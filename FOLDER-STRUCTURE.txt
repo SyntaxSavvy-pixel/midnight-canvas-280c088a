@@ -1,0 +1,26 @@
+📁 CORRECT FOLDER STRUCTURE FOR CHROME EXTENSION LOADING
+
+Your current path structure:
+
+📁 /media/fuse/crostini_.../Tabmangment/          ← ❌ DON'T SELECT THIS
+    📁 chrome-extension/                          ← ✅ SELECT THIS FOLDER!
+        📄 manifest.json                          ← Chrome needs to see this
+        📄 popup.html
+        📄 popup.js
+        📄 background.js  
+        📄 content.js
+        📁 icons/
+            📄 icon-16.png
+            📄 icon-48.png
+            📄 icon-128.png
+        📄 README.md
+        📄 LOADING-INSTRUCTIONS.md
+
+CHROME EXTENSION LOADING STEPS:
+1. Open chrome://extensions/
+2. Enable "Developer mode" 
+3. Click "Load unpacked"
+4. Navigate to: /media/fuse/.../Tabmangment/chrome-extension  ← THIS EXACT FOLDER
+5. Click "Select Folder"
+
+The extension will only load if Chrome can see manifest.json directly in the selected folder!

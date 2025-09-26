@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tabmangment</title>
+    <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+
+    <div class="header">
+        <div class="header-content">
+            <div class="logo">
+                <div class="logo-icon-wrapper" title="Tabmangment">
+                    <img src="icons/icon-48.png" alt="App Icon" class="logo-icon" width="28" height="28">
+                </div>
+            </div>
+            <div class="header-buttons">
+                <button class="header-btn contact-btn" id="contact-btn">
+                    <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
+                        <polyline points="22,6 12,13 2,6"></polyline>
+                    </svg>
+                    <span class="btn-text">Contact</span>
+                </button>
+                <button class="header-btn premium-btn" id="premium-btn">
+                    <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"></path>
+                    </svg>
+                    <span class="btn-text" id="premium-btn-text">Upgrade Pro</span>
+                </button>
+            </div>
+        </div>
+
+        <div class="stats">
+            <div class="stat-card">
+                <div class="stat-number" id="active-tabs">0</div>
+                <div class="stat-label">Open</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="scheduled-tabs">0</div>
+                <div class="stat-label">Closed Soon</div>
+            </div>
+        </div>
+
+        <div class="subscription-plan" id="subscription-plan">
+            <div class="plan-indicator free-plan" id="plan-indicator">
+                <div class="plan-badge">FREE PLAN</div>
+                <div class="plan-description">Limited to 10 tabs</div>
+            </div>
+        </div>
+
+        <div class="controls">
+            <button class="control-btn pro-feature" id="collapse-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M5 12h14"></path>
+                    <path d="M12 5l7 7-7 7"></path>
+                    <path d="M5 5l7 7-7 7" opacity="0.6"></path>
+                </svg>
+                Collapse All
+            </button>
+            <button class="control-btn pro-feature" id="bookmark-all-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16z"></path>
+                </svg>
+                Bookmark All
+            </button>
+        </div>
+    </div>
+
+    <div id="tab-limit-warning"></div>
+
+    <div class="tabs-container" id="tabs-container">
+        <div class="empty-state" id="empty-state">
+            <div class="empty-icon">📋</div>
+            <p>No tabs to manage</p>
+        </div>
+    </div>
+
+    <div class="contact-modal" id="contact-modal" style="display: none;">
+        <div class="contact-modal-content">
+            <div class="contact-header">
+                <h3>📧 Contact Support</h3>
+                <button class="contact-close-btn" id="contact-close-btn">&times;</button>
+            </div>
+
+            <form class="contact-form" id="contact-form">
+                <div class="contact-field">
+                    <label class="contact-label" for="contact-name">Your Name</label>
+                    <input type="text" id="contact-name" class="contact-input" placeholder="Enter your name" required>
+                </div>
+
+                <div class="contact-field">
+                    <label class="contact-label" for="contact-email">Your Email</label>
+                    <input type="email" id="contact-email" class="contact-input" placeholder="Enter your email" required>
+                </div>
+
+                <div class="contact-field">
+                    <label class="contact-label" for="contact-subject">Subject</label>
+                    <select id="contact-subject" class="contact-input" required>
+                        <option value="">Select a subject</option>
+                        <option value="Bug Report">🐛 Bug Report</option>
+                        <option value="Feature Request">💡 Feature Request</option>
+                        <option value="Technical Support">🔧 Technical Support</option>
+                        <option value="Billing Issue">💳 Billing Issue</option>
+                        <option value="General Question">❓ General Question</option>
+                        <option value="Other">📝 Other</option>
+                    </select>
+                </div>
+
+                <div class="contact-field">
+                    <label class="contact-label" for="contact-message">Message</label>
+                    <textarea id="contact-message" class="contact-textarea" placeholder="Describe your issue or question in detail..." required></textarea>
+                </div>
+
+                <div class="contact-actions">
+                    <button type="button" class="contact-btn-cancel" id="contact-cancel">Cancel</button>
+                    <button type="submit" class="contact-btn-submit" id="contact-submit">
+                        <span class="contact-submit-text">Send Message</span>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="html2canvas.min.js"></script>
+    <script src="extension-simple-auth.js"></script>
+    <script type="module" src="popup.js"></script>
+</body>
+</html>

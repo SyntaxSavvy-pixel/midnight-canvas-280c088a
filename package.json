@@ -1,0 +1,28 @@
+{
+  "name": "tabmangment-extension",
+  "version": "1.0.0",
+  "description": "Professional Tab Management Chrome Extension",
+  "main": "index.html",
+  "scripts": {
+    "start": "python3 -m http.server 3000",
+    "build": "echo 'Static build complete'",
+    "lint": "echo 'No linting configured'",
+    "test": "echo 'No tests configured'"
+  },
+  "keywords": [
+    "chrome-extension",
+    "tab-management",
+    "productivity"
+  ],
+  "author": "Tabmangment Team",
+  "license": "MIT",
+  "dependencies": {
+    "express": "^4.18.2",
+    "stripe": "^14.25.0",
+    "cors": "^2.8.5",
+    "dotenv": "^16.3.1"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

@@ -1,0 +1,20 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(/home/selfshios/**)",
+      "Bash(npm run build:*)",
+      "Bash(npm install)",
+      "Bash(node:*)",
+      "Bash(tar:*)",
+      "Bash(python3:*)",
+      "Bash(rg:*)",
+      "Bash(find:*)",
+      "Bash(grep:*)",
+      "Bash(zip:*)",
+      "Bash(rm:*)",
+      "mcp__ide__getDiagnostics"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

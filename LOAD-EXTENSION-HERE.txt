@@ -1,0 +1,22 @@
+🚀 TABMANGMENT CHROME EXTENSION - READY TO LOAD!
+
+✅ THIS IS THE CORRECT FOLDER TO SELECT IN CHROME!
+
+LOADING INSTRUCTIONS:
+1. Open Chrome and go to: chrome://extensions/
+2. Turn ON "Developer mode" (toggle in top right corner)  
+3. Click "Load unpacked"
+4. SELECT THIS EXACT FOLDER: /media/fuse/.../Tabmangment
+5. Click "Select Folder"
+
+✅ FILES CHROME WILL FIND:
+- manifest.json ← Main extension config
+- popup.html   ← Extension popup interface  
+- popup.js     ← Popup functionality
+- background.js ← Background service worker
+- content.js   ← Content script
+- icons/       ← Extension icons (16, 32, 48, 128px)
+
+The extension should load successfully now that manifest.json is in the root folder!
+
+🎉 After loading, you'll see "Tabmangment v1.0.1" in your extensions list.

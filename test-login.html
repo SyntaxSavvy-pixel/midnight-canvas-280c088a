@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>TEST LOGIN PAGE - ROUTING WORKING</title>
+    <meta charset="UTF-8">
+</head>
+<body style="background: #ff0000; color: #ffffff; text-align: center; padding: 50px; font-family: Arial, sans-serif;">
+    <h1 style="font-size: 48px;">🔴 TEST SUCCESSFUL!</h1>
+    <h2 style="font-size: 32px;">ROUTING IS WORKING!</h2>
+    <p style="font-size: 20px;">If you can see this RED page, then login.html should also work!</p>
+    <p style="font-size: 16px;">Current timestamp: <span id="timestamp"></span></p>
+    <a href="login.html" style="color: #ffff00; font-size: 24px; text-decoration: underline;">→ Go to Real Login Page ←</a>
+
+    <script>
+        document.getElementById('timestamp').textContent = new Date().toLocaleString();
+    </script>
+</body>
+</html>

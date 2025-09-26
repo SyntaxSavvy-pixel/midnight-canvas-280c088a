@@ -1,0 +1,71 @@
+{
+  "manifest_version": 3,
+  "name": "Tabmangment",
+  "version": "2.0",
+  "description": "Professional tab management with auto-closing, timers, and premium features",
+  
+  "permissions": [
+    "tabs",
+    "activeTab",
+    "storage",
+    "notifications",
+    "bookmarks",
+    "browsingData",
+    "identity",
+    "scripting"
+  ],
+
+  "host_permissions": [
+    "https://buy.stripe.com/*",
+    "https://*.vercel.app/*",
+    "https://api.emailjs.com/*",
+    "https://billing.stripe.com/*",
+    "https://www.googleapis.com/*",
+    "https://js.stripe.com/*"
+  ],
+  
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "Tabmangment"
+  },
+  
+  "background": {
+    "service_worker": "background.js"
+  },
+  
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["content.js"],
+      "run_at": "document_idle"
+    },
+    {
+      "matches": [
+        "*://*.stripe.com/*",
+        "*://*/success*",
+        "*://*/payment*",
+        "*://*/*success*",
+        "*://*/*payment*"
+      ],
+      "js": ["success-page-activator.js"],
+      "run_at": "document_idle"
+    }
+  ],
+  
+  "icons": {
+    "16": "icons/icon-16.png",
+    "48": "icons/icon-48.png",
+    "128": "icons/icon-128.png"
+  },
+  
+  "content_security_policy": {
+    "extension_pages": "script-src 'self'; object-src 'self'; connect-src 'self' https://buy.stripe.com https://*.vercel.app https://api.emailjs.com https://billing.stripe.com https://js.stripe.com https://www.googleapis.com/*;"
+  },
+
+  "web_accessible_resources": [
+    {
+      "resources": ["icons/*"],
+      "matches": ["<all_urls>"]
+    }
+  ]
+}
