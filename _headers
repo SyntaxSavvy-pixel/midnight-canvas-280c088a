@@ -1,0 +1,25 @@
+# Security headers for all pages
+/*
+  X-Frame-Options: DENY
+  X-Content-Type-Options: nosniff
+  X-XSS-Protection: 1; mode=block
+  Referrer-Policy: strict-origin-when-cross-origin
+  Permissions-Policy: camera=(), microphone=(), geolocation=()
+
+# Cache headers for static assets
+/icons/*
+  Cache-Control: public, max-age=31536000, immutable
+
+# Cache headers for JS and CSS
+/*.js
+  Cache-Control: public, max-age=86400
+
+/*.css
+  Cache-Control: public, max-age=86400
+
+# Favicon and manifest
+/favicon.ico
+  Cache-Control: public, max-age=31536000
+
+/manifest.json
+  Cache-Control: public, max-age=86400

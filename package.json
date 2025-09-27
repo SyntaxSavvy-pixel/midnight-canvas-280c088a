@@ -5,7 +5,10 @@
   "main": "index.html",
   "scripts": {
     "start": "python3 -m http.server 3000",
+    "dev": "vercel dev",
     "build": "echo 'Static build complete'",
+    "deploy": "vercel --prod",
+    "preview": "vercel",
     "lint": "echo 'No linting configured'",
     "test": "echo 'No tests configured'"
   },
@@ -21,6 +24,9 @@
     "stripe": "^14.25.0",
     "cors": "^2.8.5",
     "dotenv": "^16.3.1"
+  },
+  "devDependencies": {
+    "vercel": "^32.0.0"
   },
   "engines": {
     "node": ">=18.0.0"

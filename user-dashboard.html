@@ -1,0 +1,1426 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - TabManagement</title>
+    <meta name="description" content="Manage your TabManagement subscription, view analytics, and control your tab management settings.">
+
+    <link rel="icon" type="image/png" sizes="32x32" href="/icons/icon-32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/icons/icon-16.png">
+
+    <script src="https://unpkg.com/feather-icons"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            line-height: 1.6;
+            color: #e2e8f0;
+            background: #0f172a;
+            min-height: 100vh;
+        }
+
+        /* Header */
+        .header {
+            background: #1e293b;
+            border-bottom: 1px solid #334155;
+            padding: 1rem 0;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+
+        .header-content {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: #e2e8f0;
+            text-decoration: none;
+        }
+
+        .logo img {
+            width: 32px;
+            height: 32px;
+            margin-right: 8px;
+        }
+
+        .user-menu {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .plan-badge {
+            padding: 0.375rem 0.75rem;
+            border-radius: 0.5rem;
+            font-size: 0.875rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.025em;
+        }
+
+        .plan-badge.free {
+            background: rgba(107, 114, 128, 0.2);
+            color: #9ca3af;
+            border: 1px solid #374151;
+        }
+
+        .plan-badge.pro {
+            background: rgba(20, 184, 166, 0.2);
+            color: #14b8a6;
+            border: 1px solid #14b8a6;
+        }
+
+        .user-avatar {
+            width: 40px;
+            height: 40px;
+            background: #14b8a6;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .logout-btn {
+            padding: 0.5rem 1rem;
+            background: transparent;
+            border: 1px solid #475569;
+            border-radius: 0.5rem;
+            color: #94a3b8;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .logout-btn:hover {
+            background: #334155;
+            color: #e2e8f0;
+        }
+
+        /* Main Layout */
+        .main-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 2rem;
+            display: grid;
+            grid-template-columns: 280px 1fr;
+            gap: 2rem;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            background: #1e293b;
+            border-radius: 0.75rem;
+            padding: 1.5rem;
+            height: fit-content;
+            border: 1px solid #334155;
+        }
+
+        .nav-menu {
+            list-style: none;
+        }
+
+        .nav-item {
+            margin-bottom: 0.5rem;
+        }
+
+        .nav-link {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.75rem 1rem;
+            border-radius: 0.5rem;
+            color: #94a3b8;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            font-weight: 500;
+        }
+
+        .nav-link:hover,
+        .nav-link.active {
+            background: #14b8a6;
+            color: white;
+        }
+
+        /* Main Content */
+        .content {
+            display: flex;
+            flex-direction: column;
+            gap: 2rem;
+        }
+
+        .page-header {
+            margin-bottom: 1rem;
+        }
+
+        .page-title {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #f8fafc;
+            margin-bottom: 0.5rem;
+        }
+
+        .page-subtitle {
+            color: #94a3b8;
+            font-size: 1.1rem;
+        }
+
+        /* Cards */
+        .card {
+            background: #1e293b;
+            border-radius: 0.75rem;
+            padding: 1.5rem;
+            border: 1px solid #334155;
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+
+        .card-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: #f8fafc;
+        }
+
+        .card-action {
+            padding: 0.5rem 1rem;
+            background: #14b8a6;
+            color: white;
+            border: none;
+            border-radius: 0.5rem;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .card-action:hover {
+            background: #0d9488;
+            transform: translateY(-1px);
+        }
+
+        .card-action.secondary {
+            background: transparent;
+            color: #94a3b8;
+            border: 1px solid #475569;
+        }
+
+        .card-action.secondary:hover {
+            background: #334155;
+            color: #e2e8f0;
+        }
+
+        /* Stats Grid */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background: #1e293b;
+            border-radius: 0.75rem;
+            padding: 1.5rem;
+            border: 1px solid #334155;
+            text-align: center;
+        }
+
+        .stat-icon {
+            width: 48px;
+            height: 48px;
+            background: #14b8a6;
+            border-radius: 0.75rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            margin: 0 auto 1rem;
+        }
+
+        .stat-number {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #f8fafc;
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-label {
+            color: #94a3b8;
+            font-size: 0.9rem;
+        }
+
+        .stat-change {
+            font-size: 0.85rem;
+            margin-top: 0.5rem;
+        }
+
+        .stat-change.positive {
+            color: #10b981;
+        }
+
+        .stat-change.negative {
+            color: #ef4444;
+        }
+
+        /* Subscription Section */
+        .subscription-card {
+            background: linear-gradient(135deg, #1e293b 0%, #0f766e 100%);
+            border: 1px solid #14b8a6;
+        }
+
+        .subscription-info {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .current-plan {
+            color: white;
+        }
+
+        .plan-name {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 0.25rem;
+        }
+
+        .plan-price {
+            color: rgba(255, 255, 255, 0.8);
+        }
+
+        .plan-features {
+            list-style: none;
+            margin-bottom: 1.5rem;
+        }
+
+        .plan-features li {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-bottom: 0.5rem;
+            color: rgba(255, 255, 255, 0.9);
+        }
+
+        .plan-features .check {
+            color: #10b981;
+        }
+
+        .plan-features .x {
+            color: #ef4444;
+        }
+
+        /* Chart Container */
+        .chart-container {
+            position: relative;
+            height: 300px;
+            margin-top: 1rem;
+        }
+
+        /* Tab Management */
+        .tab-controls {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .control-group {
+            flex: 1;
+        }
+
+        .control-label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+            color: #f8fafc;
+        }
+
+        .control-input {
+            width: 100%;
+            padding: 0.75rem;
+            background: #0f172a;
+            border: 1px solid #334155;
+            border-radius: 0.5rem;
+            color: #e2e8f0;
+        }
+
+        .control-input:focus {
+            outline: none;
+            border-color: #14b8a6;
+        }
+
+        .toggle-switch {
+            position: relative;
+            display: inline-block;
+            width: 48px;
+            height: 24px;
+        }
+
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #475569;
+            transition: 0.4s;
+            border-radius: 24px;
+        }
+
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 16px;
+            width: 16px;
+            left: 4px;
+            bottom: 4px;
+            background-color: white;
+            transition: 0.4s;
+            border-radius: 50%;
+        }
+
+        input:checked + .slider {
+            background-color: #14b8a6;
+        }
+
+        input:checked + .slider:before {
+            transform: translateX(24px);
+        }
+
+        /* Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 10000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(5px);
+        }
+
+        .modal.show {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-content {
+            background: #1e293b;
+            border-radius: 0.75rem;
+            padding: 2rem;
+            border: 1px solid #334155;
+            max-width: 500px;
+            width: 90%;
+            position: relative;
+        }
+
+        .modal-close {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            background: none;
+            border: none;
+            color: #94a3b8;
+            cursor: pointer;
+            font-size: 1.5rem;
+        }
+
+        /* Responsive */
+        @media (max-width: 1024px) {
+            .main-container {
+                grid-template-columns: 1fr;
+                gap: 1rem;
+            }
+
+            .sidebar {
+                order: 2;
+            }
+
+            .stats-grid {
+                grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            }
+        }
+
+        @media (max-width: 768px) {
+            .main-container {
+                padding: 1rem;
+            }
+
+            .header-content {
+                padding: 0 1rem;
+            }
+
+            .user-menu {
+                gap: 0.5rem;
+            }
+
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .tab-controls {
+                flex-direction: column;
+            }
+        }
+
+        /* Page-specific styles */
+        .page-content {
+            display: none;
+        }
+
+        .page-content.active {
+            display: block;
+        }
+
+        .billing-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 1rem;
+        }
+
+        .billing-table th,
+        .billing-table td {
+            padding: 0.75rem;
+            text-align: left;
+            border-bottom: 1px solid #334155;
+        }
+
+        .billing-table th {
+            color: #f8fafc;
+            font-weight: 600;
+        }
+
+        .billing-table td {
+            color: #94a3b8;
+        }
+
+        .status-badge {
+            padding: 0.25rem 0.5rem;
+            border-radius: 0.375rem;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .status-badge.paid {
+            background: rgba(16, 185, 129, 0.2);
+            color: #10b981;
+        }
+
+        .status-badge.pending {
+            background: rgba(251, 191, 36, 0.2);
+            color: #fbbf24;
+        }
+
+        .whitelist-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.75rem;
+            background: #0f172a;
+            border-radius: 0.5rem;
+            margin-bottom: 0.5rem;
+            border: 1px solid #334155;
+        }
+
+        .remove-btn {
+            background: none;
+            border: none;
+            color: #ef4444;
+            cursor: pointer;
+            padding: 0.25rem;
+            border-radius: 0.25rem;
+            transition: all 0.3s ease;
+        }
+
+        .remove-btn:hover {
+            background: rgba(239, 68, 68, 0.1);
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="header-content">
+            <a href="/mainlandingpage.html" class="logo">
+                <img src="/icons/icon-32.png" alt="TabManagement Logo">
+                TabManagement
+            </a>
+            <div class="user-menu">
+                <div class="plan-badge" id="plan-badge">Free</div>
+                <div class="user-avatar" id="user-avatar">U</div>
+                <a href="/mainlandingpage.html" class="logout-btn">
+                    <i data-feather="log-out"></i>
+                    Logout
+                </a>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <div class="main-container">
+        <!-- Sidebar -->
+        <nav class="sidebar">
+            <ul class="nav-menu">
+                <li class="nav-item">
+                    <a href="#" class="nav-link active" data-page="dashboard">
+                        <i data-feather="home"></i>
+                        Dashboard
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="#" class="nav-link" data-page="subscription">
+                        <i data-feather="credit-card"></i>
+                        Subscription
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="#" class="nav-link" data-page="analytics">
+                        <i data-feather="bar-chart-2"></i>
+                        Analytics
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="#" class="nav-link" data-page="settings">
+                        <i data-feather="settings"></i>
+                        Tab Settings
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="#" class="nav-link" data-page="billing">
+                        <i data-feather="file-text"></i>
+                        Billing
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="#" class="nav-link" data-page="profile">
+                        <i data-feather="user"></i>
+                        Profile
+                    </a>
+                </li>
+            </ul>
+        </nav>
+
+        <!-- Main Content -->
+        <main class="content">
+            <!-- Dashboard Page -->
+            <div class="page-content active" id="dashboard-page">
+                <div class="page-header">
+                    <h1 class="page-title">Dashboard</h1>
+                    <p class="page-subtitle">Welcome back! Here's your tab management overview.</p>
+                </div>
+
+                <!-- Stats Grid -->
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <i data-feather="monitor"></i>
+                        </div>
+                        <div class="stat-number" id="total-tabs">127</div>
+                        <div class="stat-label">Tabs Managed</div>
+                        <div class="stat-change positive">+12% vs last week</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <i data-feather="clock"></i>
+                        </div>
+                        <div class="stat-number" id="auto-closed">48</div>
+                        <div class="stat-label">Auto-closed Today</div>
+                        <div class="stat-change positive">+23% efficiency</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <i data-feather="zap"></i>
+                        </div>
+                        <div class="stat-number" id="memory-saved">342MB</div>
+                        <div class="stat-label">Memory Saved</div>
+                        <div class="stat-change positive">-31% usage</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <i data-feather="target"></i>
+                        </div>
+                        <div class="stat-number" id="focus-score">85%</div>
+                        <div class="stat-label">Focus Score</div>
+                        <div class="stat-change positive">+7% improvement</div>
+                    </div>
+                </div>
+
+                <!-- Quick Actions -->
+                <div class="card">
+                    <div class="card-header">
+                        <h2 class="card-title">Quick Actions</h2>
+                    </div>
+                    <div class="tab-controls">
+                        <div class="control-group">
+                            <label class="control-label">
+                                <label class="toggle-switch">
+                                    <input type="checkbox" id="auto-close-toggle" checked>
+                                    <span class="slider"></span>
+                                </label>
+                                Auto-close enabled
+                            </label>
+                        </div>
+                        <div class="control-group">
+                            <label class="control-label" for="close-timer">Default close timer (minutes)</label>
+                            <input type="number" id="close-timer" class="control-input" value="30" min="1" max="480">
+                        </div>
+                        <div class="control-group">
+                            <button class="card-action" onclick="syncWithExtension()">
+                                <i data-feather="refresh-cw"></i>
+                                Sync Extension
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Current Plan Overview -->
+                <div class="card subscription-card">
+                    <div class="card-header">
+                        <h2 class="card-title" style="color: white;">Current Plan</h2>
+                        <button class="card-action" onclick="showPage('subscription')">
+                            <i data-feather="arrow-right"></i>
+                            Manage Plan
+                        </button>
+                    </div>
+                    <div class="subscription-info">
+                        <div class="current-plan">
+                            <div class="plan-name" id="current-plan-name">Free Plan</div>
+                            <div class="plan-price" id="current-plan-price">$0/month</div>
+                        </div>
+                    </div>
+                    <ul class="plan-features" id="current-plan-features">
+                        <li><i data-feather="check" class="check"></i> Up to 10 managed tabs</li>
+                        <li><i data-feather="check" class="check"></i> Basic auto-close timers</li>
+                        <li><i data-feather="x" class="x"></i> Advanced analytics</li>
+                        <li><i data-feather="x" class="x"></i> Custom themes</li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Subscription Page -->
+            <div class="page-content" id="subscription-page">
+                <div class="page-header">
+                    <h1 class="page-title">Subscription Management</h1>
+                    <p class="page-subtitle">Upgrade your plan to unlock premium features.</p>
+                </div>
+
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 2rem;">
+                    <!-- Free Plan -->
+                    <div class="card">
+                        <div class="card-header">
+                            <h3 class="card-title">Free Plan</h3>
+                            <div class="plan-badge free" id="free-status">Current</div>
+                        </div>
+                        <div style="text-align: center; margin: 1rem 0;">
+                            <div style="font-size: 2.5rem; font-weight: 700; color: #f8fafc;">$0</div>
+                            <div style="color: #94a3b8;">per month</div>
+                        </div>
+                        <ul class="plan-features">
+                            <li><i data-feather="check" class="check"></i> Up to 10 managed tabs</li>
+                            <li><i data-feather="check" class="check"></i> Basic auto-close timers</li>
+                            <li><i data-feather="check" class="check"></i> Tab organization</li>
+                            <li><i data-feather="x" class="x"></i> Advanced analytics</li>
+                            <li><i data-feather="x" class="x"></i> Custom themes</li>
+                            <li><i data-feather="x" class="x"></i> Priority support</li>
+                        </ul>
+                    </div>
+
+                    <!-- Pro Plan -->
+                    <div class="card subscription-card">
+                        <div class="card-header">
+                            <h3 class="card-title" style="color: white;">Pro Plan</h3>
+                            <div class="plan-badge pro" id="pro-status" style="display: none;">Current</div>
+                        </div>
+                        <div style="text-align: center; margin: 1rem 0;">
+                            <div style="font-size: 2.5rem; font-weight: 700; color: white;">$4.99</div>
+                            <div style="color: rgba(255, 255, 255, 0.8);">per month</div>
+                        </div>
+                        <ul class="plan-features">
+                            <li><i data-feather="check" class="check"></i> Unlimited managed tabs</li>
+                            <li><i data-feather="check" class="check"></i> Advanced timer features</li>
+                            <li><i data-feather="check" class="check"></i> Detailed analytics</li>
+                            <li><i data-feather="check" class="check"></i> Custom themes</li>
+                            <li><i data-feather="check" class="check"></i> Priority support</li>
+                            <li><i data-feather="check" class="check"></i> Data export</li>
+                        </ul>
+                        <button class="card-action" id="plan-action-btn" onclick="toggleSubscription()" style="width: 100%; margin-top: 1rem;">
+                            Upgrade to Pro
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Analytics Page -->
+            <div class="page-content" id="analytics-page">
+                <div class="page-header">
+                    <h1 class="page-title">Analytics</h1>
+                    <p class="page-subtitle">Detailed insights into your tab management patterns.</p>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <h2 class="card-title">Tab Usage Over Time</h2>
+                    </div>
+                    <div class="chart-container">
+                        <canvas id="usage-chart"></canvas>
+                    </div>
+                </div>
+
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 2rem; margin-top: 2rem;">
+                    <div class="card">
+                        <h3 class="card-title">Most Active Hours</h3>
+                        <div style="margin-top: 1rem;">
+                            <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+                                <span>9:00 AM - 12:00 PM</span>
+                                <span style="color: #14b8a6;">87% activity</span>
+                            </div>
+                            <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+                                <span>1:00 PM - 5:00 PM</span>
+                                <span style="color: #14b8a6;">92% activity</span>
+                            </div>
+                            <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+                                <span>6:00 PM - 9:00 PM</span>
+                                <span style="color: #14b8a6;">64% activity</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <h3 class="card-title">Top Domains</h3>
+                        <div style="margin-top: 1rem;">
+                            <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+                                <span>github.com</span>
+                                <span style="color: #14b8a6;">23 tabs</span>
+                            </div>
+                            <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+                                <span>stackoverflow.com</span>
+                                <span style="color: #14b8a6;">18 tabs</span>
+                            </div>
+                            <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+                                <span>docs.google.com</span>
+                                <span style="color: #14b8a6;">12 tabs</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Settings Page -->
+            <div class="page-content" id="settings-page">
+                <div class="page-header">
+                    <h1 class="page-title">Tab Management Settings</h1>
+                    <p class="page-subtitle">Configure how TabManagement handles your tabs.</p>
+                </div>
+
+                <div class="card">
+                    <h2 class="card-title">Auto-close Settings</h2>
+                    <div class="tab-controls">
+                        <div class="control-group">
+                            <label class="control-label" for="default-timer">Default auto-close timer (minutes)</label>
+                            <input type="number" id="default-timer" class="control-input" value="30" min="1" max="480">
+                        </div>
+                        <div class="control-group">
+                            <label class="control-label" for="max-tabs">Maximum tabs before auto-close</label>
+                            <input type="number" id="max-tabs" class="control-input" value="20" min="5" max="100">
+                        </div>
+                    </div>
+
+                    <div style="margin-top: 1.5rem;">
+                        <label class="control-label">
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="weekend-mode">
+                                <span class="slider"></span>
+                            </label>
+                            Pause auto-close on weekends
+                        </label>
+                    </div>
+
+                    <button class="card-action" style="margin-top: 1rem;" onclick="saveSettings()">
+                        <i data-feather="save"></i>
+                        Save Settings
+                    </button>
+                </div>
+
+                <div class="card" style="margin-top: 2rem;">
+                    <h2 class="card-title">Whitelist Management</h2>
+                    <p style="color: #94a3b8; margin-bottom: 1rem;">Add domains that should never be auto-closed.</p>
+
+                    <div style="display: flex; gap: 1rem; margin-bottom: 1rem;">
+                        <input type="text" id="whitelist-domain" class="control-input" placeholder="example.com" style="flex: 1;">
+                        <button class="card-action" onclick="addToWhitelist()">
+                            <i data-feather="plus"></i>
+                            Add
+                        </button>
+                    </div>
+
+                    <div id="whitelist-items">
+                        <div class="whitelist-item">
+                            <span>github.com</span>
+                            <button class="remove-btn" onclick="removeFromWhitelist(this)">
+                                <i data-feather="trash-2"></i>
+                            </button>
+                        </div>
+                        <div class="whitelist-item">
+                            <span>gmail.com</span>
+                            <button class="remove-btn" onclick="removeFromWhitelist(this)">
+                                <i data-feather="trash-2"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Billing Page -->
+            <div class="page-content" id="billing-page">
+                <div class="page-header">
+                    <h1 class="page-title">Billing & Invoices</h1>
+                    <p class="page-subtitle">Manage your payment methods and view billing history.</p>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <h2 class="card-title">Payment Method</h2>
+                        <button class="card-action secondary">
+                            <i data-feather="credit-card"></i>
+                            Update Payment
+                        </button>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 1rem;">
+                        <div style="width: 48px; height: 32px; background: #1e40af; border-radius: 0.375rem; display: flex; align-items: center; justify-content: center; color: white; font-weight: 600;">VISA</div>
+                        <div>
+                            <div style="color: #f8fafc;">•••• •••• •••• 4242</div>
+                            <div style="color: #94a3b8; font-size: 0.875rem;">Expires 12/25</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card" style="margin-top: 2rem;">
+                    <h2 class="card-title">Billing History</h2>
+                    <table class="billing-table">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Amount</th>
+                                <th>Status</th>
+                                <th>Invoice</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>Dec 1, 2024</td>
+                                <td>$4.99</td>
+                                <td><span class="status-badge paid">Paid</span></td>
+                                <td><a href="#" style="color: #14b8a6;">Download</a></td>
+                            </tr>
+                            <tr>
+                                <td>Nov 1, 2024</td>
+                                <td>$4.99</td>
+                                <td><span class="status-badge paid">Paid</span></td>
+                                <td><a href="#" style="color: #14b8a6;">Download</a></td>
+                            </tr>
+                            <tr>
+                                <td>Oct 1, 2024</td>
+                                <td>$4.99</td>
+                                <td><span class="status-badge paid">Paid</span></td>
+                                <td><a href="#" style="color: #14b8a6;">Download</a></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Profile Page -->
+            <div class="page-content" id="profile-page">
+                <div class="page-header">
+                    <h1 class="page-title">Profile Settings</h1>
+                    <p class="page-subtitle">Manage your account information and preferences.</p>
+                </div>
+
+                <div class="card">
+                    <h2 class="card-title">Account Information</h2>
+                    <div class="tab-controls">
+                        <div class="control-group">
+                            <label class="control-label" for="profile-name">Full Name</label>
+                            <input type="text" id="profile-name" class="control-input" value="John Doe">
+                        </div>
+                        <div class="control-group">
+                            <label class="control-label" for="profile-email">Email Address</label>
+                            <input type="email" id="profile-email" class="control-input" value="john.doe@example.com">
+                        </div>
+                    </div>
+                    <button class="card-action" style="margin-top: 1rem;" onclick="updateProfile()">
+                        <i data-feather="save"></i>
+                        Update Profile
+                    </button>
+                </div>
+
+                <div class="card" style="margin-top: 2rem;">
+                    <h2 class="card-title">Security</h2>
+                    <div class="control-group">
+                        <label class="control-label" for="current-password">Current Password</label>
+                        <input type="password" id="current-password" class="control-input" placeholder="Enter current password">
+                    </div>
+                    <div class="tab-controls">
+                        <div class="control-group">
+                            <label class="control-label" for="new-password">New Password</label>
+                            <input type="password" id="new-password" class="control-input" placeholder="Enter new password">
+                        </div>
+                        <div class="control-group">
+                            <label class="control-label" for="confirm-password">Confirm Password</label>
+                            <input type="password" id="confirm-password" class="control-input" placeholder="Confirm new password">
+                        </div>
+                    </div>
+                    <button class="card-action" style="margin-top: 1rem;" onclick="updatePassword()">
+                        <i data-feather="lock"></i>
+                        Update Password
+                    </button>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Upgrade Modal -->
+    <div class="modal" id="upgrade-modal">
+        <div class="modal-content">
+            <button class="modal-close" onclick="closeModal()">&times;</button>
+            <h2 style="color: #f8fafc; margin-bottom: 1rem;">Upgrade to Pro</h2>
+            <p style="color: #94a3b8; margin-bottom: 2rem;">Unlock unlimited tab management and advanced features for just $4.99/month.</p>
+
+            <div style="background: #0f172a; padding: 1.5rem; border-radius: 0.5rem; margin-bottom: 2rem;">
+                <h3 style="color: #f8fafc; margin-bottom: 1rem;">Pro Features Include:</h3>
+                <ul style="list-style: none; color: #94a3b8;">
+                    <li style="margin-bottom: 0.5rem;"><i data-feather="check" style="color: #10b981; width: 16px; height: 16px; margin-right: 0.5rem;"></i> Unlimited managed tabs</li>
+                    <li style="margin-bottom: 0.5rem;"><i data-feather="check" style="color: #10b981; width: 16px; height: 16px; margin-right: 0.5rem;"></i> Advanced analytics & insights</li>
+                    <li style="margin-bottom: 0.5rem;"><i data-feather="check" style="color: #10b981; width: 16px; height: 16px; margin-right: 0.5rem;"></i> Custom themes & appearance</li>
+                    <li style="margin-bottom: 0.5rem;"><i data-feather="check" style="color: #10b981; width: 16px; height: 16px; margin-right: 0.5rem;"></i> Priority customer support</li>
+                    <li><i data-feather="check" style="color: #10b981; width: 16px; height: 16px; margin-right: 0.5rem;"></i> Data export capabilities</li>
+                </ul>
+            </div>
+
+            <div style="display: flex; gap: 1rem;">
+                <button class="card-action secondary" onclick="closeModal()" style="flex: 1;">Cancel</button>
+                <button class="card-action" onclick="processUpgrade()" style="flex: 1;">Upgrade Now</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Initialize
+        feather.replace();
+
+        // User data simulation
+        let userData = {
+            name: 'John Doe',
+            email: 'john.doe@example.com',
+            plan: 'free', // 'free' or 'pro'
+            joinDate: '2024-01-15',
+            avatar: 'JD'
+        };
+
+        // Initialize dashboard
+        function initDashboard() {
+            // Load user data from localStorage
+            const storedUserData = localStorage.getItem('userData');
+            if (storedUserData) {
+                userData = JSON.parse(storedUserData);
+            }
+
+            updateUserDisplay();
+            updatePlanDisplay();
+            initChart();
+            loadUserSettings();
+
+            // Simulate extension data sync
+            setTimeout(() => {
+                syncWithExtension();
+            }, 1000);
+        }
+
+        // Navigation
+        function showPage(pageId) {
+            // Hide all pages
+            document.querySelectorAll('.page-content').forEach(page => {
+                page.classList.remove('active');
+            });
+
+            // Remove active from all nav links
+            document.querySelectorAll('.nav-link').forEach(link => {
+                link.classList.remove('active');
+            });
+
+            // Show selected page
+            document.getElementById(pageId + '-page').classList.add('active');
+
+            // Activate nav link
+            document.querySelector(`[data-page="${pageId}"]`).classList.add('active');
+        }
+
+        // Event listeners for navigation
+        document.querySelectorAll('.nav-link').forEach(link => {
+            link.addEventListener('click', (e) => {
+                e.preventDefault();
+                const page = link.getAttribute('data-page');
+                showPage(page);
+            });
+        });
+
+        // Update user display
+        function updateUserDisplay() {
+            document.getElementById('user-avatar').textContent = userData.avatar;
+            document.getElementById('profile-name').value = userData.name;
+            document.getElementById('profile-email').value = userData.email;
+        }
+
+        // Update plan display
+        function updatePlanDisplay() {
+            const planBadge = document.getElementById('plan-badge');
+            const currentPlanName = document.getElementById('current-plan-name');
+            const currentPlanPrice = document.getElementById('current-plan-price');
+            const planActionBtn = document.getElementById('plan-action-btn');
+            const freeStatus = document.getElementById('free-status');
+            const proStatus = document.getElementById('pro-status');
+
+            if (userData.plan === 'pro') {
+                planBadge.textContent = 'Pro';
+                planBadge.className = 'plan-badge pro';
+                currentPlanName.textContent = 'Pro Plan';
+                currentPlanPrice.textContent = '$4.99/month';
+                planActionBtn.textContent = 'Downgrade to Free';
+                freeStatus.style.display = 'none';
+                proStatus.style.display = 'block';
+
+                // Update features list for pro
+                document.getElementById('current-plan-features').innerHTML = `
+                    <li><i data-feather="check" class="check"></i> Unlimited managed tabs</li>
+                    <li><i data-feather="check" class="check"></i> Advanced timer features</li>
+                    <li><i data-feather="check" class="check"></i> Detailed analytics</li>
+                    <li><i data-feather="check" class="check"></i> Custom themes</li>
+                `;
+            } else {
+                planBadge.textContent = 'Free';
+                planBadge.className = 'plan-badge free';
+                currentPlanName.textContent = 'Free Plan';
+                currentPlanPrice.textContent = '$0/month';
+                planActionBtn.textContent = 'Upgrade to Pro';
+                freeStatus.style.display = 'block';
+                proStatus.style.display = 'none';
+
+                // Update features list for free
+                document.getElementById('current-plan-features').innerHTML = `
+                    <li><i data-feather="check" class="check"></i> Up to 10 managed tabs</li>
+                    <li><i data-feather="check" class="check"></i> Basic auto-close timers</li>
+                    <li><i data-feather="x" class="x"></i> Advanced analytics</li>
+                    <li><i data-feather="x" class="x"></i> Custom themes</li>
+                `;
+            }
+            feather.replace();
+        }
+
+        // Subscription management
+        function toggleSubscription() {
+            if (userData.plan === 'free') {
+                showUpgradeModal();
+            } else {
+                downgradeToFree();
+            }
+        }
+
+        function showUpgradeModal() {
+            document.getElementById('upgrade-modal').classList.add('show');
+        }
+
+        function closeModal() {
+            document.getElementById('upgrade-modal').classList.remove('show');
+        }
+
+        function processUpgrade() {
+            userData.plan = 'pro';
+            updatePlanDisplay();
+            closeModal();
+            showNotification('Successfully upgraded to Pro! 🎉', 'success');
+            syncWithExtension();
+        }
+
+        function downgradeToFree() {
+            if (confirm('Are you sure you want to downgrade to the Free plan? You will lose access to Pro features.')) {
+                userData.plan = 'free';
+                updatePlanDisplay();
+                showNotification('Downgraded to Free plan', 'info');
+                syncWithExtension();
+            }
+        }
+
+        // Settings management
+        function saveSettings() {
+            const settings = {
+                defaultTimer: document.getElementById('default-timer').value,
+                maxTabs: document.getElementById('max-tabs').value,
+                weekendMode: document.getElementById('weekend-mode').checked,
+                autoCloseEnabled: document.getElementById('auto-close-toggle').checked
+            };
+
+            localStorage.setItem('tabManagementSettings', JSON.stringify(settings));
+            showNotification('Settings saved successfully!', 'success');
+            syncWithExtension();
+        }
+
+        function loadUserSettings() {
+            const saved = localStorage.getItem('tabManagementSettings');
+            if (saved) {
+                const settings = JSON.parse(saved);
+                document.getElementById('default-timer').value = settings.defaultTimer || 30;
+                document.getElementById('max-tabs').value = settings.maxTabs || 20;
+                document.getElementById('weekend-mode').checked = settings.weekendMode || false;
+                document.getElementById('auto-close-toggle').checked = settings.autoCloseEnabled !== false;
+                document.getElementById('close-timer').value = settings.defaultTimer || 30;
+            }
+        }
+
+        // Whitelist management
+        function addToWhitelist() {
+            const domain = document.getElementById('whitelist-domain').value.trim();
+            if (domain) {
+                const whitelistItems = document.getElementById('whitelist-items');
+                const newItem = document.createElement('div');
+                newItem.className = 'whitelist-item';
+                newItem.innerHTML = `
+                    <span>${domain}</span>
+                    <button class="remove-btn" onclick="removeFromWhitelist(this)">
+                        <i data-feather="trash-2"></i>
+                    </button>
+                `;
+                whitelistItems.appendChild(newItem);
+                document.getElementById('whitelist-domain').value = '';
+                feather.replace();
+                showNotification(`Added ${domain} to whitelist`, 'success');
+            }
+        }
+
+        function removeFromWhitelist(button) {
+            button.closest('.whitelist-item').remove();
+            showNotification('Removed from whitelist', 'info');
+        }
+
+        // Profile management
+        function updateProfile() {
+            userData.name = document.getElementById('profile-name').value;
+            userData.email = document.getElementById('profile-email').value;
+            userData.avatar = userData.name.split(' ').map(n => n[0]).join('').toUpperCase();
+            updateUserDisplay();
+            showNotification('Profile updated successfully!', 'success');
+        }
+
+        function updatePassword() {
+            const current = document.getElementById('current-password').value;
+            const newPass = document.getElementById('new-password').value;
+            const confirm = document.getElementById('confirm-password').value;
+
+            if (!current || !newPass || !confirm) {
+                showNotification('Please fill in all password fields', 'error');
+                return;
+            }
+
+            if (newPass !== confirm) {
+                showNotification('New passwords do not match', 'error');
+                return;
+            }
+
+            // Clear fields
+            document.getElementById('current-password').value = '';
+            document.getElementById('new-password').value = '';
+            document.getElementById('confirm-password').value = '';
+
+            showNotification('Password updated successfully!', 'success');
+        }
+
+        // Extension sync - This would communicate with the browser extension
+        function syncWithExtension() {
+            showNotification('Syncing with extension...', 'info');
+
+            // Simulate sending data to extension
+            const extensionData = {
+                plan: userData.plan,
+                settings: JSON.parse(localStorage.getItem('tabManagementSettings') || '{}'),
+                user: userData
+            };
+
+            // In a real implementation, this would use chrome.runtime.sendMessage()
+            // chrome.runtime.sendMessage(extensionId, extensionData);
+
+            // Simulate sync delay
+            setTimeout(() => {
+                showNotification('Extension sync completed!', 'success');
+                updateStats(); // Update dashboard stats after sync
+            }, 2000);
+        }
+
+        // Update dashboard stats
+        function updateStats() {
+            // Simulate receiving stats from extension
+            const stats = {
+                totalTabs: Math.floor(Math.random() * 50) + 100,
+                autoClosed: Math.floor(Math.random() * 20) + 30,
+                memorySaved: Math.floor(Math.random() * 200) + 250,
+                focusScore: Math.floor(Math.random() * 15) + 80
+            };
+
+            document.getElementById('total-tabs').textContent = stats.totalTabs;
+            document.getElementById('auto-closed').textContent = stats.autoClosed;
+            document.getElementById('memory-saved').textContent = stats.memorySaved + 'MB';
+            document.getElementById('focus-score').textContent = stats.focusScore + '%';
+        }
+
+        // Chart initialization
+        function initChart() {
+            const ctx = document.getElementById('usage-chart').getContext('2d');
+            new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+                    datasets: [{
+                        label: 'Tabs Managed',
+                        data: [12, 19, 3, 5, 2, 3, 9],
+                        borderColor: '#14b8a6',
+                        backgroundColor: 'rgba(20, 184, 166, 0.1)',
+                        tension: 0.4
+                    }, {
+                        label: 'Auto-closed',
+                        data: [8, 12, 2, 3, 1, 2, 6],
+                        borderColor: '#6366f1',
+                        backgroundColor: 'rgba(99, 102, 241, 0.1)',
+                        tension: 0.4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            labels: {
+                                color: '#94a3b8'
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                color: '#94a3b8'
+                            },
+                            grid: {
+                                color: '#334155'
+                            }
+                        },
+                        x: {
+                            ticks: {
+                                color: '#94a3b8'
+                            },
+                            grid: {
+                                color: '#334155'
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // Notification system
+        function showNotification(message, type = 'info') {
+            const notification = document.createElement('div');
+            notification.style.cssText = `
+                position: fixed;
+                top: 2rem;
+                right: 2rem;
+                background: ${type === 'success' ? '#10b981' : type === 'error' ? '#ef4444' : '#14b8a6'};
+                color: white;
+                padding: 1rem 1.5rem;
+                border-radius: 0.5rem;
+                box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+                z-index: 10001;
+                animation: slideIn 0.3s ease;
+            `;
+            notification.textContent = message;
+
+            document.body.appendChild(notification);
+
+            setTimeout(() => {
+                notification.remove();
+            }, 3000);
+        }
+
+        // Close modal on outside click
+        document.getElementById('upgrade-modal').addEventListener('click', (e) => {
+            if (e.target === e.currentTarget) {
+                closeModal();
+            }
+        });
+
+        // Initialize dashboard on load
+        document.addEventListener('DOMContentLoaded', initDashboard);
+
+        // Add CSS animation for notifications
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes slideIn {
+                from {
+                    transform: translateX(100%);
+                    opacity: 0;
+                }
+                to {
+                    transform: translateX(0);
+                    opacity: 1;
+                }
+            }
+        `;
+        document.head.appendChild(style);
+
+        // Listen for messages from extension (in real implementation)
+        // chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+        //     if (message.type === 'STATS_UPDATE') {
+        //         updateStats(message.data);
+        //     }
+        // });
+    </script>
+</body>
+</html>

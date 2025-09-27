@@ -1,0 +1,857 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tabmangment - Tame your tabs. Boost your focus.</title>
+    <meta name="description" content="Professional tab management with auto-closing, timers, and premium features. Organize your browser tabs efficiently with Tabmangment.">
+    <meta name="keywords" content="chrome extension, tab management, productivity, browser tabs, auto-close tabs">
+
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://tabmangment.vercel.app/">
+    <meta property="og:title" content="Tabmangment - Tame your tabs. Boost your focus.">
+    <meta property="og:description" content="Professional tab management with auto-closing, timers, and premium features.">
+    <meta property="og:image" content="https://tabmangment.vercel.app/icons/icon-128.png">
+
+    <meta property="twitter:card" content="summary_large_image">
+    <meta property="twitter:url" content="https://tabmangment.vercel.app/">
+    <meta property="twitter:title" content="Tabmangment - Tame your tabs. Boost your focus.">
+    <meta property="twitter:description" content="Professional tab management with auto-closing, timers, and premium features.">
+    <meta property="twitter:image" content="https://tabmangment.vercel.app/icons/icon-128.png">
+
+    <link rel="icon" type="image/png" sizes="32x32" href="/icons/icon-32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/icons/icon-16.png">
+    <link rel="apple-touch-icon" sizes="128x128" href="/icons/icon-128.png">
+
+    <script src="https://unpkg.com/feather-icons"></script>
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            line-height: 1.6;
+            color: #e2e8f0;
+            background: #0f172a;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+
+        /* Header */
+        header {
+            background: #0f172a;
+            border-bottom: 1px solid rgba(148, 163, 184, 0.1);
+            padding: 1rem 0;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+
+        nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: #e2e8f0;
+            text-decoration: none;
+        }
+
+        .logo img {
+            width: 32px;
+            height: 32px;
+            margin-right: 8px;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 2rem;
+            list-style: none;
+        }
+
+        .nav-links a {
+            color: #94a3b8;
+            text-decoration: none;
+            font-weight: 500;
+            transition: color 0.3s ease;
+        }
+
+        .nav-links a:hover {
+            color: #e2e8f0;
+        }
+
+        .get-started-btn {
+            background: #14b8a6;
+            color: white;
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.5rem;
+            text-decoration: none;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .get-started-btn:hover {
+            background: #0d9488;
+            transform: translateY(-1px);
+        }
+
+        /* Hero Section */
+        .hero {
+            padding: 120px 0 80px;
+            text-align: center;
+        }
+
+        .hero h1 {
+            font-size: 4rem;
+            font-weight: 700;
+            margin-bottom: 1.5rem;
+            color: #f8fafc;
+            line-height: 1.1;
+        }
+
+        .hero p {
+            font-size: 1.25rem;
+            color: #94a3b8;
+            margin-bottom: 3rem;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .hero-buttons {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-bottom: 4rem;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.875rem 1.75rem;
+            border-radius: 0.5rem;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+            border: none;
+            cursor: pointer;
+        }
+
+        .btn-primary {
+            background: #14b8a6;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #0d9488;
+            transform: translateY(-1px);
+        }
+
+        .btn-secondary {
+            background: transparent;
+            color: #94a3b8;
+            border: 1px solid #334155;
+        }
+
+        .btn-secondary:hover {
+            background: #1e293b;
+            color: #e2e8f0;
+        }
+
+        /* Features Section */
+        .features {
+            padding: 80px 0;
+            background: #0f172a;
+        }
+
+        .section-header {
+            text-align: center;
+            margin-bottom: 4rem;
+        }
+
+        .section-title {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: #f8fafc;
+            margin-bottom: 1rem;
+        }
+
+        .section-subtitle {
+            font-size: 1.125rem;
+            color: #94a3b8;
+        }
+
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 2rem;
+        }
+
+        .feature-card {
+            background: #1e293b;
+            padding: 2rem;
+            border-radius: 0.75rem;
+            border: 1px solid #334155;
+            transition: all 0.3s ease;
+        }
+
+        .feature-card:hover {
+            transform: translateY(-2px);
+            border-color: #14b8a6;
+        }
+
+        .feature-icon {
+            width: 48px;
+            height: 48px;
+            background: #14b8a6;
+            border-radius: 0.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            margin-bottom: 1rem;
+        }
+
+        .feature-card h3 {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: #f8fafc;
+            margin-bottom: 0.75rem;
+        }
+
+        .feature-card p {
+            color: #94a3b8;
+            line-height: 1.6;
+        }
+
+        /* Why it works section */
+        .why-works {
+            padding: 80px 0;
+            background: #0f172a;
+        }
+
+        .benefits-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .benefit-card {
+            background: #1e293b;
+            padding: 1.5rem;
+            border-radius: 0.75rem;
+            border: 1px solid #334155;
+            text-align: center;
+        }
+
+        .benefit-card h4 {
+            font-size: 1.125rem;
+            font-weight: 600;
+            color: #f8fafc;
+            margin-bottom: 0.5rem;
+        }
+
+        .benefit-card p {
+            color: #94a3b8;
+            font-size: 0.875rem;
+        }
+
+        /* Testimonials */
+        .testimonials {
+            padding: 80px 0;
+            background: #0f172a;
+        }
+
+        .testimonials-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+        }
+
+        .testimonial-card {
+            background: #1e293b;
+            padding: 2rem;
+            border-radius: 0.75rem;
+            border: 1px solid #334155;
+        }
+
+        .testimonial-text {
+            color: #e2e8f0;
+            margin-bottom: 1.5rem;
+            font-style: italic;
+            line-height: 1.6;
+        }
+
+        .testimonial-author {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .author-avatar {
+            width: 40px;
+            height: 40px;
+            background: #14b8a6;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 600;
+        }
+
+        .author-info h5 {
+            color: #f8fafc;
+            font-weight: 600;
+            margin-bottom: 0.25rem;
+        }
+
+        .author-info p {
+            color: #94a3b8;
+            font-size: 0.875rem;
+        }
+
+        /* Pricing */
+        .pricing {
+            padding: 80px 0;
+            background: #0f172a;
+        }
+
+        .pricing-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 2rem;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .pricing-card {
+            background: #1e293b;
+            padding: 2.5rem 2rem;
+            border-radius: 0.75rem;
+            border: 1px solid #334155;
+            text-align: center;
+            position: relative;
+        }
+
+        .pricing-card.featured {
+            border-color: #14b8a6;
+            background: linear-gradient(135deg, #1e293b 0%, #0f766e 100%);
+        }
+
+        .plan-name {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #f8fafc;
+            margin-bottom: 1rem;
+        }
+
+        .plan-price {
+            font-size: 3rem;
+            font-weight: 700;
+            color: #14b8a6;
+            margin-bottom: 1rem;
+        }
+
+        .plan-price .period {
+            font-size: 1rem;
+            color: #94a3b8;
+            font-weight: 400;
+        }
+
+        .plan-features {
+            list-style: none;
+            margin-bottom: 2rem;
+            text-align: left;
+        }
+
+        .plan-features li {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.5rem 0;
+            color: #e2e8f0;
+        }
+
+        .plan-features .check {
+            width: 16px;
+            height: 16px;
+            color: #14b8a6;
+        }
+
+        /* FAQ */
+        .faq {
+            padding: 80px 0;
+            background: #0f172a;
+        }
+
+        .faq-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
+            gap: 2rem;
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+
+        .faq-item {
+            background: #1e293b;
+            padding: 2rem;
+            border-radius: 0.75rem;
+            border: 1px solid #334155;
+        }
+
+        .faq-question {
+            font-size: 1.125rem;
+            font-weight: 600;
+            color: #f8fafc;
+            margin-bottom: 1rem;
+        }
+
+        .faq-answer {
+            color: #94a3b8;
+            line-height: 1.6;
+        }
+
+        /* Footer */
+        footer {
+            background: #020617;
+            padding: 3rem 0 1.5rem;
+            border-top: 1px solid #334155;
+        }
+
+        .footer-content {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 3rem;
+            margin-bottom: 2rem;
+        }
+
+        .footer-brand h3 {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #f8fafc;
+            margin-bottom: 1rem;
+        }
+
+        .footer-brand p {
+            color: #94a3b8;
+            line-height: 1.6;
+        }
+
+        .footer-links h4 {
+            font-size: 1.125rem;
+            font-weight: 600;
+            color: #f8fafc;
+            margin-bottom: 1rem;
+        }
+
+        .footer-links ul {
+            list-style: none;
+        }
+
+        .footer-links ul li {
+            margin-bottom: 0.5rem;
+        }
+
+        .footer-links ul li a {
+            color: #94a3b8;
+            text-decoration: none;
+            transition: color 0.3s ease;
+        }
+
+        .footer-links ul li a:hover {
+            color: #14b8a6;
+        }
+
+        .footer-bottom {
+            text-align: center;
+            padding-top: 2rem;
+            border-top: 1px solid #334155;
+            color: #64748b;
+        }
+
+        .get-started-cta {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .get-started-cta .btn {
+            background: #14b8a6;
+            color: white;
+            padding: 1rem 2rem;
+            font-size: 1.125rem;
+        }
+
+        .get-started-cta .btn:hover {
+            background: #0d9488;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .hero h1 {
+                font-size: 2.5rem;
+            }
+
+            .nav-links {
+                display: none;
+            }
+
+            .hero-buttons {
+                flex-direction: column;
+                align-items: center;
+            }
+
+            .features-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .benefits-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .testimonials-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .pricing-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .faq-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .footer-content {
+                grid-template-columns: 1fr;
+                text-align: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header>
+        <nav class="container">
+            <a href="#" class="logo">
+                <img src="/icons/icon-32.png" alt="Tabmangment Logo">
+                Tabmangment
+            </a>
+            <ul class="nav-links">
+                <li><a href="#features">Features</a></li>
+                <li><a href="#pricing">Pricing</a></li>
+                <li><a href="#faq">FAQ</a></li>
+            </ul>
+            <a href="/New-authentication.html" class="get-started-btn">
+                Get Started
+            </a>
+        </nav>
+    </header>
+
+    <!-- Hero Section -->
+    <section class="hero">
+        <div class="container">
+            <h1>Tame your tabs. Boost your focus.</h1>
+            <p>Tabmangment is a free chrome extension that automatically organizes your browser tabs and helps you stay focused by closing unnecessary ones.</p>
+
+            <div class="hero-buttons">
+                <a href="https://chrome.google.com/webstore/detail/my-extension/abplhccmjhdcofakcolniimgbfjlkohn" target="_blank" class="btn btn-primary">
+                    <i data-feather="download"></i>
+                    Add to Chrome - Free
+                </a>
+                <a href="#features" class="btn btn-secondary">
+                    Learn More
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Features Section -->
+    <section class="features" id="features">
+        <div class="container">
+            <div class="section-header">
+                <h2 class="section-title">Powerful features</h2>
+                <p class="section-subtitle">Everything you need to manage your tabs and stay focused while browsing.</p>
+            </div>
+
+            <div class="features-grid">
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i data-feather="clock"></i>
+                    </div>
+                    <h3>Smart Timers</h3>
+                    <p>Set automatic closing timers on tabs to keep your browser organized and prevent tab overload.</p>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i data-feather="zap"></i>
+                    </div>
+                    <h3>Auto Close</h3>
+                    <p>Intelligently detect and close inactive tabs based on your browsing patterns and preferences.</p>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i data-feather="bar-chart-2"></i>
+                    </div>
+                    <h3>Tab Analytics</h3>
+                    <p>Track your tab usage patterns and gain insights into your browsing habits to improve productivity.</p>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i data-feather="shield"></i>
+                    </div>
+                    <h3>Whitelist Control</h3>
+                    <p>Protect important tabs from being closed automatically with customizable whitelist rules.</p>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i data-feather="settings"></i>
+                    </div>
+                    <h3>Custom Settings</h3>
+                    <p>Personalize your tab management experience with flexible settings and preferences.</p>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i data-feather="refresh-cw"></i>
+                    </div>
+                    <h3>Real-time Sync</h3>
+                    <p>Keep your settings synchronized across all your devices with Chrome's built-in sync.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Why it works -->
+    <section class="why-works">
+        <div class="container">
+            <div class="section-header">
+                <h2 class="section-title">Why it works</h2>
+            </div>
+
+            <div class="benefits-grid">
+                <div class="benefit-card">
+                    <h4>Saves Memory</h4>
+                    <p>Reduces browser memory usage by closing unused tabs</p>
+                </div>
+
+                <div class="benefit-card">
+                    <h4>Improves Focus</h4>
+                    <p>Eliminates distractions by keeping only relevant tabs open</p>
+                </div>
+
+                <div class="benefit-card">
+                    <h4>Boosts Performance</h4>
+                    <p>Faster browsing with fewer tabs consuming system resources</p>
+                </div>
+
+                <div class="benefit-card">
+                    <h4>Reduces Clutter</h4>
+                    <p>Maintains a clean and organized browser workspace</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Testimonials -->
+    <section class="testimonials">
+        <div class="container">
+            <div class="section-header">
+                <h2 class="section-title">Loved by focused people</h2>
+            </div>
+
+            <div class="testimonials-grid">
+                <div class="testimonial-card">
+                    <p class="testimonial-text">"Tabmangment has completely transformed how I browse. I used to have 50+ tabs open, now I stay focused with just what I need."</p>
+                    <div class="testimonial-author">
+                        <div class="author-avatar">S</div>
+                        <div class="author-info">
+                            <h5>Sarah Chen</h5>
+                            <p>Product Designer</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="testimonial-card">
+                    <p class="testimonial-text">"As a developer, I constantly have documentation tabs open. This extension helps me keep only the relevant ones active."</p>
+                    <div class="testimonial-author">
+                        <div class="author-avatar">M</div>
+                        <div class="author-info">
+                            <h5>Mike Rodriguez</h5>
+                            <p>Software Engineer</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="testimonial-card">
+                    <p class="testimonial-text">"The auto-close feature is genius. My browser runs so much faster now and I don't get overwhelmed by tab chaos."</p>
+                    <div class="testimonial-author">
+                        <div class="author-avatar">E</div>
+                        <div class="author-info">
+                            <h5>Emily Johnson</h5>
+                            <p>Marketing Manager</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Pricing -->
+    <section class="pricing" id="pricing">
+        <div class="container">
+            <div class="section-header">
+                <h2 class="section-title">Simple pricing</h2>
+            </div>
+
+            <div class="pricing-grid">
+                <div class="pricing-card featured">
+                    <div class="plan-name">Free</div>
+                    <div class="plan-price">$0<span class="period">/month</span></div>
+                    <ul class="plan-features">
+                        <li><i data-feather="check" class="check"></i> Basic tab management</li>
+                        <li><i data-feather="check" class="check"></i> Auto-close timers</li>
+                        <li><i data-feather="check" class="check"></i> Whitelist protection</li>
+                        <li><i data-feather="check" class="check"></i> Community support</li>
+                    </ul>
+                    <a href="https://chrome.google.com/webstore/detail/my-extension/abplhccmjhdcofakcolniimgbfjlkohn" target="_blank" class="btn btn-primary">Get Started Free</a>
+                </div>
+
+                <div class="pricing-card">
+                    <div class="plan-name">Pro</div>
+                    <div class="plan-price">$4.99<span class="period">/month</span></div>
+                    <ul class="plan-features">
+                        <li><i data-feather="check" class="check"></i> Everything in Free</li>
+                        <li><i data-feather="check" class="check"></i> Advanced analytics</li>
+                        <li><i data-feather="check" class="check"></i> Custom themes</li>
+                        <li><i data-feather="check" class="check"></i> Priority support</li>
+                        <li><i data-feather="check" class="check"></i> Export data</li>
+                    </ul>
+                    <a href="/New-authentication.html?plan=pro" class="btn btn-primary">Upgrade to Pro</a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- FAQ -->
+    <section class="faq" id="faq">
+        <div class="container">
+            <div class="section-header">
+                <h2 class="section-title">Frequently asked questions</h2>
+            </div>
+
+            <div class="faq-grid">
+                <div class="faq-item">
+                    <h4 class="faq-question">Will it close important tabs?</h4>
+                    <p class="faq-answer">No, you can whitelist important sites and tabs to prevent them from being closed automatically. The extension is smart enough to avoid closing tabs you're actively using.</p>
+                </div>
+
+                <div class="faq-item">
+                    <h4 class="faq-question">Does it work with Chrome sync?</h4>
+                    <p class="faq-answer">Yes, all your settings and preferences are automatically synced across all your devices using Chrome's built-in sync functionality.</p>
+                </div>
+
+                <div class="faq-item">
+                    <h4 class="faq-question">Can I pause the auto-close?</h4>
+                    <p class="faq-answer">Absolutely! You can easily pause or disable the auto-close feature at any time through the extension popup or settings page.</p>
+                </div>
+
+                <div class="faq-item">
+                    <h4 class="faq-question">What data do you collect?</h4>
+                    <p class="faq-answer">We only collect minimal usage analytics to improve the extension. We never access your browsing history or personal data. Everything is processed locally on your device.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer>
+        <div class="container">
+            <div class="get-started-cta">
+                <a href="https://chrome.google.com/webstore/detail/my-extension/abplhccmjhdcofakcolniimgbfjlkohn" target="_blank" class="btn">
+                    <i data-feather="download"></i>
+                    Get Started Free
+                </a>
+            </div>
+
+            <div class="footer-content">
+                <div class="footer-brand">
+                    <h3>Tabmangment</h3>
+                    <p>Professional tab management for productive browsing. Take control of your tabs and boost your focus today.</p>
+                </div>
+                <div class="footer-links">
+                    <h4>Links</h4>
+                    <ul>
+                        <li><a href="/privacy.html">Privacy Policy</a></li>
+                        <li><a href="/New-authentication.html">Support</a></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; <span id="currentYear">2024</span> Tabmangment. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // Initialize Feather icons
+        feather.replace();
+
+        // Update current year
+        document.getElementById('currentYear').textContent = new Date().getFullYear();
+
+        // Smooth scrolling for anchor links
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'start'
+                    });
+                }
+            });
+        });
+
+        // Track analytics
+        window.va = window.va || function () { (window.vaq = window.vaq || []).push(arguments); };
+
+        document.querySelectorAll('a[href*="chrome.google.com/webstore"]').forEach(link => {
+            link.addEventListener('click', () => {
+                if (window.va) window.va('track', 'Chrome Store Click');
+            });
+        });
+
+        document.querySelectorAll('.btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const planType = e.target.textContent.includes('Pro') ? 'Pro Plan' :
+                               e.target.textContent.includes('Free') ? 'Free Plan' : 'Unknown';
+                if (window.va) window.va('track', 'Plan Click', { plan: planType });
+            });
+        });
+    </script>
+
+    <script defer src="/_vercel/insights/script.js"></script>
+</body>
+</html>
