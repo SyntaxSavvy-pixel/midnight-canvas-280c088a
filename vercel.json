@@ -1,81 +1,73 @@
 {
   "version": 2,
-  "rewrites": [
+  "builds": [
     {
-      "source": "/",
-      "destination": "/mainlandingpage.html"
-    },
-    {
-      "source": "/login",
-      "destination": "/New-authentication.html"
-    },
-    {
-      "source": "/signup",
-      "destination": "/New-authentication.html"
-    },
-    {
-      "source": "/dashboard",
-      "destination": "/user-dashboard.html"
-    },
-    {
-      "source": "/auth",
-      "destination": "/New-authentication.html"
-    },
-    {
-      "source": "/checkout",
-      "destination": "/payment-checkout.html"
-    },
-    {
-      "source": "/returning",
-      "destination": "/Returning-Users.html"
+      "src": "**",
+      "use": "@vercel/static"
     }
   ],
-  "redirects": [
+  "routes": [
     {
-      "source": "/home",
-      "destination": "/",
-      "permanent": true
+      "src": "^/$",
+      "dest": "/mainlandingpage.html"
     },
     {
-      "source": "/landing",
-      "destination": "/",
-      "permanent": true
+      "src": "^/login/?$",
+      "dest": "/New-authentication.html"
     },
     {
-      "source": "/pricing",
-      "destination": "/mainlandingpage.html#pricing",
-      "permanent": false
+      "src": "^/signup/?$",
+      "dest": "/New-authentication.html"
     },
     {
-      "source": "/features",
-      "destination": "/mainlandingpage.html#features",
-      "permanent": false
+      "src": "^/dashboard/?$",
+      "dest": "/user-dashboard.html"
     },
     {
-      "source": "/faq",
-      "destination": "/mainlandingpage.html#faq",
-      "permanent": false
+      "src": "^/auth/?$",
+      "dest": "/New-authentication.html"
+    },
+    {
+      "src": "^/checkout/?$",
+      "dest": "/payment-checkout.html"
+    },
+    {
+      "src": "^/returning/?$",
+      "dest": "/Returning-Users.html"
+    },
+    {
+      "src": "^/home/?$",
+      "status": 301,
+      "headers": { "Location": "/" }
+    },
+    {
+      "src": "^/landing/?$",
+      "status": 301,
+      "headers": { "Location": "/" }
+    },
+    {
+      "src": "^/pricing/?$",
+      "status": 301,
+      "headers": { "Location": "/mainlandingpage.html#pricing" }
+    },
+    {
+      "src": "^/features/?$",
+      "status": 301,
+      "headers": { "Location": "/mainlandingpage.html#features" }
+    },
+    {
+      "src": "^/faq/?$",
+      "status": 301,
+      "headers": { "Location": "/mainlandingpage.html#faq" }
+    },
+    {
+      "src": "/(.*)",
+      "headers": {
+        "X-Content-Type-Options": "nosniff",
+        "X-Frame-Options": "DENY",
+        "X-XSS-Protection": "1; mode=block"
+      },
+      "dest": "/$1"
     }
-  ],
-  "headers": [
-    {
-      "source": "/(.*)",
-      "headers": [
-        {
-          "key": "X-Content-Type-Options",
-          "value": "nosniff"
-        },
-        {
-          "key": "X-Frame-Options",
-          "value": "DENY"
-        },
-        {
-          "key": "X-XSS-Protection",
-          "value": "1; mode=block"
-        }
-      ]
-    }
-  ],
-  "cleanUrls": true,
-  "trailingSlash": false
+  ]
 }
