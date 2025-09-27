@@ -1,72 +1,64 @@
 {
   "version": 2,
-  "name": "tabmanagement",
-  "builds": [
+  "rewrites": [
     {
-      "src": "**/*.html",
-      "use": "@vercel/static"
+      "source": "/",
+      "destination": "/mainlandingpage.html"
     },
     {
-      "src": "**/*.js",
-      "use": "@vercel/static"
+      "source": "/login",
+      "destination": "/New-authentication.html"
     },
     {
-      "src": "**/*.css",
-      "use": "@vercel/static"
+      "source": "/signup",
+      "destination": "/New-authentication.html"
     },
     {
-      "src": "**/*.png",
-      "use": "@vercel/static"
+      "source": "/dashboard",
+      "destination": "/user-dashboard.html"
     },
     {
-      "src": "**/*.jpg",
-      "use": "@vercel/static"
+      "source": "/auth",
+      "destination": "/New-authentication.html"
     },
     {
-      "src": "**/*.ico",
-      "use": "@vercel/static"
+      "source": "/checkout",
+      "destination": "/payment-checkout.html"
+    },
+    {
+      "source": "/returning",
+      "destination": "/Returning-Users.html"
+    },
+    {
+      "source": "/api/(.*)",
+      "destination": "https://your-backend-api.vercel.app/api/$1"
     }
   ],
-  "routes": [
+  "redirects": [
     {
-      "src": "/",
-      "dest": "/mainlandingpage.html"
+      "source": "/home",
+      "destination": "/",
+      "permanent": true
     },
     {
-      "src": "/login",
-      "dest": "/New-authentication.html"
+      "source": "/landing",
+      "destination": "/",
+      "permanent": true
     },
     {
-      "src": "/signup",
-      "dest": "/New-authentication.html?mode=signup"
+      "source": "/pricing",
+      "destination": "/mainlandingpage.html#pricing",
+      "permanent": false
     },
     {
-      "src": "/dashboard",
-      "dest": "/user-dashboard.html"
+      "source": "/features",
+      "destination": "/mainlandingpage.html#features",
+      "permanent": false
     },
     {
-      "src": "/auth",
-      "dest": "/New-authentication.html"
-    },
-    {
-      "src": "/checkout",
-      "dest": "/payment-checkout.html"
-    },
-    {
-      "src": "/returning",
-      "dest": "/Returning-Users.html"
-    },
-    {
-      "src": "/pricing",
-      "dest": "/mainlandingpage.html#pricing"
-    },
-    {
-      "src": "/features",
-      "dest": "/mainlandingpage.html#features"
-    },
-    {
-      "src": "/faq",
-      "dest": "/mainlandingpage.html#faq"
+      "source": "/faq",
+      "destination": "/mainlandingpage.html#faq",
+      "permanent": false
     }
   ],
   "headers": [
@@ -117,24 +109,6 @@
           "value": "public, max-age=86400"
         }
       ]
-    }
-  ],
-  "rewrites": [
-    {
-      "source": "/api/(.*)",
-      "destination": "https://your-backend-api.vercel.app/api/$1"
-    }
-  ],
-  "redirects": [
-    {
-      "source": "/home",
-      "destination": "/",
-      "permanent": true
-    },
-    {
-      "source": "/landing",
-      "destination": "/",
-      "permanent": true
     }
   ],
   "cleanUrls": true,

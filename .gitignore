@@ -75,3 +75,4 @@ Thumbs.db
 # Chrome extension specific
 *.crx
 *.pem
+.vercel
