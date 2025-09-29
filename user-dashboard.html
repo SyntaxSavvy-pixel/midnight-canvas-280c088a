@@ -1251,7 +1251,7 @@
                         'Authorization': `Bearer ${authToken}`
                     },
                     body: JSON.stringify({
-                        priceId: 'price_1Rzw2LLJKLfllJJD6HPKEDHK'
+                        priceId: window.STRIPE_PRICE_ID || 'price_placeholder'
                     })
                 });
 

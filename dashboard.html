@@ -418,7 +418,7 @@
                         'Authorization': `Bearer ${localStorage.getItem('tabmangment_token')}`
                     },
                     body: JSON.stringify({
-                        priceId: 'price_1QFXoUKD7W0WKkf7uQbNSm5i', // Your Stripe price ID
+                        priceId: window.STRIPE_PRICE_ID || 'price_placeholder', // Stripe price ID from environment
                         userId: currentUser.email,
                         userEmail: currentUser.email,
                         successUrl: `${window.location.origin}/payment-success.html?user=${encodeURIComponent(currentUser.email)}`,

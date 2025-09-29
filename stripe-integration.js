@@ -3,10 +3,10 @@
 
 class StripeProIntegration {
     constructor() {
-        // Stripe configuration
-        this.STRIPE_PUBLISHABLE_KEY = 'pk_live_51RzvfOLJKLfllJJDtHiAZ6xXR0gAIEOs8p6Wdz4IeWMaxhwSv2CWsZkZhNIOBNWZ0TE2ouw73jPfiPY7GcZyJYkk00DfzWuwgl';
-        this.PRO_PRICE_ID = 'price_1QFXoUKD7W0WKkf7uQbNSm5i';
-        this.API_BASE_URL = 'https://tabmangment-extension-bz4chus0i-kavon-hicks-projects.vercel.app';
+        // Stripe configuration - values set via environment variables
+        this.STRIPE_PUBLISHABLE_KEY = process.env.STRIPE_PUBLISHABLE_KEY || 'pk_test_placeholder';
+        this.PRO_PRICE_ID = process.env.STRIPE_PRICE_ID || 'price_placeholder';
+        this.API_BASE_URL = 'https://tabmangment.netlify.app';
 
         // Initialize Stripe
         this.stripe = null;

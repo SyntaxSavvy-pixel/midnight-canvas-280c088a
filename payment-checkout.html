@@ -639,7 +639,7 @@
 
     <script>
         // Initialize Stripe
-        const stripe = Stripe('pk_test_your_publishable_key_here'); // Replace with your actual publishable key
+        const stripe = Stripe(window.STRIPE_PUBLISHABLE_KEY || 'pk_test_placeholder'); // Publishable key set via environment
         const elements = stripe.elements();
 
         // Create card element
