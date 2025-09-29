@@ -5,11 +5,9 @@
   "main": "index.html",
   "scripts": {
     "start": "python3 -m http.server 3000",
-    "dev": "vercel dev",
-    "build": "echo 'Building Node.js project for Vercel'",
-    "vercel-build": "echo 'Vercel build step for API functions'",
-    "deploy": "vercel --prod",
-    "preview": "vercel",
+    "dev": "netlify dev",
+    "build": "echo 'Static site - no build needed'",
+    "deploy": "netlify deploy --prod",
     "lint": "echo 'No linting configured'",
     "test": "echo 'No tests configured'"
   },
