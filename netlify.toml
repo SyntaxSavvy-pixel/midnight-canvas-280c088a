@@ -7,10 +7,6 @@
   to = "/.netlify/functions/:splat"
   status = 200
 
-[[redirects]]
-  from = "/login"
-  to = "/New-authentication.html"
-  status = 200
 
 [[redirects]]
   from = "/signup"
