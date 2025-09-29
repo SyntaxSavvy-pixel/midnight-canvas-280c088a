@@ -68,7 +68,8 @@ exports.handler = async (event, context) => {
                         email: email,
                         name: name,
                         is_pro: false,
-                        subscription_status: 'free'
+                        subscription_status: 'free',
+                        password_hash: password // Simple storage for now - in production should be hashed
                     };
 
                     const { data, error } = await supabase
@@ -141,7 +142,8 @@ exports.handler = async (event, context) => {
                             email: email,
                             name: isDemoUser ? 'Demo User' : email.split('@')[0],
                             is_pro: false,
-                            subscription_status: 'free'
+                            subscription_status: 'free',
+                            password_hash: password // Simple storage for now - in production should be hashed
                         };
 
                         const { data: newUser, error: createError } = await supabase
