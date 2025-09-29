@@ -1044,8 +1044,8 @@
             stripeSubscriptionId: null
         };
 
-        // API Configuration
-        const API_BASE = 'https://tabmangment-extension-kohl.vercel.app/api';
+        // API Configuration - Update this with your Netlify domain
+        const API_BASE = window.location.origin + '/api';
         let authToken = null;
 
         // Initialize dashboard

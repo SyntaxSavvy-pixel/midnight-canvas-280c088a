@@ -1,0 +1,46 @@
+[build]
+  functions = "netlify/functions"
+  publish = "."
+
+[functions]
+  node_bundler = "esbuild"
+
+[[redirects]]
+  from = "/api/*"
+  to = "/.netlify/functions/:splat"
+  status = 200
+
+[[redirects]]
+  from = "/"
+  to = "/mainlandingpage.html"
+  status = 200
+
+[[redirects]]
+  from = "/login"
+  to = "/New-authentication.html"
+  status = 200
+
+[[redirects]]
+  from = "/signup"
+  to = "/New-authentication.html"
+  status = 200
+
+[[redirects]]
+  from = "/dashboard"
+  to = "/user-dashboard.html"
+  status = 200
+
+[[redirects]]
+  from = "/auth"
+  to = "/New-authentication.html"
+  status = 200
+
+[[redirects]]
+  from = "/checkout"
+  to = "/payment-checkout.html"
+  status = 200
+
+[[redirects]]
+  from = "/returning"
+  to = "/Returning-Users.html"
+  status = 200
