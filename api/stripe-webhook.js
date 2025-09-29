@@ -2,12 +2,11 @@
 // Path: /api/stripe-webhook.js
 // Updated to work with authenticated user system
 
-import { buffer } from 'micro';
 import Stripe from 'stripe';
 // Dynamic imports for Supabase functions
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
-const endpointSecret = process.env.STRIPE_WEBHOOK_SECRET;
+const endpointSecret = process.env.STRIPE_WEBHOOK_SECRET || 'whsec_development_webhook_secret';
 
 // Disable body parsing for raw webhook payload
 export const config = {
@@ -25,7 +24,17 @@ export default async function handler(req, res) {
 
   try {
     // Verify webhook signature
-    const buf = await buffer(req);
+    let buf;
+    if (req.body) {
+      buf = Buffer.from(JSON.stringify(req.body));
+    } else {
+      // Read raw body
+      const chunks = [];
+      req.on('data', chunk => chunks.push(chunk));
+      await new Promise(resolve => req.on('end', resolve));
+      buf = Buffer.concat(chunks);
+    }
+
     const sig = req.headers['stripe-signature'];
 
     event = stripe.webhooks.constructEvent(buf, sig, endpointSecret);
