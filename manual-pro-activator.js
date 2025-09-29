@@ -11,7 +11,7 @@ window.manuallyActivatePro = async function(email) {
   try {
     console.log('🎯 Manually activating Pro for:', email);
 
-    const apiBaseUrl = 'https://tabmangment-extension-bz4chus0i-kavon-hicks-projects.vercel.app/api';
+    const apiBaseUrl = 'https://tabmangment.netlify.app/api';
 
     // 1. Store the email in extension storage
     if (typeof chrome !== 'undefined' && chrome.storage) {
@@ -90,7 +90,7 @@ window.manuallyActivatePro = async function(email) {
 // Also add a function to check current status
 window.checkProStatus = async function(email) {
   try {
-    const apiBaseUrl = 'https://tabmangment-extension-bz4chus0i-kavon-hicks-projects.vercel.app/api';
+    const apiBaseUrl = 'https://tabmangment.netlify.app/api';
 
     const response = await fetch(`${apiBaseUrl}/status?user=${encodeURIComponent(email || 'unknown')}`);
     const result = await response.json();

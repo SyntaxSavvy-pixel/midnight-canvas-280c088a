@@ -4,7 +4,7 @@
 
 class ExtensionAuthSync {
   constructor() {
-    this.apiBaseUrl = 'https://tabmangment-extension-bz4chus0i-kavon-hicks-projects.vercel.app/api';
+    this.apiBaseUrl = 'https://tabmangment.netlify.app/api';
     this.syncInterval = null;
     this.isLoggedIn = false;
     this.currentUser = null;

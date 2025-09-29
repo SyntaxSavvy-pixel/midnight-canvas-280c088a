@@ -1627,7 +1627,7 @@ class TabmangmentPopup {
             } else {
                 // Fallback - open login page directly
                 chrome.tabs.create({
-                    url: 'https://tabmangment-extension-bz4chus0i-kavon-hicks-projects.vercel.app/login.html'
+                    url: 'https://tabmangment.netlify.app/New-authentication.html'
                 });
             }
         }

@@ -6,7 +6,7 @@ class SimpleAuth {
         this.userEmail = null;
         this.isLoggedIn = false;
         this.isPro = false;
-        this.apiUrl = 'https://tabmangment-extension-bz4chus0i-kavon-hicks-projects.vercel.app';
+        this.apiUrl = 'https://tabmangment.netlify.app';
 
         this.init();
     }

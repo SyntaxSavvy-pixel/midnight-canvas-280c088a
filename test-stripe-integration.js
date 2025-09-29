@@ -3,7 +3,7 @@
 
 class StripeIntegrationTester {
     constructor() {
-        this.API_BASE = 'https://tabmangment-extension-bkn15ioy3-kavon-hicks-projects.vercel.app/api';
+        this.API_BASE = 'https://tabmangment.netlify.app/api';
         this.testEmail = 'test@example.com';
         this.results = {};
     }

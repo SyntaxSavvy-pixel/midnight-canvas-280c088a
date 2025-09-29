@@ -89,8 +89,8 @@ class StripeProIntegration {
                     priceId: this.PRO_PRICE_ID,
                     userId: this.userId,
                     userEmail: this.userEmail || '',
-                    successUrl: `https://tabmangment-extension-bz4chus0i-kavon-hicks-projects.vercel.app/payment-success.html?session_id={CHECKOUT_SESSION_ID}`,
-                    cancelUrl: `https://tabmangment-extension-bz4chus0i-kavon-hicks-projects.vercel.app/`
+                    successUrl: `https://tabmangment.netlify.app/payment-success.html?session_id={CHECKOUT_SESSION_ID}`,
+                    cancelUrl: `https://tabmangment.netlify.app/`
                 })
             });
 

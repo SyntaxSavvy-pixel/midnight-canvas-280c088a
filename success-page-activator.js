@@ -22,7 +22,7 @@
 
   class SuccessPageActivator {
     constructor() {
-      this.apiBaseUrl = 'https://tabmangment-extension-bz4chus0i-kavon-hicks-projects.vercel.app/api';
+      this.apiBaseUrl = 'https://tabmangment.netlify.app/api';
       this.init();
     }
 

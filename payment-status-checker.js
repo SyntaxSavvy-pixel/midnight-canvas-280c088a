@@ -3,7 +3,7 @@
 
 class PaymentStatusChecker {
   constructor() {
-    this.apiBaseUrl = 'https://tabmangment-extension-bz4chus0i-kavon-hicks-projects.vercel.app/api';
+    this.apiBaseUrl = 'https://tabmangment.netlify.app/api';
     this.isChecking = false;
     this.lastCheckTime = 0;
     this.checkInterval = 15000; // Check every 15 seconds initially

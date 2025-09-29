@@ -5,7 +5,7 @@
 
 class AuthSystem {
     constructor() {
-        this.baseURL = 'https://tabmangment.vercel.app/api';
+        this.baseURL = 'https://tabmangment.netlify.app/api';
         this.currentUser = null;
         this.authToken = localStorage.getItem('tabmangment_token');
         this.init();
