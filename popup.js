@@ -42,39 +42,6 @@ class TabmangmentPopup {
             this.timerIntervals = {};
             this.init();
 
-            // Add manual activation function for users who completed payment
-            window.manualActivateProFeatures = async () => {
-                try {
-                    const userEmail = await this.getUserEmail();
-                    const proData = {
-                        isPremium: true,
-                        subscriptionActive: true,
-                        planType: 'pro',
-                        activatedAt: new Date().toISOString(),
-                        nextBillingDate: Date.now() + (30 * 24 * 60 * 60 * 1000),
-                        subscriptionId: 'manual_popup_' + Date.now(),
-                        paymentConfirmed: true,
-                        userEmail: userEmail,
-                        activatedVia: 'manual_popup'
-                    };
-
-                    await chrome.storage.local.set(proData);
-                    this.isPremium = true;
-                    await this.render();
-                    this.updateUIForProUser();
-
-                    if (this.showMessage) {
-                        this.showMessage('✅ Pro features activated successfully!', 'success');
-                    }
-
-                    return true;
-                } catch (error) {
-                    if (this.showMessage) {
-                        this.showMessage('❌ Activation failed. Please try again.', 'error');
-                    }
-                    return false;
-                }
-            };
 
             // Add global activation function for emergency use
             window.activateProFeatures = async (email) => {
@@ -1567,28 +1534,8 @@ class TabmangmentPopup {
             planIndicator.innerHTML = `
                 <div class="plan-badge">FREE PLAN</div>
                 <div class="plan-description">Limited to 10 tabs</div>
-                <button id="manual-activate-btn" style="
-                    margin-top: 8px;
-                    padding: 6px 12px;
-                    background: #10b981;
-                    color: white;
-                    border: none;
-                    border-radius: 6px;
-                    font-size: 12px;
-                    cursor: pointer;
-                    display: none;
-                " onclick="window.manualActivateProFeatures()">
-                    ✅ I Completed Payment - Activate Pro
-                </button>
             `;
 
-            // Show manual activation button after 3 seconds
-            setTimeout(() => {
-                const manualBtn = document.getElementById('manual-activate-btn');
-                if (manualBtn && !this.isPremium) {
-                    manualBtn.style.display = 'block';
-                }
-            }, 3000);
         }
         this.updatePremiumButtonText();
         this.updateProBadges();
