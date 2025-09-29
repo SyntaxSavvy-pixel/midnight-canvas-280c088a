@@ -589,10 +589,10 @@
             <div class="user-menu">
                 <div class="plan-badge" id="plan-badge">Free</div>
                 <div class="user-avatar" id="user-avatar">U</div>
-                <a href="/mainlandingpage.html" class="logout-btn">
+                <button onclick="logout()" class="logout-btn">
                     <i data-feather="log-out"></i>
                     Logout
-                </a>
+                </button>
             </div>
         </div>
     </header>
@@ -1051,12 +1051,22 @@
         // Initialize dashboard
         async function initDashboard() {
             // Check authentication
-            authToken = localStorage.getItem('authToken');
-            const userEmail = localStorage.getItem('userEmail');
+            authToken = localStorage.getItem('tabmangment_token');
+            const storedUserData = localStorage.getItem('userData');
+            let userEmail = null;
+
+            if (storedUserData) {
+                try {
+                    const parsedData = JSON.parse(storedUserData);
+                    userEmail = parsedData.email;
+                } catch (e) {
+                    console.error('Error parsing userData:', e);
+                }
+            }
 
             if (!authToken || !userEmail) {
                 // Redirect to login if not authenticated
-                window.location.href = '/login';
+                window.location.href = '/auth';
                 return;
             }
 
@@ -1571,6 +1581,29 @@
                 closeModal();
             }
         });
+
+        // Logout function
+        function logout() {
+            // Clear all authentication data
+            localStorage.removeItem('tabmangment_token');
+            localStorage.removeItem('userData');
+            localStorage.removeItem('authToken');
+            localStorage.removeItem('userEmail');
+
+            // Notify extension about logout
+            try {
+                if (typeof chrome !== 'undefined' && chrome.runtime) {
+                    chrome.runtime.sendMessage({
+                        type: 'USER_LOGGED_OUT'
+                    });
+                }
+            } catch (e) {
+                console.log('Extension not available');
+            }
+
+            // Redirect to home page
+            window.location.href = '/mainlandingpage.html';
+        }
 
         // Initialize dashboard on load
         document.addEventListener('DOMContentLoaded', initDashboard);
