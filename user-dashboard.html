@@ -686,56 +686,6 @@
                     </div>
                 </div>
 
-                <!-- Quick Actions -->
-                <div class="card">
-                    <div class="card-header">
-                        <h2 class="card-title">Quick Actions</h2>
-                    </div>
-                    <div class="tab-controls">
-                        <div class="control-group">
-                            <label class="control-label">
-                                <label class="toggle-switch">
-                                    <input type="checkbox" id="auto-close-toggle" checked>
-                                    <span class="slider"></span>
-                                </label>
-                                Auto-close enabled
-                            </label>
-                        </div>
-                        <div class="control-group">
-                            <label class="control-label" for="close-timer">Default close timer (minutes)</label>
-                            <input type="number" id="close-timer" class="control-input" value="30" min="1" max="480">
-                        </div>
-                        <div class="control-group">
-                            <button class="card-action" onclick="syncWithExtension()">
-                                <i data-feather="refresh-cw"></i>
-                                Sync Extension
-                            </button>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Current Plan Overview -->
-                <div class="card subscription-card">
-                    <div class="card-header">
-                        <h2 class="card-title" style="color: white;">Current Plan</h2>
-                        <button class="card-action" onclick="showPage('subscription')">
-                            <i data-feather="arrow-right"></i>
-                            Manage Plan
-                        </button>
-                    </div>
-                    <div class="subscription-info">
-                        <div class="current-plan">
-                            <div class="plan-name" id="current-plan-name">Free Plan</div>
-                            <div class="plan-price" id="current-plan-price">$0/month</div>
-                        </div>
-                    </div>
-                    <ul class="plan-features" id="current-plan-features">
-                        <li><i data-feather="check" class="check"></i> Up to 10 managed tabs</li>
-                        <li><i data-feather="check" class="check"></i> Basic auto-close timers</li>
-                        <li><i data-feather="x" class="x"></i> Advanced analytics</li>
-                        <li><i data-feather="x" class="x"></i> Custom themes</li>
-                    </ul>
-                </div>
             </div>
 
             <!-- Subscription Page -->
