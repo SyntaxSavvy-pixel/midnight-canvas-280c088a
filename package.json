@@ -6,7 +6,8 @@
   "scripts": {
     "start": "python3 -m http.server 3000",
     "dev": "vercel dev",
-    "build": "echo 'Static build complete'",
+    "build": "echo 'Building Node.js project for Vercel'",
+    "vercel-build": "echo 'Vercel build step for API functions'",
     "deploy": "vercel --prod",
     "preview": "vercel",
     "lint": "echo 'No linting configured'",
