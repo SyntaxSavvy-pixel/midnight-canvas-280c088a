@@ -65,7 +65,6 @@ exports.handler = async (event, context) => {
                 // Save user to Supabase
                 try {
                     const userData = {
-                        user_id: email,
                         email: email,
                         name: name,
                         is_pro: false,
@@ -139,7 +138,6 @@ exports.handler = async (event, context) => {
                     if (!user) {
                         // Create user if they don't exist
                         const newUserData = {
-                            user_id: email,
                             email: email,
                             name: isDemoUser ? 'Demo User' : email.split('@')[0],
                             is_pro: false,
