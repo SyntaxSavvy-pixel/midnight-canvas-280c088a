@@ -936,37 +936,18 @@
                 </div>
 
                 <div class="card" style="margin-top: 2rem;">
-                    <h2 class="card-title">Billing History</h2>
-                    <table class="billing-table">
-                        <thead>
-                            <tr>
-                                <th>Date</th>
-                                <th>Amount</th>
-                                <th>Status</th>
-                                <th>Invoice</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr>
-                                <td>Dec 1, 2024</td>
-                                <td>$4.99</td>
-                                <td><span class="status-badge paid">Paid</span></td>
-                                <td><a href="#" style="color: #14b8a6;">Download</a></td>
-                            </tr>
-                            <tr>
-                                <td>Nov 1, 2024</td>
-                                <td>$4.99</td>
-                                <td><span class="status-badge paid">Paid</span></td>
-                                <td><a href="#" style="color: #14b8a6;">Download</a></td>
-                            </tr>
-                            <tr>
-                                <td>Oct 1, 2024</td>
-                                <td>$4.99</td>
-                                <td><span class="status-badge paid">Paid</span></td>
-                                <td><a href="#" style="color: #14b8a6;">Download</a></td>
-                            </tr>
-                        </tbody>
-                    </table>
+                    <div class="card-header">
+                        <h2 class="card-title">Billing History</h2>
+                        <button class="card-action secondary" onclick="openBillingPortal()">
+                            <i data-feather="external-link"></i>
+                            Manage Billing
+                        </button>
+                    </div>
+                    <div id="billing-history-container">
+                        <p style="color: #94a3b8; text-align: center; padding: 2rem;">
+                            Loading billing history...
+                        </p>
+                    </div>
                 </div>
             </div>
 
@@ -1049,32 +1030,117 @@
         // Initialize
         feather.replace();
 
-        // User data simulation
+        // Real user data - loaded from API
         let userData = {
-            name: 'John Doe',
-            email: 'john.doe@example.com',
+            name: '',
+            email: '',
             plan: 'free', // 'free' or 'pro'
-            joinDate: '2024-01-15',
-            avatar: 'JD'
+            joinDate: '',
+            avatar: '',
+            isPro: false,
+            subscriptionStatus: 'free',
+            currentPeriodEnd: null,
+            stripeCustomerId: null,
+            stripeSubscriptionId: null
         };
 
+        // API Configuration
+        const API_BASE = 'https://tabmangment-extension-kohl.vercel.app/api';
+        let authToken = null;
+
         // Initialize dashboard
-        function initDashboard() {
-            // Load user data from localStorage
-            const storedUserData = localStorage.getItem('userData');
-            if (storedUserData) {
-                userData = JSON.parse(storedUserData);
+        async function initDashboard() {
+            // Check authentication
+            authToken = localStorage.getItem('authToken');
+            const userEmail = localStorage.getItem('userEmail');
+
+            if (!authToken || !userEmail) {
+                // Redirect to login if not authenticated
+                window.location.href = '/login';
+                return;
             }
+
+            // Load real user data from API
+            await loadUserData(userEmail);
 
             updateUserDisplay();
             updatePlanDisplay();
             initChart();
             loadUserSettings();
+            loadBillingHistory();
 
-            // Simulate extension data sync
-            setTimeout(() => {
-                syncWithExtension();
-            }, 1000);
+            // Start real-time sync with extension
+            await syncWithExtension();
+
+            // Start subscription status monitoring
+            startSubscriptionStatusRefresh();
+        }
+
+        // Load user data from API
+        async function loadUserData(email) {
+            try {
+                showNotification('Loading user data...', 'info');
+
+                const response = await fetch(`${API_BASE}/me?email=${encodeURIComponent(email)}`, {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${authToken}`
+                    }
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+
+                    // Update userData with real data
+                    userData.email = data.email;
+                    userData.name = data.name || email.split('@')[0];
+                    userData.plan = data.plan || 'free';
+                    userData.isPro = data.isPro || false;
+                    userData.subscriptionStatus = data.subscriptionStatus || 'free';
+                    userData.currentPeriodEnd = data.currentPeriodEnd;
+                    userData.stripeCustomerId = data.stripeCustomerId;
+                    userData.stripeSubscriptionId = data.stripeSubscriptionId;
+                    userData.avatar = userData.name.split(' ').map(n => n[0]).join('').toUpperCase();
+
+                    // Save to localStorage
+                    localStorage.setItem('userData', JSON.stringify(userData));
+
+                    showNotification('User data loaded successfully!', 'success');
+                } else {
+                    throw new Error('Failed to load user data');
+                }
+            } catch (error) {
+                console.error('Error loading user data:', error);
+                showNotification('Failed to load user data', 'error');
+
+                // Try to load from localStorage as fallback
+                const storedUserData = localStorage.getItem('userData');
+                if (storedUserData) {
+                    userData = { ...userData, ...JSON.parse(storedUserData) };
+                }
+            }
+        }
+
+        // Real subscription status refresh
+        function startSubscriptionStatusRefresh() {
+            // Check subscription status every 5 minutes
+            const refreshInterval = setInterval(async () => {
+                if (userData.email) {
+                    await loadUserData(userData.email);
+                    updateUserDisplay();
+                    updatePlanDisplay();
+                }
+            }, 5 * 60 * 1000); // 5 minutes
+
+            // Also check on page focus
+            window.addEventListener('focus', async () => {
+                if (userData.email) {
+                    await loadUserData(userData.email);
+                    updateUserDisplay();
+                    updatePlanDisplay();
+                }
+            });
         }
 
         // Navigation
@@ -1174,12 +1240,34 @@
             document.getElementById('upgrade-modal').classList.remove('show');
         }
 
-        function processUpgrade() {
-            userData.plan = 'pro';
-            updatePlanDisplay();
-            closeModal();
-            showNotification('Successfully upgraded to Pro! 🎉', 'success');
-            syncWithExtension();
+        async function processUpgrade() {
+            try {
+                showNotification('Creating checkout session...', 'info');
+
+                const response = await fetch(`${API_BASE}/create-checkout-session`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${authToken}`
+                    },
+                    body: JSON.stringify({
+                        priceId: 'price_1Rzw2LLJKLfllJJD6HPKEDHK'
+                    })
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+
+                    // Redirect to Stripe Checkout
+                    window.location.href = data.url;
+                } else {
+                    const errorData = await response.json();
+                    throw new Error(errorData.error || 'Failed to create checkout session');
+                }
+            } catch (error) {
+                console.error('Error creating checkout session:', error);
+                showNotification('Failed to start upgrade process: ' + error.message, 'error');
+            }
         }
 
         function downgradeToFree() {
@@ -1274,41 +1362,129 @@
             showNotification('Password updated successfully!', 'success');
         }
 
-        // Extension sync - This would communicate with the browser extension
-        function syncWithExtension() {
-            showNotification('Syncing with extension...', 'info');
+        // Real extension sync
+        async function syncWithExtension() {
+            try {
+                showNotification('Syncing with extension...', 'info');
 
-            // Simulate sending data to extension
-            const extensionData = {
-                plan: userData.plan,
-                settings: JSON.parse(localStorage.getItem('tabManagementSettings') || '{}'),
-                user: userData
-            };
+                // Prepare data to send to extension
+                const extensionData = {
+                    type: 'SUBSCRIPTION_UPDATE',
+                    user: userData,
+                    plan: userData.plan,
+                    isPro: userData.isPro,
+                    subscriptionStatus: userData.subscriptionStatus,
+                    settings: JSON.parse(localStorage.getItem('tabManagementSettings') || '{}'),
+                    timestamp: Date.now()
+                };
 
-            // In a real implementation, this would use chrome.runtime.sendMessage()
-            // chrome.runtime.sendMessage(extensionId, extensionData);
+                // Try to communicate with extension
+                if (typeof chrome !== 'undefined' && chrome.runtime) {
+                    try {
+                        // Send message to extension
+                        await chrome.runtime.sendMessage(extensionData);
+                        showNotification('Extension sync completed!', 'success');
+                    } catch (extensionError) {
+                        console.log('Extension not available or not installed');
+                        showNotification('Extension sync skipped - extension not detected', 'info');
+                    }
+                } else {
+                    // Extension API not available (normal for web version)
+                    console.log('Chrome extension API not available');
+                    showNotification('Web dashboard updated (extension sync skipped)', 'info');
+                }
 
-            // Simulate sync delay
-            setTimeout(() => {
-                showNotification('Extension sync completed!', 'success');
-                updateStats(); // Update dashboard stats after sync
-            }, 2000);
+                // Update dashboard stats regardless
+                await updateStats();
+
+                // Store sync data in localStorage for extension to read
+                localStorage.setItem('dashboardSyncData', JSON.stringify(extensionData));
+
+            } catch (error) {
+                console.error('Sync error:', error);
+                showNotification('Sync encountered issues: ' + error.message, 'error');
+            }
         }
 
-        // Update dashboard stats
-        function updateStats() {
-            // Simulate receiving stats from extension
-            const stats = {
-                totalTabs: Math.floor(Math.random() * 50) + 100,
-                autoClosed: Math.floor(Math.random() * 20) + 30,
-                memorySaved: Math.floor(Math.random() * 200) + 250,
-                focusScore: Math.floor(Math.random() * 15) + 80
-            };
+        // Update dashboard stats from extension or localStorage
+        async function updateStats() {
+            try {
+                // Try to get real stats from extension or localStorage
+                let stats = null;
 
-            document.getElementById('total-tabs').textContent = stats.totalTabs;
-            document.getElementById('auto-closed').textContent = stats.autoClosed;
-            document.getElementById('memory-saved').textContent = stats.memorySaved + 'MB';
-            document.getElementById('focus-score').textContent = stats.focusScore + '%';
+                // Check if extension data is available
+                const extensionStats = localStorage.getItem('extensionStats');
+                if (extensionStats) {
+                    stats = JSON.parse(extensionStats);
+                } else {
+                    // Fallback to default stats
+                    stats = {
+                        totalTabs: 0,
+                        autoClosed: 0,
+                        memorySaved: 0,
+                        focusScore: 0
+                    };
+                }
+
+                document.getElementById('total-tabs').textContent = stats.totalTabs || 0;
+                document.getElementById('auto-closed').textContent = stats.autoClosed || 0;
+                document.getElementById('memory-saved').textContent = (stats.memorySaved || 0) + 'MB';
+                document.getElementById('focus-score').textContent = (stats.focusScore || 0) + '%';
+
+            } catch (error) {
+                console.error('Error updating stats:', error);
+            }
+        }
+
+        // Open Stripe billing portal
+        async function openBillingPortal() {
+            try {
+                showNotification('Opening billing portal...', 'info');
+
+                const response = await fetch(`${API_BASE}/billing-portal`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${authToken}`
+                    },
+                    body: JSON.stringify({
+                        returnUrl: window.location.href
+                    })
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    // Open billing portal in new tab
+                    window.open(data.url, '_blank');
+                } else {
+                    throw new Error('Failed to create billing portal session');
+                }
+            } catch (error) {
+                console.error('Error opening billing portal:', error);
+                showNotification('Failed to open billing portal', 'error');
+            }
+        }
+
+        // Load billing history
+        async function loadBillingHistory() {
+            if (!userData.stripeCustomerId) {
+                document.getElementById('billing-history-container').innerHTML = `
+                    <p style="color: #94a3b8; text-align: center; padding: 2rem;">
+                        No billing history available
+                    </p>
+                `;
+                return;
+            }
+
+            // For now, show a simple message and direct to billing portal
+            document.getElementById('billing-history-container').innerHTML = `
+                <p style="color: #94a3b8; text-align: center; padding: 2rem;">
+                    View your complete billing history and manage your subscription in the
+                    <button onclick="openBillingPortal()" style="color: #14b8a6; background: none; border: none; text-decoration: underline; cursor: pointer;">
+                        Stripe Customer Portal
+                    </button>
+                </p>
+            `;
         }
 
         // Chart initialization

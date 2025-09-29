@@ -119,6 +119,9 @@ class TabmangmentPopup {
             await this.checkAndApplySubscriptionStatus();
 
             await this.initializeTimerSystem();
+
+            // Start dashboard sync listener
+            this.startDashboardSync();
         } catch (error) {
             this.showError('Failed to initialize extension: ' + error.message);
         }
@@ -3465,7 +3468,7 @@ class TabmangmentPopup {
 
             // Always check API first for paid users
             try {
-                const response = await fetch(`${API_BASE}/status?email=${encodeURIComponent(userEmail)}`, {
+                const response = await fetch(`${API_BASE}/me?email=${encodeURIComponent(userEmail)}`, {
                     method: 'GET',
                     headers: { 'Content-Type': 'application/json' },
                     timeout: 10000
@@ -6207,3 +6210,107 @@ window.addEventListener('beforeunload', () => {
         popup.stopRealTimeUpdates();
     }
 });
+// Dashboard sync functionality for TabmangmentPopup
+
+// Add dashboard sync methods to the prototype
+TabmangmentPopup.prototype.startDashboardSync = function() {
+    // Listen for messages from dashboard
+    if (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.onMessage) {
+        chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+            if (message.type === 'SUBSCRIPTION_UPDATE') {
+                this.handleDashboardSync(message);
+                sendResponse({ status: 'received' });
+            }
+            return true;
+        });
+    }
+
+    // Check for dashboard sync data in localStorage periodically
+    setInterval(() => {
+        this.checkDashboardSyncData();
+    }, 10000); // Check every 10 seconds
+
+    // Also send stats to dashboard
+    setInterval(() => {
+        this.sendStatsToLocalStorage();
+    }, 30000); // Send stats every 30 seconds
+};
+
+TabmangmentPopup.prototype.handleDashboardSync = async function(message) {
+    try {
+        if (message.user && message.user.email) {
+            // Update extension with dashboard data
+            const userData = message.user;
+
+            await chrome.storage.local.set({
+                isPremium: userData.isPro || false,
+                subscriptionActive: userData.isPro || false,
+                planType: userData.plan || 'free',
+                subscriptionStatus: userData.subscriptionStatus || 'free',
+                userEmail: userData.email,
+                dashboardSyncTime: Date.now()
+            });
+
+            this.isPremium = userData.isPro || false;
+
+            // Update UI
+            await this.render();
+            if (this.isPremium) {
+                this.updateUIForProUser();
+            }
+            await this.renderSubscriptionPlan();
+
+            console.log('✅ Synced with dashboard:', userData.plan);
+        }
+    } catch (error) {
+        console.error('Dashboard sync error:', error);
+    }
+};
+
+TabmangmentPopup.prototype.checkDashboardSyncData = function() {
+    try {
+        const syncData = localStorage.getItem('dashboardSyncData');
+        if (syncData) {
+            const data = JSON.parse(syncData);
+            const now = Date.now();
+
+            // Only process if data is recent (less than 1 minute old)
+            if (data.timestamp && (now - data.timestamp) < 60000) {
+                this.handleDashboardSync(data);
+                // Clear the sync data after processing
+                localStorage.removeItem('dashboardSyncData');
+            }
+        }
+    } catch (error) {
+        console.error('Error checking dashboard sync data:', error);
+    }
+};
+
+TabmangmentPopup.prototype.sendStatsToLocalStorage = async function() {
+    try {
+        // Get current tab statistics
+        const tabs = await chrome.tabs.query({});
+        const managedTabs = this.tabs ? this.tabs.length : 0;
+        const activeTimers = Object.keys(this.tabTimers || {}).length;
+
+        // Calculate memory saved (estimate)
+        const memorySavedMB = Math.max(0, (tabs.length - managedTabs) * 50); // Estimate 50MB per tab
+
+        // Calculate focus score based on managed vs total tabs
+        const focusScore = tabs.length > 0 ? Math.round((managedTabs / tabs.length) * 100) : 100;
+
+        const stats = {
+            totalTabs: managedTabs,
+            autoClosed: this.stats ? this.stats.scheduled : 0,
+            memorySaved: memorySavedMB,
+            focusScore: focusScore,
+            lastUpdated: Date.now()
+        };
+
+        // Store stats for dashboard to read
+        localStorage.setItem('extensionStats', JSON.stringify(stats));
+
+    } catch (error) {
+        console.error('Error sending stats to localStorage:', error);
+    }
+};
