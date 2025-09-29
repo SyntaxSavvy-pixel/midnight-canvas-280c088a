@@ -1,5 +1,5 @@
 const _cfg = {
-    _b: ['dGFibWFuZ21lbnQtZXh0ZW5zaW9uLWJ6NGNodXMwaS1rYXZvbi1oaWNrcy1wcm9qZWN0cy52ZXJjZWwuYXBw'],
+    _b: ['dGFibWFuZ21lbnQubmV0bGlmeS5hcHA='],
     _p: 'https://',
     _d: () => atob(_cfg._b[0])
 };
