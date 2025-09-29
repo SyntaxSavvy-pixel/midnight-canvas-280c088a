@@ -14,6 +14,11 @@
   status = 200
 
 [[redirects]]
+  from = "/login"
+  to = "/New-authentication.html"
+  status = 200
+
+[[redirects]]
   from = "/dashboard"
   to = "/user-dashboard.html"
   status = 200
@@ -31,4 +36,24 @@
 [[redirects]]
   from = "/returning"
   to = "/Returning-Users.html"
+  status = 200
+
+[[redirects]]
+  from = "/register"
+  to = "/New-authentication.html?mode=signup"
+  status = 200
+
+[[redirects]]
+  from = "/forgot-password"
+  to = "/New-authentication.html"
+  status = 200
+
+[[redirects]]
+  from = "/terms"
+  to = "/privacy.html"
+  status = 200
+
+[[redirects]]
+  from = "/support"
+  to = "/New-authentication.html"
   status = 200
