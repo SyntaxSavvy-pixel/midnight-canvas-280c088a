@@ -700,59 +700,120 @@
         document.getElementById('signup-tab').addEventListener('click', switchToSignup);
 
         // Form submissions
-        function handleLogin(event) {
+        async function handleLogin(event) {
             event.preventDefault();
             const email = document.getElementById('login-email').value;
             const password = document.getElementById('login-password').value;
 
-            // For testing - simulate successful login
-            if (email && password) {
-                // Create mock user data
-                const userData = {
-                    name: 'Test User',
-                    email: email,
-                    plan: 'free', // or 'pro' for testing
-                    joinDate: new Date().toISOString(),
-                    avatar: 'TU'
-                };
-
-                // Store in localStorage to simulate login
-                localStorage.setItem('tabManagementSettings', JSON.stringify({
-                    defaultTimer: 30,
-                    maxTabs: 20,
-                    weekendMode: false,
-                    autoCloseEnabled: true
-                }));
-
-                localStorage.setItem('userData', JSON.stringify(userData));
-
-                // Show success message
-                showNotification('Login successful! Redirecting to dashboard...', 'success');
-
-                // Redirect to dashboard after 1 second
-                setTimeout(() => {
-                    window.location.href = '/user-dashboard.html';
-                }, 1000);
-            } else {
+            if (!email || !password) {
                 showNotification('Please enter both email and password', 'error');
+                return;
+            }
+
+            try {
+                showNotification('Signing in...', 'info');
+
+                const response = await fetch('/api/me', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        action: 'login',
+                        email: email,
+                        password: password
+                    })
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    // Store user data and token
+                    localStorage.setItem('tabmangment_token', result.token);
+                    localStorage.setItem('userData', JSON.stringify(result.user));
+
+                    // Notify extension about login
+                    try {
+                        if (typeof chrome !== 'undefined' && chrome.runtime) {
+                            chrome.runtime.sendMessage({
+                                type: 'USER_LOGGED_IN',
+                                user: result.user,
+                                token: result.token
+                            });
+                        }
+                    } catch (e) {
+                        console.log('Extension not available');
+                    }
+
+                    showNotification('Login successful! Redirecting to dashboard...', 'success');
+
+                    setTimeout(() => {
+                        window.location.href = '/user-dashboard.html';
+                    }, 1000);
+                } else {
+                    showNotification(result.message || 'Login failed', 'error');
+                }
+            } catch (error) {
+                console.error('Login error:', error);
+                showNotification('Network error. Please try again.', 'error');
             }
         }
 
-        function handleSignup(event) {
+        async function handleSignup(event) {
             event.preventDefault();
             const name = document.getElementById('signup-name').value;
             const email = document.getElementById('signup-email').value;
             const password = document.getElementById('signup-password').value;
             const confirmPassword = document.getElementById('signup-confirm').value;
 
-            if (password !== confirmPassword) {
-                alert('Passwords do not match!');
+            if (!name || !email || !password || !confirmPassword) {
+                showNotification('Please fill in all fields', 'error');
                 return;
             }
 
-            // Simulate signup
-            console.log('Signing up:', { name, email, password });
-            alert('Signup functionality will be implemented soon!');
+            if (password !== confirmPassword) {
+                showNotification('Passwords do not match!', 'error');
+                return;
+            }
+
+            if (password.length < 8) {
+                showNotification('Password must be at least 8 characters', 'error');
+                return;
+            }
+
+            try {
+                showNotification('Creating account...', 'info');
+
+                const response = await fetch('/api/me', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        action: 'register',
+                        name: name,
+                        email: email,
+                        password: password
+                    })
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    showNotification('Account created successfully! Please sign in.', 'success');
+
+                    // Switch to login tab
+                    setTimeout(() => {
+                        switchToLogin();
+                        document.getElementById('login-email').value = email;
+                    }, 1500);
+                } else {
+                    showNotification(result.message || 'Registration failed', 'error');
+                }
+            } catch (error) {
+                console.error('Registration error:', error);
+                showNotification('Network error. Please try again.', 'error');
+            }
         }
 
         // Social login
