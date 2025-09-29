@@ -1,9 +1,4 @@
 {
-  "functions": {
-    "api/*.js": {
-      "runtime": "@vercel/node"
-    }
-  },
   "rewrites": [
     {
       "source": "/",
@@ -32,47 +27,6 @@
     {
       "source": "/returning",
       "destination": "/Returning-Users.html"
-    }
-  ],
-  "redirects": [
-    {
-      "source": "/home",
-      "destination": "/"
-    },
-    {
-      "source": "/landing",
-      "destination": "/"
-    },
-    {
-      "source": "/pricing",
-      "destination": "/mainlandingpage.html#pricing"
-    },
-    {
-      "source": "/features",
-      "destination": "/mainlandingpage.html#features"
-    },
-    {
-      "source": "/faq",
-      "destination": "/mainlandingpage.html#faq"
-    }
-  ],
-  "headers": [
-    {
-      "source": "/(.*)",
-      "headers": [
-        {
-          "key": "X-Content-Type-Options",
-          "value": "nosniff"
-        },
-        {
-          "key": "X-Frame-Options",
-          "value": "DENY"
-        },
-        {
-          "key": "X-XSS-Protection",
-          "value": "1; mode=block"
-        }
-      ]
     }
   ]
 }
