@@ -2,7 +2,7 @@
 // Creates a Stripe Checkout session for Pro plan purchase
 
 const Stripe = require('stripe');
-import { getUser } from '../lib/database-supabase.js';
+// Dynamic import for Supabase
 
 // Initialize Stripe with secret key
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
@@ -35,6 +35,7 @@ export default async function handler(req, res) {
                 if (tokenData.email && tokenData.exp > Math.floor(Date.now() / 1000)) {
                     // Get user from Supabase
                     try {
+                        const { getUser } = await import('../lib/database-supabase.js');
                         authenticatedUser = await getUser(tokenData.email);
                     } catch (dbError) {
                         console.error('❌ Database error:', dbError);

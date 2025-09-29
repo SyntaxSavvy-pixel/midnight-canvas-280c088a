@@ -4,7 +4,7 @@
 
 import { buffer } from 'micro';
 import Stripe from 'stripe';
-import { saveUser, getUser, updateUser } from '../lib/database-supabase.js';
+// Dynamic imports for Supabase functions
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 const endpointSecret = process.env.STRIPE_WEBHOOK_SECRET;
@@ -103,6 +103,8 @@ async function handleCheckoutCompleted(session) {
 
     // Update user in Supabase
     try {
+      const { getUser, saveUser, updateUser } = await import('../lib/database-supabase.js');
+
       // Try to get existing user
       let existingUser = await getUser(targetEmail);
 
@@ -161,6 +163,7 @@ async function handleSubscriptionCreated(subscription) {
       return;
     }
 
+    const { updateUser } = await import('../lib/database-supabase.js');
     await updateUser(targetEmail, {
       isPro: true,
       subscriptionStatus: subscription.status,
@@ -190,6 +193,7 @@ async function handleSubscriptionUpdated(subscription) {
 
     const isPro = subscription.status === 'active';
 
+    const { updateUser } = await import('../lib/database-supabase.js');
     await updateUser(targetEmail, {
       isPro: isPro,
       subscriptionStatus: subscription.status,
@@ -216,6 +220,7 @@ async function handleSubscriptionDeleted(subscription) {
       return;
     }
 
+    const { updateUser } = await import('../lib/database-supabase.js');
     await updateUser(targetEmail, {
       isPro: false,
       subscriptionStatus: 'cancelled',
@@ -246,6 +251,7 @@ async function handlePaymentSucceeded(invoice) {
 
       const paymentAmount = (invoice.amount_paid || 0) / 100;
 
+      const { updateUser } = await import('../lib/database-supabase.js');
       await updateUser(targetEmail, {
         isPro: true,
         subscriptionStatus: 'active',
@@ -277,6 +283,7 @@ async function handlePaymentFailed(invoice) {
       }
 
       // Don't immediately revoke Pro access - Stripe handles retry logic
+      const { updateUser } = await import('../lib/database-supabase.js');
       await updateUser(targetEmail, {
         subscriptionStatus: 'past_due',
         lastFailedPaymentAt: new Date().toISOString()

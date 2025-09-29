@@ -2,7 +2,8 @@
 // Extension calls: GET /api/me?email=user@example.com
 // Returns: { email, plan: "pro"|"free" }
 
-import { getUser, saveUser, updateUser } from '../lib/database-supabase.js';
+// For Vercel serverless functions, we need to use dynamic imports
+// const { getUser, saveUser, updateUser } = require('../lib/database-supabase.js');
 
 export default async function handler(req, res) {
     res.setHeader('Access-Control-Allow-Origin', '*');
@@ -43,6 +44,7 @@ export default async function handler(req, res) {
 
                 // Save user to Supabase
                 try {
+                    const { saveUser } = await import('../lib/database-supabase.js');
                     const userData = {
                         userId: email,
                         email: email,
@@ -86,6 +88,7 @@ export default async function handler(req, res) {
 
                 // Get or create user in Supabase
                 try {
+                    const { getUser, saveUser } = await import('../lib/database-supabase.js');
                     let user = await getUser(email);
 
                     if (!user) {
@@ -158,6 +161,7 @@ export default async function handler(req, res) {
         // Get user from Supabase database
         let user = null;
         try {
+            const { getUser } = await import('../lib/database-supabase.js');
             user = await getUser(email);
         } catch (dbError) {
             console.error('❌ Database error:', dbError);
@@ -183,6 +187,7 @@ export default async function handler(req, res) {
                 // Subscription expired
                 currentlyPro = false;
                 try {
+                    const { updateUser } = await import('../lib/database-supabase.js');
                     await updateUser(email, {
                         isPro: false,
                         subscriptionStatus: 'expired'
