@@ -114,6 +114,7 @@ class TabmangmentPopup {
             }
             await this.renderSubscriptionPlan();
             this.startRealTimeUpdates();
+            this.startSubscriptionStatusRefresh();
 
             await this.checkAndApplySubscriptionStatus();
 
@@ -3800,42 +3801,83 @@ class TabmangmentPopup {
     }
     async checkAndApplySubscriptionStatus() {
         try {
-
             const stored = await chrome.storage.local.get(['userEmail']);
             if (!stored.userEmail) {
                 this.isPremium = false;
                 return;
             }
 
-            const status = await this.checkSubscriptionStatus(stored.userEmail);
-            if (status.isActive && status.plan === 'pro') {
+            // Check subscription status via enhanced API
+            const response = await fetch(`${CONFIG.API.BASE}/me?email=${encodeURIComponent(stored.userEmail)}`);
+            const data = await response.json();
 
+            if (data.found && data.isPro) {
+                // User has active Pro subscription
                 await chrome.storage.local.set({
                     hasProPlan: true,
                     isPremium: true,
                     subscriptionActive: true,
                     planType: 'pro',
-                    subscriptionId: status.subscriptionId,
+                    subscriptionStatus: data.subscriptionStatus,
+                    currentPeriodEnd: data.currentPeriodEnd,
+                    stripeCustomerId: data.stripeCustomerId,
+                    stripeSubscriptionId: data.stripeSubscriptionId,
                     lastStatusCheck: new Date().toISOString()
                 });
                 this.isPremium = true;
                 this.updateUIForProUser();
-            } else {
 
+                // Show subscription info in UI
+                this.updateSubscriptionInfo(data);
+            } else {
+                // User is on free plan or subscription expired
                 await chrome.storage.local.set({
                     hasProPlan: false,
                     isPremium: false,
                     subscriptionActive: false,
                     planType: 'free',
+                    subscriptionStatus: data.subscriptionStatus || 'free',
                     subscriptionId: null,
                     lastStatusCheck: new Date().toISOString()
                 });
                 this.isPremium = false;
             }
         } catch (error) {
-
+            console.error('Error checking subscription status:', error);
             this.isPremium = false;
         }
+    }
+
+    // Update subscription info in UI
+    updateSubscriptionInfo(data) {
+        if (data.currentPeriodEnd) {
+            const endDate = new Date(data.currentPeriodEnd);
+            const daysLeft = Math.ceil((endDate - new Date()) / (1000 * 60 * 60 * 24));
+
+            // Store for display in subscription plan section
+            this.subscriptionInfo = {
+                status: data.subscriptionStatus,
+                currentPeriodEnd: data.currentPeriodEnd,
+                daysLeft: daysLeft,
+                customerId: data.stripeCustomerId,
+                subscriptionId: data.stripeSubscriptionId
+            };
+        }
+    }
+
+    // Auto-refresh subscription status every 5 minutes
+    startSubscriptionStatusRefresh() {
+        if (this.statusRefreshInterval) {
+            clearInterval(this.statusRefreshInterval);
+        }
+
+        this.statusRefreshInterval = setInterval(async () => {
+            await this.checkAndApplySubscriptionStatus();
+            // Re-render if the user is viewing the popup
+            if (document.visibilityState === 'visible') {
+                await this.renderSubscriptionPlan();
+            }
+        }, 5 * 60 * 1000); // 5 minutes
     }
     async upgradeToProPlan() {
         try {

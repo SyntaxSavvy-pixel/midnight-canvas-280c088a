@@ -1,6 +1,8 @@
-// Simple /api/me endpoint for extension
+// Enhanced /api/me endpoint for extension with Supabase
 // Extension calls: GET /api/me?email=user@example.com
 // Returns: { email, plan: "pro"|"free" }
+
+import { getUser, saveUser, updateUser } from '../lib/database-supabase.js';
 
 export default async function handler(req, res) {
     res.setHeader('Access-Control-Allow-Origin', '*');
@@ -39,22 +41,36 @@ export default async function handler(req, res) {
                     });
                 }
 
-                // For demo: accept all registrations
-                const userData = {
-                    userId: email,
-                    email: email,
-                    name: name,
-                    isPro: false,
-                    planType: 'free',
-                    status: 'active',
-                    createdAt: new Date().toISOString()
-                };
+                // Save user to Supabase
+                try {
+                    const userData = {
+                        userId: email,
+                        email: email,
+                        name: name,
+                        isPro: false,
+                        subscriptionStatus: 'free'
+                    };
 
-                return res.status(200).json({
-                    success: true,
-                    message: 'Account created successfully',
-                    user: userData
-                });
+                    const savedUser = await saveUser(userData);
+
+                    return res.status(200).json({
+                        success: true,
+                        message: 'Account created successfully',
+                        user: {
+                            email: savedUser.email,
+                            name: savedUser.name,
+                            isPro: savedUser.isPro,
+                            subscriptionStatus: savedUser.subscriptionStatus,
+                            plan: savedUser.isPro ? 'pro' : 'free'
+                        }
+                    });
+                } catch (dbError) {
+                    console.error('❌ Database error during registration:', dbError);
+                    return res.status(500).json({
+                        success: false,
+                        message: 'Failed to create account. Please try again.'
+                    });
+                }
             }
 
             if (action === 'login') {
@@ -68,24 +84,46 @@ export default async function handler(req, res) {
                     });
                 }
 
-                const userData = {
-                    userId: email,
-                    email: email,
-                    name: isDemoUser ? 'Demo User' : email.split('@')[0],
-                    isPro: false,
-                    planType: 'free',
-                    status: 'active',
-                    lastLoginAt: new Date().toISOString()
-                };
+                // Get or create user in Supabase
+                try {
+                    let user = await getUser(email);
 
-                const token = Buffer.from(`${email}:${Date.now()}`).toString('base64');
+                    if (!user) {
+                        // Create user if they don't exist
+                        const newUserData = {
+                            userId: email,
+                            email: email,
+                            name: isDemoUser ? 'Demo User' : email.split('@')[0],
+                            isPro: false,
+                            subscriptionStatus: 'free'
+                        };
+                        user = await saveUser(newUserData);
+                    }
 
-                return res.status(200).json({
-                    success: true,
-                    message: 'Login successful',
-                    user: userData,
-                    token: token
-                });
+                    const token = Buffer.from(JSON.stringify({
+                        email: email,
+                        exp: Math.floor(Date.now() / 1000) + (24 * 60 * 60) // 24 hours
+                    })).toString('base64');
+
+                    return res.status(200).json({
+                        success: true,
+                        message: 'Login successful',
+                        user: {
+                            email: user.email,
+                            name: user.name,
+                            isPro: user.isPro,
+                            subscriptionStatus: user.subscriptionStatus,
+                            plan: user.isPro ? 'pro' : 'free'
+                        },
+                        token: token
+                    });
+                } catch (dbError) {
+                    console.error('❌ Database error during login:', dbError);
+                    return res.status(500).json({
+                        success: false,
+                        message: 'Login failed. Please try again.'
+                    });
+                }
             }
 
             return res.status(400).json({
@@ -117,26 +155,54 @@ export default async function handler(req, res) {
 
         console.log('🔍 Checking plan for:', email);
 
-        // Get user from database
+        // Get user from Supabase database
         let user = null;
-        if (process.env.KV_REST_API_URL && process.env.KV_REST_API_TOKEN) {
-            const { kv } = await import('@vercel/kv');
-            user = await kv.get(`user:${email}`);
+        try {
+            user = await getUser(email);
+        } catch (dbError) {
+            console.error('❌ Database error:', dbError);
         }
 
         if (!user) {
             return res.status(200).json({
                 email: email,
                 plan: 'free',
-                found: false
+                found: false,
+                isPro: false,
+                subscriptionStatus: 'free'
             });
         }
 
-        // Simple response - just what the extension needs
+        // Check if subscription is still valid
+        let currentlyPro = user.isPro;
+        if (user.isPro && user.currentPeriodEnd) {
+            const now = new Date();
+            const periodEnd = new Date(user.currentPeriodEnd);
+
+            if (now > periodEnd && user.subscriptionStatus !== 'active') {
+                // Subscription expired
+                currentlyPro = false;
+                try {
+                    await updateUser(email, {
+                        isPro: false,
+                        subscriptionStatus: 'expired'
+                    });
+                } catch (updateError) {
+                    console.error('❌ Error updating expired subscription:', updateError);
+                }
+            }
+        }
+
+        // Response with all necessary data for extension
         return res.status(200).json({
             email: user.email,
-            name: user.name,
-            plan: user.isPro ? 'pro' : 'free',
+            name: user.name || email.split('@')[0],
+            plan: currentlyPro ? 'pro' : 'free',
+            isPro: currentlyPro,
+            subscriptionStatus: user.subscriptionStatus || 'free',
+            currentPeriodEnd: user.currentPeriodEnd,
+            stripeCustomerId: user.stripeCustomerId,
+            stripeSubscriptionId: user.stripeSubscriptionId,
             found: true
         });
 
@@ -146,6 +212,8 @@ export default async function handler(req, res) {
         return res.status(200).json({
             email: req.query.email || 'unknown',
             plan: 'free',
+            isPro: false,
+            subscriptionStatus: 'free',
             found: false,
             error: 'Lookup failed'
         });

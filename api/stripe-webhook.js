@@ -4,6 +4,7 @@
 
 import { buffer } from 'micro';
 import Stripe from 'stripe';
+import { saveUser, getUser, updateUser } from '../lib/database-supabase.js';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 const endpointSecret = process.env.STRIPE_WEBHOOK_SECRET;
@@ -100,39 +101,43 @@ async function handleCheckoutCompleted(session) {
       subscription = await stripe.subscriptions.retrieve(subscriptionId);
     }
 
-    // Update user in our authentication system
+    // Update user in Supabase
     try {
-      if (process.env.KV_REST_API_URL && process.env.KV_REST_API_TOKEN) {
-        const { kv } = await import('@vercel/kv');
+      // Try to get existing user
+      let existingUser = await getUser(targetEmail);
 
-        // Try to get existing user
-        let existingUser = await kv.get(`user:${targetEmail}`);
+      if (existingUser) {
+        console.log('✅ Found existing user, updating to Pro');
 
-        if (existingUser) {
-          console.log('✅ Found existing user, updating to Pro');
+        // Update user with Pro status and Stripe details
+        await updateUser(targetEmail, {
+          isPro: true,
+          subscriptionStatus: 'active',
+          stripeCustomerId: customerId,
+          stripeSubscriptionId: subscriptionId,
+          currentPeriodEnd: subscription ? new Date(subscription.current_period_end * 1000).toISOString() : null,
+          lastPaymentAt: new Date().toISOString()
+        });
 
-          // Simple Pro activation - just update the key fields
-          const updatedUser = {
-            ...existingUser,
-            isPro: true,
-            planType: 'pro',
-            proActivatedAt: new Date().toISOString(),
-            stripeCustomerId: customerId,
-            stripeSubscriptionId: subscriptionId,
-            lastUpdatedAt: new Date().toISOString()
-          };
+        console.log(`✅ User ${targetEmail} upgraded to Pro via webhook`);
 
-          await kv.set(`user:${targetEmail}`, updatedUser);
-          console.log(`✅ User ${targetEmail} upgraded to Pro via webhook`);
-
-        } else {
-          console.log(`⚠️ User ${targetEmail} not found - payment succeeded but no account exists`);
-          // In the new flow, users MUST be logged in to pay, so this shouldn't happen
-          // But we'll log it for debugging
-        }
+      } else {
+        console.log(`⚠️ User ${targetEmail} not found - payment succeeded but no account exists`);
+        // Create user if they don't exist (backup case)
+        await saveUser({
+          email: targetEmail,
+          userId: targetEmail,
+          isPro: true,
+          subscriptionStatus: 'active',
+          stripeCustomerId: customerId,
+          stripeSubscriptionId: subscriptionId,
+          currentPeriodEnd: subscription ? new Date(subscription.current_period_end * 1000).toISOString() : null,
+          lastPaymentAt: new Date().toISOString()
+        });
+        console.log(`✅ Created new Pro user ${targetEmail} via webhook`);
       }
-    } catch (kvError) {
-      console.error('❌ KV storage error:', kvError);
+    } catch (dbError) {
+      console.error('❌ Supabase error:', dbError);
     }
 
     console.log(`✅ Webhook processed successfully for ${targetEmail}`);
@@ -156,12 +161,11 @@ async function handleSubscriptionCreated(subscription) {
       return;
     }
 
-    await updateUserInKV(targetEmail, {
+    await updateUser(targetEmail, {
       isPro: true,
       subscriptionStatus: subscription.status,
       stripeSubscriptionId: subscription.id,
-      currentPeriodEnd: new Date(subscription.current_period_end * 1000).toISOString(),
-      lastUpdatedAt: new Date().toISOString()
+      currentPeriodEnd: new Date(subscription.current_period_end * 1000).toISOString()
     });
 
     console.log(`✅ Subscription created for user: ${targetEmail}`);
@@ -186,11 +190,10 @@ async function handleSubscriptionUpdated(subscription) {
 
     const isPro = subscription.status === 'active';
 
-    await updateUserInKV(targetEmail, {
+    await updateUser(targetEmail, {
       isPro: isPro,
       subscriptionStatus: subscription.status,
-      currentPeriodEnd: new Date(subscription.current_period_end * 1000).toISOString(),
-      lastUpdatedAt: new Date().toISOString()
+      currentPeriodEnd: new Date(subscription.current_period_end * 1000).toISOString()
     });
 
     console.log(`✅ Subscription updated for user: ${targetEmail}, status: ${subscription.status}`);
@@ -213,12 +216,10 @@ async function handleSubscriptionDeleted(subscription) {
       return;
     }
 
-    await updateUserInKV(targetEmail, {
+    await updateUser(targetEmail, {
       isPro: false,
       subscriptionStatus: 'cancelled',
-      cancelledAt: new Date().toISOString(),
-      currentPeriodEnd: new Date(subscription.current_period_end * 1000).toISOString(),
-      lastUpdatedAt: new Date().toISOString()
+      currentPeriodEnd: new Date(subscription.current_period_end * 1000).toISOString()
     });
 
     console.log(`✅ Pro access revoked for user: ${targetEmail}`);
@@ -245,13 +246,11 @@ async function handlePaymentSucceeded(invoice) {
 
       const paymentAmount = (invoice.amount_paid || 0) / 100;
 
-      await updateUserInKV(targetEmail, {
+      await updateUser(targetEmail, {
         isPro: true,
         subscriptionStatus: 'active',
         currentPeriodEnd: new Date(subscription.current_period_end * 1000).toISOString(),
-        lastPaymentDate: new Date().toISOString(),
-        lastPaymentAmount: paymentAmount,
-        lastUpdatedAt: new Date().toISOString()
+        lastPaymentAt: new Date().toISOString()
       });
 
       console.log(`✅ Payment processed for user: ${targetEmail}`);
@@ -278,10 +277,9 @@ async function handlePaymentFailed(invoice) {
       }
 
       // Don't immediately revoke Pro access - Stripe handles retry logic
-      await updateUserInKV(targetEmail, {
+      await updateUser(targetEmail, {
         subscriptionStatus: 'past_due',
-        lastFailedPaymentAt: new Date().toISOString(),
-        lastUpdatedAt: new Date().toISOString()
+        lastFailedPaymentAt: new Date().toISOString()
       });
 
       console.log(`⚠️ Payment failed for user: ${targetEmail}`);
@@ -292,29 +290,3 @@ async function handlePaymentFailed(invoice) {
   }
 }
 
-// Helper function to update user in KV storage
-async function updateUserInKV(email, updates) {
-  try {
-    if (process.env.KV_REST_API_URL && process.env.KV_REST_API_TOKEN) {
-      const { kv } = await import('@vercel/kv');
-
-      // Get existing user
-      let existingUser = await kv.get(`user:${email}`);
-
-      if (existingUser) {
-        // Update existing user
-        const updatedUser = {
-          ...existingUser,
-          ...updates
-        };
-
-        await kv.set(`user:${email}`, updatedUser);
-        console.log(`✅ User ${email} updated in KV`);
-      } else {
-        console.log(`⚠️ User ${email} not found for update`);
-      }
-    }
-  } catch (error) {
-    console.error('❌ KV update error:', error);
-  }
-}

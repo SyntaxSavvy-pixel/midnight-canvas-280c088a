@@ -2,6 +2,7 @@
 // Creates a Stripe Checkout session for Pro plan purchase
 
 const Stripe = require('stripe');
+import { getUser } from '../lib/database-supabase.js';
 
 // Initialize Stripe with secret key
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
@@ -32,10 +33,11 @@ export default async function handler(req, res) {
                 // Decode simple token
                 const tokenData = JSON.parse(Buffer.from(token, 'base64').toString());
                 if (tokenData.email && tokenData.exp > Math.floor(Date.now() / 1000)) {
-                    // Get user from database
-                    if (process.env.KV_REST_API_URL && process.env.KV_REST_API_TOKEN) {
-                        const { kv } = await import('@vercel/kv');
-                        authenticatedUser = await kv.get(`user:${tokenData.email}`);
+                    // Get user from Supabase
+                    try {
+                        authenticatedUser = await getUser(tokenData.email);
+                    } catch (dbError) {
+                        console.error('❌ Database error:', dbError);
                     }
                 }
             } catch (authError) {
