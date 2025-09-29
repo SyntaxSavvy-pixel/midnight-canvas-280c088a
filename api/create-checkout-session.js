@@ -83,8 +83,8 @@ export default async function handler(req, res) {
                 userName: authenticatedUser.name,
                 plan: 'pro'
             },
-            success_url: `https://tabmangment-extension-bz4chus0i-kavon-hicks-projects.vercel.app/payment-success.html?session_id={CHECKOUT_SESSION_ID}&email=${encodeURIComponent(authenticatedUser.email)}`,
-            cancel_url: `https://tabmangment-extension-bz4chus0i-kavon-hicks-projects.vercel.app/dashboard.html`,
+            success_url: `https://tabmangment-extension-kohl.vercel.app/payment-success.html?session_id={CHECKOUT_SESSION_ID}&email=${encodeURIComponent(authenticatedUser.email)}`,
+            cancel_url: `https://tabmangment-extension-kohl.vercel.app/dashboard.html`,
             billing_address_collection: 'auto',
             tax_id_collection: {
                 enabled: true
