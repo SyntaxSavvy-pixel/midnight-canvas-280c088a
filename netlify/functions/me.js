@@ -112,13 +112,14 @@ exports.handler = async (event, context) => {
                 // Accept demo credentials or any password 8+ chars
                 const isDemoUser = email === 'demo@example.com' && password === 'demo123';
 
+                // For testing purposes, allow any email with password 8+ chars or demo user
                 if (!isDemoUser && password.length < 8) {
                     return {
                         statusCode: 401,
                         headers,
                         body: JSON.stringify({
                             success: false,
-                            message: 'Invalid credentials'
+                            message: 'Password must be at least 8 characters'
                         })
                     };
                 }
@@ -178,12 +179,31 @@ exports.handler = async (event, context) => {
                     };
                 } catch (dbError) {
                     console.error('❌ Database error during login:', dbError);
+                    console.error('❌ Error details:', {
+                        message: dbError.message,
+                        code: dbError.code,
+                        details: dbError.details,
+                        hint: dbError.hint
+                    });
+
+                    // If it's a table doesn't exist error, provide a helpful message
+                    if (dbError.message && dbError.message.includes('relation "users" does not exist')) {
+                        return {
+                            statusCode: 500,
+                            headers,
+                            body: JSON.stringify({
+                                success: false,
+                                message: 'Database not set up. Please create the users table in Supabase.'
+                            })
+                        };
+                    }
+
                     return {
                         statusCode: 500,
                         headers,
                         body: JSON.stringify({
                             success: false,
-                            message: 'Login failed. Please try again.'
+                            message: `Database error: ${dbError.message || 'Login failed. Please try again.'}`
                         })
                     };
                 }
