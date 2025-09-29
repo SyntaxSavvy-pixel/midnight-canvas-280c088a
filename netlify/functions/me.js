@@ -2,6 +2,8 @@
 // Extension calls: GET /api/me?email=user@example.com
 // Returns: { email, plan: "pro"|"free" }
 
+const { saveUser, getUser, updateUser } = require('../../lib/database-supabase.js');
+
 exports.handler = async (event, context) => {
     // CORS headers
     const headers = {
@@ -57,7 +59,6 @@ exports.handler = async (event, context) => {
 
                 // Save user to Supabase
                 try {
-                    const { saveUser } = await import('../../lib/database-supabase.js');
                     const userData = {
                         userId: email,
                         email: email,
@@ -113,7 +114,6 @@ exports.handler = async (event, context) => {
 
                 // Get or create user in Supabase
                 try {
-                    const { getUser, saveUser } = await import('../../lib/database-supabase.js');
                     let user = await getUser(email);
 
                     if (!user) {
@@ -210,7 +210,6 @@ exports.handler = async (event, context) => {
         // Get user from Supabase database
         let user = null;
         try {
-            const { getUser } = await import('../../lib/database-supabase.js');
             user = await getUser(email);
         } catch (dbError) {
             console.error('❌ Database error:', dbError);
@@ -240,7 +239,6 @@ exports.handler = async (event, context) => {
                 // Subscription expired
                 currentlyPro = false;
                 try {
-                    const { updateUser } = await import('../../lib/database-supabase.js');
                     await updateUser(email, {
                         isPro: false,
                         subscriptionStatus: 'expired'

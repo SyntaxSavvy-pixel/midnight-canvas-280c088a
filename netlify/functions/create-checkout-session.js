@@ -2,6 +2,7 @@
 // Creates a Stripe Checkout session for Pro plan purchase
 
 const Stripe = require('stripe');
+const { getUser } = require('../../lib/database-supabase.js');
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
 exports.handler = async (event, context) => {
@@ -39,7 +40,6 @@ exports.handler = async (event, context) => {
                 if (tokenData.email && tokenData.exp > Math.floor(Date.now() / 1000)) {
                     // Get user from Supabase
                     try {
-                        const { getUser } = await import('../../lib/database-supabase.js');
                         authenticatedUser = await getUser(tokenData.email);
                     } catch (dbError) {
                         console.error('❌ Database error:', dbError);

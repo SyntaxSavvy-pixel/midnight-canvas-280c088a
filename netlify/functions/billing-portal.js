@@ -2,6 +2,7 @@
 // Creates a Stripe billing portal session
 
 const Stripe = require('stripe');
+const { getUser } = require('../../lib/database-supabase.js');
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
 exports.handler = async (event, context) => {
@@ -35,7 +36,6 @@ exports.handler = async (event, context) => {
             try {
                 const tokenData = JSON.parse(Buffer.from(token, 'base64').toString());
                 if (tokenData.email && tokenData.exp > Math.floor(Date.now() / 1000)) {
-                    const { getUser } = await import('../../lib/database-supabase.js');
                     authenticatedUser = await getUser(tokenData.email);
                 }
             } catch (authError) {
