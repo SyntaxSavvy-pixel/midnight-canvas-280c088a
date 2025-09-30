@@ -1645,6 +1645,12 @@
             if (event.source !== window) return;
 
             const message = event.data;
+
+            // Log ALL messages to debug
+            if (message && message.type && message.type.startsWith('TABMANGMENT_')) {
+                console.log('🔔 Received message:', message.type, message);
+            }
+
             if (!message || !message.type) return;
 
             // Handle bridge ready
@@ -1652,8 +1658,11 @@
                 console.log('✅ Bridge ready, extension ID:', message.extensionId);
                 extensionId = message.extensionId;
                 bridgeReady = true;
-                // Auto-sync when bridge becomes ready
-                setTimeout(() => syncWithExtension(), 500);
+                extensionConnected = true;
+
+                // Immediately sync
+                console.log('🚀 Bridge connected! Syncing now...');
+                syncWithExtension();
                 return;
             }
 
