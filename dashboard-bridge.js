@@ -67,9 +67,28 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 });
 
 // Notify the page that the bridge is ready
-window.postMessage({
-    type: 'TABMANGMENT_BRIDGE_READY',
-    extensionId: chrome.runtime.id
-}, '*');
+// Send immediately AND when DOM is ready to ensure the message is received
+function sendBridgeReady() {
+    const message = {
+        type: 'TABMANGMENT_BRIDGE_READY',
+        extensionId: chrome.runtime.id
+    };
 
-console.log('✅ Dashboard Bridge ready, extension ID:', chrome.runtime.id);
+    window.postMessage(message, '*');
+    console.log('✅ Dashboard Bridge ready, extension ID:', chrome.runtime.id);
+}
+
+// Send immediately
+sendBridgeReady();
+
+// Send again when DOM is ready (in case page listener isn't set up yet)
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', sendBridgeReady);
+} else {
+    // DOM already loaded, send again
+    setTimeout(sendBridgeReady, 100);
+}
+
+// Send one more time after a delay to catch late listeners
+setTimeout(sendBridgeReady, 500);
+setTimeout(sendBridgeReady, 1000);
