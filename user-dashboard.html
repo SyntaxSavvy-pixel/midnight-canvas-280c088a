@@ -1915,10 +1915,10 @@
                 clearTimeout(updateDebounceTimer);
             }
 
-            // Debounce rapid updates (wait 300ms before updating)
+            // Debounce rapid updates (wait 150ms - feels instant but prevents flicker)
             updateDebounceTimer = setTimeout(() => {
                 performStatsUpdate(stats);
-            }, 300);
+            }, 150);
         }
 
         function performStatsUpdate(stats) {
@@ -2004,43 +2004,67 @@
             // This function is kept for compatibility but does nothing now
         }
 
-        // Start periodic sync (every 10 seconds - smooth updates)
+        // Adaptive polling - fast when page active, slow when in background
+        let currentSyncInterval = 10000; // Start with 10s
+        const ACTIVE_SYNC_INTERVAL = 5000; // 5s when page is active
+        const IDLE_SYNC_INTERVAL = 30000; // 30s when page is idle
+
+        // Start periodic sync with adaptive intervals
         function startPeriodicSync() {
             if (syncInterval) {
                 clearInterval(syncInterval);
             }
 
-            syncInterval = setInterval(async () => {
-                // Always try to sync, even if previously disconnected
-                await syncWithExtension();
+            // Adaptive sync function
+            const performSync = async () => {
+                // Only sync if page is visible
+                if (!document.hidden) {
+                    await syncWithExtension();
+                }
 
                 // Check connection health
                 const lastUpdate = localStorage.getItem('lastStatsUpdate');
                 if (lastUpdate) {
                     const timeSinceUpdate = Date.now() - parseInt(lastUpdate);
-                    if (timeSinceUpdate > 30000) { // More than 30 seconds
-                        console.warn('⚠️ Stats may be stale, attempting reconnect...');
+                    if (timeSinceUpdate > 60000) { // More than 1 minute
+                        console.warn('⚠️ Stats stale, reconnecting...');
                         extensionConnected = false;
                         retryCount = 0;
                         await syncWithExtension();
                     }
                 }
-            }, 10000); // 10 seconds - smooth and efficient
+            };
 
-            console.log('⏰ Periodic sync started (every 10s)');
+            // Start with active interval
+            syncInterval = setInterval(performSync, currentSyncInterval);
+            console.log(`⏰ Periodic sync started (every ${currentSyncInterval/1000}s)`);
 
-            // Also sync on page visibility change
+            // Adaptive interval switching based on visibility
             document.addEventListener('visibilitychange', async () => {
                 if (!document.hidden) {
-                    console.log('👁️ Page visible, syncing...');
+                    console.log('👁️ Page visible - switching to fast sync (5s)');
+                    currentSyncInterval = ACTIVE_SYNC_INTERVAL;
+
+                    // Restart interval with new timing
+                    clearInterval(syncInterval);
+                    syncInterval = setInterval(performSync, currentSyncInterval);
+
+                    // Immediate sync when page becomes visible
                     retryCount = 0;
                     await syncWithExtension();
+                } else {
+                    console.log('😴 Page hidden - switching to slow sync (30s)');
+                    currentSyncInterval = IDLE_SYNC_INTERVAL;
+
+                    // Restart interval with new timing
+                    clearInterval(syncInterval);
+                    syncInterval = setInterval(performSync, currentSyncInterval);
                 }
             });
 
-            // Sync on window focus
+            // Sync on window focus (immediate)
             window.addEventListener('focus', async () => {
-                console.log('🔍 Window focused, syncing...');
+                console.log('🔍 Window focused, syncing now...');
                 retryCount = 0;
                 await syncWithExtension();
             });
