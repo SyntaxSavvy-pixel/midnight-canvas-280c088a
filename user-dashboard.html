@@ -1043,10 +1043,24 @@
 
         // Wait for bridge to be ready
         async function waitForBridge(timeout = 10000) {
+            console.log('⏳ Waiting for bridge... Current state:', {
+                bridgeReady,
+                extensionId,
+                hasChrome: typeof chrome !== 'undefined',
+                hasRuntime: typeof chrome?.runtime !== 'undefined'
+            });
+
             const startTime = Date.now();
             while (!bridgeReady && (Date.now() - startTime) < timeout) {
                 await new Promise(resolve => setTimeout(resolve, 100));
             }
+
+            console.log('Bridge wait result:', {
+                bridgeReady,
+                extensionId,
+                waitTime: Date.now() - startTime
+            });
+
             return bridgeReady;
         }
 
@@ -2134,8 +2148,15 @@
             window.location.href = '/mainlandingpage.html';
         }
 
+        // Set up bridge listener IMMEDIATELY (before DOMContentLoaded)
+        // This ensures we catch the BRIDGE_READY message from the extension
+        console.log('🎧 Setting up bridge listener early...');
+
         // Initialize dashboard on load
-        document.addEventListener('DOMContentLoaded', initDashboard);
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log('📄 DOM loaded, initializing dashboard...');
+            initDashboard();
+        });
 
         // Add CSS animation for notifications
         const style = document.createElement('style');
