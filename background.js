@@ -665,20 +665,34 @@ class TabManager {
 
     async getRealTimeStats() {
         try {
-            const tabs = await this.getAllTabData();
-            const storage = await chrome.storage.local.get(['tabsClosedAuto', 'totalTabsOpened']);
+            // Get ACTUAL current tabs from browser (not just tracked ones)
+            const allBrowserTabs = await chrome.tabs.query({});
+            const trackedTabs = await this.getAllTabData();
+            const storage = await chrome.storage.local.get(['tabsClosedAuto', 'totalTabsOpened', 'tabsClosedToday']);
 
-            // Calculate memory saved (rough estimate)
-            const closedTabs = storage.tabsClosedAuto || 0;
-            const memorySaved = Math.round(closedTabs * 50); // Estimate 50MB per tab
+            // Get auto-closed count (only count today's closures for "Auto-closed Today")
+            const today = new Date().toDateString();
+            const tabsClosedToday = storage.tabsClosedToday || {};
+            const autoClosedToday = tabsClosedToday[today] || 0;
+
+            // Calculate memory saved based on auto-closed tabs
+            // Average tab uses 50-100MB, we'll estimate 75MB per tab
+            const totalClosed = storage.tabsClosedAuto || 0;
+            const memorySaved = Math.round(totalClosed * 75); // More accurate estimate: 75MB per tab
+
+            console.log('📊 Real-time stats calculated:', {
+                totalTabs: allBrowserTabs.length,
+                autoClosedToday,
+                memorySaved
+            });
 
             return {
-                totalTabs: tabs.length,
-                autoClosed: closedTabs,
+                totalTabs: allBrowserTabs.length, // Actual browser tab count
+                autoClosed: autoClosedToday, // Only today's auto-closed tabs
                 memorySaved: memorySaved,
-                activeTabs: tabs.filter(tab => tab.active).length,
-                scheduledTabs: tabs.filter(tab => tab.timerActive && tab.autoCloseTime).length,
-                protectedTabs: tabs.filter(tab => tab.protected).length,
+                activeTabs: allBrowserTabs.filter(tab => tab.active).length,
+                scheduledTabs: trackedTabs.filter(tab => tab.timerActive && tab.autoCloseTime).length,
+                protectedTabs: trackedTabs.filter(tab => tab.protected).length,
                 timestamp: Date.now()
             };
         } catch (error) {
@@ -746,7 +760,7 @@ class TabManager {
         }
     }
 
-    async closeTab(tabId) {
+    async closeTab(tabId, isAutoClose = false) {
         try {
             const tabInfo = this.tabData.get(tabId);
 
@@ -756,8 +770,47 @@ class TabManager {
 
             await chrome.tabs.remove(tabId);
             this.tabData.delete(tabId);
+
+            // Track auto-closed tabs
+            if (isAutoClose) {
+                await this.trackAutoClosedTab();
+            }
         } catch (error) {
             throw error;
+        }
+    }
+
+    async trackAutoClosedTab() {
+        try {
+            const today = new Date().toDateString();
+            const storage = await chrome.storage.local.get(['tabsClosedAuto', 'tabsClosedToday']);
+
+            // Increment total auto-closed count
+            const totalClosed = (storage.tabsClosedAuto || 0) + 1;
+
+            // Increment today's count
+            const tabsClosedToday = storage.tabsClosedToday || {};
+            tabsClosedToday[today] = (tabsClosedToday[today] || 0) + 1;
+
+            // Clean up old days (keep only last 7 days)
+            const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toDateString();
+            for (const day in tabsClosedToday) {
+                if (new Date(day) < new Date(sevenDaysAgo)) {
+                    delete tabsClosedToday[day];
+                }
+            }
+
+            await chrome.storage.local.set({
+                tabsClosedAuto: totalClosed,
+                tabsClosedToday: tabsClosedToday
+            });
+
+            console.log(`📊 Auto-closed tab tracked. Today: ${tabsClosedToday[today]}, Total: ${totalClosed}`);
+
+            // Broadcast updated stats
+            this.broadcastStatsUpdate();
+        } catch (error) {
+            console.error('Error tracking auto-closed tab:', error);
         }
     }
 
@@ -806,7 +859,7 @@ class TabManager {
                     if (currentTime >= autoCloseTime) {
                         try {
                             if (!tabInfo.protected) {
-                                await this.closeTab(tabId);
+                                await this.closeTab(tabId, true); // true = auto-close
                             }
                         } catch (error) {
                         }
@@ -825,7 +878,7 @@ class TabManager {
                 tabInfo.timer = setTimeout(async () => {
                     try {
                         if (!tabInfo.protected) {
-                            await this.closeTab(tabId);
+                            await this.closeTab(tabId, true); // true = auto-close
                         }
                     } catch (error) {
                     }
@@ -1065,7 +1118,7 @@ class TabManager {
                         tabInfo.timer = setTimeout(async () => {
                             try {
                                 if (!tabInfo.protected) {
-                                    await this.closeTab(tabId);
+                                    await this.closeTab(tabId, true); // true = auto-close
                                 }
                             } catch (error) {
                             }
