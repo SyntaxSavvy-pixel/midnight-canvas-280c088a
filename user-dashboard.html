@@ -1056,13 +1056,20 @@
                 console.log('🔌 Attempting direct extension connection...');
                 console.log('Chrome object:', typeof chrome);
                 console.log('Chrome.runtime:', typeof chrome?.runtime);
+                console.log('Extension ID:', extensionId);
 
                 // Check if chrome.runtime is available
                 if (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.sendMessage) {
-                    console.log('✅ chrome.runtime available, sending GET_STATS message...');
+                    // Need extension ID to call from webpage
+                    if (!extensionId) {
+                        console.warn('⚠️ Extension ID not available yet, waiting for bridge...');
+                        return;
+                    }
 
-                    // Try to get stats directly from extension
-                    chrome.runtime.sendMessage({
+                    console.log('✅ chrome.runtime available, sending GET_STATS message to extension:', extensionId);
+
+                    // Try to get stats directly from extension (must include extension ID when calling from webpage)
+                    chrome.runtime.sendMessage(extensionId, {
                         type: 'GET_STATS'
                     }, (response) => {
                         if (chrome.runtime.lastError) {
@@ -1152,21 +1159,22 @@
             loadBillingHistory();
             loadPaymentMethod();
 
-            // Try to get stats immediately using chrome.runtime (if extension is installed)
-            console.log('🔍 Checking for extension...');
-            console.log('Extension available:', typeof chrome !== 'undefined' && chrome.runtime);
-            await tryDirectExtensionConnection();
-
-            // Wait for bridge to be ready
+            // Wait for bridge to be ready FIRST (it sets the extension ID)
             console.log('⏳ Waiting for extension bridge...');
             const isBridgeReady = await waitForBridge(5000);
 
             if (!isBridgeReady) {
-                console.warn('⚠️ Bridge not ready after 5 seconds - trying direct connection');
-                // Try direct connection one more time
-                await tryDirectExtensionConnection();
+                console.warn('⚠️ Bridge not ready after 5 seconds');
+                console.log('Extension might not be installed or bridge script not loading');
+                updateStatsDisplay({
+                    totalTabs: 0,
+                    autoClosed: 0,
+                    memorySaved: 0
+                });
                 return;
             }
+
+            console.log('✅ Bridge ready with extension ID:', extensionId);
 
             console.log('✅ Bridge ready, starting sync...');
 
