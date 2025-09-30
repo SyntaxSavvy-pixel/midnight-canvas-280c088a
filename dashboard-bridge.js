@@ -13,6 +13,11 @@ window.addEventListener('message', async (event) => {
     // Only handle messages with our specific type
     if (!message || !message.type || !message.type.startsWith('TABMANGMENT_')) return;
 
+    // Don't forward RESPONSE messages - they're meant for the page only
+    if (message.type === 'TABMANGMENT_RESPONSE') {
+        return;
+    }
+
     console.log('📨 Bridge received message from page:', message.type);
 
     try {
