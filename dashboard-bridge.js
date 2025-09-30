@@ -47,10 +47,11 @@ window.addEventListener('message', async (event) => {
 
 // Listen for messages from the background script
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-    console.log('📨 Bridge received message from background:', message.type);
+    console.log('📨 Bridge received message from background:', message.type, message);
 
     // Forward messages from background to the web page
     if (message.type === 'STATS_UPDATE' || message.type === 'EXTENSION_READY') {
+        console.log('📤 Forwarding to page:', message);
         window.postMessage({
             type: 'TABMANGMENT_' + message.type,
             data: message.data || message

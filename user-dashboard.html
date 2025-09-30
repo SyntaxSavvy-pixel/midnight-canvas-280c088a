@@ -1585,9 +1585,11 @@
 
             // Handle real-time updates from extension
             if (message.type === 'TABMANGMENT_STATS_UPDATE') {
-                console.log('📊 Real-time stats update received:', message.data);
-                if (message.data && message.data.data) {
-                    updateStatsDisplay(message.data.data);
+                console.log('📊 Real-time stats update received:', message);
+                // The stats can be in message.data.data OR message.data
+                const statsData = message.data?.data || message.data;
+                if (statsData) {
+                    updateStatsDisplay(statsData);
                 }
                 return;
             }
@@ -1771,6 +1773,8 @@
 
         // Update stats display with real data
         function updateStatsDisplay(stats) {
+            console.log('📊 Updating stats display with:', stats);
+
             if (!stats) {
                 setStatsDisconnected();
                 return;
@@ -1781,15 +1785,15 @@
             const memorySavedEl = document.getElementById('memory-saved');
 
             if (totalTabsEl) {
-                totalTabsEl.textContent = stats.totalTabs || 0;
+                totalTabsEl.innerHTML = stats.totalTabs || 0;
                 totalTabsEl.classList.remove('loading', 'error', 'disconnected');
             }
             if (autoClosedEl) {
-                autoClosedEl.textContent = stats.autoClosed || 0;
+                autoClosedEl.innerHTML = stats.autoClosed || 0;
                 autoClosedEl.classList.remove('loading', 'error', 'disconnected');
             }
             if (memorySavedEl) {
-                memorySavedEl.textContent = (stats.memorySaved || 0) + 'MB';
+                memorySavedEl.innerHTML = (stats.memorySaved || 0) + 'MB';
                 memorySavedEl.classList.remove('loading', 'error', 'disconnected');
             }
 
@@ -1799,6 +1803,8 @@
             // Store stats for later
             localStorage.setItem('extensionStats', JSON.stringify(stats));
             localStorage.setItem('lastStatsUpdate', Date.now().toString());
+
+            console.log('✅ Stats display updated successfully');
         }
 
         // Set disconnected state
