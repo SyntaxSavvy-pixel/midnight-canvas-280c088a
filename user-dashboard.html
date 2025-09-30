@@ -273,6 +273,12 @@
             font-weight: 700;
             color: #f8fafc;
             margin-bottom: 0.5rem;
+            transition: all 0.3s ease;
+        }
+
+        .stat-number.stat-updated {
+            color: #10b981;
+            transform: scale(1.05);
         }
 
         .stat-label {
@@ -1221,19 +1227,13 @@
                 console.error('Initial sync failed:', error);
             }
 
-            // Retry sync every second for the first 5 seconds to ensure we get data fast
-            let quickSyncCount = 0;
-            const quickSyncInterval = setInterval(async () => {
-                quickSyncCount++;
-                console.log(`🔄 Quick sync attempt ${quickSyncCount}/5`);
+            // Quick retry once after 2 seconds to ensure first load
+            setTimeout(async () => {
+                console.log('🔄 Second sync attempt...');
                 await syncWithExtension();
+            }, 2000);
 
-                if (quickSyncCount >= 5) {
-                    clearInterval(quickSyncInterval);
-                }
-            }, 1000);
-
-            // Start periodic sync (every 3 seconds for real-time updates)
+            // Start periodic sync (every 10 seconds - smooth and efficient)
             startPeriodicSync();
 
             // Start subscription status monitoring
@@ -1904,12 +1904,26 @@
             }
         }
 
-        // Update stats display with real data
-        function updateStatsDisplay(stats) {
-            console.log('📊 Updating stats display with:', stats);
+        // Cache last stats to prevent flickering
+        let lastStats = { totalTabs: 0, autoClosed: 0, memorySaved: 0 };
+        let updateDebounceTimer = null;
 
+        // Update stats display with real data (debounced to prevent flickering)
+        function updateStatsDisplay(stats) {
+            // Clear any pending update
+            if (updateDebounceTimer) {
+                clearTimeout(updateDebounceTimer);
+            }
+
+            // Debounce rapid updates (wait 300ms before updating)
+            updateDebounceTimer = setTimeout(() => {
+                performStatsUpdate(stats);
+            }, 300);
+        }
+
+        function performStatsUpdate(stats) {
             if (!stats) {
-                console.warn('⚠️ No stats provided, showing disconnected state');
+                console.warn('⚠️ No stats provided');
                 setStatsDisconnected();
                 return;
             }
@@ -1923,29 +1937,46 @@
             const autoClosed = stats.autoClosed !== undefined ? stats.autoClosed : 0;
             const memorySaved = stats.memorySaved !== undefined ? stats.memorySaved : 0;
 
-            console.log('📊 Displaying: Tabs:', totalTabs, 'Closed:', autoClosed, 'Memory:', memorySaved);
+            // Only update if values actually changed (prevents flickering)
+            let hasChanges = false;
 
-            if (totalTabsEl) {
+            if (totalTabsEl && lastStats.totalTabs !== totalTabs) {
                 totalTabsEl.innerHTML = totalTabs;
                 totalTabsEl.classList.remove('loading', 'error', 'disconnected');
+                totalTabsEl.classList.add('stat-updated');
+                setTimeout(() => totalTabsEl.classList.remove('stat-updated'), 500);
+                hasChanges = true;
             }
-            if (autoClosedEl) {
+
+            if (autoClosedEl && lastStats.autoClosed !== autoClosed) {
                 autoClosedEl.innerHTML = autoClosed;
                 autoClosedEl.classList.remove('loading', 'error', 'disconnected');
+                autoClosedEl.classList.add('stat-updated');
+                setTimeout(() => autoClosedEl.classList.remove('stat-updated'), 500);
+                hasChanges = true;
             }
-            if (memorySavedEl) {
+
+            if (memorySavedEl && lastStats.memorySaved !== memorySaved) {
                 memorySavedEl.innerHTML = memorySaved + 'MB';
                 memorySavedEl.classList.remove('loading', 'error', 'disconnected');
+                memorySavedEl.classList.add('stat-updated');
+                setTimeout(() => memorySavedEl.classList.remove('stat-updated'), 500);
+                hasChanges = true;
+            }
+
+            // Update cache
+            lastStats = { totalTabs, autoClosed, memorySaved };
+
+            if (hasChanges) {
+                console.log('📊 Stats updated:', { totalTabs, autoClosed, memorySaved });
             }
 
             // Remove loading state
             setStatsLoading(false);
 
-            // Store stats for later
+            // Store stats
             localStorage.setItem('extensionStats', JSON.stringify(stats));
             localStorage.setItem('lastStatsUpdate', Date.now().toString());
-
-            console.log('✅ Stats display updated successfully');
         }
 
         // Set disconnected state
@@ -1973,15 +2004,13 @@
             // This function is kept for compatibility but does nothing now
         }
 
-        // Start periodic sync (every 3 seconds for real-time updates)
+        // Start periodic sync (every 10 seconds - smooth updates)
         function startPeriodicSync() {
             if (syncInterval) {
                 clearInterval(syncInterval);
             }
 
             syncInterval = setInterval(async () => {
-                console.log('🔄 Periodic sync triggered');
-
                 // Always try to sync, even if previously disconnected
                 await syncWithExtension();
 
@@ -1989,16 +2018,16 @@
                 const lastUpdate = localStorage.getItem('lastStatsUpdate');
                 if (lastUpdate) {
                     const timeSinceUpdate = Date.now() - parseInt(lastUpdate);
-                    if (timeSinceUpdate > 10000) { // More than 10 seconds
+                    if (timeSinceUpdate > 30000) { // More than 30 seconds
                         console.warn('⚠️ Stats may be stale, attempting reconnect...');
                         extensionConnected = false;
                         retryCount = 0;
                         await syncWithExtension();
                     }
                 }
-            }, 3000); // 3 seconds for real-time updates
+            }, 10000); // 10 seconds - smooth and efficient
 
-            console.log('⏰ Periodic sync started (every 3s)');
+            console.log('⏰ Periodic sync started (every 10s)');
 
             // Also sync on page visibility change
             document.addEventListener('visibilitychange', async () => {
