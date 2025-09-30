@@ -1054,10 +1054,12 @@
         async function tryDirectExtensionConnection() {
             try {
                 console.log('🔌 Attempting direct extension connection...');
+                console.log('Chrome object:', typeof chrome);
+                console.log('Chrome.runtime:', typeof chrome?.runtime);
 
                 // Check if chrome.runtime is available
                 if (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.sendMessage) {
-                    console.log('✅ chrome.runtime available, sending message...');
+                    console.log('✅ chrome.runtime available, sending GET_STATS message...');
 
                     // Try to get stats directly from extension
                     chrome.runtime.sendMessage({
@@ -1065,7 +1067,8 @@
                     }, (response) => {
                         if (chrome.runtime.lastError) {
                             console.error('❌ Extension error:', chrome.runtime.lastError.message);
-                            console.log('Extension might not be installed or not responding');
+                            console.log('⚠️ Extension might not be installed or not responding');
+                            console.log('Setting stats to 0...');
                             updateStatsDisplay({
                                 totalTabs: 0,
                                 autoClosed: 0,
@@ -1074,14 +1077,20 @@
                             return;
                         }
 
-                        console.log('📨 Direct response from extension:', response);
+                        console.log('📨 Direct response from extension:', JSON.stringify(response, null, 2));
 
                         if (response && response.success && response.data) {
-                            console.log('✅ Got stats via direct connection!');
+                            console.log('✅ Got stats via direct connection!', response.data);
+                            updateStatsDisplay(response.data);
+                            extensionConnected = true;
+                        } else if (response && response.data) {
+                            // Sometimes response.success might not be set
+                            console.log('✅ Got stats (no success flag):', response.data);
                             updateStatsDisplay(response.data);
                             extensionConnected = true;
                         } else {
-                            console.warn('⚠️ Invalid response from extension');
+                            console.warn('⚠️ Invalid response from extension:', response);
+                            console.log('Setting stats to 0...');
                             updateStatsDisplay({
                                 totalTabs: 0,
                                 autoClosed: 0,
@@ -1090,7 +1099,9 @@
                         }
                     });
                 } else {
-                    console.warn('⚠️ chrome.runtime not available - extension not installed?');
+                    console.warn('⚠️ chrome.runtime not available');
+                    console.log('This means the extension is not installed or page is not allowed to communicate');
+                    console.log('Setting stats to 0...');
                     updateStatsDisplay({
                         totalTabs: 0,
                         autoClosed: 0,
@@ -1143,6 +1154,7 @@
 
             // Try to get stats immediately using chrome.runtime (if extension is installed)
             console.log('🔍 Checking for extension...');
+            console.log('Extension available:', typeof chrome !== 'undefined' && chrome.runtime);
             await tryDirectExtensionConnection();
 
             // Wait for bridge to be ready
@@ -1392,45 +1404,29 @@
         // Update plan display
         function updatePlanDisplay() {
             const planBadge = document.getElementById('plan-badge');
-            const currentPlanName = document.getElementById('current-plan-name');
-            const currentPlanPrice = document.getElementById('current-plan-price');
             const planActionBtn = document.getElementById('plan-action-btn');
             const freeStatus = document.getElementById('free-status');
             const proStatus = document.getElementById('pro-status');
 
+            if (!planBadge) {
+                console.warn('⚠️ Plan badge element not found');
+                return;
+            }
+
             if (userData.plan === 'pro') {
                 planBadge.textContent = 'Pro';
                 planBadge.className = 'plan-badge pro';
-                currentPlanName.textContent = 'Pro Plan';
-                currentPlanPrice.textContent = '$4.99/month';
-                planActionBtn.textContent = 'Downgrade to Free';
-                freeStatus.style.display = 'none';
-                proStatus.style.display = 'block';
-
-                // Update features list for pro
-                document.getElementById('current-plan-features').innerHTML = `
-                    <li><i data-feather="check" class="check"></i> Unlimited managed tabs</li>
-                    <li><i data-feather="check" class="check"></i> Advanced timer features</li>
-                    <li><i data-feather="check" class="check"></i> Detailed analytics</li>
-                    <li><i data-feather="check" class="check"></i> Custom themes</li>
-                `;
+                if (planActionBtn) planActionBtn.textContent = 'Downgrade to Free';
+                if (freeStatus) freeStatus.style.display = 'none';
+                if (proStatus) proStatus.style.display = 'block';
             } else {
                 planBadge.textContent = 'Free';
                 planBadge.className = 'plan-badge free';
-                currentPlanName.textContent = 'Free Plan';
-                currentPlanPrice.textContent = '$0/month';
-                planActionBtn.textContent = 'Upgrade to Pro';
-                freeStatus.style.display = 'block';
-                proStatus.style.display = 'none';
-
-                // Update features list for free
-                document.getElementById('current-plan-features').innerHTML = `
-                    <li><i data-feather="check" class="check"></i> Up to 10 managed tabs</li>
-                    <li><i data-feather="check" class="check"></i> Basic auto-close timers</li>
-                    <li><i data-feather="x" class="x"></i> Advanced analytics</li>
-                    <li><i data-feather="x" class="x"></i> Custom themes</li>
-                `;
+                if (planActionBtn) planActionBtn.textContent = 'Upgrade to Pro';
+                if (freeStatus) freeStatus.style.display = 'block';
+                if (proStatus) proStatus.style.display = 'none';
             }
+
             feather.replace();
         }
 
