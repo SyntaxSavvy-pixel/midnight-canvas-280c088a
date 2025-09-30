@@ -17,7 +17,6 @@
 
   "host_permissions": [
     "https://buy.stripe.com/*",
-    "https://*.vercel.app/*",
     "https://*.netlify.app/*",
     "https://api.emailjs.com/*",
     "https://billing.stripe.com/*",
@@ -43,7 +42,6 @@
     {
       "matches": [
         "https://*.netlify.app/*",
-        "https://*.vercel.app/*",
         "http://localhost/*",
         "https://localhost/*",
         "file://*/user-dashboard.html"
@@ -72,7 +70,7 @@
   },
   
   "content_security_policy": {
-    "extension_pages": "script-src 'self'; object-src 'self'; connect-src 'self' https://buy.stripe.com https://*.vercel.app https://*.netlify.app https://api.emailjs.com https://billing.stripe.com https://js.stripe.com https://www.googleapis.com/*;"
+    "extension_pages": "script-src 'self'; object-src 'self'; connect-src 'self' https://buy.stripe.com https://*.netlify.app https://api.emailjs.com https://billing.stripe.com https://js.stripe.com https://www.googleapis.com/*;"
   },
 
   "web_accessible_resources": [
@@ -85,7 +83,6 @@
   "externally_connectable": {
     "matches": [
       "https://*.netlify.app/*",
-      "https://*.vercel.app/*",
       "http://localhost/*",
       "https://localhost/*"
     ]
