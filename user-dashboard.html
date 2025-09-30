@@ -576,6 +576,122 @@
         .remove-btn:hover {
             background: rgba(239, 68, 68, 0.1);
         }
+
+        /* Loading dots animation */
+        .loading-dots {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
+            height: 2rem;
+        }
+
+        .loading-dots span {
+            width: 8px;
+            height: 8px;
+            background-color: #14b8a6;
+            border-radius: 50%;
+            animation: loadingDot 1.4s infinite ease-in-out;
+            opacity: 0.3;
+        }
+
+        .loading-dots span:nth-child(1) {
+            animation-delay: 0s;
+        }
+
+        .loading-dots span:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+
+        .loading-dots span:nth-child(3) {
+            animation-delay: 0.4s;
+        }
+
+        @keyframes loadingDot {
+            0%, 60%, 100% {
+                opacity: 0.3;
+                transform: translateY(0) scale(1);
+            }
+            30% {
+                opacity: 1;
+                transform: translateY(-8px) scale(1.3);
+            }
+        }
+
+        .stat-number.loading {
+            color: #14b8a6;
+            font-size: 2rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .stat-number.error {
+            color: #ef4444;
+            font-size: 1.2rem;
+        }
+
+        .stat-number.disconnected {
+            color: #94a3b8;
+            font-size: 1.5rem;
+        }
+
+        /* Connection status indicator */
+        .connection-status {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            padding: 0.75rem 1.25rem;
+            border-radius: 2rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.875rem;
+            font-weight: 500;
+            background: #1e293b;
+            border: 1px solid #334155;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+            z-index: 9999;
+            transition: all 0.3s ease;
+        }
+
+        .connection-status.connected {
+            background: rgba(16, 185, 129, 0.15);
+            border-color: #10b981;
+            color: #10b981;
+        }
+
+        .connection-status.disconnected {
+            background: rgba(239, 68, 68, 0.15);
+            border-color: #ef4444;
+            color: #ef4444;
+        }
+
+        .connection-status.connecting {
+            background: rgba(251, 191, 36, 0.15);
+            border-color: #fbbf24;
+            color: #fbbf24;
+        }
+
+        .connection-status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: currentColor;
+        }
+
+        .connection-status.connected .connection-status-dot {
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% {
+                opacity: 1;
+            }
+            50% {
+                opacity: 0.5;
+            }
+        }
     </style>
 </head>
 <body>
@@ -937,6 +1053,12 @@
         </main>
     </div>
 
+    <!-- Connection Status Indicator -->
+    <div class="connection-status connecting" id="connection-status">
+        <div class="connection-status-dot"></div>
+        <span id="connection-status-text">Connecting to extension...</span>
+    </div>
+
     <!-- Upgrade Modal -->
     <div class="modal" id="upgrade-modal">
         <div class="modal-content">
@@ -1015,11 +1137,20 @@
             loadUserSettings();
             loadBillingHistory();
 
+            // Start real-time listener for extension messages
+            startRealtimeListener();
+
             // Start real-time sync with extension
             await syncWithExtension();
 
+            // Start periodic sync
+            startPeriodicSync();
+
             // Start subscription status monitoring
             startSubscriptionStatusRefresh();
+
+            // Sync again after 2 seconds (ensure connection established)
+            setTimeout(() => syncWithExtension(), 2000);
         }
 
         // Load user data from API
@@ -1308,10 +1439,127 @@
             showNotification('Password updated successfully!', 'success');
         }
 
-        // Real extension sync
+        // Extension connection state
+        let extensionConnected = false;
+        let extensionId = 'YOUR_EXTENSION_ID'; // Will be detected dynamically
+        let syncInterval = null;
+        let extensionPinned = false;
+        let retryCount = 0;
+        const MAX_RETRIES = 3;
+
+        // Check if extension is installed and pinned
+        async function checkExtensionInstalled() {
+            try {
+                if (typeof chrome === 'undefined' || !chrome.runtime) {
+                    console.warn('Chrome runtime not available');
+                    return { installed: false, pinned: false };
+                }
+
+                // Try to ping the extension
+                const response = await new Promise((resolve) => {
+                    const timeout = setTimeout(() => {
+                        resolve(null);
+                    }, 2000);
+
+                    chrome.runtime.sendMessage({ type: 'PING', action: 'ping' }, (response) => {
+                        clearTimeout(timeout);
+                        if (chrome.runtime.lastError) {
+                            console.warn('Extension ping failed:', chrome.runtime.lastError.message);
+                            resolve(null);
+                        } else {
+                            resolve(response);
+                        }
+                    });
+                });
+
+                if (!response) {
+                    return { installed: false, pinned: false };
+                }
+
+                // Extension is installed and responding
+                // Note: Chrome doesn't provide direct API to check if extension is pinned
+                // We can only verify it's installed and communicating
+                return { installed: true, pinned: true };
+            } catch (error) {
+                console.error('Extension check error:', error);
+                return { installed: false, pinned: false };
+            }
+        }
+
+        // Check extension pinning status (indirect method)
+        async function verifyExtensionPinned() {
+            try {
+                // Send multiple pings to verify extension is actively responding
+                let successCount = 0;
+                for (let i = 0; i < 3; i++) {
+                    const response = await new Promise((resolve) => {
+                        const timeout = setTimeout(() => resolve(null), 1000);
+                        chrome.runtime.sendMessage({ type: 'PING' }, (res) => {
+                            clearTimeout(timeout);
+                            resolve(res);
+                        });
+                    });
+                    if (response) successCount++;
+                }
+
+                // If extension responds consistently, it's likely pinned and active
+                return successCount >= 2;
+            } catch (error) {
+                return false;
+            }
+        }
+
+        // Set loading state for stats
+        function setStatsLoading(loading) {
+            const statNumbers = ['total-tabs', 'auto-closed', 'memory-saved'];
+            statNumbers.forEach(id => {
+                const element = document.getElementById(id);
+                if (element) {
+                    if (loading) {
+                        element.innerHTML = '<span class="loading-dots"><span>.</span><span>.</span><span>.</span></span>';
+                        element.classList.add('loading');
+                    } else {
+                        element.classList.remove('loading');
+                    }
+                }
+            });
+        }
+
+        // Real-time extension sync with requirements check
         async function syncWithExtension() {
             try {
-                showNotification('Syncing with extension...', 'info');
+                console.log('🔄 Starting extension sync...');
+
+                // Set loading state
+                setStatsLoading(true);
+
+                // Check if extension is installed and pinned
+                const extensionStatus = await checkExtensionInstalled();
+
+                if (!extensionStatus.installed) {
+                    console.warn('⚠️ Extension not installed');
+                    setStatsLoading(false);
+                    setStatsDisconnected();
+                    updateConnectionStatus('disconnected', 'Extension not installed');
+                    showNotification('Extension not installed. Please install the Tabmangment extension.', 'error');
+                    extensionConnected = false;
+                    extensionPinned = false;
+                    return;
+                }
+
+                if (!extensionStatus.pinned) {
+                    console.warn('⚠️ Extension not pinned or not responding');
+                    setStatsLoading(false);
+                    setStatsDisconnected();
+                    updateConnectionStatus('disconnected', 'Extension not responding - please pin it');
+                    showNotification('Please pin the extension to enable real-time sync.', 'error');
+                    extensionConnected = false;
+                    extensionPinned = false;
+                    return;
+                }
+
+                extensionPinned = true;
+                updateConnectionStatus('connecting', 'Syncing data...');
 
                 // Prepare data to send to extension
                 const extensionData = {
@@ -1324,62 +1572,245 @@
                     timestamp: Date.now()
                 };
 
-                // Try to communicate with extension
-                if (typeof chrome !== 'undefined' && chrome.runtime) {
-                    try {
-                        // Send message to extension
-                        await chrome.runtime.sendMessage(extensionData);
-                        showNotification('Extension sync completed!', 'success');
-                    } catch (extensionError) {
-                        console.log('Extension not available or not installed');
-                        showNotification('Extension sync skipped - extension not detected', 'info');
+                // Request stats from extension
+                const statsRequest = {
+                    type: 'GET_STATS',
+                    timestamp: Date.now()
+                };
+
+                try {
+                    // Send subscription update
+                    await new Promise((resolve, reject) => {
+                        const timeout = setTimeout(() => reject(new Error('Timeout')), 3000);
+                        chrome.runtime.sendMessage(extensionData, (response) => {
+                            clearTimeout(timeout);
+                            if (chrome.runtime.lastError) {
+                                reject(chrome.runtime.lastError);
+                            } else {
+                                resolve(response);
+                            }
+                        });
+                    });
+
+                    // Request current stats
+                    const stats = await new Promise((resolve, reject) => {
+                        const timeout = setTimeout(() => reject(new Error('Timeout')), 3000);
+                        chrome.runtime.sendMessage(statsRequest, (response) => {
+                            clearTimeout(timeout);
+                            if (chrome.runtime.lastError) {
+                                reject(chrome.runtime.lastError);
+                            } else {
+                                resolve(response);
+                            }
+                        });
+                    });
+
+                    if (stats && stats.success && stats.data) {
+                        updateStatsDisplay(stats.data);
+                        extensionConnected = true;
+                        retryCount = 0; // Reset retry count on success
+                        console.log('✅ Extension sync completed!', stats.data);
+                        updateConnectionStatus('connected', 'Extension synced successfully');
+                    } else {
+                        throw new Error('Invalid stats response');
                     }
-                } else {
-                    // Extension API not available (normal for web version)
-                    console.log('Chrome extension API not available');
-                    showNotification('Web dashboard updated (extension sync skipped)', 'info');
+
+                } catch (extensionError) {
+                    console.error('Extension communication error:', extensionError);
+                    extensionConnected = false;
+
+                    // Implement retry logic
+                    if (retryCount < MAX_RETRIES) {
+                        retryCount++;
+                        console.log(`🔄 Retry attempt ${retryCount}/${MAX_RETRIES}...`);
+                        updateConnectionStatus('connecting', `Retrying... (${retryCount}/${MAX_RETRIES})`);
+                        setStatsLoading(true);
+                        setTimeout(() => {
+                            syncWithExtension();
+                        }, 2000 * retryCount); // Exponential backoff
+                        return;
+                    }
+
+                    setStatsLoading(false);
+                    setStatsDisconnected();
+                    updateConnectionStatus('disconnected', 'Sync failed - extension not responding');
+                    showNotification('Extension sync failed. Ensure extension is pinned and active.', 'error');
                 }
 
-                // Update dashboard stats regardless
-                await updateStats();
-
-                // Store sync data in localStorage for extension to read
+                // Store sync data in localStorage as backup
                 localStorage.setItem('dashboardSyncData', JSON.stringify(extensionData));
+                localStorage.setItem('lastSyncTime', Date.now().toString());
 
             } catch (error) {
-                console.error('Sync error:', error);
-                showNotification('Sync encountered issues: ' + error.message, 'error');
+                console.error('❌ Sync error:', error);
+                extensionConnected = false;
+                setStatsLoading(false);
+                showNotification('Sync error: ' + error.message, 'error');
             }
         }
 
-        // Update dashboard stats from extension or localStorage
-        async function updateStats() {
-            try {
-                // Try to get real stats from extension or localStorage
-                let stats = null;
-
-                // Check if extension data is available
-                const extensionStats = localStorage.getItem('extensionStats');
-                if (extensionStats) {
-                    stats = JSON.parse(extensionStats);
-                } else {
-                    // Fallback to default stats
-                    stats = {
-                        totalTabs: 0,
-                        autoClosed: 0,
-                        memorySaved: 0,
-                        focusScore: 0
-                    };
-                }
-
-                document.getElementById('total-tabs').textContent = stats.totalTabs || 0;
-                document.getElementById('auto-closed').textContent = stats.autoClosed || 0;
-                document.getElementById('memory-saved').textContent = (stats.memorySaved || 0) + 'MB';
-                document.getElementById('focus-score').textContent = (stats.focusScore || 0) + '%';
-
-            } catch (error) {
-                console.error('Error updating stats:', error);
+        // Update stats display with real data
+        function updateStatsDisplay(stats) {
+            if (!stats) {
+                setStatsDisconnected();
+                return;
             }
+
+            const totalTabsEl = document.getElementById('total-tabs');
+            const autoClosedEl = document.getElementById('auto-closed');
+            const memorySavedEl = document.getElementById('memory-saved');
+
+            if (totalTabsEl) {
+                totalTabsEl.textContent = stats.totalTabs || 0;
+                totalTabsEl.classList.remove('loading', 'error', 'disconnected');
+            }
+            if (autoClosedEl) {
+                autoClosedEl.textContent = stats.autoClosed || 0;
+                autoClosedEl.classList.remove('loading', 'error', 'disconnected');
+            }
+            if (memorySavedEl) {
+                memorySavedEl.textContent = (stats.memorySaved || 0) + 'MB';
+                memorySavedEl.classList.remove('loading', 'error', 'disconnected');
+            }
+
+            // Remove loading state
+            setStatsLoading(false);
+
+            // Store stats for later
+            localStorage.setItem('extensionStats', JSON.stringify(stats));
+            localStorage.setItem('lastStatsUpdate', Date.now().toString());
+        }
+
+        // Set disconnected state
+        function setStatsDisconnected() {
+            const statNumbers = ['total-tabs', 'auto-closed', 'memory-saved'];
+            statNumbers.forEach(id => {
+                const element = document.getElementById(id);
+                if (element) {
+                    element.textContent = '--';
+                    element.classList.remove('loading');
+                    element.classList.add('disconnected');
+                }
+            });
+        }
+
+        // Update connection status indicator
+        function updateConnectionStatus(status, message) {
+            const statusEl = document.getElementById('connection-status');
+            const textEl = document.getElementById('connection-status-text');
+
+            if (!statusEl || !textEl) return;
+
+            // Remove all status classes
+            statusEl.classList.remove('connected', 'disconnected', 'connecting');
+
+            // Add new status class
+            statusEl.classList.add(status);
+
+            // Update text
+            if (message) {
+                textEl.textContent = message;
+            } else {
+                switch (status) {
+                    case 'connected':
+                        textEl.textContent = 'Extension connected';
+                        break;
+                    case 'disconnected':
+                        textEl.textContent = 'Extension not connected';
+                        break;
+                    case 'connecting':
+                        textEl.textContent = 'Connecting...';
+                        break;
+                }
+            }
+
+            // Auto-hide after 5 seconds if connected
+            if (status === 'connected') {
+                setTimeout(() => {
+                    statusEl.style.opacity = '0';
+                    setTimeout(() => {
+                        statusEl.style.display = 'none';
+                    }, 300);
+                }, 5000);
+            } else {
+                statusEl.style.display = 'flex';
+                statusEl.style.opacity = '1';
+            }
+        }
+
+        // Update dashboard stats (called periodically)
+        async function updateStats() {
+            await syncWithExtension();
+        }
+
+        // Listen for real-time updates from extension
+        function startRealtimeListener() {
+            if (typeof chrome !== 'undefined' && chrome.runtime) {
+                chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+                    console.log('📨 Received message from extension:', message.type);
+
+                    if (message.type === 'STATS_UPDATE') {
+                        console.log('📊 Stats update received:', message.data);
+                        updateStatsDisplay(message.data);
+                        sendResponse({ success: true });
+                    }
+
+                    if (message.type === 'EXTENSION_READY') {
+                        console.log('✅ Extension is ready');
+                        extensionConnected = true;
+                        syncWithExtension();
+                        sendResponse({ success: true });
+                    }
+
+                    return true; // Keep channel open for async response
+                });
+
+                console.log('👂 Real-time listener started');
+            }
+        }
+
+        // Start periodic sync (every 30 seconds)
+        function startPeriodicSync() {
+            if (syncInterval) {
+                clearInterval(syncInterval);
+            }
+
+            syncInterval = setInterval(async () => {
+                console.log('🔄 Periodic sync triggered');
+
+                // Always try to sync, even if previously disconnected
+                await syncWithExtension();
+
+                // Check connection health
+                const lastUpdate = localStorage.getItem('lastStatsUpdate');
+                if (lastUpdate) {
+                    const timeSinceUpdate = Date.now() - parseInt(lastUpdate);
+                    if (timeSinceUpdate > 60000) { // More than 1 minute
+                        console.warn('⚠️ Stats may be stale, attempting reconnect...');
+                        extensionConnected = false;
+                        retryCount = 0;
+                        await syncWithExtension();
+                    }
+                }
+            }, 15000); // 15 seconds for more responsive updates
+
+            console.log('⏰ Periodic sync started (every 15s)');
+
+            // Also sync on page visibility change
+            document.addEventListener('visibilitychange', async () => {
+                if (!document.hidden) {
+                    console.log('👁️ Page visible, syncing...');
+                    retryCount = 0;
+                    await syncWithExtension();
+                }
+            });
+
+            // Sync on window focus
+            window.addEventListener('focus', async () => {
+                console.log('🔍 Window focused, syncing...');
+                retryCount = 0;
+                await syncWithExtension();
+            });
         }
 
         // Open Stripe billing portal

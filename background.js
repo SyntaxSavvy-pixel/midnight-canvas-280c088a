@@ -316,6 +316,8 @@ class TabManager {
         this.trackTab(tab);
         this.trackTabOpenAnalytics(tab);
 
+        // Broadcast stats update in real-time
+        this.broadcastStatsUpdate();
     }
 
     handleTabUpdated(tabId, changeInfo, tab) {
@@ -340,6 +342,8 @@ class TabManager {
 
         this.tabData.delete(tabId);
 
+        // Broadcast stats update in real-time
+        this.broadcastStatsUpdate();
     }
 
     async cleanupEmptyTab(tabId) {
@@ -522,8 +526,20 @@ class TabManager {
                     break;
 
                 case 'getStats':
+                case 'GET_STATS':
                     const stats = await this.getTabStats();
-                    sendResponse({ success: true, data: stats });
+                    const realTimeStats = await this.getRealTimeStats();
+                    sendResponse({ success: true, data: realTimeStats });
+                    break;
+
+                case 'PING':
+                    sendResponse({ success: true, message: 'pong', timestamp: Date.now() });
+                    break;
+
+                case 'SUBSCRIPTION_UPDATE':
+                    // Handle subscription update from dashboard
+                    await this.handleSubscriptionUpdate(message);
+                    sendResponse({ success: true });
                     break;
 
                 case 'protectTab':
@@ -645,6 +661,78 @@ class TabManager {
             protected: tabs.filter(tab => tab.protected).length,
             scheduled: tabs.filter(tab => tab.timerActive && tab.autoCloseTime).length
         };
+    }
+
+    async getRealTimeStats() {
+        try {
+            const tabs = await this.getAllTabData();
+            const storage = await chrome.storage.local.get(['tabsClosedAuto', 'totalTabsOpened']);
+
+            // Calculate memory saved (rough estimate)
+            const closedTabs = storage.tabsClosedAuto || 0;
+            const memorySaved = Math.round(closedTabs * 50); // Estimate 50MB per tab
+
+            return {
+                totalTabs: tabs.length,
+                autoClosed: closedTabs,
+                memorySaved: memorySaved,
+                activeTabs: tabs.filter(tab => tab.active).length,
+                scheduledTabs: tabs.filter(tab => tab.timerActive && tab.autoCloseTime).length,
+                protectedTabs: tabs.filter(tab => tab.protected).length,
+                timestamp: Date.now()
+            };
+        } catch (error) {
+            console.error('Error getting real-time stats:', error);
+            return {
+                totalTabs: 0,
+                autoClosed: 0,
+                memorySaved: 0,
+                activeTabs: 0,
+                scheduledTabs: 0,
+                protectedTabs: 0,
+                timestamp: Date.now()
+            };
+        }
+    }
+
+    async handleSubscriptionUpdate(message) {
+        try {
+            console.log('Received subscription update:', message);
+
+            // Store subscription data
+            if (message.user) {
+                await chrome.storage.local.set({
+                    userData: message.user,
+                    isPremium: message.isPro || false,
+                    subscriptionActive: message.subscriptionStatus === 'active',
+                    lastSyncTime: Date.now()
+                });
+
+                // Update extension behavior based on plan
+                await this.updateExtensionVisibility();
+            }
+
+            // Broadcast stats update back to dashboard
+            this.broadcastStatsUpdate();
+        } catch (error) {
+            console.error('Error handling subscription update:', error);
+        }
+    }
+
+    async broadcastStatsUpdate() {
+        try {
+            const stats = await this.getRealTimeStats();
+
+            // Try to send message to dashboard
+            chrome.runtime.sendMessage({
+                type: 'STATS_UPDATE',
+                data: stats
+            }).catch(() => {
+                // Dashboard might not be open, that's okay
+            });
+        } catch (error) {
+            console.error('Error broadcasting stats:', error);
+        }
     }
 
     async toggleProtection(tabId) {
