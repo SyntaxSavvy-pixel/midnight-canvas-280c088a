@@ -52,6 +52,11 @@ class SimpleAuth {
     }
 
     async handleMessage(message, sender, sendResponse) {
+        // Ignore RESPONSE messages - they're for the dashboard
+        if (message.type === 'RESPONSE' || message.type === 'TABMANGMENT_RESPONSE') {
+            return;
+        }
+
         console.log('📨 Extension message:', message.type);
 
         switch (message.type) {
@@ -83,6 +88,10 @@ class SimpleAuth {
                 break;
 
             default:
+                // Only log unknown messages that aren't internal Chrome messages
+                if (!message.type || !message.type.startsWith('_')) {
+                    console.log('⚠️ Unknown message type:', message.type);
+                }
                 sendResponse({ success: false, message: 'Unknown message type' });
         }
     }
@@ -114,10 +123,27 @@ class SimpleAuth {
             return;
         }
 
+        // If using fallback email, skip API check and set to free
+        if (this.userEmail.startsWith('fallback_')) {
+            console.log('📧 Fallback email detected - setting to free plan');
+            this.isPro = false;
+            await this.deactivateProFeatures();
+            return;
+        }
+
         try {
             console.log('🔍 Checking plan for:', this.userEmail);
 
             const response = await fetch(`${this.apiUrl}/api/me?email=${encodeURIComponent(this.userEmail)}`);
+
+            if (!response.ok) {
+                console.warn('⚠️ API returned status:', response.status);
+                // Default to free plan if user not found
+                this.isPro = false;
+                await this.deactivateProFeatures();
+                return;
+            }
+
             const userData = await response.json();
 
             console.log('📊 Plan check response:', userData);
@@ -133,6 +159,7 @@ class SimpleAuth {
         } catch (error) {
             console.error('❌ Failed to check user plan:', error);
             this.isPro = false;
+            await this.deactivateProFeatures();
         }
     }
 
