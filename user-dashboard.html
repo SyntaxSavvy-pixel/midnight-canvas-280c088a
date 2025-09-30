@@ -1502,13 +1502,28 @@
 
         function loadUserSettings() {
             const saved = localStorage.getItem('tabManagementSettings');
-            if (saved) {
+            if (!saved) return;
+
+            try {
                 const settings = JSON.parse(saved);
-                document.getElementById('default-timer').value = settings.defaultTimer || 30;
-                document.getElementById('max-tabs').value = settings.maxTabs || 20;
-                document.getElementById('weekend-mode').checked = settings.weekendMode || false;
-                document.getElementById('auto-close-toggle').checked = settings.autoCloseEnabled !== false;
-                document.getElementById('close-timer').value = settings.defaultTimer || 30;
+
+                // Safely set values with null checks
+                const defaultTimer = document.getElementById('default-timer');
+                if (defaultTimer) defaultTimer.value = settings.defaultTimer || 30;
+
+                const maxTabs = document.getElementById('max-tabs');
+                if (maxTabs) maxTabs.value = settings.maxTabs || 20;
+
+                const weekendMode = document.getElementById('weekend-mode');
+                if (weekendMode) weekendMode.checked = settings.weekendMode || false;
+
+                const autoCloseToggle = document.getElementById('auto-close-toggle');
+                if (autoCloseToggle) autoCloseToggle.checked = settings.autoCloseEnabled !== false;
+
+                const closeTimer = document.getElementById('close-timer');
+                if (closeTimer) closeTimer.value = settings.defaultTimer || 30;
+            } catch (error) {
+                console.error('Error loading user settings:', error);
             }
         }
 
