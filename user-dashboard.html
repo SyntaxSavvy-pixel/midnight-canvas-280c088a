@@ -710,39 +710,21 @@
                         <div class="stat-icon">
                             <i data-feather="monitor"></i>
                         </div>
-                        <div class="stat-number" id="total-tabs">
-                            <div class="loading-dots">
-                                <span></span>
-                                <span></span>
-                                <span></span>
-                            </div>
-                        </div>
+                        <div class="stat-number" id="total-tabs">0</div>
                         <div class="stat-label">Tabs Managed</div>
                     </div>
                     <div class="stat-card">
                         <div class="stat-icon">
                             <i data-feather="clock"></i>
                         </div>
-                        <div class="stat-number" id="auto-closed">
-                            <div class="loading-dots">
-                                <span></span>
-                                <span></span>
-                                <span></span>
-                            </div>
-                        </div>
+                        <div class="stat-number" id="auto-closed">0</div>
                         <div class="stat-label">Auto-closed Today</div>
                     </div>
                     <div class="stat-card">
                         <div class="stat-icon">
                             <i data-feather="zap"></i>
                         </div>
-                        <div class="stat-number" id="memory-saved">
-                            <div class="loading-dots">
-                                <span></span>
-                                <span></span>
-                                <span></span>
-                            </div>
-                        </div>
+                        <div class="stat-number" id="memory-saved">0MB</div>
                         <div class="stat-label">Memory Saved</div>
                     </div>
                 </div>
@@ -1122,30 +1104,30 @@
             // Start real-time listener for extension messages
             startRealtimeListener();
 
-            // Start real-time sync with extension
-            await syncWithExtension();
+            // Immediately try to get stats
+            try {
+                await syncWithExtension();
+            } catch (error) {
+                console.error('Initial sync failed:', error);
+            }
 
-            // Add timeout fallback - if no stats after 8 seconds, show zeros
-            setTimeout(() => {
-                const lastUpdate = localStorage.getItem('lastStatsUpdate');
-                if (!lastUpdate || (Date.now() - parseInt(lastUpdate)) > 8000) {
-                    console.warn('⚠️ No stats received - showing zeros');
-                    updateStatsDisplay({
-                        totalTabs: 0,
-                        autoClosed: 0,
-                        memorySaved: 0
-                    });
+            // Retry sync every second for the first 5 seconds to ensure we get data fast
+            let quickSyncCount = 0;
+            const quickSyncInterval = setInterval(async () => {
+                quickSyncCount++;
+                console.log(`🔄 Quick sync attempt ${quickSyncCount}/5`);
+                await syncWithExtension();
+
+                if (quickSyncCount >= 5) {
+                    clearInterval(quickSyncInterval);
                 }
-            }, 8000);
+            }, 1000);
 
-            // Start periodic sync
+            // Start periodic sync (every 3 seconds for real-time updates)
             startPeriodicSync();
 
             // Start subscription status monitoring
             startSubscriptionStatusRefresh();
-
-            // Sync again after 2 seconds (ensure connection established)
-            setTimeout(() => syncWithExtension(), 2000);
         }
 
         // Load payment method from Stripe
@@ -1873,7 +1855,7 @@
             // This function is kept for compatibility but does nothing now
         }
 
-        // Start periodic sync (every 30 seconds)
+        // Start periodic sync (every 3 seconds for real-time updates)
         function startPeriodicSync() {
             if (syncInterval) {
                 clearInterval(syncInterval);
@@ -1889,16 +1871,16 @@
                 const lastUpdate = localStorage.getItem('lastStatsUpdate');
                 if (lastUpdate) {
                     const timeSinceUpdate = Date.now() - parseInt(lastUpdate);
-                    if (timeSinceUpdate > 60000) { // More than 1 minute
+                    if (timeSinceUpdate > 10000) { // More than 10 seconds
                         console.warn('⚠️ Stats may be stale, attempting reconnect...');
                         extensionConnected = false;
                         retryCount = 0;
                         await syncWithExtension();
                     }
                 }
-            }, 15000); // 15 seconds for more responsive updates
+            }, 3000); // 3 seconds for real-time updates
 
-            console.log('⏰ Periodic sync started (every 15s)');
+            console.log('⏰ Periodic sync started (every 3s)');
 
             // Also sync on page visibility change
             document.addEventListener('visibilitychange', async () => {
