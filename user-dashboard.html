@@ -1050,6 +1050,63 @@
             return bridgeReady;
         }
 
+        // Try direct connection to extension (fallback method)
+        async function tryDirectExtensionConnection() {
+            try {
+                console.log('🔌 Attempting direct extension connection...');
+
+                // Check if chrome.runtime is available
+                if (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.sendMessage) {
+                    console.log('✅ chrome.runtime available, sending message...');
+
+                    // Try to get stats directly from extension
+                    chrome.runtime.sendMessage({
+                        type: 'GET_STATS'
+                    }, (response) => {
+                        if (chrome.runtime.lastError) {
+                            console.error('❌ Extension error:', chrome.runtime.lastError.message);
+                            console.log('Extension might not be installed or not responding');
+                            updateStatsDisplay({
+                                totalTabs: 0,
+                                autoClosed: 0,
+                                memorySaved: 0
+                            });
+                            return;
+                        }
+
+                        console.log('📨 Direct response from extension:', response);
+
+                        if (response && response.success && response.data) {
+                            console.log('✅ Got stats via direct connection!');
+                            updateStatsDisplay(response.data);
+                            extensionConnected = true;
+                        } else {
+                            console.warn('⚠️ Invalid response from extension');
+                            updateStatsDisplay({
+                                totalTabs: 0,
+                                autoClosed: 0,
+                                memorySaved: 0
+                            });
+                        }
+                    });
+                } else {
+                    console.warn('⚠️ chrome.runtime not available - extension not installed?');
+                    updateStatsDisplay({
+                        totalTabs: 0,
+                        autoClosed: 0,
+                        memorySaved: 0
+                    });
+                }
+            } catch (error) {
+                console.error('❌ Direct connection error:', error);
+                updateStatsDisplay({
+                    totalTabs: 0,
+                    autoClosed: 0,
+                    memorySaved: 0
+                });
+            }
+        }
+
         // Initialize dashboard
         async function initDashboard() {
             console.log('🚀 Initializing dashboard...');
@@ -1084,18 +1141,18 @@
             loadBillingHistory();
             loadPaymentMethod();
 
+            // Try to get stats immediately using chrome.runtime (if extension is installed)
+            console.log('🔍 Checking for extension...');
+            await tryDirectExtensionConnection();
+
             // Wait for bridge to be ready
             console.log('⏳ Waiting for extension bridge...');
             const isBridgeReady = await waitForBridge(5000);
 
             if (!isBridgeReady) {
-                console.warn('⚠️ Bridge not ready after 5 seconds - showing zeros');
-                // Show zeros instead of loading dots
-                updateStatsDisplay({
-                    totalTabs: 0,
-                    autoClosed: 0,
-                    memorySaved: 0
-                });
+                console.warn('⚠️ Bridge not ready after 5 seconds - trying direct connection');
+                // Try direct connection one more time
+                await tryDirectExtensionConnection();
                 return;
             }
 
