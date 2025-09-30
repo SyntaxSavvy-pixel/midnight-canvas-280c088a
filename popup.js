@@ -1617,20 +1617,11 @@ class TabmangmentPopup {
         });
     }
     handlePremiumButtonClick() {
-        if (this.isPremium) {
-            // User is already Pro - open subscription management
-            this.openSubscriptionManagement();
-        } else {
-            // User needs to upgrade - redirect to login/dashboard
-            if (window.openLoginPage) {
-                window.openLoginPage();
-            } else {
-                // Fallback - open login page directly
-                chrome.tabs.create({
-                    url: 'https://tabmangment.netlify.app/New-authentication.html'
-                });
-            }
-        }
+        // Always redirect to user dashboard for both free and pro users
+        chrome.tabs.create({
+            url: 'https://tabmangment.netlify.app/user-dashboard.html',
+            active: true
+        });
     }
     renderStats() {
         const activeEl = document.getElementById('active-tabs');
@@ -2899,41 +2890,19 @@ class TabmangmentPopup {
     }
     async handleUpgrade() {
         try {
-
-            const userEmail = await this.getUserEmail();
-            if (!userEmail) {
-                this.showMessage('❌ Valid email required for upgrade.', 'error');
-                return;
-            }
-
-            const checkoutUrl = await this.createPaymentSession(userEmail);
-            if (!checkoutUrl) {
-
-                const modal = document.querySelector('div[style*="position: fixed"][style*="z-index: 10000"]');
-                if (modal) modal.remove();
-                return;
-            }
-
-            await chrome.storage.local.set({
-                userEmail: userEmail,
-                paymentInitiated: Date.now(),
-                checkoutSessionId: checkoutUrl.includes('cs_') ? checkoutUrl.split('cs_')[1]?.split('?')[0] : null
-            });
-
+            // Close any open modals
             const modal = document.querySelector('div[style*="position: fixed"][style*="z-index: 10000"]');
             if (modal) modal.remove();
 
-            const tab = await chrome.tabs.create({
-                url: checkoutUrl,
+            // Redirect to user dashboard where they can manage subscription
+            await chrome.tabs.create({
+                url: 'https://tabmangment.netlify.app/user-dashboard.html',
                 active: true
             });
 
-            this.setupPaymentTabListener(tab.id, userEmail);
-
-            this.startAggressivePolling(userEmail);
-            this.showMessage('💳 Payment page opened - complete your upgrade!', 'success');
+            this.showMessage('📊 Opening your dashboard...', 'success');
         } catch (error) {
-            this.showMessage('❌ Upgrade temporarily unavailable.', 'error');
+            this.showMessage('❌ Failed to open dashboard.', 'error');
         }
     }
     setupPaymentTabListener(tabId, userEmail) {
@@ -4862,35 +4831,25 @@ Thank you!`);
         try {
             if (upgradeBtn) {
                 originalText = upgradeBtn.innerHTML;
-                upgradeBtn.innerHTML = '🔄 Opening Payment...';
+                upgradeBtn.innerHTML = '🔄 Opening Dashboard...';
                 upgradeBtn.disabled = true;
             }
-            const installationId = await this.getOrCreateInstallationId();
 
-            const userEmail = await this.getUserEmail();
-            if (!userEmail) {
-                this.showMessage('❌ Valid email required for upgrade.', 'error');
-                return;
-            }
-            const checkoutUrl = await this.createPaymentSession(userEmail);
-            if (!checkoutUrl) {
-                return;
-            }
-
+            // Redirect to user dashboard where they can manage subscription
             await chrome.tabs.create({
-                url: checkoutUrl,
+                url: 'https://tabmangment.netlify.app/user-dashboard.html',
                 active: true
             });
-            this.showMessage('💳 Payment page opened - complete your upgrade!', 'success');
+
+            this.showMessage('📊 Opening your dashboard...', 'success');
 
             if (upgradeBtn) {
                 upgradeBtn.innerHTML = originalText;
                 upgradeBtn.disabled = false;
             }
         } catch (error) {
-            this.showMessage('❌ Upgrade temporarily unavailable. Please try again.', 'error');
+            this.showMessage('❌ Failed to open dashboard. Please try again.', 'error');
         } finally {
-
             if (upgradeBtn) {
                 upgradeBtn.innerHTML = originalText;
                 upgradeBtn.disabled = false;
