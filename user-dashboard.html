@@ -636,62 +636,6 @@
             font-size: 1.5rem;
         }
 
-        /* Connection status indicator */
-        .connection-status {
-            position: fixed;
-            bottom: 2rem;
-            right: 2rem;
-            padding: 0.75rem 1.25rem;
-            border-radius: 2rem;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            font-size: 0.875rem;
-            font-weight: 500;
-            background: #1e293b;
-            border: 1px solid #334155;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-            z-index: 9999;
-            transition: all 0.3s ease;
-        }
-
-        .connection-status.connected {
-            background: rgba(16, 185, 129, 0.15);
-            border-color: #10b981;
-            color: #10b981;
-        }
-
-        .connection-status.disconnected {
-            background: rgba(239, 68, 68, 0.15);
-            border-color: #ef4444;
-            color: #ef4444;
-        }
-
-        .connection-status.connecting {
-            background: rgba(251, 191, 36, 0.15);
-            border-color: #fbbf24;
-            color: #fbbf24;
-        }
-
-        .connection-status-dot {
-            width: 8px;
-            height: 8px;
-            border-radius: 50%;
-            background: currentColor;
-        }
-
-        .connection-status.connected .connection-status-dot {
-            animation: pulse 2s infinite;
-        }
-
-        @keyframes pulse {
-            0%, 100% {
-                opacity: 1;
-            }
-            50% {
-                opacity: 0.5;
-            }
-        }
     </style>
 </head>
 <body>
@@ -766,25 +710,40 @@
                         <div class="stat-icon">
                             <i data-feather="monitor"></i>
                         </div>
-                        <div class="stat-number" id="total-tabs">127</div>
+                        <div class="stat-number" id="total-tabs">
+                            <div class="loading-dots">
+                                <span></span>
+                                <span></span>
+                                <span></span>
+                            </div>
+                        </div>
                         <div class="stat-label">Tabs Managed</div>
-                        <div class="stat-change positive">+12% vs last week</div>
                     </div>
                     <div class="stat-card">
                         <div class="stat-icon">
                             <i data-feather="clock"></i>
                         </div>
-                        <div class="stat-number" id="auto-closed">48</div>
+                        <div class="stat-number" id="auto-closed">
+                            <div class="loading-dots">
+                                <span></span>
+                                <span></span>
+                                <span></span>
+                            </div>
+                        </div>
                         <div class="stat-label">Auto-closed Today</div>
-                        <div class="stat-change positive">+23% efficiency</div>
                     </div>
                     <div class="stat-card">
                         <div class="stat-icon">
                             <i data-feather="zap"></i>
                         </div>
-                        <div class="stat-number" id="memory-saved">342MB</div>
+                        <div class="stat-number" id="memory-saved">
+                            <div class="loading-dots">
+                                <span></span>
+                                <span></span>
+                                <span></span>
+                            </div>
+                        </div>
                         <div class="stat-label">Memory Saved</div>
-                        <div class="stat-change positive">-31% usage</div>
                     </div>
                 </div>
 
@@ -1053,12 +1012,6 @@
         </main>
     </div>
 
-    <!-- Connection Status Indicator -->
-    <div class="connection-status connecting" id="connection-status">
-        <div class="connection-status-dot"></div>
-        <span id="connection-status-text">Connecting to extension...</span>
-    </div>
-
     <!-- Upgrade Modal -->
     <div class="modal" id="upgrade-modal">
         <div class="modal-content">
@@ -1151,12 +1104,10 @@
 
             // Wait for bridge to be ready
             console.log('⏳ Waiting for extension bridge...');
-            updateConnectionStatus('connecting', 'Waiting for extension...');
             const isBridgeReady = await waitForBridge(5000);
 
             if (!isBridgeReady) {
                 console.warn('⚠️ Bridge not ready after 5 seconds');
-                updateConnectionStatus('disconnected', 'Extension not detected - please install and enable it');
                 setStatsDisconnected();
                 return;
             }
@@ -1726,7 +1677,6 @@
                     console.warn('⚠️ Extension not installed');
                     setStatsLoading(false);
                     setStatsDisconnected();
-                    updateConnectionStatus('disconnected', 'Extension not installed');
                     showNotification('Extension not installed. Please install the Tabmangment extension.', 'error');
                     extensionConnected = false;
                     extensionPinned = false;
@@ -1737,7 +1687,6 @@
                     console.warn('⚠️ Extension not pinned or not responding');
                     setStatsLoading(false);
                     setStatsDisconnected();
-                    updateConnectionStatus('disconnected', 'Extension not responding - please pin it');
                     showNotification('Please pin the extension to enable real-time sync.', 'error');
                     extensionConnected = false;
                     extensionPinned = false;
@@ -1745,7 +1694,6 @@
                 }
 
                 extensionPinned = true;
-                updateConnectionStatus('connecting', 'Syncing data...');
 
                 // Prepare data to send to extension
                 const extensionData = {
@@ -1785,7 +1733,6 @@
                         extensionConnected = true;
                         retryCount = 0; // Reset retry count on success
                         console.log('✅ Extension sync completed!', stats.data);
-                        updateConnectionStatus('connected', 'Extension synced successfully');
                     } else {
                         throw new Error('Invalid stats response');
                     }
@@ -1798,7 +1745,6 @@
                     if (retryCount < MAX_RETRIES) {
                         retryCount++;
                         console.log(`🔄 Retry attempt ${retryCount}/${MAX_RETRIES}...`);
-                        updateConnectionStatus('connecting', `Retrying... (${retryCount}/${MAX_RETRIES})`);
                         setStatsLoading(true);
                         setTimeout(() => {
                             syncWithExtension();
@@ -1808,7 +1754,6 @@
 
                     setStatsLoading(false);
                     setStatsDisconnected();
-                    updateConnectionStatus('disconnected', 'Sync failed - extension not responding');
                     showNotification('Extension sync failed. Ensure extension is pinned and active.', 'error');
                 }
 
@@ -1867,50 +1812,6 @@
                     element.classList.add('disconnected');
                 }
             });
-        }
-
-        // Update connection status indicator
-        function updateConnectionStatus(status, message) {
-            const statusEl = document.getElementById('connection-status');
-            const textEl = document.getElementById('connection-status-text');
-
-            if (!statusEl || !textEl) return;
-
-            // Remove all status classes
-            statusEl.classList.remove('connected', 'disconnected', 'connecting');
-
-            // Add new status class
-            statusEl.classList.add(status);
-
-            // Update text
-            if (message) {
-                textEl.textContent = message;
-            } else {
-                switch (status) {
-                    case 'connected':
-                        textEl.textContent = 'Extension connected';
-                        break;
-                    case 'disconnected':
-                        textEl.textContent = 'Extension not connected';
-                        break;
-                    case 'connecting':
-                        textEl.textContent = 'Connecting...';
-                        break;
-                }
-            }
-
-            // Auto-hide after 5 seconds if connected
-            if (status === 'connected') {
-                setTimeout(() => {
-                    statusEl.style.opacity = '0';
-                    setTimeout(() => {
-                        statusEl.style.display = 'none';
-                    }, 300);
-                }, 5000);
-            } else {
-                statusEl.style.display = 'flex';
-                statusEl.style.opacity = '1';
-            }
         }
 
         // Update dashboard stats (called periodically)
