@@ -1107,8 +1107,13 @@
             const isBridgeReady = await waitForBridge(5000);
 
             if (!isBridgeReady) {
-                console.warn('⚠️ Bridge not ready after 5 seconds');
-                setStatsDisconnected();
+                console.warn('⚠️ Bridge not ready after 5 seconds - showing zeros');
+                // Show zeros instead of loading dots
+                updateStatsDisplay({
+                    totalTabs: 0,
+                    autoClosed: 0,
+                    memorySaved: 0
+                });
                 return;
             }
 
@@ -1119,6 +1124,19 @@
 
             // Start real-time sync with extension
             await syncWithExtension();
+
+            // Add timeout fallback - if no stats after 8 seconds, show zeros
+            setTimeout(() => {
+                const lastUpdate = localStorage.getItem('lastStatsUpdate');
+                if (!lastUpdate || (Date.now() - parseInt(lastUpdate)) > 8000) {
+                    console.warn('⚠️ No stats received - showing zeros');
+                    updateStatsDisplay({
+                        totalTabs: 0,
+                        autoClosed: 0,
+                        memorySaved: 0
+                    });
+                }
+            }, 8000);
 
             // Start periodic sync
             startPeriodicSync();
@@ -1730,12 +1748,27 @@
                         timestamp: Date.now()
                     });
 
-                    if (stats && stats.success && stats.data) {
-                        updateStatsDisplay(stats.data);
+                    console.log('📊 Raw stats response:', stats);
+
+                    // Handle different response formats
+                    let statsData = null;
+                    if (stats) {
+                        if (stats.data) {
+                            statsData = stats.data;
+                        } else if (stats.success && stats.totalTabs !== undefined) {
+                            statsData = stats;
+                        } else if (stats.totalTabs !== undefined) {
+                            statsData = stats;
+                        }
+                    }
+
+                    if (statsData) {
+                        updateStatsDisplay(statsData);
                         extensionConnected = true;
                         retryCount = 0; // Reset retry count on success
-                        console.log('✅ Extension sync completed!', stats.data);
+                        console.log('✅ Extension sync completed!', statsData);
                     } else {
+                        console.warn('⚠️ No valid stats data found in response:', stats);
                         throw new Error('Invalid stats response');
                     }
 
@@ -1776,6 +1809,7 @@
             console.log('📊 Updating stats display with:', stats);
 
             if (!stats) {
+                console.warn('⚠️ No stats provided, showing disconnected state');
                 setStatsDisconnected();
                 return;
             }
@@ -1784,16 +1818,23 @@
             const autoClosedEl = document.getElementById('auto-closed');
             const memorySavedEl = document.getElementById('memory-saved');
 
+            // Extract values with fallbacks
+            const totalTabs = stats.totalTabs !== undefined ? stats.totalTabs : 0;
+            const autoClosed = stats.autoClosed !== undefined ? stats.autoClosed : 0;
+            const memorySaved = stats.memorySaved !== undefined ? stats.memorySaved : 0;
+
+            console.log('📊 Displaying: Tabs:', totalTabs, 'Closed:', autoClosed, 'Memory:', memorySaved);
+
             if (totalTabsEl) {
-                totalTabsEl.innerHTML = stats.totalTabs || 0;
+                totalTabsEl.innerHTML = totalTabs;
                 totalTabsEl.classList.remove('loading', 'error', 'disconnected');
             }
             if (autoClosedEl) {
-                autoClosedEl.innerHTML = stats.autoClosed || 0;
+                autoClosedEl.innerHTML = autoClosed;
                 autoClosedEl.classList.remove('loading', 'error', 'disconnected');
             }
             if (memorySavedEl) {
-                memorySavedEl.innerHTML = (stats.memorySaved || 0) + 'MB';
+                memorySavedEl.innerHTML = memorySaved + 'MB';
                 memorySavedEl.classList.remove('loading', 'error', 'disconnected');
             }
 
