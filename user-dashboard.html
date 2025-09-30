@@ -973,16 +973,16 @@
                 <div class="card">
                     <div class="card-header">
                         <h2 class="card-title">Payment Method</h2>
-                        <button class="card-action secondary">
+                        <button class="card-action secondary" id="update-payment-btn" onclick="openBillingPortal()">
                             <i data-feather="credit-card"></i>
                             Update Payment
                         </button>
                     </div>
-                    <div style="display: flex; align-items: center; gap: 1rem;">
-                        <div style="width: 48px; height: 32px; background: #1e40af; border-radius: 0.375rem; display: flex; align-items: center; justify-content: center; color: white; font-weight: 600;">VISA</div>
-                        <div>
-                            <div style="color: #f8fafc;">•••• •••• •••• 4242</div>
-                            <div style="color: #94a3b8; font-size: 0.875rem;">Expires 12/25</div>
+                    <div id="payment-method-container" style="display: flex; align-items: center; gap: 1rem;">
+                        <div class="loading-dots" style="margin: 1rem 0;">
+                            <span></span>
+                            <span></span>
+                            <span></span>
                         </div>
                     </div>
                 </div>
@@ -1147,6 +1147,7 @@
             initChart();
             loadUserSettings();
             loadBillingHistory();
+            loadPaymentMethod();
 
             // Wait for bridge to be ready
             console.log('⏳ Waiting for extension bridge...');
@@ -1176,6 +1177,106 @@
 
             // Sync again after 2 seconds (ensure connection established)
             setTimeout(() => syncWithExtension(), 2000);
+        }
+
+        // Load payment method from Stripe
+        async function loadPaymentMethod() {
+            try {
+                const container = document.getElementById('payment-method-container');
+                if (!container) return;
+
+                // Show loading state
+                container.innerHTML = `
+                    <div class="loading-dots" style="margin: 1rem 0;">
+                        <span></span>
+                        <span></span>
+                        <span></span>
+                    </div>
+                `;
+
+                // Get user email
+                const storedUserData = localStorage.getItem('userData');
+                if (!storedUserData) {
+                    container.innerHTML = `
+                        <div style="color: #94a3b8; font-style: italic;">
+                            No payment method on file
+                        </div>
+                    `;
+                    return;
+                }
+
+                const userData = JSON.parse(storedUserData);
+                const userEmail = userData.email;
+
+                // Fetch payment method from API
+                const response = await fetch(`${API_BASE}/payment-method?email=${encodeURIComponent(userEmail)}`, {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${authToken}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error('Failed to fetch payment method');
+                }
+
+                const data = await response.json();
+
+                if (!data.paymentMethod) {
+                    // No payment method on file
+                    container.innerHTML = `
+                        <div style="color: #94a3b8; font-style: italic;">
+                            <svg style="width: 20px; height: 20px; display: inline-block; vertical-align: middle; margin-right: 0.5rem;" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                            No payment method on file
+                        </div>
+                    `;
+                    return;
+                }
+
+                const pm = data.paymentMethod;
+                const card = pm.card;
+
+                // Get card brand color
+                const brandColors = {
+                    'visa': '#1e40af',
+                    'mastercard': '#eb001b',
+                    'amex': '#006fcf',
+                    'discover': '#ff6000',
+                    'diners': '#0079be',
+                    'jcb': '#0e4c96',
+                    'unionpay': '#e21836'
+                };
+
+                const brandColor = brandColors[card.brand.toLowerCase()] || '#475569';
+                const brandName = card.brand.toUpperCase();
+
+                // Display payment method
+                container.innerHTML = `
+                    <div style="width: 48px; height: 32px; background: ${brandColor}; border-radius: 0.375rem; display: flex; align-items: center; justify-content: center; color: white; font-weight: 600; font-size: 10px;">
+                        ${brandName}
+                    </div>
+                    <div>
+                        <div style="color: #f8fafc;">•••• •••• •••• ${card.last4}</div>
+                        <div style="color: #94a3b8; font-size: 0.875rem;">
+                            Expires ${String(card.exp_month).padStart(2, '0')}/${String(card.exp_year).slice(-2)}
+                        </div>
+                    </div>
+                `;
+
+            } catch (error) {
+                console.error('Error loading payment method:', error);
+                const container = document.getElementById('payment-method-container');
+                if (container) {
+                    container.innerHTML = `
+                        <div style="color: #94a3b8; font-style: italic;">
+                            Unable to load payment method
+                        </div>
+                    `;
+                }
+            }
         }
 
         // Load user data from API
