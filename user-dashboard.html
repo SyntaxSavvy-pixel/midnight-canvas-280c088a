@@ -799,10 +799,19 @@
 
                 <div class="card">
                     <div class="card-header">
-                        <h2 class="card-title">Tab Usage Over Time</h2>
+                        <h2 class="card-title">Top Sites This Month</h2>
+                        <p style="color: #94a3b8; font-size: 0.875rem; margin-top: 0.5rem;">Time spent on your most visited domains</p>
                     </div>
                     <div class="chart-container">
                         <canvas id="usage-chart"></canvas>
+                    </div>
+                    <div id="chart-loading" style="text-align: center; padding: 2rem; color: #94a3b8;">
+                        <div class="loading-dots" style="display: inline-flex; gap: 0.5rem;">
+                            <span style="width: 8px; height: 8px; background: #14b8a6; border-radius: 50%; animation: pulse 1.5s ease-in-out infinite;"></span>
+                            <span style="width: 8px; height: 8px; background: #14b8a6; border-radius: 50%; animation: pulse 1.5s ease-in-out 0.2s infinite;"></span>
+                            <span style="width: 8px; height: 8px; background: #14b8a6; border-radius: 50%; animation: pulse 1.5s ease-in-out 0.4s infinite;"></span>
+                        </div>
+                        <p style="margin-top: 1rem;">Loading analytics...</p>
                     </div>
                 </div>
 
@@ -2118,58 +2127,187 @@
             `;
         }
 
-        // Chart initialization
-        function initChart() {
-            const ctx = document.getElementById('usage-chart').getContext('2d');
-            new Chart(ctx, {
-                type: 'line',
-                data: {
-                    labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
-                    datasets: [{
-                        label: 'Tabs Managed',
-                        data: [12, 19, 3, 5, 2, 3, 9],
-                        borderColor: '#14b8a6',
-                        backgroundColor: 'rgba(20, 184, 166, 0.1)',
-                        tension: 0.4
-                    }, {
-                        label: 'Auto-closed',
-                        data: [8, 12, 2, 3, 1, 2, 6],
-                        borderColor: '#6366f1',
-                        backgroundColor: 'rgba(99, 102, 241, 0.1)',
-                        tension: 0.4
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: {
-                            labels: {
-                                color: '#94a3b8'
-                            }
-                        }
+        // Chart instance (global)
+        let usageChart = null;
+
+        // Chart initialization with real analytics data
+        async function initChart() {
+            try {
+                // Get analytics data from extension
+                const analyticsData = await getMonthlyAnalytics();
+
+                // Hide loading indicator
+                const loadingEl = document.getElementById('chart-loading');
+                if (loadingEl) loadingEl.style.display = 'none';
+
+                const ctx = document.getElementById('usage-chart');
+                if (!ctx) return;
+
+                // Create horizontal bar chart
+                usageChart = new Chart(ctx.getContext('2d'), {
+                    type: 'bar',
+                    data: {
+                        labels: analyticsData.domains,
+                        datasets: [{
+                            label: 'Hours Spent',
+                            data: analyticsData.hours,
+                            backgroundColor: [
+                                'rgba(20, 184, 166, 0.8)',
+                                'rgba(99, 102, 241, 0.8)',
+                                'rgba(245, 158, 11, 0.8)',
+                                'rgba(236, 72, 153, 0.8)',
+                                'rgba(139, 92, 246, 0.8)'
+                            ],
+                            borderColor: [
+                                '#14b8a6',
+                                '#6366f1',
+                                '#f59e0b',
+                                '#ec4899',
+                                '#8b5cf6'
+                            ],
+                            borderWidth: 2
+                        }]
                     },
-                    scales: {
-                        y: {
-                            beginAtZero: true,
-                            ticks: {
-                                color: '#94a3b8'
+                    options: {
+                        indexAxis: 'y', // Horizontal bars
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                display: false
                             },
-                            grid: {
-                                color: '#334155'
+                            tooltip: {
+                                callbacks: {
+                                    label: function(context) {
+                                        const hours = context.parsed.x;
+                                        const minutes = Math.round((hours % 1) * 60);
+                                        const wholeHours = Math.floor(hours);
+                                        return `${wholeHours}h ${minutes}m`;
+                                    }
+                                }
                             }
                         },
-                        x: {
-                            ticks: {
-                                color: '#94a3b8'
+                        scales: {
+                            x: {
+                                beginAtZero: true,
+                                ticks: {
+                                    color: '#94a3b8',
+                                    callback: function(value) {
+                                        return value + 'h';
+                                    }
+                                },
+                                grid: {
+                                    color: '#334155'
+                                },
+                                title: {
+                                    display: true,
+                                    text: 'Time Spent (hours)',
+                                    color: '#94a3b8'
+                                }
                             },
-                            grid: {
-                                color: '#334155'
+                            y: {
+                                ticks: {
+                                    color: '#94a3b8',
+                                    font: {
+                                        size: 12
+                                    }
+                                },
+                                grid: {
+                                    display: false
+                                }
                             }
                         }
                     }
+                });
+
+                console.log('📊 Chart initialized with real data');
+            } catch (error) {
+                console.error('Chart init error:', error);
+                const loadingEl = document.getElementById('chart-loading');
+                if (loadingEl) {
+                    loadingEl.innerHTML = '<p style="color: #ef4444;">Unable to load analytics data</p>';
                 }
-            });
+            }
+        }
+
+        // Get monthly analytics from extension
+        async function getMonthlyAnalytics() {
+            try {
+                if (!bridgeReady || !extensionId) {
+                    throw new Error('Extension not connected');
+                }
+
+                // Request analytics from extension
+                const response = await sendMessageToExtension('GET_ANALYTICS', {
+                    timeframe: 'month'
+                });
+
+                if (response && response.success && response.data) {
+                    return processAnalyticsData(response.data);
+                }
+
+                // Fallback if no data
+                return {
+                    domains: ['No data yet'],
+                    hours: [0]
+                };
+            } catch (error) {
+                console.error('Failed to get analytics:', error);
+                return {
+                    domains: ['No data yet'],
+                    hours: [0]
+                };
+            }
+        }
+
+        // Process raw analytics into chart-ready format
+        function processAnalyticsData(rawData) {
+            try {
+                // Extract top 5 domains by time spent
+                const sorted = Object.entries(rawData)
+                    .map(([domain, data]) => ({
+                        domain: domain,
+                        totalTime: data.totalTime || 0,
+                        totalTabs: data.totalTabs || 0
+                    }))
+                    .sort((a, b) => b.totalTime - a.totalTime)
+                    .slice(0, 5);
+
+                if (sorted.length === 0) {
+                    return {
+                        domains: ['No data yet'],
+                        hours: [0]
+                    };
+                }
+
+                return {
+                    domains: sorted.map(item => item.domain),
+                    hours: sorted.map(item => item.totalTime / (1000 * 60 * 60)) // Convert ms to hours
+                };
+            } catch (error) {
+                console.error('Error processing analytics:', error);
+                return {
+                    domains: ['Error loading data'],
+                    hours: [0]
+                };
+            }
+        }
+
+        // Update chart with new data
+        async function updateChart() {
+            if (!usageChart) return;
+
+            try {
+                const analyticsData = await getMonthlyAnalytics();
+
+                usageChart.data.labels = analyticsData.domains;
+                usageChart.data.datasets[0].data = analyticsData.hours;
+                usageChart.update('none'); // Update without animation for smoothness
+
+                console.log('📊 Chart updated');
+            } catch (error) {
+                console.error('Chart update error:', error);
+            }
         }
 
         // Notification system

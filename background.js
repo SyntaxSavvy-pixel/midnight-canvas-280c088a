@@ -615,6 +615,12 @@ class TabManager {
                     sendResponse({ success: true });
                     break;
 
+                case 'GET_ANALYTICS':
+                    const storage = await chrome.storage.local.get(['tabAnalytics']);
+                    const analytics = storage.tabAnalytics || {};
+                    sendResponse({ success: true, data: analytics });
+                    break;
+
                 default:
                     sendResponse({ success: false, error: 'Unknown action: ' + messageType });
             }
