@@ -477,6 +477,11 @@ class TabManager {
 
     async checkAndActivateSubscription(email) {
         try {
+            // Skip API check for fallback emails - they're always free plan
+            if (email && email.startsWith('fallback_')) {
+                console.log('📧 Fallback email detected - skipping subscription check');
+                return false;
+            }
 
             const response = await fetch(`${CONFIG.API.CHECK_STATUS}?email=${encodeURIComponent(email)}`);
 
