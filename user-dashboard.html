@@ -1106,8 +1106,19 @@
         const API_BASE = window.location.origin + '/api';
         let authToken = null;
 
+        // Wait for bridge to be ready
+        async function waitForBridge(timeout = 10000) {
+            const startTime = Date.now();
+            while (!bridgeReady && (Date.now() - startTime) < timeout) {
+                await new Promise(resolve => setTimeout(resolve, 100));
+            }
+            return bridgeReady;
+        }
+
         // Initialize dashboard
         async function initDashboard() {
+            console.log('🚀 Initializing dashboard...');
+
             // Check authentication
             authToken = localStorage.getItem('tabmangment_token');
             const storedUserData = localStorage.getItem('userData');
@@ -1136,6 +1147,20 @@
             initChart();
             loadUserSettings();
             loadBillingHistory();
+
+            // Wait for bridge to be ready
+            console.log('⏳ Waiting for extension bridge...');
+            updateConnectionStatus('connecting', 'Waiting for extension...');
+            const isBridgeReady = await waitForBridge(5000);
+
+            if (!isBridgeReady) {
+                console.warn('⚠️ Bridge not ready after 5 seconds');
+                updateConnectionStatus('disconnected', 'Extension not detected - please install and enable it');
+                setStatsDisconnected();
+                return;
+            }
+
+            console.log('✅ Bridge ready, starting sync...');
 
             // Start real-time listener for extension messages
             startRealtimeListener();
@@ -1441,44 +1466,104 @@
 
         // Extension connection state
         let extensionConnected = false;
-        let extensionId = 'YOUR_EXTENSION_ID'; // Will be detected dynamically
+        let extensionId = null; // Will be detected dynamically
         let syncInterval = null;
         let extensionPinned = false;
         let retryCount = 0;
         const MAX_RETRIES = 3;
+        let bridgeReady = false;
+        let pendingRequests = new Map();
+
+        // Send message to extension via bridge
+        function sendMessageToExtension(type, data = {}) {
+            return new Promise((resolve, reject) => {
+                if (!bridgeReady) {
+                    reject(new Error('Bridge not ready'));
+                    return;
+                }
+
+                const requestId = Date.now() + '_' + Math.random();
+                const timeout = setTimeout(() => {
+                    pendingRequests.delete(requestId);
+                    reject(new Error('Request timeout'));
+                }, 3000);
+
+                pendingRequests.set(requestId, { resolve, reject, timeout });
+
+                window.postMessage({
+                    type: 'TABMANGMENT_' + type,
+                    requestId: requestId,
+                    ...data
+                }, '*');
+            });
+        }
+
+        // Listen for messages from the bridge
+        window.addEventListener('message', (event) => {
+            if (event.source !== window) return;
+
+            const message = event.data;
+            if (!message || !message.type) return;
+
+            // Handle bridge ready
+            if (message.type === 'TABMANGMENT_BRIDGE_READY') {
+                console.log('✅ Bridge ready, extension ID:', message.extensionId);
+                extensionId = message.extensionId;
+                bridgeReady = true;
+                // Auto-sync when bridge becomes ready
+                setTimeout(() => syncWithExtension(), 500);
+                return;
+            }
+
+            // Handle responses
+            if (message.type === 'TABMANGMENT_RESPONSE') {
+                const pending = pendingRequests.get(message.requestId);
+                if (pending) {
+                    clearTimeout(pending.timeout);
+                    pendingRequests.delete(message.requestId);
+
+                    if (message.success) {
+                        pending.resolve(message.data);
+                    } else {
+                        pending.reject(new Error(message.error || 'Request failed'));
+                    }
+                }
+                return;
+            }
+
+            // Handle real-time updates from extension
+            if (message.type === 'TABMANGMENT_STATS_UPDATE') {
+                console.log('📊 Real-time stats update received:', message.data);
+                if (message.data && message.data.data) {
+                    updateStatsDisplay(message.data.data);
+                }
+                return;
+            }
+
+            if (message.type === 'TABMANGMENT_EXTENSION_READY') {
+                console.log('✅ Extension ready signal received');
+                extensionConnected = true;
+                syncWithExtension();
+                return;
+            }
+        });
 
         // Check if extension is installed and pinned
         async function checkExtensionInstalled() {
             try {
-                if (typeof chrome === 'undefined' || !chrome.runtime) {
-                    console.warn('Chrome runtime not available');
+                if (!bridgeReady) {
+                    console.warn('Bridge not ready');
                     return { installed: false, pinned: false };
                 }
 
-                // Try to ping the extension
-                const response = await new Promise((resolve) => {
-                    const timeout = setTimeout(() => {
-                        resolve(null);
-                    }, 2000);
-
-                    chrome.runtime.sendMessage({ type: 'PING', action: 'ping' }, (response) => {
-                        clearTimeout(timeout);
-                        if (chrome.runtime.lastError) {
-                            console.warn('Extension ping failed:', chrome.runtime.lastError.message);
-                            resolve(null);
-                        } else {
-                            resolve(response);
-                        }
-                    });
-                });
+                // Try to ping the extension via bridge
+                const response = await sendMessageToExtension('PING');
 
                 if (!response) {
                     return { installed: false, pinned: false };
                 }
 
                 // Extension is installed and responding
-                // Note: Chrome doesn't provide direct API to check if extension is pinned
-                // We can only verify it's installed and communicating
                 return { installed: true, pinned: true };
             } catch (error) {
                 console.error('Extension check error:', error);
@@ -1489,17 +1574,17 @@
         // Check extension pinning status (indirect method)
         async function verifyExtensionPinned() {
             try {
+                if (!bridgeReady) return false;
+
                 // Send multiple pings to verify extension is actively responding
                 let successCount = 0;
                 for (let i = 0; i < 3; i++) {
-                    const response = await new Promise((resolve) => {
-                        const timeout = setTimeout(() => resolve(null), 1000);
-                        chrome.runtime.sendMessage({ type: 'PING' }, (res) => {
-                            clearTimeout(timeout);
-                            resolve(res);
-                        });
-                    });
-                    if (response) successCount++;
+                    try {
+                        const response = await sendMessageToExtension('PING');
+                        if (response) successCount++;
+                    } catch (e) {
+                        // Ping failed
+                    }
                 }
 
                 // If extension responds consistently, it's likely pinned and active
@@ -1579,30 +1664,19 @@
                 };
 
                 try {
-                    // Send subscription update
-                    await new Promise((resolve, reject) => {
-                        const timeout = setTimeout(() => reject(new Error('Timeout')), 3000);
-                        chrome.runtime.sendMessage(extensionData, (response) => {
-                            clearTimeout(timeout);
-                            if (chrome.runtime.lastError) {
-                                reject(chrome.runtime.lastError);
-                            } else {
-                                resolve(response);
-                            }
-                        });
+                    // Send subscription update via bridge
+                    await sendMessageToExtension('SUBSCRIPTION_UPDATE', {
+                        user: userData,
+                        plan: userData.plan,
+                        isPro: userData.isPro,
+                        subscriptionStatus: userData.subscriptionStatus,
+                        settings: JSON.parse(localStorage.getItem('tabManagementSettings') || '{}'),
+                        timestamp: Date.now()
                     });
 
-                    // Request current stats
-                    const stats = await new Promise((resolve, reject) => {
-                        const timeout = setTimeout(() => reject(new Error('Timeout')), 3000);
-                        chrome.runtime.sendMessage(statsRequest, (response) => {
-                            clearTimeout(timeout);
-                            if (chrome.runtime.lastError) {
-                                reject(chrome.runtime.lastError);
-                            } else {
-                                resolve(response);
-                            }
-                        });
+                    // Request current stats via bridge
+                    const stats = await sendMessageToExtension('GET_STATS', {
+                        timestamp: Date.now()
                     });
 
                     if (stats && stats.success && stats.data) {
@@ -1743,30 +1817,11 @@
             await syncWithExtension();
         }
 
-        // Listen for real-time updates from extension
+        // Listen for real-time updates from extension (now handled by window.addEventListener above)
         function startRealtimeListener() {
-            if (typeof chrome !== 'undefined' && chrome.runtime) {
-                chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-                    console.log('📨 Received message from extension:', message.type);
-
-                    if (message.type === 'STATS_UPDATE') {
-                        console.log('📊 Stats update received:', message.data);
-                        updateStatsDisplay(message.data);
-                        sendResponse({ success: true });
-                    }
-
-                    if (message.type === 'EXTENSION_READY') {
-                        console.log('✅ Extension is ready');
-                        extensionConnected = true;
-                        syncWithExtension();
-                        sendResponse({ success: true });
-                    }
-
-                    return true; // Keep channel open for async response
-                });
-
-                console.log('👂 Real-time listener started');
-            }
+            console.log('👂 Real-time listener started (using bridge)');
+            // The actual listener is in the window.addEventListener('message') above
+            // This function is kept for compatibility but does nothing now
         }
 
         // Start periodic sync (every 30 seconds)

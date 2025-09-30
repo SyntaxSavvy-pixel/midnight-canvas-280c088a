@@ -41,6 +41,18 @@
     },
     {
       "matches": [
+        "https://*.netlify.app/*",
+        "https://*.vercel.app/*",
+        "http://localhost/*",
+        "https://localhost/*",
+        "file://*/user-dashboard.html"
+      ],
+      "js": ["dashboard-bridge.js"],
+      "run_at": "document_start",
+      "all_frames": false
+    },
+    {
+      "matches": [
         "*://*.stripe.com/*",
         "*://*/success*",
         "*://*/payment*",
@@ -67,5 +79,14 @@
       "resources": ["icons/*"],
       "matches": ["<all_urls>"]
     }
-  ]
+  ],
+
+  "externally_connectable": {
+    "matches": [
+      "https://*.netlify.app/*",
+      "https://*.vercel.app/*",
+      "http://localhost/*",
+      "https://localhost/*"
+    ]
+  }
 }
