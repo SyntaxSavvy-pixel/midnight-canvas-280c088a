@@ -1046,18 +1046,37 @@
             console.log('⏳ Waiting for bridge... Current state:', {
                 bridgeReady,
                 extensionId,
+                windowBridge: window.TABMANGMENT_BRIDGE,
                 hasChrome: typeof chrome !== 'undefined',
                 hasRuntime: typeof chrome?.runtime !== 'undefined'
             });
 
+            // Check if bridge is already ready via window object
+            if (window.TABMANGMENT_BRIDGE?.ready) {
+                console.log('✅ Bridge already ready on window!');
+                extensionId = window.TABMANGMENT_BRIDGE.extensionId;
+                bridgeReady = true;
+                extensionConnected = true;
+                return true;
+            }
+
             const startTime = Date.now();
             while (!bridgeReady && (Date.now() - startTime) < timeout) {
+                // Check window.TABMANGMENT_BRIDGE each iteration
+                if (window.TABMANGMENT_BRIDGE?.ready) {
+                    console.log('✅ Bridge became ready!');
+                    extensionId = window.TABMANGMENT_BRIDGE.extensionId;
+                    bridgeReady = true;
+                    extensionConnected = true;
+                    break;
+                }
                 await new Promise(resolve => setTimeout(resolve, 100));
             }
 
             console.log('Bridge wait result:', {
                 bridgeReady,
                 extensionId,
+                windowBridge: window.TABMANGMENT_BRIDGE,
                 waitTime: Date.now() - startTime
             });
 
