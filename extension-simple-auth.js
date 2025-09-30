@@ -52,6 +52,11 @@ class SimpleAuth {
     }
 
     async handleMessage(message, sender, sendResponse) {
+        // Ignore messages without a type
+        if (!message || !message.type) {
+            return; // Silently ignore empty messages
+        }
+
         // Ignore RESPONSE messages - they're for the dashboard
         if (message.type === 'RESPONSE' || message.type === 'TABMANGMENT_RESPONSE') {
             return;
