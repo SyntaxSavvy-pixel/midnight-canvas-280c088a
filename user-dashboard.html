@@ -1227,7 +1227,20 @@
                 console.error('Initial sync failed:', error);
             }
 
-            // Quick retry once after 2 seconds to ensure first load
+            // If stats don't load within 1 second, show zeros instead of loading dots
+            setTimeout(() => {
+                const totalTabsEl = document.getElementById('total-tabs');
+                if (totalTabsEl && totalTabsEl.innerHTML.includes('loading-dots')) {
+                    console.log('⏱️ Loading timeout - showing zeros');
+                    updateStatsDisplay({
+                        totalTabs: 0,
+                        autoClosed: 0,
+                        memorySaved: 0
+                    });
+                }
+            }, 1000);
+
+            // Quick retry once after 2 seconds to get real data
             setTimeout(async () => {
                 console.log('🔄 Second sync attempt...');
                 await syncWithExtension();
@@ -1910,15 +1923,22 @@
 
         // Update stats display with real data (debounced to prevent flickering)
         function updateStatsDisplay(stats) {
+            // Check if this is first load (loading dots still showing)
+            const totalTabsEl = document.getElementById('total-tabs');
+            const isFirstLoad = totalTabsEl && totalTabsEl.innerHTML.includes('loading-dots');
+
             // Clear any pending update
             if (updateDebounceTimer) {
                 clearTimeout(updateDebounceTimer);
             }
 
-            // Debounce rapid updates (wait 150ms - feels instant but prevents flicker)
+            // First load: no debounce (instant)
+            // Subsequent updates: 150ms debounce to prevent flicker
+            const debounceDelay = isFirstLoad ? 0 : 150;
+
             updateDebounceTimer = setTimeout(() => {
                 performStatsUpdate(stats);
-            }, 150);
+            }, debounceDelay);
         }
 
         function performStatsUpdate(stats) {
@@ -1932,35 +1952,49 @@
             const autoClosedEl = document.getElementById('auto-closed');
             const memorySavedEl = document.getElementById('memory-saved');
 
+            if (!totalTabsEl || !autoClosedEl || !memorySavedEl) {
+                console.warn('⚠️ Stats elements not found');
+                return;
+            }
+
             // Extract values with fallbacks
             const totalTabs = stats.totalTabs !== undefined ? stats.totalTabs : 0;
             const autoClosed = stats.autoClosed !== undefined ? stats.autoClosed : 0;
             const memorySaved = stats.memorySaved !== undefined ? stats.memorySaved : 0;
 
-            // Only update if values actually changed (prevents flickering)
+            // Check if we're replacing loading dots (first load)
+            const isFirstLoad = totalTabsEl.innerHTML.includes('loading-dots');
+
+            // Only update if values actually changed OR it's first load (prevents flickering)
             let hasChanges = false;
 
-            if (totalTabsEl && lastStats.totalTabs !== totalTabs) {
+            if (isFirstLoad || lastStats.totalTabs !== totalTabs) {
                 totalTabsEl.innerHTML = totalTabs;
                 totalTabsEl.classList.remove('loading', 'error', 'disconnected');
-                totalTabsEl.classList.add('stat-updated');
-                setTimeout(() => totalTabsEl.classList.remove('stat-updated'), 500);
+                if (!isFirstLoad) {
+                    totalTabsEl.classList.add('stat-updated');
+                    setTimeout(() => totalTabsEl.classList.remove('stat-updated'), 500);
+                }
                 hasChanges = true;
             }
 
-            if (autoClosedEl && lastStats.autoClosed !== autoClosed) {
+            if (isFirstLoad || lastStats.autoClosed !== autoClosed) {
                 autoClosedEl.innerHTML = autoClosed;
                 autoClosedEl.classList.remove('loading', 'error', 'disconnected');
-                autoClosedEl.classList.add('stat-updated');
-                setTimeout(() => autoClosedEl.classList.remove('stat-updated'), 500);
+                if (!isFirstLoad) {
+                    autoClosedEl.classList.add('stat-updated');
+                    setTimeout(() => autoClosedEl.classList.remove('stat-updated'), 500);
+                }
                 hasChanges = true;
             }
 
-            if (memorySavedEl && lastStats.memorySaved !== memorySaved) {
+            if (isFirstLoad || lastStats.memorySaved !== memorySaved) {
                 memorySavedEl.innerHTML = memorySaved + 'MB';
                 memorySavedEl.classList.remove('loading', 'error', 'disconnected');
-                memorySavedEl.classList.add('stat-updated');
-                setTimeout(() => memorySavedEl.classList.remove('stat-updated'), 500);
+                if (!isFirstLoad) {
+                    memorySavedEl.classList.add('stat-updated');
+                    setTimeout(() => memorySavedEl.classList.remove('stat-updated'), 500);
+                }
                 hasChanges = true;
             }
 
