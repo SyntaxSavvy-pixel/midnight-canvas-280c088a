@@ -1,10 +1,10 @@
 // Temporarily removed import to test service worker loading
 const CONFIG = {
     API: {
-        BASE: '/api',
-        CREATE_CHECKOUT: '/api/create-checkout',
-        CHECK_STATUS: '/api/status',
-        BILLING_PORTAL: '/api/billing-portal'
+        BASE: 'https://tabmangment.netlify.app/api',
+        CREATE_CHECKOUT: 'https://tabmangment.netlify.app/api/create-checkout',
+        CHECK_STATUS: 'https://tabmangment.netlify.app/api/status',
+        BILLING_PORTAL: 'https://tabmangment.netlify.app/api/billing-portal'
     },
     EXTENSION: {
         DEFAULT_TAB_LIMIT: 10,
