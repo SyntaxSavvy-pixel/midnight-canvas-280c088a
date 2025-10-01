@@ -1017,6 +1017,7 @@
 
         // API Configuration - Update this with your Netlify domain
         const API_BASE = window.location.origin + '/api';
+        const STRIPE_PRICE_ID = 'price_1Rzw2LLJKLfllJJD6HPKEDHK'; // Pro plan price ID
         let authToken = null;
 
         // Wait for bridge to be ready
@@ -1492,7 +1493,7 @@
                         'Authorization': `Bearer ${authToken}`
                     },
                     body: JSON.stringify({
-                        priceId: window.STRIPE_PRICE_ID || 'price_placeholder'
+                        priceId: STRIPE_PRICE_ID
                     })
                 });
 
