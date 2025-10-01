@@ -6144,46 +6144,6 @@ Thank you!`);
         } catch (error) {
         }
     }
-    showNotification(message, type = 'info') {
-        const notification = document.createElement('div');
-        notification.className = `notification notification-${type}`;
-        notification.textContent = message;
-        notification.style.cssText = `
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            padding: 12px 16px;
-            border-radius: 8px;
-            color: white;
-            font-weight: 500;
-            z-index: 10000;
-            max-width: 300px;
-            word-wrap: break-word;
-            animation: slideIn 0.3s ease-out;
-        `;
-        switch (type) {
-            case 'success':
-                notification.style.backgroundColor = '#10b981';
-                break;
-            case 'error':
-                notification.style.backgroundColor = '#ef4444';
-                break;
-            case 'warning':
-                notification.style.backgroundColor = '#f59e0b';
-                break;
-            default:
-                notification.style.backgroundColor = '#3b82f6';
-        }
-        document.body.appendChild(notification);
-        setTimeout(() => {
-            if (notification.parentNode) {
-                notification.style.animation = 'slideOut 0.3s ease-in';
-                setTimeout(() => {
-                    notification.remove();
-                }, 300);
-            }
-        }, 3000);
-    }
 }
 let popup;
 if (document.readyState === 'loading') {

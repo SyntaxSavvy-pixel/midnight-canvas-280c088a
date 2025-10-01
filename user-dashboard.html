@@ -1199,7 +1199,6 @@
             const sessionId = urlParams.get('session_id');
             if (sessionId) {
                 console.log('💳 Returning from Stripe checkout, verifying payment...');
-                showNotification('Verifying your payment...', 'info');
                 await verifyStripeSession(sessionId, userEmail);
             }
 
@@ -1371,8 +1370,6 @@
         // Load user data from API
         async function loadUserData(email) {
             try {
-                showNotification('Loading user data...', 'info');
-
                 const response = await fetch(`${API_BASE}/me?email=${encodeURIComponent(email)}`, {
                     method: 'GET',
                     headers: {
@@ -1397,14 +1394,11 @@
 
                     // Save to localStorage
                     localStorage.setItem('userData', JSON.stringify(userData));
-
-                    showNotification('User data loaded successfully!', 'success');
                 } else {
                     throw new Error('Failed to load user data');
                 }
             } catch (error) {
                 console.error('Error loading user data:', error);
-                showNotification('Failed to load user data', 'error');
 
                 // Try to load from localStorage as fallback
                 const storedUserData = localStorage.getItem('userData');
@@ -1522,8 +1516,6 @@
                     throw new Error('Stripe configuration not loaded. Please refresh the page.');
                 }
 
-                showNotification('Creating checkout session...', 'info');
-
                 const response = await fetch(`${API_BASE}/create-checkout-session`, {
                     method: 'POST',
                     headers: {
@@ -1546,7 +1538,6 @@
                 }
             } catch (error) {
                 console.error('Error creating checkout session:', error);
-                showNotification('Failed to start upgrade process: ' + error.message, 'error');
             }
         }
 
@@ -1554,7 +1545,6 @@
             if (confirm('Are you sure you want to downgrade to the Free plan? You will lose access to Pro features.')) {
                 userData.plan = 'free';
                 updatePlanDisplay();
-                showNotification('Downgraded to Free plan', 'info');
                 syncWithExtension();
             }
         }
@@ -1569,7 +1559,6 @@
             };
 
             localStorage.setItem('tabManagementSettings', JSON.stringify(settings));
-            showNotification('Settings saved successfully!', 'success');
             syncWithExtension();
         }
 
@@ -1616,13 +1605,11 @@
                 whitelistItems.appendChild(newItem);
                 document.getElementById('whitelist-domain').value = '';
                 feather.replace();
-                showNotification(`Added ${domain} to whitelist`, 'success');
             }
         }
 
         function removeFromWhitelist(button) {
             button.closest('.whitelist-item').remove();
-            showNotification('Removed from whitelist', 'info');
         }
 
         // Profile management
@@ -1631,7 +1618,6 @@
             userData.email = document.getElementById('profile-email').value;
             userData.avatar = userData.name.split(' ').map(n => n[0]).join('').toUpperCase();
             updateUserDisplay();
-            showNotification('Profile updated successfully!', 'success');
         }
 
         function updatePassword() {
@@ -1640,12 +1626,10 @@
             const confirm = document.getElementById('confirm-password').value;
 
             if (!current || !newPass || !confirm) {
-                showNotification('Please fill in all password fields', 'error');
                 return;
             }
 
             if (newPass !== confirm) {
-                showNotification('New passwords do not match', 'error');
                 return;
             }
 
@@ -1653,8 +1637,6 @@
             document.getElementById('current-password').value = '';
             document.getElementById('new-password').value = '';
             document.getElementById('confirm-password').value = '';
-
-            showNotification('Password updated successfully!', 'success');
         }
 
         // Extension connection state
@@ -1829,7 +1811,6 @@
                     console.warn('⚠️ Extension not installed');
                     setStatsLoading(false);
                     setStatsDisconnected();
-                    showNotification('Extension not installed. Please install the Tabmangment extension.', 'error');
                     extensionConnected = false;
                     extensionPinned = false;
                     return;
@@ -1839,7 +1820,6 @@
                     console.warn('⚠️ Extension not pinned or not responding');
                     setStatsLoading(false);
                     setStatsDisconnected();
-                    showNotification('Please pin the extension to enable real-time sync.', 'error');
                     extensionConnected = false;
                     extensionPinned = false;
                     return;
@@ -1905,7 +1885,6 @@
 
                     setStatsLoading(false);
                     setStatsDisconnected();
-                    showNotification('Extension sync failed. Ensure extension is pinned and active.', 'error');
                 }
 
                 // Store sync data in localStorage as backup
@@ -1916,7 +1895,6 @@
                 console.error('❌ Sync error:', error);
                 extensionConnected = false;
                 setStatsLoading(false);
-                showNotification('Sync error: ' + error.message, 'error');
             }
         }
 
@@ -2110,8 +2088,6 @@
         // Open Stripe billing portal
         async function openBillingPortal() {
             try {
-                showNotification('Opening billing portal...', 'info');
-
                 const response = await fetch(`${API_BASE}/billing-portal`, {
                     method: 'POST',
                     headers: {
@@ -2132,7 +2108,6 @@
                 }
             } catch (error) {
                 console.error('Error opening billing portal:', error);
-                showNotification('Failed to open billing portal', 'error');
             }
         }
 
@@ -2341,29 +2316,6 @@
             }
         }
 
-        // Notification system
-        function showNotification(message, type = 'info') {
-            const notification = document.createElement('div');
-            notification.style.cssText = `
-                position: fixed;
-                top: 2rem;
-                right: 2rem;
-                background: ${type === 'success' ? '#10b981' : type === 'error' ? '#ef4444' : '#14b8a6'};
-                color: white;
-                padding: 1rem 1.5rem;
-                border-radius: 0.5rem;
-                box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
-                z-index: 10001;
-                animation: slideIn 0.3s ease;
-            `;
-            notification.textContent = message;
-
-            document.body.appendChild(notification);
-
-            setTimeout(() => {
-                notification.remove();
-            }, 3000);
-        }
 
         // Verify Stripe session immediately on return from payment
         async function verifyStripeSession(sessionId, userEmail) {
@@ -2429,8 +2381,6 @@
 
                     // Remove session_id from URL
                     window.history.replaceState({}, document.title, window.location.pathname);
-
-                    showNotification('🎉 Payment verified! Pro features activated!', 'success');
                     return;
                 }
 
@@ -2441,7 +2391,6 @@
             } catch (error) {
                 console.error('❌ Session verification error:', error);
                 // Fall back to polling
-                showNotification('Verifying subscription status...', 'info');
                 startSubscriptionPolling(userEmail);
             }
         }
@@ -2452,7 +2401,6 @@
             const maxAttempts = 60; // Poll for up to 60 seconds (every 1s)
 
             console.log('🔄 Starting subscription polling for:', userEmail);
-            showNotification('Processing your subscription...', 'info');
 
             const pollInterval = setInterval(async () => {
                 pollAttempts++;
@@ -2506,8 +2454,6 @@
 
                             // Remove session_id from URL
                             window.history.replaceState({}, document.title, window.location.pathname);
-
-                            showNotification('🎉 Successfully upgraded to Pro! All features unlocked.', 'success');
                             return;
                         }
                     }
@@ -2519,7 +2465,6 @@
                 if (pollAttempts >= maxAttempts) {
                     clearInterval(pollInterval);
                     console.warn('⏱️ Polling timed out - refreshing page');
-                    showNotification('Activating Pro features - refreshing page...', 'info');
                     // Force reload to get fresh data
                     setTimeout(() => window.location.reload(), 2000);
                 }
