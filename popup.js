@@ -3434,8 +3434,20 @@ class TabmangmentPopup {
                 return { isActive: false, plan: 'free', subscriptionId: null };
             }
 
+            // FIRST: Check if storage was recently set to Pro (trust it if recent)
+            const stored = await chrome.storage.local.get(['isPremium', 'planType', 'subscriptionActive', 'lastSyncTime']);
+            if (stored.isPremium === true || stored.planType === 'pro' || stored.subscriptionActive === true) {
+                // Check if it was updated in the last 5 minutes
+                const now = Date.now();
+                const lastSync = stored.lastSyncTime || 0;
+                if (now - lastSync < 5 * 60 * 1000) {
+                    console.log('✅ Pro plan found in recent storage - trusting it');
+                    this.isPremium = true;
+                    return { isActive: true, plan: 'pro', subscriptionId: stored.subscriptionId };
+                }
+            }
 
-            // Always check API first for paid users
+            // SECOND: Check API for paid users
             try {
                 const response = await fetch(`${API_BASE}/me?email=${encodeURIComponent(userEmail)}`, {
                     method: 'GET',

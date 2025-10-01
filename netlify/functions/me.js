@@ -318,7 +318,9 @@ exports.handler = async (event, context) => {
                 name: user.name || email.split('@')[0],
                 plan: currentlyPro ? 'pro' : 'free',
                 isPro: currentlyPro,
+                status: user.subscription_status || 'free', // For popup compatibility
                 subscriptionStatus: user.subscription_status || 'free',
+                subscriptionId: user.stripe_subscription_id,
                 currentPeriodEnd: user.current_period_end,
                 stripeCustomerId: user.stripe_customer_id,
                 stripeSubscriptionId: user.stripe_subscription_id,
