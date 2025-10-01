@@ -2362,41 +2362,65 @@
         // Poll for subscription updates after payment
         async function startSubscriptionPolling(userEmail) {
             let pollAttempts = 0;
-            const maxAttempts = 30; // Poll for up to 30 seconds (every 1s)
+            const maxAttempts = 60; // Poll for up to 60 seconds (every 1s)
+
+            console.log('🔄 Starting subscription polling for:', userEmail);
+            showNotification('Processing your subscription...', 'info');
 
             const pollInterval = setInterval(async () => {
                 pollAttempts++;
+                console.log(`🔍 Poll attempt ${pollAttempts}/${maxAttempts}`);
 
                 try {
                     const response = await fetch(`${API_BASE}/status?email=${encodeURIComponent(userEmail)}`);
                     if (response.ok) {
                         const data = await response.json();
+                        console.log('📊 Subscription status:', data);
 
                         // Check if plan is now Pro
                         if (data.active && data.plan === 'pro') {
                             clearInterval(pollInterval);
+
+                            console.log('✅ Pro plan detected! Activating...');
 
                             // Update local data
                             userData.plan = 'pro';
                             userData.isPro = true;
                             userData.subscriptionStatus = 'active';
 
+                            // Save to localStorage
+                            localStorage.setItem('userData', JSON.stringify(userData));
+
                             // Update display
                             updatePlanDisplay();
 
-                            // Notify extension to refresh plan
+                            // Notify extension to refresh plan - WITH USER DATA
                             if (bridgeReady && extensionId) {
+                                console.log('📡 Sending SUBSCRIPTION_UPDATE to extension');
                                 await sendMessageToExtension('SUBSCRIPTION_UPDATE', {
                                     plan: 'pro',
                                     isPro: true,
-                                    status: 'active'
+                                    status: 'active',
+                                    user: {
+                                        email: userEmail,
+                                        plan: 'pro',
+                                        isPro: true
+                                    }
                                 });
+
+                                // Also send CHECK_USER_PLAN to force extension to recheck
+                                setTimeout(() => {
+                                    sendMessageToExtension('CHECK_USER_PLAN', {}).catch(e => console.log('Plan check sent'));
+                                }, 500);
                             }
+
+                            // Reload user data from API
+                            await loadUserData(userEmail);
 
                             // Remove session_id from URL
                             window.history.replaceState({}, document.title, window.location.pathname);
 
-                            showNotification('🎉 Successfully upgraded to Pro!', 'success');
+                            showNotification('🎉 Successfully upgraded to Pro! All features unlocked.', 'success');
                             return;
                         }
                     }
@@ -2407,7 +2431,10 @@
                 // Stop polling after max attempts
                 if (pollAttempts >= maxAttempts) {
                     clearInterval(pollInterval);
-                    showNotification('Please refresh the page to see your updated subscription', 'info');
+                    console.warn('⏱️ Polling timed out - refreshing page');
+                    showNotification('Activating Pro features - refreshing page...', 'info');
+                    // Force reload to get fresh data
+                    setTimeout(() => window.location.reload(), 2000);
                 }
             }, 1000);
         }
