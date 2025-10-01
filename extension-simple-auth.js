@@ -138,16 +138,8 @@ class SimpleAuth {
             return;
         }
 
-        // If using fallback email, skip API check and set to free
-        if (this.userEmail.startsWith('fallback_')) {
-            console.log('📧 Fallback email detected - setting to free plan');
-            this.isPro = false;
-            await this.deactivateProFeatures();
-            return;
-        }
-
         try {
-            // FIRST: Check chrome.storage for recent Pro activation
+            // FIRST: ALWAYS Check chrome.storage before anything else
             if (chrome && chrome.storage) {
                 const stored = await chrome.storage.local.get([
                     'isPremium',
@@ -159,6 +151,7 @@ class SimpleAuth {
                 console.log('💾 Stored plan data:', stored);
 
                 // If storage says Pro, ALWAYS trust it - storage is the source of truth
+                // This takes precedence over EVERYTHING including fallback emails
                 if (stored.isPremium === true || stored.planType === 'pro' || stored.subscriptionActive === true) {
                     console.log('✅ Pro plan found in storage - trusting it permanently');
                     this.isPro = true;
@@ -168,10 +161,17 @@ class SimpleAuth {
                         await this.activateProFeatures();
                     }
 
-                    // Skip API check entirely - we NEVER downgrade from Pro to Free automatically
-                    // Only Stripe cancellation via webhook should downgrade, which will update storage
+                    // Skip all other checks - storage is absolute source of truth
                     return;
                 }
+            }
+
+            // SECOND: If using fallback email and storage doesn't have Pro, set to free
+            if (this.userEmail.startsWith('fallback_')) {
+                console.log('📧 Fallback email detected - setting to free plan');
+                this.isPro = false;
+                await this.deactivateProFeatures();
+                return;
             }
 
             console.log('🔍 Checking plan via API for:', this.userEmail);
