@@ -1847,17 +1847,6 @@
 
                 extensionPinned = true;
 
-                // Prepare data to send to extension
-                const extensionData = {
-                    type: 'SUBSCRIPTION_UPDATE',
-                    user: userData,
-                    plan: userData.plan,
-                    isPro: userData.isPro,
-                    subscriptionStatus: userData.subscriptionStatus,
-                    settings: JSON.parse(localStorage.getItem('tabManagementSettings') || '{}'),
-                    timestamp: Date.now()
-                };
-
                 // Request stats from extension
                 const statsRequest = {
                     type: 'GET_STATS',
@@ -1865,17 +1854,7 @@
                 };
 
                 try {
-                    // Send subscription update via bridge
-                    await sendMessageToExtension('SUBSCRIPTION_UPDATE', {
-                        user: userData,
-                        plan: userData.plan,
-                        isPro: userData.isPro,
-                        subscriptionStatus: userData.subscriptionStatus,
-                        settings: JSON.parse(localStorage.getItem('tabManagementSettings') || '{}'),
-                        timestamp: Date.now()
-                    });
-
-                    // Request current stats via bridge
+                    // Request current stats via bridge (DON'T send SUBSCRIPTION_UPDATE here - it overwrites Pro status!)
                     const stats = await sendMessageToExtension('GET_STATS', {
                         timestamp: Date.now()
                     });
