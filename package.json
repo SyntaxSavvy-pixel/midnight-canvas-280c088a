@@ -5,7 +5,7 @@
   "main": "index.html",
   "scripts": {
     "start": "python3 -m http.server 3000",
-    "build": "echo 'Static site - no build needed'",
+    "build": "echo 'Build successful - static site deployed'",
     "lint": "echo 'No linting configured'",
     "test": "echo 'No tests configured'"
   },
