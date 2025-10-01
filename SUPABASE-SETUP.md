@@ -14,11 +14,13 @@ Your Tab Management extension now uses Supabase for user authentication and subs
 Run this SQL in your Supabase SQL Editor:
 
 ```sql
--- Create users table
-CREATE TABLE users (
+-- Create users table with ALL required columns
+CREATE TABLE IF NOT EXISTS users (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-  user_id TEXT UNIQUE NOT NULL,
+  user_id TEXT UNIQUE,
   email TEXT UNIQUE NOT NULL,
+  name TEXT,
+  password_hash TEXT,
   is_pro BOOLEAN DEFAULT false,
   subscription_status TEXT DEFAULT 'free',
   stripe_customer_id TEXT,
@@ -27,14 +29,16 @@ CREATE TABLE users (
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW(),
   last_payment_at TIMESTAMPTZ,
-  last_failed_payment_at TIMESTAMPTZ
+  last_failed_payment_at TIMESTAMPTZ,
+  plan_updated_at TIMESTAMPTZ
 );
 
 -- Add indexes for performance
-CREATE INDEX idx_users_user_id ON users(user_id);
-CREATE INDEX idx_users_email ON users(email);
-CREATE INDEX idx_users_is_pro ON users(is_pro);
-CREATE INDEX idx_users_subscription_status ON users(subscription_status);
+CREATE INDEX IF NOT EXISTS idx_users_user_id ON users(user_id);
+CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
+CREATE INDEX IF NOT EXISTS idx_users_is_pro ON users(is_pro);
+CREATE INDEX IF NOT EXISTS idx_users_subscription_status ON users(subscription_status);
+CREATE INDEX IF NOT EXISTS idx_users_plan_updated_at ON users(plan_updated_at);
 
 -- Add updated_at trigger
 CREATE OR REPLACE FUNCTION update_updated_at_column()

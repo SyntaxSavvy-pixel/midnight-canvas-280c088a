@@ -2384,10 +2384,8 @@
                             }
                         });
 
-                        // Force plan recheck
-                        setTimeout(() => {
-                            sendMessageToExtension('CHECK_USER_PLAN', {}).catch(e => console.log('Plan check sent'));
-                        }, 500);
+                        // DON'T call CHECK_USER_PLAN - storage is source of truth
+                        // The SUBSCRIPTION_UPDATE above already set Pro status in storage
                     }
 
                     // Remove session_id from URL
@@ -2454,10 +2452,8 @@
                                     }
                                 });
 
-                                // Also send CHECK_USER_PLAN to force extension to recheck
-                                setTimeout(() => {
-                                    sendMessageToExtension('CHECK_USER_PLAN', {}).catch(e => console.log('Plan check sent'));
-                                }, 500);
+                                // DON'T call CHECK_USER_PLAN - storage is source of truth
+                                // The SUBSCRIPTION_UPDATE above already set Pro status in storage
                             }
 
                             // Reload user data from API

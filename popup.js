@@ -73,6 +73,10 @@ class TabmangmentPopup {
             // Simple subscription status check
             await this.checkSubscription();
 
+            // DISABLED: Old payment system checks - now using Supabase
+            // await this.checkForSubscriptionUpdates();
+            // await this.forceSubscriptionCheck();
+
             // DEBUG: Check storage BEFORE calling API
             const preCheck = await chrome.storage.local.get(['isPremium', 'planType', 'subscriptionActive']);
             console.log('🔍 INIT: Storage BEFORE checkSubscriptionStatus:', preCheck);
@@ -121,8 +125,9 @@ class TabmangmentPopup {
                 });
                 this.isPremium = false;
             }
-            await this.checkForSubscriptionUpdates();
-            await this.forceSubscriptionCheck();
+            // DISABLED: Old payment system checks - moved to line 77-78
+            // await this.checkForSubscriptionUpdates();
+            // await this.forceSubscriptionCheck();
             await this.render();
 
             this.removeAllProBadges();
@@ -133,7 +138,9 @@ class TabmangmentPopup {
             this.startRealTimeUpdates();
             this.startSubscriptionStatusRefresh();
 
-            await this.checkAndApplySubscriptionStatus();
+            // DISABLED: checkAndApplySubscriptionStatus can overwrite Pro status
+            // Storage is now source of truth, not API
+            // await this.checkAndApplySubscriptionStatus();
 
             await this.initializeTimerSystem();
 
@@ -3831,17 +3838,26 @@ class TabmangmentPopup {
                 // Show subscription info in UI
                 this.updateSubscriptionInfo(data);
             } else {
-                // User is on free plan or subscription expired
-                await chrome.storage.local.set({
-                    hasProPlan: false,
-                    isPremium: false,
-                    subscriptionActive: false,
-                    planType: 'free',
-                    subscriptionStatus: data.subscriptionStatus || 'free',
-                    subscriptionId: null,
-                    lastStatusCheck: new Date().toISOString()
-                });
-                this.isPremium = false;
+                // API says Free - but check storage first! Don't overwrite Pro status
+                const storage = await chrome.storage.local.get(['isPremium', 'planType', 'subscriptionActive']);
+
+                // Only set to Free if storage doesn't already have Pro status
+                if (storage.isPremium !== true && storage.planType !== 'pro' && storage.subscriptionActive !== true) {
+                    console.log('✅ Both API and storage say Free - setting to Free');
+                    await chrome.storage.local.set({
+                        hasProPlan: false,
+                        isPremium: false,
+                        subscriptionActive: false,
+                        planType: 'free',
+                        subscriptionStatus: data.subscriptionStatus || 'free',
+                        subscriptionId: null,
+                        lastStatusCheck: new Date().toISOString()
+                    });
+                    this.isPremium = false;
+                } else {
+                    console.log('⚠️ API says Free but storage says Pro - keeping Pro (storage is source of truth)');
+                    this.isPremium = true;
+                }
             }
         } catch (error) {
             console.error('Error checking subscription status:', error);
@@ -3867,18 +3883,21 @@ class TabmangmentPopup {
     }
 
     // Auto-refresh subscription status every 5 minutes
+    // DISABLED: Storage is now source of truth, not API
+    // Only webhooks should update subscription status
     startSubscriptionStatusRefresh() {
-        if (this.statusRefreshInterval) {
-            clearInterval(this.statusRefreshInterval);
-        }
+        console.log('✅ Periodic API checks disabled - using storage as source of truth');
+        // if (this.statusRefreshInterval) {
+        //     clearInterval(this.statusRefreshInterval);
+        // }
 
-        this.statusRefreshInterval = setInterval(async () => {
-            await this.checkAndApplySubscriptionStatus();
-            // Re-render if the user is viewing the popup
-            if (document.visibilityState === 'visible') {
-                await this.renderSubscriptionPlan();
-            }
-        }, 5 * 60 * 1000); // 5 minutes
+        // this.statusRefreshInterval = setInterval(async () => {
+        //     await this.checkAndApplySubscriptionStatus();
+        //     // Re-render if the user is viewing the popup
+        //     if (document.visibilityState === 'visible') {
+        //         await this.renderSubscriptionPlan();
+        //     }
+        // }, 5 * 60 * 1000); // 5 minutes
     }
     async upgradeToProPlan() {
         try {
