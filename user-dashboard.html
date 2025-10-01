@@ -1183,7 +1183,18 @@
             loadBillingHistory();
             loadPaymentMethod();
 
-            // Check if returning from payment
+            // Wait for bridge to be ready FIRST before checking payment
+            console.log('⏳ Waiting for extension bridge...');
+            const isBridgeReady = await waitForBridge(5000);
+
+            if (!isBridgeReady) {
+                console.warn('⚠️ Bridge not ready after 5 seconds');
+                console.log('Extension might not be installed or bridge script not loading');
+            } else {
+                console.log('✅ Bridge ready with extension ID:', extensionId);
+            }
+
+            // Check if returning from payment (AFTER bridge is ready)
             const urlParams = new URLSearchParams(window.location.search);
             const sessionId = urlParams.get('session_id');
             if (sessionId) {
@@ -1192,13 +1203,25 @@
                 await verifyStripeSession(sessionId, userEmail);
             }
 
-            // Wait for bridge to be ready FIRST (it sets the extension ID)
-            console.log('⏳ Waiting for extension bridge...');
-            const isBridgeReady = await waitForBridge(5000);
+            // If user is Pro, make sure extension knows (in case of refresh or manual navigation)
+            if (userData.isPro && bridgeReady && extensionId) {
+                console.log('🔄 User is Pro - ensuring extension is synced...');
+                setTimeout(async () => {
+                    await sendMessageToExtension('SUBSCRIPTION_UPDATE', {
+                        plan: 'pro',
+                        isPro: true,
+                        status: 'active',
+                        user: {
+                            email: userEmail,
+                            plan: 'pro',
+                            isPro: true
+                        }
+                    });
+                    await sendMessageToExtension('CHECK_USER_PLAN', {});
+                }, 1000);
+            }
 
             if (!isBridgeReady) {
-                console.warn('⚠️ Bridge not ready after 5 seconds');
-                console.log('Extension might not be installed or bridge script not loading');
                 updateStatsDisplay({
                     totalTabs: 0,
                     autoClosed: 0,
@@ -1206,8 +1229,6 @@
                 });
                 return;
             }
-
-            console.log('✅ Bridge ready with extension ID:', extensionId);
 
             console.log('✅ Bridge ready, starting sync...');
 
