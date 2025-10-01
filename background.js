@@ -725,12 +725,19 @@ class TabManager {
             console.log('🔄 Received subscription update:', message);
 
             // Update subscription data in storage
+            const now = Date.now();
             const updateData = {
                 isPremium: message.isPro || false,
                 subscriptionActive: message.status === 'active',
                 subscriptionStatus: message.status,
                 planType: message.plan || (message.isPro ? 'pro' : 'free'),
-                lastSyncTime: Date.now()
+                lastSyncTime: now,
+                // Set expiry far in future to prevent popup from thinking it's expired
+                subscriptionExpiry: message.currentPeriodEnd || (now + (365 * 24 * 60 * 60 * 1000)), // 1 year
+                nextBillingDate: message.currentPeriodEnd || (now + (30 * 24 * 60 * 60 * 1000)), // 30 days
+                subscriptionDate: now,
+                subscriptionType: 'monthly',
+                paymentConfirmed: true
             };
 
             if (message.user) {
