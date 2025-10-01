@@ -47,96 +47,17 @@
 
         console.log('💳 Payment details from URL:', { sessionId, email, userSession });
 
-        // Method 1: Call new payment completion API
-        await this.callPaymentCompletionAPI(sessionId, email, userSession);
-
-        // Method 2: Call old activation APIs as fallback
-        await this.callActivationAPI(email, sessionId);
-
-        // Method 3: Store activation data for extension to pick up
+        // Store activation data for extension to pick up
         this.storeActivationData(email, sessionId, userSession);
 
-        // Method 4: Notify extension directly if possible
+        // Notify extension directly if possible
         this.notifyExtension(email, sessionId, userSession);
 
-        console.log('✅ Pro activation initiated successfully');
+        console.log('✅ Pro activation data stored - Stripe webhook will handle backend activation');
 
       } catch (error) {
         console.error('❌ Error activating Pro features:', error);
       }
-    }
-
-    async callPaymentCompletionAPI(sessionId, email, userSession) {
-      try {
-        console.log('🔄 Calling payment completion API...');
-
-        const response = await fetch(`${this.apiBaseUrl}/complete-payment`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({
-            session_id: sessionId,
-            email: email,
-            user_session: userSession,
-            timestamp: new Date().toISOString()
-          })
-        });
-
-        const result = await response.json();
-
-        if (result.success) {
-          console.log('✅ Payment completion API successful:', result);
-          return true;
-        } else {
-          console.log('⚠️ Payment completion API returned false:', result);
-          return false;
-        }
-      } catch (error) {
-        console.log('⚠️ Payment completion API failed:', error.message);
-        return false;
-      }
-    }
-
-    async callActivationAPI(email, sessionId) {
-      // Try multiple activation endpoints
-      const endpoints = [
-        { url: `${this.apiBaseUrl}/activate`, name: 'activate' },
-        { url: `${this.apiBaseUrl}/activate-pro`, name: 'activate-pro' }
-      ];
-
-      for (const endpoint of endpoints) {
-        try {
-          console.log(`🔄 Trying activation endpoint: ${endpoint.name}`);
-
-          const response = await fetch(endpoint.url, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-              email: email,
-              sessionId: sessionId,
-              timestamp: new Date().toISOString()
-            })
-          });
-
-          const result = await response.json();
-
-          if (result.success) {
-            console.log(`✅ Backend Pro activation successful via ${endpoint.name}:`, result);
-            return true;
-          } else {
-            console.log(`⚠️ Activation endpoint ${endpoint.name} returned false:`, result);
-          }
-        } catch (error) {
-          console.log(`⚠️ Activation endpoint ${endpoint.name} failed:`, error.message);
-          continue;
-        }
-      }
-
-      console.error('❌ All activation endpoints failed');
-      return false;
     }
 
     storeActivationData(email, sessionId, userSession) {
@@ -224,16 +145,15 @@
           const detectedEmail = emailMatch[0];
           console.log('📧 Email detected from page:', detectedEmail);
 
-          await this.callActivationAPI(detectedEmail, null);
-          this.storeActivationData(detectedEmail, null);
-          this.notifyExtension(detectedEmail, null);
+          this.storeActivationData(detectedEmail, null, null);
+          this.notifyExtension(detectedEmail, null, null);
           return;
         }
 
         // If no email found, still try to notify extension
         console.log('🔄 No email found, notifying extension anyway...');
-        this.notifyExtension('unknown@payment.success', 'unknown_session');
-        this.storeActivationData('unknown@payment.success', 'unknown_session');
+        this.notifyExtension('unknown@payment.success', 'unknown_session', null);
+        this.storeActivationData('unknown@payment.success', 'unknown_session', null);
 
       } catch (error) {
         console.error('❌ Error in alternative activation:', error);
