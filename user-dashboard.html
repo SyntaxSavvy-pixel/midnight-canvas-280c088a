@@ -1170,6 +1170,14 @@
             loadBillingHistory();
             loadPaymentMethod();
 
+            // Check if returning from payment
+            const urlParams = new URLSearchParams(window.location.search);
+            if (urlParams.get('session_id')) {
+                console.log('💳 Returning from Stripe checkout, polling for subscription update...');
+                showNotification('Processing your subscription...', 'info');
+                startSubscriptionPolling(userEmail);
+            }
+
             // Wait for bridge to be ready FIRST (it sets the extension ID)
             console.log('⏳ Waiting for extension bridge...');
             const isBridgeReady = await waitForBridge(5000);
@@ -2332,6 +2340,59 @@
             setTimeout(() => {
                 notification.remove();
             }, 3000);
+        }
+
+        // Poll for subscription updates after payment
+        async function startSubscriptionPolling(userEmail) {
+            let pollAttempts = 0;
+            const maxAttempts = 30; // Poll for up to 30 seconds (every 1s)
+
+            const pollInterval = setInterval(async () => {
+                pollAttempts++;
+
+                try {
+                    const response = await fetch(`${API_BASE}/status?email=${encodeURIComponent(userEmail)}`);
+                    if (response.ok) {
+                        const data = await response.json();
+
+                        // Check if plan is now Pro
+                        if (data.active && data.plan === 'pro') {
+                            clearInterval(pollInterval);
+
+                            // Update local data
+                            userData.plan = 'pro';
+                            userData.isPro = true;
+                            userData.subscriptionStatus = 'active';
+
+                            // Update display
+                            updatePlanDisplay();
+
+                            // Notify extension to refresh plan
+                            if (bridgeReady && extensionId) {
+                                await sendMessageToExtension('SUBSCRIPTION_UPDATE', {
+                                    plan: 'pro',
+                                    isPro: true,
+                                    status: 'active'
+                                });
+                            }
+
+                            // Remove session_id from URL
+                            window.history.replaceState({}, document.title, window.location.pathname);
+
+                            showNotification('🎉 Successfully upgraded to Pro!', 'success');
+                            return;
+                        }
+                    }
+                } catch (error) {
+                    console.error('Subscription polling error:', error);
+                }
+
+                // Stop polling after max attempts
+                if (pollAttempts >= maxAttempts) {
+                    clearInterval(pollInterval);
+                    showNotification('Please refresh the page to see your updated subscription', 'info');
+                }
+            }, 1000);
         }
 
         // Close modal on outside click

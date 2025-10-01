@@ -24,6 +24,19 @@ class SimpleAuth {
         if (this.userEmail) {
             await this.checkUserPlan();
         }
+
+        // Set up periodic plan checks (every 5 minutes)
+        this.startPeriodicPlanCheck();
+    }
+
+    startPeriodicPlanCheck() {
+        // Check plan status every 5 minutes
+        setInterval(async () => {
+            if (this.userEmail && this.isLoggedIn) {
+                console.log('🔄 Periodic plan check...');
+                await this.checkUserPlan();
+            }
+        }, 5 * 60 * 1000); // 5 minutes
     }
 
     async loadStoredAuth() {

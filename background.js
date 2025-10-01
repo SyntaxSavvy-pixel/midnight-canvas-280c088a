@@ -722,23 +722,36 @@ class TabManager {
 
     async handleSubscriptionUpdate(message) {
         try {
-            console.log('Received subscription update:', message);
+            console.log('🔄 Received subscription update:', message);
 
-            // Store subscription data
+            // Update subscription data in storage
+            const updateData = {
+                isPremium: message.isPro || false,
+                subscriptionActive: message.status === 'active',
+                subscriptionStatus: message.status,
+                lastSyncTime: Date.now()
+            };
+
             if (message.user) {
-                await chrome.storage.local.set({
-                    userData: message.user,
-                    isPremium: message.isPro || false,
-                    subscriptionActive: message.subscriptionStatus === 'active',
-                    lastSyncTime: Date.now()
-                });
-
-                // Update extension behavior based on plan
-                await this.updateExtensionVisibility();
+                updateData.userData = message.user;
             }
+
+            await chrome.storage.local.set(updateData);
+
+            console.log('✅ Subscription data updated:', updateData);
+
+            // Notify extension-simple-auth to recheck plan
+            chrome.runtime.sendMessage({
+                type: 'CHECK_USER_PLAN'
+            }).catch(err => console.log('Auth check skipped:', err.message));
+
+            // Update extension behavior based on plan
+            await this.updateExtensionVisibility();
 
             // Broadcast stats update back to dashboard
             this.broadcastStatsUpdate();
+
+            console.log('🎉 Extension features updated for plan:', message.plan);
         } catch (error) {
             console.error('Error handling subscription update:', error);
         }

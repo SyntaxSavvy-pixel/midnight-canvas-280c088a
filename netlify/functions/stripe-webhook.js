@@ -112,13 +112,17 @@ async function handleCheckoutCompleted(session) {
                 subscription_status: 'active',
                 stripe_customer_id: session.customer,
                 stripe_subscription_id: session.subscription,
-                last_payment_at: new Date().toISOString()
+                last_payment_at: new Date().toISOString(),
+                plan_updated_at: new Date().toISOString()
             })
             .eq('email', customerEmail);
 
         if (error) throw error;
 
         console.log('✅ User updated to Pro:', customerEmail);
+
+        // Create notification for real-time updates
+        await createSubscriptionNotification(customerEmail, 'activated', 'pro');
     } catch (error) {
         console.error('❌ Error updating user after checkout:', error);
     }
@@ -177,19 +181,24 @@ async function handleSubscriptionUpdated(subscription) {
 
     try {
         const customer = await stripe.customers.retrieve(subscription.customer);
+        const isPro = subscription.status === 'active';
 
         const { error } = await supabase
             .from('users')
             .update({
-                is_pro: subscription.status === 'active',
+                is_pro: isPro,
                 subscription_status: subscription.status,
-                current_period_end: new Date(subscription.current_period_end * 1000).toISOString()
+                current_period_end: new Date(subscription.current_period_end * 1000).toISOString(),
+                plan_updated_at: new Date().toISOString()
             })
             .eq('email', customer.email);
 
         if (error) throw error;
 
         console.log('✅ User subscription status updated:', customer.email, subscription.status);
+
+        // Create notification for real-time updates
+        await createSubscriptionNotification(customer.email, 'updated', isPro ? 'pro' : 'free');
     } catch (error) {
         console.error('❌ Error updating subscription:', error);
     }
@@ -205,14 +214,41 @@ async function handleSubscriptionDeleted(subscription) {
             .from('users')
             .update({
                 is_pro: false,
-                subscription_status: 'cancelled'
+                subscription_status: 'cancelled',
+                plan_updated_at: new Date().toISOString()
             })
             .eq('email', customer.email);
 
         if (error) throw error;
 
         console.log('✅ User subscription cancelled:', customer.email);
+
+        // Create notification for real-time updates
+        await createSubscriptionNotification(customer.email, 'cancelled', 'free');
     } catch (error) {
         console.error('❌ Error cancelling subscription:', error);
+    }
+}
+
+// Create subscription update notification in Supabase for real-time polling
+async function createSubscriptionNotification(email, action, plan) {
+    try {
+        const { error } = await supabase
+            .from('subscription_updates')
+            .insert({
+                user_email: email,
+                action: action,
+                plan: plan,
+                created_at: new Date().toISOString()
+            });
+
+        if (error) {
+            // Table might not exist, which is ok - we'll use polling fallback
+            console.log('⚠️ Subscription notification not created (table may not exist):', error.message);
+        } else {
+            console.log('📢 Subscription notification created for:', email);
+        }
+    } catch (error) {
+        console.log('⚠️ Subscription notification error:', error.message);
     }
 }
