@@ -749,10 +749,9 @@ class TabManager {
 
             console.log('✅ Subscription data updated in storage:', updateData);
 
-            // Notify extension-simple-auth to recheck plan
-            chrome.runtime.sendMessage({
-                type: 'CHECK_USER_PLAN'
-            }).catch(err => console.log('Auth check skipped:', err.message));
+            // DON'T call CHECK_USER_PLAN here - it would query the API which might not be updated yet
+            // Storage is the source of truth, and we just updated it above
+            // extension-simple-auth will see the updated storage when needed
 
             // Update extension behavior based on plan
             await this.updateExtensionVisibility();
