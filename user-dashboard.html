@@ -1847,14 +1847,19 @@
 
                 extensionPinned = true;
 
-                // Request stats from extension
-                const statsRequest = {
-                    type: 'GET_STATS',
+                // Prepare data for local storage (but don't send as SUBSCRIPTION_UPDATE!)
+                const extensionData = {
+                    type: 'SYNC_DATA',
+                    user: userData,
+                    plan: userData.plan,
+                    isPro: userData.isPro,
+                    subscriptionStatus: userData.subscriptionStatus,
+                    settings: JSON.parse(localStorage.getItem('tabManagementSettings') || '{}'),
                     timestamp: Date.now()
                 };
 
                 try {
-                    // Request current stats via bridge (DON'T send SUBSCRIPTION_UPDATE here - it overwrites Pro status!)
+                    // Only request stats - DON'T send SUBSCRIPTION_UPDATE (it overwrites Pro status!)
                     const stats = await sendMessageToExtension('GET_STATS', {
                         timestamp: Date.now()
                     });
