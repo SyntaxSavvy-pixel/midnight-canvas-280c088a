@@ -729,16 +729,18 @@ class TabManager {
                 isPremium: message.isPro || false,
                 subscriptionActive: message.status === 'active',
                 subscriptionStatus: message.status,
+                planType: message.plan || (message.isPro ? 'pro' : 'free'),
                 lastSyncTime: Date.now()
             };
 
             if (message.user) {
                 updateData.userData = message.user;
+                updateData.userEmail = message.user.email;
             }
 
             await chrome.storage.local.set(updateData);
 
-            console.log('✅ Subscription data updated:', updateData);
+            console.log('✅ Subscription data updated in storage:', updateData);
 
             // Notify extension-simple-auth to recheck plan
             chrome.runtime.sendMessage({

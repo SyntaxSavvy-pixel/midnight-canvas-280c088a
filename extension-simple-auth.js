@@ -150,7 +150,21 @@ class SimpleAuth {
         }
 
         try {
-            console.log('🔍 Checking plan for:', this.userEmail);
+            // FIRST: Check chrome.storage for recent Pro activation
+            if (chrome && chrome.storage) {
+                const stored = await chrome.storage.local.get(['isPremium', 'subscriptionActive', 'planType']);
+                console.log('💾 Stored plan data:', stored);
+
+                // If storage says Pro, trust it (dashboard would have set this)
+                if (stored.isPremium === true || stored.planType === 'pro' || stored.subscriptionActive === true) {
+                    console.log('✅ Pro plan found in storage - activating immediately');
+                    this.isPro = true;
+                    await this.activateProFeatures();
+                    return; // Skip API check - storage is source of truth for fresh activations
+                }
+            }
+
+            console.log('🔍 Checking plan via API for:', this.userEmail);
 
             const response = await fetch(`${this.apiUrl}/api/me?email=${encodeURIComponent(this.userEmail)}`);
 
@@ -166,7 +180,7 @@ class SimpleAuth {
 
             console.log('📊 Plan check response:', userData);
 
-            if (userData.plan === 'pro') {
+            if (userData.plan === 'pro' || userData.isPro === true) {
                 this.isPro = true;
                 await this.activateProFeatures();
             } else {
