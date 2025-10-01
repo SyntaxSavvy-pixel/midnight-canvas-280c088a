@@ -97,6 +97,16 @@ class SimpleAuth {
                 });
                 break;
 
+            case 'USER_LOGIN':
+                // Dashboard is syncing real user email to replace fallback
+                console.log('📧 Received USER_LOGIN from dashboard:', message.email);
+                await this.handleUserLogin({
+                    email: message.email,
+                    name: message.name
+                }, null);
+                sendResponse({ success: true });
+                break;
+
             case 'LOGOUT_USER':
                 await this.logout();
                 sendResponse({ success: true });

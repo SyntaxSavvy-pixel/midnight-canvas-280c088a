@@ -1202,22 +1202,33 @@
                 await verifyStripeSession(sessionId, userEmail);
             }
 
-            // If user is Pro, make sure extension knows (in case of refresh or manual navigation)
-            if (userData.isPro && bridgeReady && extensionId) {
-                console.log('🔄 User is Pro - ensuring extension is synced...');
+            // ALWAYS sync user email to extension (replace fallback email with real email)
+            if (bridgeReady && extensionId && userEmail) {
+                console.log('📧 Syncing user email to extension:', userEmail);
                 setTimeout(async () => {
-                    await sendMessageToExtension('SUBSCRIPTION_UPDATE', {
-                        plan: 'pro',
-                        isPro: true,
-                        status: 'active',
-                        user: {
-                            email: userEmail,
-                            plan: 'pro',
-                            isPro: true
-                        }
+                    // Send USER_LOGIN message to sync real email
+                    await sendMessageToExtension('USER_LOGIN', {
+                        email: userEmail,
+                        name: userData.name,
+                        plan: userData.plan,
+                        isPro: userData.isPro
                     });
-                    await sendMessageToExtension('CHECK_USER_PLAN', {});
-                }, 1000);
+
+                    // If user is Pro, also send subscription update
+                    if (userData.isPro) {
+                        console.log('🔄 User is Pro - ensuring extension is synced...');
+                        await sendMessageToExtension('SUBSCRIPTION_UPDATE', {
+                            plan: 'pro',
+                            isPro: true,
+                            status: 'active',
+                            user: {
+                                email: userEmail,
+                                plan: 'pro',
+                                isPro: true
+                            }
+                        });
+                    }
+                }, 500);
             }
 
             if (!isBridgeReady) {
