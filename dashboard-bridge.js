@@ -40,12 +40,34 @@ window.addEventListener('message', async (event) => {
     } catch (error) {
         console.error('❌ Bridge error:', error);
 
+        // Check if extension context was invalidated (extension reloaded/updated)
+        if (error.message && error.message.includes('Extension context invalidated')) {
+            console.warn('🔄 Extension was reloaded - auto-refreshing page in 2 seconds...');
+
+            // Send special error response
+            window.postMessage({
+                type: 'TABMANGMENT_RESPONSE',
+                requestId: message.requestId,
+                success: false,
+                error: 'EXTENSION_RELOADED',
+                message: 'Extension was updated. Page will refresh automatically.'
+            }, '*');
+
+            // Auto-reload page after 2 seconds
+            setTimeout(() => {
+                console.log('🔄 Reloading page due to extension update...');
+                window.location.reload();
+            }, 2000);
+
+            return;
+        }
+
         // Send error back to the web page
         window.postMessage({
             type: 'TABMANGMENT_RESPONSE',
             requestId: message.requestId,
             success: false,
-            error: error.message
+            error: error.message || 'Unknown error'
         }, '*');
     }
 });
