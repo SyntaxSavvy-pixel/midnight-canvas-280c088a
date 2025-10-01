@@ -3550,14 +3550,10 @@ class TabmangmentPopup {
                             subscriptionId: data.subscriptionId,
                             currentPeriodEnd: data.currentPeriodEnd
                         };
-                    } else {
-
-                        await chrome.storage.local.set({
-                            isPremium: false,
-                            subscriptionActive: false,
-                            planType: 'free'
-                        });
                     }
+                    // CRITICAL FIX: Don't downgrade from Pro to Free based on API
+                    // Storage is the source of truth - only webhooks should downgrade
+                    // This prevents race conditions during payment processing
                 } else {
                 }
             } catch (apiError) {

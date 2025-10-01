@@ -30,13 +30,10 @@ class SimpleAuth {
     }
 
     startPeriodicPlanCheck() {
-        // Check plan status every 5 minutes
-        setInterval(async () => {
-            if (this.userEmail && this.isLoggedIn) {
-                console.log('🔄 Periodic plan check...');
-                await this.checkUserPlan();
-            }
-        }, 5 * 60 * 1000); // 5 minutes
+        // Disabled periodic plan checks - storage is now the source of truth
+        // Only Stripe webhooks should update subscription status
+        // This prevents flickering and race conditions with payment processing
+        console.log('✅ Periodic plan checks disabled - using storage as source of truth');
     }
 
     async loadStoredAuth() {
@@ -152,15 +149,28 @@ class SimpleAuth {
         try {
             // FIRST: Check chrome.storage for recent Pro activation
             if (chrome && chrome.storage) {
-                const stored = await chrome.storage.local.get(['isPremium', 'subscriptionActive', 'planType']);
+                const stored = await chrome.storage.local.get([
+                    'isPremium',
+                    'subscriptionActive',
+                    'planType',
+                    'activatedAt',
+                    'paymentConfirmed'
+                ]);
                 console.log('💾 Stored plan data:', stored);
 
-                // If storage says Pro, trust it (dashboard would have set this)
+                // If storage says Pro, ALWAYS trust it - storage is the source of truth
                 if (stored.isPremium === true || stored.planType === 'pro' || stored.subscriptionActive === true) {
-                    console.log('✅ Pro plan found in storage - activating immediately');
+                    console.log('✅ Pro plan found in storage - trusting it permanently');
                     this.isPro = true;
-                    await this.activateProFeatures();
-                    return; // Skip API check - storage is source of truth for fresh activations
+
+                    // Make sure Pro features are active (don't overwrite existing storage)
+                    if (!this.isPro) {
+                        await this.activateProFeatures();
+                    }
+
+                    // Skip API check entirely - we NEVER downgrade from Pro to Free automatically
+                    // Only Stripe cancellation via webhook should downgrade, which will update storage
+                    return;
                 }
             }
 
@@ -170,7 +180,7 @@ class SimpleAuth {
 
             if (!response.ok) {
                 console.warn('⚠️ API returned status:', response.status);
-                // Default to free plan if user not found
+                // If storage doesn't say Pro and API fails, default to free
                 this.isPro = false;
                 await this.deactivateProFeatures();
                 return;
@@ -180,18 +190,23 @@ class SimpleAuth {
 
             console.log('📊 Plan check response:', userData);
 
+            // API can only UPGRADE to Pro, never downgrade
             if (userData.plan === 'pro' || userData.isPro === true) {
                 this.isPro = true;
                 await this.activateProFeatures();
-            } else {
+            } else if (!this.isPro) {
+                // Only set to free if we're not already Pro
                 this.isPro = false;
                 await this.deactivateProFeatures();
             }
 
         } catch (error) {
             console.error('❌ Failed to check user plan:', error);
-            this.isPro = false;
-            await this.deactivateProFeatures();
+            // On error, keep current Pro status if we have it
+            if (!this.isPro) {
+                this.isPro = false;
+                await this.deactivateProFeatures();
+            }
         }
     }
 
