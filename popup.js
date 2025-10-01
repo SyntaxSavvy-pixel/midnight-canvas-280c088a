@@ -73,10 +73,17 @@ class TabmangmentPopup {
             // Simple subscription status check
             await this.checkSubscription();
 
+            // DEBUG: Check storage BEFORE calling API
+            const preCheck = await chrome.storage.local.get(['isPremium', 'planType', 'subscriptionActive']);
+            console.log('🔍 INIT: Storage BEFORE checkSubscriptionStatus:', preCheck);
+
             const userEmail = await this.getUserEmail();
             if (userEmail) {
                 const status = await this.checkSubscriptionStatus(userEmail);
+                console.log('📊 INIT: checkSubscriptionStatus returned:', status);
+
                 if (status.isActive && status.plan === 'pro') {
+                    console.log('✅ INIT: Setting Pro from API');
                     const nextBillingDate = new Date(status.currentPeriodEnd).getTime();
                     await chrome.storage.local.set({
                         isPremium: true,
@@ -91,8 +98,18 @@ class TabmangmentPopup {
                     });
                     this.isPremium = true;
                 } else {
+                    console.log('⚠️ INIT: API says not Pro, checking storage again...');
+                    // API says not Pro, but check storage one more time to be sure
+                    const storageCheck = await chrome.storage.local.get(['isPremium', 'planType']);
+                    if (storageCheck.isPremium || storageCheck.planType === 'pro') {
+                        console.log('✅ INIT: Storage says Pro - keeping Pro status');
+                        this.isPremium = true;
+                    } else {
+                        console.log('❌ INIT: Both API and storage say Free');
+                    }
                 }
             } else {
+                console.log('⚠️ INIT: No user email found');
             }
             const debugSub = await chrome.storage.local.get(['isPremium', 'subscriptionActive']);
             const refundCheck = await chrome.storage.local.get(['refundProcessed', 'subscriptionRefunded']);
@@ -1150,21 +1167,30 @@ class TabmangmentPopup {
     }
     async checkSubscriptionExpiry(subscriptionData) {
         try {
+            console.log('⏰ checkSubscriptionExpiry called with:', subscriptionData);
             const subscriptionExpiry = subscriptionData.subscriptionExpiry;
             const now = Date.now();
+            console.log('⏰ Expiry:', subscriptionExpiry, 'Now:', now, 'Expired?:', now > subscriptionExpiry);
+
             const refundStatus = await this.checkForRefunds(subscriptionData);
             if (refundStatus.wasRefunded) {
+                console.log('💸 Refund detected!');
                 await this.handleRefundDetected(refundStatus);
                 return;
             }
             if (subscriptionData.isPremium && subscriptionExpiry && now > subscriptionExpiry) {
+                console.log('⚠️ Subscription appears expired, validating with Stripe...');
                 const realTimeStatus = await this.validateSubscriptionWithStripe(subscriptionData.stripeCustomerId);
+                console.log('📊 Stripe validation result:', realTimeStatus);
                 if (!realTimeStatus.isActive) {
+                    console.log('❌ Stripe says inactive - deactivating Pro');
                     await this.handleSubscriptionDeactivation('expired');
                     subscriptionData.isPremium = false;
                     subscriptionData.subscriptionActive = false;
                     subscriptionData.planType = 'free';
                 } else {
+                    console.log('✅ Stripe says still active - updating expiry');
+
                     await chrome.storage.local.set({
                         subscriptionExpiry: realTimeStatus.nextBillingDate,
                         nextBillingDate: realTimeStatus.nextBillingDate,
