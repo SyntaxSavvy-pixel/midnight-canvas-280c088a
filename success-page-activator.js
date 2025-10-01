@@ -59,12 +59,10 @@
         // Method 4: Notify extension directly if possible
         this.notifyExtension(email, sessionId, userSession);
 
-        // Method 5: Show success message to user
-        this.showSuccessMessage(email);
+        console.log('✅ Pro activation initiated successfully');
 
       } catch (error) {
         console.error('❌ Error activating Pro features:', error);
-        this.showErrorMessage();
       }
     }
 
@@ -215,101 +213,6 @@
       }
     }
 
-    showSuccessMessage(email) {
-      try {
-        // Create success notification
-        const notification = document.createElement('div');
-        notification.id = 'tabmangment-success-notification';
-        notification.style.cssText = `
-          position: fixed;
-          top: 20px;
-          right: 20px;
-          background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-          color: white;
-          padding: 20px;
-          border-radius: 12px;
-          font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-          font-weight: 600;
-          z-index: 999999;
-          box-shadow: 0 8px 25px rgba(16, 185, 129, 0.3);
-          max-width: 350px;
-          cursor: pointer;
-          transition: all 0.3s ease;
-        `;
-
-        notification.innerHTML = `
-          <div style="display: flex; align-items: center; gap: 12px;">
-            <div style="font-size: 24px;">🎉</div>
-            <div>
-              <div style="font-size: 16px; margin-bottom: 4px;">Pro Features Activated!</div>
-              <div style="font-size: 13px; opacity: 0.9;">
-                ${email ? `Welcome ${email.split('@')[0]}!` : 'Welcome!'}
-                Open Tabmangment to use Pro features.
-              </div>
-            </div>
-            <div style="margin-left: auto; font-size: 18px; cursor: pointer;" onclick="this.parentElement.parentElement.remove()">×</div>
-          </div>
-        `;
-
-        // Add hover effects
-        notification.addEventListener('mouseenter', () => {
-          notification.style.transform = 'scale(1.02)';
-          notification.style.boxShadow = '0 12px 35px rgba(16, 185, 129, 0.4)';
-        });
-
-        notification.addEventListener('mouseleave', () => {
-          notification.style.transform = 'scale(1)';
-          notification.style.boxShadow = '0 8px 25px rgba(16, 185, 129, 0.3)';
-        });
-
-        document.body.appendChild(notification);
-
-        // Auto-remove after 10 seconds
-        setTimeout(() => {
-          if (notification.parentNode) {
-            notification.style.opacity = '0';
-            notification.style.transform = 'translateX(400px)';
-            setTimeout(() => notification.remove(), 300);
-          }
-        }, 10000);
-
-        console.log('✅ Success notification displayed');
-
-      } catch (error) {
-        console.error('❌ Error showing success message:', error);
-      }
-    }
-
-    showErrorMessage() {
-      try {
-        console.log('⚠️ Showing error message to user');
-
-        // Simple error notification
-        const notification = document.createElement('div');
-        notification.style.cssText = `
-          position: fixed;
-          top: 20px;
-          right: 20px;
-          background: #ef4444;
-          color: white;
-          padding: 16px;
-          border-radius: 8px;
-          font-family: system-ui;
-          z-index: 999999;
-        `;
-
-        notification.innerHTML = `
-          <div>⚠️ Pro activation in progress... Please check the Tabmangment extension in a few moments.</div>
-        `;
-
-        document.body.appendChild(notification);
-
-        setTimeout(() => notification.remove(), 5000);
-
-      } catch (error) {
-        console.error('❌ Error showing error message:', error);
-      }
-    }
 
     async alternativeActivation() {
       try {
@@ -324,7 +227,6 @@
           await this.callActivationAPI(detectedEmail, null);
           this.storeActivationData(detectedEmail, null);
           this.notifyExtension(detectedEmail, null);
-          this.showSuccessMessage(detectedEmail);
           return;
         }
 
