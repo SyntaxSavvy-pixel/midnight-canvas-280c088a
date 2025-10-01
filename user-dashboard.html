@@ -1185,10 +1185,11 @@
 
             // Check if returning from payment
             const urlParams = new URLSearchParams(window.location.search);
-            if (urlParams.get('session_id')) {
-                console.log('💳 Returning from Stripe checkout, polling for subscription update...');
-                showNotification('Processing your subscription...', 'info');
-                startSubscriptionPolling(userEmail);
+            const sessionId = urlParams.get('session_id');
+            if (sessionId) {
+                console.log('💳 Returning from Stripe checkout, verifying payment...');
+                showNotification('Verifying your payment...', 'info');
+                await verifyStripeSession(sessionId, userEmail);
             }
 
             // Wait for bridge to be ready FIRST (it sets the extension ID)
@@ -2357,6 +2358,87 @@
             setTimeout(() => {
                 notification.remove();
             }, 3000);
+        }
+
+        // Verify Stripe session immediately on return from payment
+        async function verifyStripeSession(sessionId, userEmail) {
+            try {
+                console.log('🔐 Verifying Stripe session:', sessionId);
+
+                const response = await fetch(`${API_BASE}/verify-session`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        session_id: sessionId
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error('Verification failed');
+                }
+
+                const result = await response.json();
+                console.log('📋 Verification result:', result);
+
+                if (result.success && result.paid && result.isPro) {
+                    // Payment verified and Pro activated!
+                    console.log('✅ Payment verified! Activating Pro immediately...');
+
+                    // Update local data
+                    userData.plan = 'pro';
+                    userData.isPro = true;
+                    userData.subscriptionStatus = result.subscriptionStatus || 'active';
+                    userData.stripeCustomerId = result.customerId;
+                    userData.stripeSubscriptionId = result.subscriptionId;
+
+                    // Save to localStorage
+                    localStorage.setItem('userData', JSON.stringify(userData));
+
+                    // Update display
+                    updatePlanDisplay();
+
+                    // Reload user data from API
+                    await loadUserData(userEmail);
+
+                    // Notify extension IMMEDIATELY
+                    if (bridgeReady && extensionId) {
+                        console.log('📡 Notifying extension of Pro activation');
+                        await sendMessageToExtension('SUBSCRIPTION_UPDATE', {
+                            plan: 'pro',
+                            isPro: true,
+                            status: 'active',
+                            user: {
+                                email: userEmail,
+                                plan: 'pro',
+                                isPro: true
+                            }
+                        });
+
+                        // Force plan recheck
+                        setTimeout(() => {
+                            sendMessageToExtension('CHECK_USER_PLAN', {}).catch(e => console.log('Plan check sent'));
+                        }, 500);
+                    }
+
+                    // Remove session_id from URL
+                    window.history.replaceState({}, document.title, window.location.pathname);
+
+                    showNotification('🎉 Payment verified! Pro features activated!', 'success');
+                    return;
+                }
+
+                // If verification didn't return Pro, fall back to polling
+                console.log('⚠️ Session verification incomplete, starting polling...');
+                startSubscriptionPolling(userEmail);
+
+            } catch (error) {
+                console.error('❌ Session verification error:', error);
+                // Fall back to polling
+                showNotification('Verifying subscription status...', 'info');
+                startSubscriptionPolling(userEmail);
+            }
         }
 
         // Poll for subscription updates after payment
