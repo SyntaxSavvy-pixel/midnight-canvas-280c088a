@@ -1017,8 +1017,8 @@
 
         // API Configuration - Update this with your Netlify domain
         const API_BASE = window.location.origin + '/api';
-        const STRIPE_PRICE_ID = 'price_1Rzw2LLJKLfllJJD6HPKEDHK'; // Pro plan price ID
         let authToken = null;
+        let STRIPE_PRICE_ID = null; // Will be fetched from API
 
         // Wait for bridge to be ready
         async function waitForBridge(timeout = 10000) {
@@ -1140,6 +1140,18 @@
         // Initialize dashboard
         async function initDashboard() {
             console.log('🚀 Initializing dashboard...');
+
+            // Fetch configuration from API
+            try {
+                const configResponse = await fetch(`${API_BASE}/config`);
+                if (configResponse.ok) {
+                    const config = await configResponse.json();
+                    STRIPE_PRICE_ID = config.stripePriceId;
+                    console.log('✅ Configuration loaded');
+                }
+            } catch (error) {
+                console.error('⚠️ Failed to load config:', error);
+            }
 
             // Check authentication
             authToken = localStorage.getItem('tabmangment_token');
@@ -1484,6 +1496,10 @@
 
         async function processUpgrade() {
             try {
+                if (!STRIPE_PRICE_ID) {
+                    throw new Error('Stripe configuration not loaded. Please refresh the page.');
+                }
+
                 showNotification('Creating checkout session...', 'info');
 
                 const response = await fetch(`${API_BASE}/create-checkout-session`, {
