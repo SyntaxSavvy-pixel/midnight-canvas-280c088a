@@ -1816,11 +1816,52 @@ class TabmangmentPopup {
     }
     async checkWebLoginStatus() {
         try {
-            // Query all tabs for tabmangment.netlify.app
+            // FIRST: Try to validate existing token with Supabase/API
+            const stored = await chrome.storage.local.get(['authToken', 'userEmail']);
+
+            if (stored.authToken && stored.userEmail) {
+                console.log('🔑 Found stored token, validating with API...');
+
+                try {
+                    // Validate token with your API
+                    const response = await fetch('https://tabmangment.netlify.app/api/me', {
+                        method: 'GET',
+                        headers: {
+                            'Authorization': `Bearer ${stored.authToken}`,
+                            'Content-Type': 'application/json'
+                        }
+                    });
+
+                    if (response.ok) {
+                        const userData = await response.json();
+                        console.log('✅ Token valid, user:', userData.email || stored.userEmail);
+
+                        // Update storage with fresh data
+                        await chrome.storage.local.set({
+                            userEmail: userData.email || stored.userEmail,
+                            userName: userData.name || userData.email?.split('@')[0] || stored.userEmail.split('@')[0],
+                            isPremium: userData.isPro || userData.plan === 'pro' || false,
+                            planType: userData.plan || 'free',
+                            subscriptionActive: userData.isPro || userData.plan === 'pro' || false,
+                        });
+
+                        console.log('💾 Updated user data from API');
+                        return true;
+                    } else {
+                        console.log('❌ Token invalid or expired');
+                        // Clear invalid token
+                        await chrome.storage.local.remove(['authToken']);
+                    }
+                } catch (apiError) {
+                    console.log('⚠️ API check failed:', apiError.message);
+                }
+            }
+
+            // SECOND: If no valid token, try to sync from open web page
             const tabs = await chrome.tabs.query({ url: '*://tabmangment.netlify.app/*' });
 
             if (tabs.length === 0) {
-                console.log('ℹ️ No tabmangment web pages open');
+                console.log('ℹ️ No tabmangment web pages open and no valid token');
                 return false;
             }
 
