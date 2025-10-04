@@ -740,9 +740,9 @@
                 const result = await response.json();
 
                 if (result.success) {
-                    // Store user data and token
+                    // Store user data and token (use consistent key names)
                     localStorage.setItem('tabmangment_token', result.token);
-                    localStorage.setItem('userData', JSON.stringify(result.user));
+                    localStorage.setItem('tabmangment_user', JSON.stringify(result.user));
 
                     // Notify extension about login
                     try {
@@ -887,6 +887,11 @@
                 };
 
                 console.log('📦 User data:', userData);
+
+                // Save to localStorage for dashboard access
+                localStorage.setItem('tabmangment_user', JSON.stringify(userData));
+                localStorage.setItem('tabmangment_token', session.access_token);
+                console.log('✅ Saved to localStorage for dashboard');
 
                 // Save to extension storage
                 if (typeof chrome !== 'undefined' && chrome.runtime) {
