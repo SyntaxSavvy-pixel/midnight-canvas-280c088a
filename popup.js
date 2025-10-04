@@ -90,7 +90,8 @@ class TabmangmentPopup {
             const preCheck = await chrome.storage.local.get(['isPremium', 'planType', 'subscriptionActive']);
             console.log('🔍 INIT: Storage BEFORE checkSubscriptionStatus:', preCheck);
 
-            const userEmail = await this.getUserEmail();
+            // Use the authenticated email (already set in checkAuthentication)
+            const userEmail = this.userEmail;
             if (userEmail) {
                 const status = await this.checkSubscriptionStatus(userEmail);
                 console.log('📊 INIT: checkSubscriptionStatus returned:', status);
@@ -1731,14 +1732,28 @@ class TabmangmentPopup {
     }
     async checkAuthentication() {
         try {
-            const stored = await chrome.storage.local.get(['userEmail', 'authToken']);
+            const stored = await chrome.storage.local.get(['userEmail', 'authToken', 'userName', 'isPremium', 'planType']);
 
-            console.log('🔍 Auth check - stored email:', stored.userEmail);
+            console.log('🔍 Auth check - stored data:', {
+                email: stored.userEmail,
+                hasToken: !!stored.authToken,
+                userName: stored.userName,
+                isPremium: stored.isPremium,
+                planType: stored.planType
+            });
 
-            // Check if user has email (not fallback)
-            if (stored.userEmail && !stored.userEmail.startsWith('fallback_')) {
+            // Check if user has email (not fallback or anonymous)
+            if (stored.userEmail &&
+                !stored.userEmail.startsWith('fallback_') &&
+                !stored.userEmail.startsWith('user_')) {
                 console.log('✅ User authenticated:', stored.userEmail);
                 this.userEmail = stored.userEmail;
+
+                // Also set premium status if available
+                if (stored.isPremium !== undefined) {
+                    this.isPremium = stored.isPremium;
+                }
+
                 return true;
             }
 
