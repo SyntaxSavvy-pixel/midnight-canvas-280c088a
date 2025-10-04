@@ -744,24 +744,21 @@
                     localStorage.setItem('tabmangment_token', result.token);
                     localStorage.setItem('tabmangment_user', JSON.stringify(result.user));
 
-                    // Notify extension about login
-                    try {
-                        if (typeof chrome !== 'undefined' && chrome.runtime) {
-                            chrome.runtime.sendMessage({
-                                type: 'USER_LOGGED_IN',
-                                user: result.user,
-                                token: result.token
-                            });
-                        }
-                    } catch (e) {
-                        console.log('Extension not available');
-                    }
+                    showNotification('Login successful! Syncing with extension...', 'success');
 
-                    showNotification('Login successful! Redirecting to dashboard...', 'success');
+                    // Notify extension about login via content script bridge
+                    console.log('🔐 Sending login event to extension...');
+                    window.postMessage({
+                        type: 'USER_LOGGED_IN',
+                        userData: result.user,
+                        token: result.token
+                    }, '*');
 
+                    // Wait for extension to receive the message, then redirect
                     setTimeout(() => {
+                        console.log('✅ Redirecting to dashboard...');
                         window.location.href = '/user-dashboard.html';
-                    }, 1000);
+                    }, 500);
                 } else {
                     showNotification(result.message || 'Login failed', 'error');
                 }
@@ -893,33 +890,7 @@
                 localStorage.setItem('tabmangment_token', session.access_token);
                 console.log('✅ Saved to localStorage for dashboard');
 
-                // Save to extension storage
-                if (typeof chrome !== 'undefined' && chrome.runtime) {
-                    try {
-                        await chrome.storage.local.set({
-                            userEmail: userData.email,
-                            userName: userData.name,
-                            userId: userData.id,
-                            authProvider: userData.provider,
-                            authToken: session.access_token
-                        });
-
-                        console.log('✅ Saved to extension storage');
-
-                        // Send message to extension
-                        chrome.runtime.sendMessage({
-                            type: 'USER_LOGGED_IN',
-                            user: userData,
-                            token: session.access_token
-                        }, (response) => {
-                            console.log('✅ Extension notified:', response);
-                        });
-                    } catch (error) {
-                        console.log('⚠️ Extension not available:', error);
-                    }
-                }
-
-                // Also save to database via API
+                // Save to database first
                 try {
                     const response = await fetch('/api/me', {
                         method: 'POST',
@@ -942,11 +913,22 @@
                     console.error('❌ Failed to sync user:', error);
                 }
 
-                // Show success and redirect
-                showNotification(`Welcome, ${userData.name}! 🎉`, 'success');
+                // Show success
+                showNotification(`Welcome, ${userData.name}! 🎉 Syncing with extension...`, 'success');
+
+                // Notify extension about login via content script bridge
+                console.log('🔐 Sending Google login event to extension...');
+                window.postMessage({
+                    type: 'USER_LOGGED_IN',
+                    userData: userData,
+                    token: session.access_token
+                }, '*');
+
+                // Wait for extension to receive the message, then redirect
                 setTimeout(() => {
+                    console.log('✅ Redirecting to dashboard...');
                     window.location.href = '/user-dashboard.html';
-                }, 1500);
+                }, 500);
             }
 
             if (event === 'SIGNED_OUT') {
@@ -956,13 +938,33 @@
         });
 
         // Check for existing session on page load
-        supabaseClient.auth.getSession().then(({ data: { session } }) => {
+        supabaseClient.auth.getSession().then(async ({ data: { session } }) => {
             if (session) {
                 console.log('🔍 Existing session found:', session.user.email);
-                showNotification('Already logged in! Redirecting...', 'success');
-                setTimeout(() => {
-                    window.location.href = '/user-dashboard.html';
-                }, 1000);
+
+                // Build user data object
+                const userData = {
+                    id: session.user.id,
+                    email: session.user.email,
+                    name: session.user.user_metadata?.full_name || session.user.user_metadata?.name || session.user.email.split('@')[0],
+                    provider: 'google',
+                    isPro: false,
+                    plan: 'free'
+                };
+
+                // Save to localStorage
+                localStorage.setItem('tabmangment_user', JSON.stringify(userData));
+                localStorage.setItem('tabmangment_token', session.access_token);
+
+                // Notify extension about existing session
+                console.log('📤 Sending existing session to extension...');
+                window.postMessage({
+                    type: 'USER_LOGGED_IN',
+                    userData: userData,
+                    token: session.access_token
+                }, '*');
+
+                console.log('ℹ️ User already logged in - session synced with extension');
             } else {
                 console.log('📭 No existing session');
             }

@@ -2498,26 +2498,35 @@
         });
 
         // Logout function
-        function logout() {
+        async function logout() {
+            console.log('🚪 Logging out...');
+
             // Clear all authentication data
             localStorage.removeItem('tabmangment_token');
+            localStorage.removeItem('tabmangment_user'); // This is the correct key!
             localStorage.removeItem('userData');
             localStorage.removeItem('authToken');
             localStorage.removeItem('userEmail');
 
-            // Notify extension about logout
-            try {
-                if (typeof chrome !== 'undefined' && chrome.runtime) {
-                    chrome.runtime.sendMessage({
-                        type: 'USER_LOGGED_OUT'
-                    });
+            // Sign out from Supabase
+            if (typeof supabase !== 'undefined' && window.supabaseClient) {
+                try {
+                    await window.supabaseClient.auth.signOut();
+                    console.log('✅ Signed out from Supabase');
+                } catch (error) {
+                    console.error('❌ Supabase signout error:', error);
                 }
-            } catch (e) {
-                console.log('Extension not available');
             }
 
-            // Redirect to home page
-            window.location.href = '/mainlandingpage.html';
+            // Notify extension about logout via window.postMessage
+            console.log('📤 Sending logout event to extension...');
+            window.postMessage({
+                type: 'USER_LOGGED_OUT'
+            }, '*');
+
+            // Redirect to auth page (not home page, so user can login again)
+            console.log('🔄 Redirecting to login page...');
+            window.location.href = '/new-authentication';
         }
 
         // Set up bridge listener IMMEDIATELY (before DOMContentLoaded)

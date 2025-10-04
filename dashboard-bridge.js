@@ -1,78 +1,129 @@
 // Dashboard Bridge - Enables communication between web dashboard and extension
 // This script runs in the context of the dashboard page and bridges messages
+// Version: 2.1 - Prevent error before it happens
 
-console.log('🌉 Dashboard Bridge loaded');
+console.log('🌉 Dashboard Bridge v2.1 loaded');
 
-// Listen for messages from the web page
+// Helper function to check if error is due to extension reload/unavailable
+function isExtensionUnavailableError(error) {
+    if (!error || !error.message) return false;
+    return error.message.includes('Extension context invalidated') ||
+           error.message.includes('message port closed') ||
+           error.message.includes('Receiving end does not exist');
+}
+
+// Single consolidated message listener for all web page messages
 window.addEventListener('message', async (event) => {
-    // Only accept messages from the same origin
+    // Only accept messages from the same window
     if (event.source !== window) return;
 
     const message = event.data;
+    if (!message || !message.type) return;
 
-    // Only handle messages with our specific type
-    if (!message || !message.type || !message.type.startsWith('TABMANGMENT_')) return;
+    // Handle TABMANGMENT_ prefixed messages (dashboard requests)
+    if (message.type.startsWith('TABMANGMENT_')) {
+        // Don't forward RESPONSE messages - they're meant for the page only
+        if (message.type === 'TABMANGMENT_RESPONSE') {
+            return;
+        }
 
-    // Don't forward RESPONSE messages - they're meant for the page only
-    if (message.type === 'TABMANGMENT_RESPONSE') {
-        return;
-    }
+        console.log('📨 Bridge received dashboard message:', message.type);
 
-    console.log('📨 Bridge received message from page:', message.type);
-
-    try {
-        // Forward the message to the background script
-        const response = await chrome.runtime.sendMessage({
-            ...message,
-            type: message.type.replace('TABMANGMENT_', '') // Remove prefix
-        });
-
-        console.log('📬 Bridge received response from extension:', response);
-
-        // Send response back to the web page
-        window.postMessage({
-            type: 'TABMANGMENT_RESPONSE',
-            requestId: message.requestId,
-            success: true,
-            data: response
-        }, '*');
-
-    } catch (error) {
-        console.warn('⚠️ Bridge connection error:', error.message);
-
-        // Check if extension context was invalidated (extension reloaded/updated)
-        if (error.message && (error.message.includes('Extension context invalidated') ||
-                               error.message.includes('message port closed') ||
-                               error.message.includes('Receiving end does not exist'))) {
-
-            console.log('ℹ️ Extension not available - this is normal if extension is not installed or was just updated');
-
-            // Send graceful error response
+        // Check if extension is available before trying to send message
+        if (!chrome.runtime?.id) {
+            console.log('ℹ️ Extension not available (reloaded/unavailable)');
             window.postMessage({
                 type: 'TABMANGMENT_RESPONSE',
                 requestId: message.requestId,
                 success: false,
-                error: 'EXTENSION_UNAVAILABLE',
-                message: 'Extension connection lost. Dashboard will work in standalone mode.'
+                error: 'EXTENSION_UNAVAILABLE'
             }, '*');
-
-            // DON'T auto-reload - let dashboard work independently
             return;
         }
 
-        // Send error back to the web page
-        window.postMessage({
-            type: 'TABMANGMENT_RESPONSE',
-            requestId: message.requestId,
-            success: false,
-            error: error.message || 'Unknown error'
-        }, '*');
+        try {
+            // Forward the message to the background script
+            const response = await chrome.runtime.sendMessage({
+                ...message,
+                type: message.type.replace('TABMANGMENT_', '') // Remove prefix
+            });
+
+            console.log('📬 Bridge received response from extension:', response);
+
+            // Send response back to the web page
+            window.postMessage({
+                type: 'TABMANGMENT_RESPONSE',
+                requestId: message.requestId,
+                success: true,
+                data: response
+            }, '*');
+
+        } catch (error) {
+            // Silently handle extension unavailable errors
+            if (isExtensionUnavailableError(error)) {
+                console.log('ℹ️ Extension unavailable (reloaded/updated)');
+                window.postMessage({
+                    type: 'TABMANGMENT_RESPONSE',
+                    requestId: message.requestId,
+                    success: false,
+                    error: 'EXTENSION_UNAVAILABLE'
+                }, '*');
+                return;
+            }
+
+            // Log other errors only
+            console.warn('⚠️ Bridge error:', error.message);
+            window.postMessage({
+                type: 'TABMANGMENT_RESPONSE',
+                requestId: message.requestId,
+                success: false,
+                error: error.message || 'Unknown error'
+            }, '*');
+        }
+        return;
+    }
+
+    // Handle USER_LOGGED_IN event from authentication page
+    if (message.type === 'USER_LOGGED_IN') {
+        console.log('🔐 Bridge detected login event');
+        console.log('📧 User email:', message.userData?.email);
+
+        try {
+            const response = await chrome.runtime.sendMessage({
+                type: 'USER_LOGGED_IN',
+                userData: message.userData,
+                token: message.token
+            });
+            console.log('✅ Login forwarded to extension:', response);
+        } catch (error) {
+            if (!isExtensionUnavailableError(error)) {
+                console.error('❌ Failed to forward login:', error.message);
+            }
+        }
+        return;
+    }
+
+    // Handle USER_LOGGED_OUT event from dashboard
+    if (message.type === 'USER_LOGGED_OUT') {
+        console.log('🚪 Bridge detected logout event');
+
+        try {
+            const response = await chrome.runtime.sendMessage({
+                type: 'USER_LOGGED_OUT'
+            });
+            console.log('✅ Logout forwarded to extension:', response);
+        } catch (error) {
+            if (!isExtensionUnavailableError(error)) {
+                console.error('❌ Failed to forward logout:', error.message);
+            }
+        }
+        return;
     }
 });
 
 // Listen for messages from the background script
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-    console.log('📨 Bridge received message from background:', message.type, message);
+    console.log('📨 Bridge received message from background:', message.type);
 
     // Forward messages from background to the web page
     if (message.type === 'STATS_UPDATE' || message.type === 'EXTENSION_READY') {

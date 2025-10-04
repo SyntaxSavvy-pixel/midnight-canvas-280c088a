@@ -70,6 +70,9 @@ class TabmangmentPopup {
             // Setup event listeners FIRST - needed to detect login
             this.setupEventListeners();
 
+            // Note: startDashboardSync is called AFTER instance creation
+            // (at bottom of file where prototype methods are available)
+
             // CHECK AUTHENTICATION FIRST - Users must be logged in
             const isAuthenticated = await this.checkAuthentication();
             if (!isAuthenticated) {
@@ -161,8 +164,7 @@ class TabmangmentPopup {
 
             await this.initializeTimerSystem();
 
-            // Start dashboard sync listener
-            this.startDashboardSync();
+            // Dashboard sync already started before auth check
 
             // Hide loader and show content smoothly
             this.hideLoader();
@@ -695,16 +697,60 @@ class TabmangmentPopup {
             }
         });
 
-        // Listen for storage changes (when user logs in from dashboard)
-        chrome.storage.onChanged.addListener((changes, areaName) => {
+        // Listen for storage changes (when user logs in/out from dashboard)
+        chrome.storage.onChanged.addListener(async (changes, areaName) => {
+            console.log('📦 Storage changed:', areaName, 'Keys:', Object.keys(changes));
+            console.log('📦 Full changes:', changes);
+
             if (areaName === 'local' && changes.userEmail) {
                 const newEmail = changes.userEmail.newValue;
                 const oldEmail = changes.userEmail.oldValue;
 
-                // If email changed from nothing to something (user logged in)
-                if (!oldEmail && newEmail && !newEmail.startsWith('fallback_')) {
-                    console.log('🎉 User email detected - reloading extension');
-                    window.location.reload();
+                console.log('📧 Email changed - old:', oldEmail, 'new:', newEmail);
+
+                // User logged out (email removed)
+                if (oldEmail && !newEmail) {
+                    console.log('🚪 User logged out - showing login screen');
+                    this.userEmail = null;
+                    this.isPremium = false;
+                    this.showLoginScreen();
+                    return;
+                }
+
+                // If email changed from nothing to something OR changed to a real email (user logged in)
+                if (newEmail && !newEmail.startsWith('fallback_') && !newEmail.startsWith('user_')) {
+                    console.log('🎉 Valid user email detected - syncing UI');
+
+                    // Get all the user data from storage
+                    const userData = await chrome.storage.local.get(['userEmail', 'userName', 'authToken', 'isPremium', 'planType']);
+                    console.log('📦 Retrieved user data:', userData);
+
+                    // Update popup state
+                    this.userEmail = userData.userEmail;
+                    this.userName = userData.userName || userData.userEmail.split('@')[0];
+                    this.isPremium = userData.isPremium || false;
+
+                    // IMPORTANT: Hide login screen first (if it exists)
+                    const loginScreen = document.getElementById('login-screen');
+                    if (loginScreen) {
+                        console.log('🗑️ Removing login screen...');
+                        this.hideLoginScreen();
+                    }
+
+                    // Show the main UI
+                    const header = document.querySelector('.header');
+                    const tabsContainer = document.getElementById('tabs-container');
+                    if (header) header.style.display = '';
+                    if (tabsContainer) tabsContainer.style.display = '';
+
+                    // Re-initialize with the logged-in user
+                    await this.loadData();
+                    await this.render();
+
+                    // Hide the loader
+                    this.hideLoader();
+
+                    console.log('✅ UI synced with login');
                 }
             }
         });
@@ -1752,6 +1798,26 @@ class TabmangmentPopup {
     }
     async checkAuthentication() {
         try {
+            // Get ALL storage data for debugging
+            const allData = await chrome.storage.local.get(null);
+
+            // ONE-TIME CLEANUP: Remove fallback emails
+            if (allData.userEmail && (allData.userEmail.startsWith('fallback_') || allData.userEmail.startsWith('user_'))) {
+                console.log('🧹 Cleaning up fallback email:', allData.userEmail);
+                await chrome.storage.local.remove(['userEmail', 'authToken', 'fallbackGenerated', 'emailDetectionError']);
+                console.log('✨ Fallback email removed - ready for real login');
+                // Reload storage data
+                const cleanData = await chrome.storage.local.get(null);
+                console.log('🔍 Storage after cleanup:', cleanData);
+                return false; // Show login screen
+            }
+
+            console.log('🔍 ============ AUTH CHECK START ============');
+            console.log('🔍 ALL storage data:', allData);
+            console.log('🔍 userEmail value:', allData.userEmail);
+            console.log('🔍 authToken present:', !!allData.authToken);
+            console.log('🔍 isPremium:', allData.isPremium);
+
             const stored = await chrome.storage.local.get(['userEmail', 'authToken', 'userName', 'isPremium', 'planType']);
 
             console.log('🔍 Auth check - stored data:', {
@@ -1768,19 +1834,24 @@ class TabmangmentPopup {
                 !stored.userEmail.startsWith('user_')) {
                 console.log('✅ User authenticated:', stored.userEmail);
                 this.userEmail = stored.userEmail;
+                this.userName = stored.userName || stored.userEmail.split('@')[0];
 
                 // Also set premium status if available
                 if (stored.isPremium !== undefined) {
                     this.isPremium = stored.isPremium;
+                    console.log('💎 Premium status set:', this.isPremium);
                 }
 
+                console.log('🔍 ============ AUTH CHECK: AUTHENTICATED ============');
                 return true;
             }
 
-            console.log('❌ No valid authentication found - showing login screen');
+            console.log('❌ No valid authentication found');
+            console.log('🔍 ============ AUTH CHECK: NOT AUTHENTICATED ============');
             return false;
         } catch (error) {
             console.error('❌ Auth check failed:', error);
+            console.log('🔍 ============ AUTH CHECK: ERROR ============');
             return false;
         }
     }
@@ -1794,9 +1865,13 @@ class TabmangmentPopup {
         // Hide the entire extension UI
         const header = document.querySelector('.header');
         const tabsContainer = document.getElementById('tabs-container');
+        const tabLimitWarningContainer = document.getElementById('tab-limit-warning');
+        const tabLimitWarning = document.querySelector('.tab-limit-warning-content');
 
         if (header) header.style.display = 'none';
         if (tabsContainer) tabsContainer.style.display = 'none';
+        if (tabLimitWarningContainer) tabLimitWarningContainer.style.display = 'none'; // Hide container
+        if (tabLimitWarning) tabLimitWarning.remove(); // Remove warning content
 
         // Create login screen
         const loginScreen = document.createElement('div');
@@ -1845,6 +1920,21 @@ class TabmangmentPopup {
                 Sign In / Sign Up
             </button>
 
+            <button id="refresh-login-btn" style="
+                background: rgba(255,255,255,0.2);
+                color: white;
+                border: 1px solid rgba(255,255,255,0.3);
+                padding: 8px 24px;
+                border-radius: 8px;
+                font-size: 14px;
+                font-weight: 500;
+                cursor: pointer;
+                transition: all 0.2s;
+                margin-bottom: 12px;
+            ">
+                🔄 Check Login Status
+            </button>
+
             <p style="margin: 16px 0 0 0; font-size: 12px; opacity: 0.7;">
                 Your tabs will sync across all your devices
             </p>
@@ -1853,25 +1943,102 @@ class TabmangmentPopup {
         document.body.appendChild(loginScreen);
 
         // Add event handlers using proper event listeners (no inline handlers for CSP)
-        const loginBtn = document.getElementById('login-btn');
+        // Use setTimeout to ensure DOM is fully ready
+        setTimeout(() => {
+            const loginBtn = document.getElementById('login-btn');
 
-        loginBtn.addEventListener('click', () => {
-            chrome.tabs.create({
-                url: 'https://tabmangment.netlify.app/new-authentication',
-                active: true
+            if (!loginBtn) {
+                console.error('❌ Login button not found!');
+                return;
+            }
+
+            console.log('✅ Setting up login button handlers');
+
+            loginBtn.addEventListener('click', (e) => {
+                console.log('🔐 Login button clicked!');
+                e.preventDefault();
+                e.stopPropagation();
+
+                chrome.tabs.create({
+                    url: 'https://tabmangment.netlify.app/new-authentication',
+                    active: true
+                });
+            }, { once: false }); // Allow multiple clicks
+
+            loginBtn.addEventListener('mouseover', () => {
+                loginBtn.style.transform = 'translateY(-2px)';
+                loginBtn.style.boxShadow = '0 6px 16px rgba(0,0,0,0.3)';
             });
-        });
 
-        loginBtn.addEventListener('mouseover', () => {
-            loginBtn.style.transform = 'translateY(-2px)';
-            loginBtn.style.boxShadow = '0 6px 16px rgba(0,0,0,0.3)';
-        });
+            loginBtn.addEventListener('mouseout', () => {
+                loginBtn.style.transform = 'translateY(0)';
+                loginBtn.style.boxShadow = '0 4px 12px rgba(0,0,0,0.2)';
+            });
 
-        loginBtn.addEventListener('mouseout', () => {
-            loginBtn.style.transform = 'translateY(0)';
-            loginBtn.style.boxShadow = '0 4px 12px rgba(0,0,0,0.2)';
-        });
+            // Add refresh login status button handler
+            const refreshBtn = document.getElementById('refresh-login-btn');
+            if (refreshBtn) {
+            refreshBtn.addEventListener('click', async () => {
+                refreshBtn.textContent = '🔄 Checking...';
+                refreshBtn.disabled = true;
+
+                // Check storage again
+                const stored = await chrome.storage.local.get(['userEmail', 'authToken', 'userName', 'isPremium', 'planType']);
+                console.log('🔄 Manual refresh - storage check:', stored);
+
+                if (stored.userEmail && !stored.userEmail.startsWith('fallback_') && !stored.userEmail.startsWith('user_')) {
+                    console.log('✅ Found valid login in storage!');
+
+                    // Update state
+                    this.userEmail = stored.userEmail;
+                    this.userName = stored.userName || stored.userEmail.split('@')[0];
+                    this.isPremium = stored.isPremium || false;
+
+                    // Hide login screen
+                    this.hideLoginScreen();
+
+                    // Initialize
+                    await this.loadData();
+                    await this.render();
+                    this.hideLoader();
+                } else {
+                    console.log('❌ Still no valid login in storage');
+                    refreshBtn.textContent = '❌ No login found';
+                    setTimeout(() => {
+                        refreshBtn.textContent = '🔄 Check Login Status';
+                        refreshBtn.disabled = false;
+                    }, 2000);
+                }
+            });
+
+            refreshBtn.addEventListener('mouseover', () => {
+                refreshBtn.style.background = 'rgba(255,255,255,0.3)';
+            });
+
+            refreshBtn.addEventListener('mouseout', () => {
+                refreshBtn.style.background = 'rgba(255,255,255,0.2)';
+            });
+            }
+        }, 100); // End of setTimeout for all button handlers
     }
+
+    hideLoginScreen() {
+        // Remove login screen
+        const loginScreen = document.getElementById('login-screen');
+        if (loginScreen) {
+            loginScreen.remove();
+        }
+
+        // Show the extension UI
+        const header = document.querySelector('.header');
+        const tabsContainer = document.getElementById('tabs-container');
+        const tabLimitWarningContainer = document.getElementById('tab-limit-warning');
+
+        if (header) header.style.display = '';
+        if (tabsContainer) tabsContainer.style.display = '';
+        if (tabLimitWarningContainer) tabLimitWarningContainer.style.display = ''; // Show container
+    }
+
     renderStats() {
         const activeEl = document.getElementById('active-tabs');
         const scheduledEl = document.getElementById('scheduled-tabs');
@@ -6426,12 +6593,28 @@ if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', async () => {
         popup = new TabmangmentPopup();
         window.popup = popup;
-        await popup.checkAndApplyProStatus();
+
+        // Start dashboard sync immediately after instance creation
+        // (prototype methods are now available)
+        if (typeof popup.startDashboardSync === 'function') {
+            popup.startDashboardSync();
+        }
+
+        // DISABLED: checkAndApplyProStatus creates fallback emails that overwrite real logins
+        // await popup.checkAndApplyProStatus();
     });
 } else {
     popup = new TabmangmentPopup();
     window.popup = popup;
-    popup.checkAndApplyProStatus();
+
+    // Start dashboard sync immediately after instance creation
+    // (prototype methods are now available)
+    if (typeof popup.startDashboardSync === 'function') {
+        popup.startDashboardSync();
+    }
+
+    // DISABLED: checkAndApplyProStatus creates fallback emails that overwrite real logins
+    // popup.checkAndApplyProStatus();
 }
 window.addEventListener('beforeunload', () => {
     if (popup) {
@@ -6447,6 +6630,10 @@ TabmangmentPopup.prototype.startDashboardSync = function() {
         chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
             if (message.type === 'SUBSCRIPTION_UPDATE') {
                 this.handleDashboardSync(message);
+                sendResponse({ status: 'received' });
+            } else if (message.type === 'USER_LOGGED_IN') {
+                console.log('🔐 Extension received login event:', message);
+                this.handleUserLogin(message);
                 sendResponse({ status: 'received' });
             }
             return true;
@@ -6499,6 +6686,44 @@ TabmangmentPopup.prototype.handleDashboardSync = async function(message) {
         }
     } catch (error) {
         console.error('Dashboard sync error:', error);
+    }
+};
+
+TabmangmentPopup.prototype.handleUserLogin = async function(message) {
+    try {
+        console.log('🔐 Processing user login:', message.userData);
+
+        const userData = message.userData;
+        const token = message.token;
+
+        // Save user data to chrome.storage
+        await chrome.storage.local.set({
+            userEmail: userData.email,
+            userName: userData.name || userData.email.split('@')[0],
+            authToken: token,
+            isPremium: userData.isPro || false,
+            planType: userData.plan || 'free',
+            subscriptionActive: userData.isPro || false,
+            userId: userData.id || userData.email
+        });
+
+        console.log('✅ User data saved to extension storage');
+
+        // Update popup state
+        this.userEmail = userData.email;
+        this.userName = userData.name || userData.email.split('@')[0];
+        this.isPremium = userData.isPro || false;
+
+        // Hide login screen and show main UI
+        this.hideLoginScreen();
+
+        // Re-initialize the extension with authenticated state
+        await this.loadData();
+        await this.render();
+
+        console.log('✅ Extension synced with login - User:', this.userEmail);
+    } catch (error) {
+        console.error('❌ Login sync error:', error);
     }
 };
 

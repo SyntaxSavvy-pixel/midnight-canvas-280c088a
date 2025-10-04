@@ -547,6 +547,42 @@ class TabManager {
                     sendResponse({ success: true });
                     break;
 
+                case 'USER_LOGGED_IN':
+                    // User logged in from web - save to storage
+                    console.log('🔐 Background: Received USER_LOGGED_IN message');
+                    console.log('📧 Email:', message.userData?.email);
+                    console.log('👤 Name:', message.userData?.name);
+                    console.log('🔑 Token:', message.token ? 'Present' : 'Missing');
+
+                    const loginData = {
+                        userEmail: message.userData.email,
+                        userName: message.userData.name || message.userData.email.split('@')[0],
+                        authToken: message.token,
+                        isPremium: message.userData.isPro || false,
+                        planType: message.userData.plan || 'free',
+                        subscriptionActive: message.userData.isPro || false,
+                        userId: message.userData.id || message.userData.email
+                    };
+
+                    console.log('💾 Saving to storage:', loginData);
+
+                    await chrome.storage.local.set(loginData);
+
+                    // Verify it was saved
+                    const saved = await chrome.storage.local.get(['userEmail', 'userName']);
+                    console.log('✅ Background: User data saved and verified:', saved);
+
+                    sendResponse({ success: true });
+                    break;
+
+                case 'USER_LOGGED_OUT':
+                    // User logged out from web - clear storage
+                    console.log('🚪 Background: User logged out from web');
+                    await chrome.storage.local.clear();
+                    console.log('✅ Background: Storage cleared');
+                    sendResponse({ success: true });
+                    break;
+
                 case 'protectTab':
                     await this.toggleProtection(message.tabId);
                     sendResponse({ success: true });
