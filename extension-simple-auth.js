@@ -149,34 +149,7 @@ class SimpleAuth {
         }
 
         try {
-            // FIRST: ALWAYS Check chrome.storage before anything else
-            if (chrome && chrome.storage) {
-                const stored = await chrome.storage.local.get([
-                    'isPremium',
-                    'subscriptionActive',
-                    'planType',
-                    'activatedAt',
-                    'paymentConfirmed'
-                ]);
-                console.log('💾 Stored plan data:', stored);
-
-                // If storage says Pro, ALWAYS trust it - storage is the source of truth
-                // This takes precedence over EVERYTHING including fallback emails
-                if (stored.isPremium === true || stored.planType === 'pro' || stored.subscriptionActive === true) {
-                    console.log('✅ Pro plan found in storage - trusting it permanently');
-                    this.isPro = true;
-
-                    // Make sure Pro features are active (don't overwrite existing storage)
-                    if (!this.isPro) {
-                        await this.activateProFeatures();
-                    }
-
-                    // Skip all other checks - storage is absolute source of truth
-                    return;
-                }
-            }
-
-            // SECOND: If using fallback email and storage doesn't have Pro, set to free
+            // FIRST: If using fallback email, set to free
             if (this.userEmail.startsWith('fallback_')) {
                 console.log('📧 Fallback email detected - setting to free plan');
                 this.isPro = false;
@@ -190,7 +163,7 @@ class SimpleAuth {
 
             if (!response.ok) {
                 console.warn('⚠️ API returned status:', response.status);
-                // If storage doesn't say Pro and API fails, default to free
+                // If API fails, default to free
                 this.isPro = false;
                 await this.deactivateProFeatures();
                 return;
@@ -200,23 +173,23 @@ class SimpleAuth {
 
             console.log('📊 Plan check response:', userData);
 
-            // API can only UPGRADE to Pro, never downgrade
+            // CRITICAL: API is now the source of truth - sync plan status
+            // This allows both upgrading AND downgrading based on actual subscription status
             if (userData.plan === 'pro' || userData.isPro === true) {
+                console.log('✅ API says Pro - activating Pro features');
                 this.isPro = true;
                 await this.activateProFeatures();
-            } else if (!this.isPro) {
-                // Only set to free if we're not already Pro
+            } else {
+                console.log('📱 API says Free - deactivating Pro features');
                 this.isPro = false;
                 await this.deactivateProFeatures();
             }
 
         } catch (error) {
             console.error('❌ Failed to check user plan:', error);
-            // On error, keep current Pro status if we have it
-            if (!this.isPro) {
-                this.isPro = false;
-                await this.deactivateProFeatures();
-            }
+            // On error, default to free to be safe
+            this.isPro = false;
+            await this.deactivateProFeatures();
         }
     }
 
@@ -293,7 +266,7 @@ class SimpleAuth {
     }
 
     async openLoginPage() {
-        const loginUrl = `${this.apiUrl}/login.html`;
+        const loginUrl = `${this.apiUrl}/new-authentication`;
         chrome.tabs.create({ url: loginUrl });
     }
 }

@@ -61,8 +61,17 @@ class TabmangmentPopup {
     }
     async init() {
         try {
-            this.initializeEmailJS();
+            // Setup event listeners FIRST - needed to detect login
             this.setupEventListeners();
+
+            // CHECK AUTHENTICATION FIRST - Users must be logged in
+            const isAuthenticated = await this.checkAuthentication();
+            if (!isAuthenticated) {
+                this.showLoginScreen();
+                return; // Stop initialization - user must login first
+            }
+
+            this.initializeEmailJS();
             this.setupPaymentListener();
             await this.checkServiceWorkerHealth();
             await new Promise(resolve => setTimeout(resolve, 100));
@@ -649,9 +658,19 @@ class TabmangmentPopup {
         if (contactBtn) {
             contactBtn.addEventListener('click', () => this.showContactModal());
         }
+        const logoutBtn = document.getElementById('logout-btn');
+        if (logoutBtn) {
+            logoutBtn.addEventListener('click', () => this.handleLogout());
+        }
         chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
             if (message.action === 'updateClosingSoonCount') {
                 this.updateClosingSoonCounter(message.count);
+            }
+            // Listen for user login from dashboard
+            if (message.type === 'USER_LOGGED_IN' || message.type === 'USER_LOGIN') {
+                console.log('🎉 User logged in - reloading extension');
+                // Reload the popup to initialize with logged in state
+                window.location.reload();
             }
         });
         this.setupControlButtons();
@@ -1654,6 +1673,146 @@ class TabmangmentPopup {
         chrome.tabs.create({
             url: 'https://tabmangment.netlify.app/user-dashboard.html',
             active: true
+        });
+    }
+    async handleLogout() {
+        try {
+            console.log('👋 Logging out...');
+
+            // Clear all stored data
+            await chrome.storage.local.clear();
+
+            // Reset instance variables
+            this.isPremium = false;
+            this.userEmail = null;
+
+            // Notify simple auth to logout
+            if (window.logoutUser) {
+                await window.logoutUser();
+            }
+
+            // Send logout message to dashboard (if open)
+            try {
+                await chrome.runtime.sendMessage({ type: 'LOGOUT_USER' });
+            } catch (e) {
+                // Dashboard may not be open, that's fine
+            }
+
+            // Show notification
+            if (chrome.notifications) {
+                chrome.notifications.create({
+                    type: 'basic',
+                    iconUrl: 'icons/icon-48.png',
+                    title: 'Logged Out',
+                    message: 'You have been successfully logged out.'
+                });
+            }
+
+            // Show login screen instead of reloading
+            this.showLoginScreen();
+        } catch (error) {
+            console.error('❌ Logout failed:', error);
+            alert('Failed to logout. Please try again.');
+        }
+    }
+    async checkAuthentication() {
+        try {
+            const stored = await chrome.storage.local.get(['userEmail', 'authToken']);
+
+            // Check if user has email (not fallback)
+            if (stored.userEmail && !stored.userEmail.startsWith('fallback_')) {
+                console.log('✅ User authenticated:', stored.userEmail);
+                this.userEmail = stored.userEmail;
+                return true;
+            }
+
+            console.log('❌ No valid authentication found');
+            return false;
+        } catch (error) {
+            console.error('❌ Auth check failed:', error);
+            return false;
+        }
+    }
+    showLoginScreen() {
+        // Hide the entire extension UI
+        const header = document.querySelector('.header');
+        const tabsContainer = document.getElementById('tabs-container');
+
+        if (header) header.style.display = 'none';
+        if (tabsContainer) tabsContainer.style.display = 'none';
+
+        // Create login screen
+        const loginScreen = document.createElement('div');
+        loginScreen.id = 'login-screen';
+        loginScreen.style.cssText = `
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 400px;
+            padding: 40px 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            text-align: center;
+        `;
+
+        loginScreen.innerHTML = `
+            <div style="margin-bottom: 20px;">
+                <img src="icons/icon-48.png" alt="Tabmangment" width="64" height="64" style="margin-bottom: 16px;">
+                <h2 style="margin: 0 0 8px 0; font-size: 24px; font-weight: 600;">Welcome to Tabmangment</h2>
+                <p style="margin: 0; font-size: 14px; opacity: 0.9;">Manage your tabs like a pro</p>
+            </div>
+
+            <div style="background: rgba(255,255,255,0.1); border-radius: 12px; padding: 24px; margin-bottom: 24px; backdrop-filter: blur(10px);">
+                <p style="margin: 0 0 16px 0; font-size: 14px; line-height: 1.6;">
+                    To use Tabmangment, you need to sign in with your account.
+                </p>
+                <p style="margin: 0; font-size: 13px; opacity: 0.8;">
+                    Don't have an account? You can create one on the login page.
+                </p>
+            </div>
+
+            <button id="login-btn" style="
+                background: white;
+                color: #667eea;
+                border: none;
+                padding: 12px 32px;
+                border-radius: 8px;
+                font-size: 16px;
+                font-weight: 600;
+                cursor: pointer;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+                transition: transform 0.2s, box-shadow 0.2s;
+                margin-bottom: 12px;
+            ">
+                Sign In / Sign Up
+            </button>
+
+            <p style="margin: 16px 0 0 0; font-size: 12px; opacity: 0.7;">
+                Your tabs will sync across all your devices
+            </p>
+        `;
+
+        document.body.appendChild(loginScreen);
+
+        // Add event handlers using proper event listeners (no inline handlers for CSP)
+        const loginBtn = document.getElementById('login-btn');
+
+        loginBtn.addEventListener('click', () => {
+            chrome.tabs.create({
+                url: 'https://tabmangment.netlify.app/new-authentication',
+                active: true
+            });
+        });
+
+        loginBtn.addEventListener('mouseover', () => {
+            loginBtn.style.transform = 'translateY(-2px)';
+            loginBtn.style.boxShadow = '0 6px 16px rgba(0,0,0,0.3)';
+        });
+
+        loginBtn.addEventListener('mouseout', () => {
+            loginBtn.style.transform = 'translateY(0)';
+            loginBtn.style.boxShadow = '0 4px 12px rgba(0,0,0,0.2)';
         });
     }
     renderStats() {
@@ -3989,6 +4148,40 @@ class TabmangmentPopup {
 
         this.removeAllProBadges();
     }
+    async updateUIForFreeUser() {
+        // Show upgrade buttons
+        const upgradeButtons = document.querySelectorAll('#tab-limit-upgrade-btn, #premium-upgrade');
+        upgradeButtons.forEach(btn => {
+            if (btn) {
+                btn.style.display = 'block';
+            }
+        });
+
+        // Reset premium button to upgrade state
+        const premiumBtn = document.getElementById('premium-btn');
+        const premiumBtnText = document.getElementById('premium-btn-text');
+        if (premiumBtn && premiumBtnText) {
+            premiumBtnText.textContent = 'Upgrade Pro';
+            premiumBtn.title = 'Upgrade to Pro';
+
+            premiumBtn.replaceWith(premiumBtn.cloneNode(true));
+            const newPremiumBtn = document.getElementById('premium-btn');
+            newPremiumBtn.addEventListener('click', () => {
+                this.handlePremiumButtonClick();
+            });
+        }
+
+        // Update plan indicator to show free plan
+        const planIndicator = document.getElementById('plan-indicator');
+        if (planIndicator) {
+            planIndicator.className = 'plan-indicator free-plan';
+            planIndicator.innerHTML = '<div class="plan-badge">FREE PLAN</div><div class="plan-description">Limited to 10 tabs</div>';
+        }
+
+        // Add pro badges back to locked features
+        this.removeAllProBadges();
+        this.addProBadgesToLockedFeatures();
+    }
     async updatePlanIndicator() {
         const planIndicator = document.getElementById('plan-indicator');
         if (planIndicator) {
@@ -6209,25 +6402,32 @@ TabmangmentPopup.prototype.handleDashboardSync = async function(message) {
             // Update extension with dashboard data
             const userData = message.user;
 
+            // CRITICAL: Dashboard is the source of truth - ALWAYS sync plan status
+            // This allows downgrading from Pro to Free when subscription is cancelled
+            const newPlanStatus = userData.isPro || false;
+
             await chrome.storage.local.set({
-                isPremium: userData.isPro || false,
-                subscriptionActive: userData.isPro || false,
+                isPremium: newPlanStatus,
+                subscriptionActive: newPlanStatus,
                 planType: userData.plan || 'free',
                 subscriptionStatus: userData.subscriptionStatus || 'free',
                 userEmail: userData.email,
                 dashboardSyncTime: Date.now()
             });
 
-            this.isPremium = userData.isPro || false;
+            this.isPremium = newPlanStatus;
 
             // Update UI
             await this.render();
             if (this.isPremium) {
                 this.updateUIForProUser();
+            } else {
+                // Update UI for free user
+                this.updateUIForFreeUser();
             }
             await this.renderSubscriptionPlan();
 
-            console.log('✅ Synced with dashboard:', userData.plan);
+            console.log('✅ Synced with dashboard - Plan:', userData.plan, 'isPro:', newPlanStatus);
         }
     } catch (error) {
         console.error('Dashboard sync error:', error);
