@@ -1155,7 +1155,7 @@
 
             // Check authentication
             authToken = localStorage.getItem('tabmangment_token');
-            const storedUserData = localStorage.getItem('userData');
+            const storedUserData = localStorage.getItem('tabmangment_user');
             let userEmail = null;
 
             if (storedUserData) {
@@ -1294,7 +1294,7 @@
                 `;
 
                 // Get user email
-                const storedUserData = localStorage.getItem('userData');
+                const storedUserData = localStorage.getItem('tabmangment_user');
                 if (!storedUserData) {
                     container.innerHTML = `
                         <div style="color: #94a3b8; font-style: italic;">
@@ -1404,7 +1404,7 @@
                     userData.avatar = userData.name.split(' ').map(n => n[0]).join('').toUpperCase();
 
                     // Save to localStorage
-                    localStorage.setItem('userData', JSON.stringify(userData));
+                    localStorage.setItem('tabmangment_user', JSON.stringify(userData));
                 } else {
                     throw new Error('Failed to load user data');
                 }
@@ -1412,7 +1412,7 @@
                 console.error('Error loading user data:', error);
 
                 // Try to load from localStorage as fallback
-                const storedUserData = localStorage.getItem('userData');
+                const storedUserData = localStorage.getItem('tabmangment_user');
                 if (storedUserData) {
                     userData = { ...userData, ...JSON.parse(storedUserData) };
                 }
@@ -2362,7 +2362,7 @@
                     userData.stripeSubscriptionId = result.subscriptionId;
 
                     // Save to localStorage
-                    localStorage.setItem('userData', JSON.stringify(userData));
+                    localStorage.setItem('tabmangment_user', JSON.stringify(userData));
 
                     // Update display
                     updatePlanDisplay();
@@ -2433,7 +2433,7 @@
                             userData.subscriptionStatus = 'active';
 
                             // Save to localStorage
-                            localStorage.setItem('userData', JSON.stringify(userData));
+                            localStorage.setItem('tabmangment_user', JSON.stringify(userData));
 
                             // Update display
                             updatePlanDisplay();
