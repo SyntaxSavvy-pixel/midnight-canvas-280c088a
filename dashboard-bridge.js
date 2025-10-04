@@ -38,27 +38,25 @@ window.addEventListener('message', async (event) => {
         }, '*');
 
     } catch (error) {
-        console.error('❌ Bridge error:', error);
+        console.warn('⚠️ Bridge connection error:', error.message);
 
         // Check if extension context was invalidated (extension reloaded/updated)
-        if (error.message && error.message.includes('Extension context invalidated')) {
-            console.warn('🔄 Extension was reloaded - auto-refreshing page in 2 seconds...');
+        if (error.message && (error.message.includes('Extension context invalidated') ||
+                               error.message.includes('message port closed') ||
+                               error.message.includes('Receiving end does not exist'))) {
 
-            // Send special error response
+            console.log('ℹ️ Extension not available - this is normal if extension is not installed or was just updated');
+
+            // Send graceful error response
             window.postMessage({
                 type: 'TABMANGMENT_RESPONSE',
                 requestId: message.requestId,
                 success: false,
-                error: 'EXTENSION_RELOADED',
-                message: 'Extension was updated. Page will refresh automatically.'
+                error: 'EXTENSION_UNAVAILABLE',
+                message: 'Extension connection lost. Dashboard will work in standalone mode.'
             }, '*');
 
-            // Auto-reload page after 2 seconds
-            setTimeout(() => {
-                console.log('🔄 Reloading page due to extension update...');
-                window.location.reload();
-            }, 2000);
-
+            // DON'T auto-reload - let dashboard work independently
             return;
         }
 

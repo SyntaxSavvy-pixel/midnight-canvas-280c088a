@@ -2144,11 +2144,29 @@
         // Chart initialization with real analytics data
         async function initChart() {
             try {
-                // Get analytics data from extension
-                const analyticsData = await getMonthlyAnalytics();
+                // Get analytics data from extension with timeout
+                let analyticsData;
+                const loadingEl = document.getElementById('chart-loading');
+
+                try {
+                    // Set timeout for analytics fetch
+                    const timeoutPromise = new Promise((_, reject) =>
+                        setTimeout(() => reject(new Error('Timeout')), 5000)
+                    );
+
+                    analyticsData = await Promise.race([
+                        getMonthlyAnalytics(),
+                        timeoutPromise
+                    ]);
+                } catch (error) {
+                    console.log('ℹ️ Extension not available, showing empty analytics');
+                    analyticsData = {
+                        domains: ['No Data'],
+                        hours: [0]
+                    };
+                }
 
                 // Hide loading indicator
-                const loadingEl = document.getElementById('chart-loading');
                 if (loadingEl) loadingEl.style.display = 'none';
 
                 const ctx = document.getElementById('usage-chart');
