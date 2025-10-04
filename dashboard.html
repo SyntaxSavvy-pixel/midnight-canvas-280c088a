@@ -298,7 +298,7 @@
 
             if (!user || !token) {
                 console.log('❌ Not logged in, redirecting...');
-                window.location.href = '/login.html';
+                window.location.href = '/new-authentication';
                 return;
             }
 
@@ -483,11 +483,11 @@
                 }
 
                 // Redirect
-                window.location.href = '/login.html';
+                window.location.href = '/new-authentication';
 
             } catch (error) {
                 console.error('❌ Logout error:', error);
-                window.location.href = '/login.html';
+                window.location.href = '/new-authentication';
             }
         }
 

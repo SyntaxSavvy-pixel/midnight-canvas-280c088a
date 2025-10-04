@@ -269,7 +269,7 @@ class ExtensionAuthSync {
 
   // Public methods for extension to use
   async openLoginPage() {
-    const loginUrl = `${this.apiBaseUrl.replace('/api', '')}/login.html`;
+    const loginUrl = `${this.apiBaseUrl.replace('/api', '')}/new-authentication`;
     chrome.tabs.create({ url: loginUrl });
   }
 

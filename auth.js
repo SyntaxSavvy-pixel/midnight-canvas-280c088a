@@ -218,8 +218,8 @@ class AuthSystem {
         } else {
             if (authButtons) {
                 authButtons.innerHTML = `
-                    <a href="/login.html" class="btn btn-outline">Sign In</a>
-                    <a href="/register.html" class="btn btn-primary">Get Started</a>
+                    <a href="/new-authentication" class="btn btn-outline">Sign In</a>
+                    <a href="/new-authentication?mode=signup" class="btn btn-primary">Get Started</a>
                 `;
             }
         }

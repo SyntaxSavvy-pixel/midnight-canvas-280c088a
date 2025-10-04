@@ -168,7 +168,7 @@
         </form>
 
         <div class="login-link">
-            Already have an account? <a href="login.html">Sign in</a>
+            Already have an account? <a href="new-authentication">Sign in</a>
         </div>
     </div>
 
@@ -217,9 +217,9 @@
                 const result = await response.json();
 
                 if (result.success) {
-                    showSuccess('Account created successfully! Redirecting to login...');
+                    showSuccess('Account created successfully! Redirecting to sign in...');
                     setTimeout(() => {
-                        window.location.href = 'login.html';
+                        window.location.href = 'new-authentication';
                     }, 2000);
                 } else {
                     showError(result.message || 'Registration failed');
