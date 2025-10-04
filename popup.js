@@ -156,8 +156,21 @@ class TabmangmentPopup {
 
             // Start dashboard sync listener
             this.startDashboardSync();
+
+            // Hide loader and show content smoothly
+            this.hideLoader();
         } catch (error) {
             this.showError('Failed to initialize extension: ' + error.message);
+            this.hideLoader(); // Hide loader even on error
+        }
+    }
+    hideLoader() {
+        // Add smooth transition
+        document.body.classList.add('loaded');
+        const loader = document.getElementById('app-loader');
+        if (loader) {
+            loader.classList.add('hidden');
+            setTimeout(() => loader.remove(), 300);
         }
     }
 
@@ -4124,7 +4137,18 @@ class TabmangmentPopup {
             this.showMessage('⚠️ Payment detected but upgrade failed. Please refresh the extension.', 'warning');
         }
     }
-    showProSuccessMessage() {
+    async showProSuccessMessage() {
+        // Only show welcome message ONCE when user first upgrades
+        const { proWelcomeShown } = await chrome.storage.local.get(['proWelcomeShown']);
+
+        if (proWelcomeShown) {
+            console.log('⏭️ Pro welcome already shown, skipping...');
+            return; // Already shown, don't spam
+        }
+
+        // Mark as shown so it never shows again
+        await chrome.storage.local.set({ proWelcomeShown: true });
+
         const successModal = document.createElement('div');
         successModal.style.cssText = `
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
