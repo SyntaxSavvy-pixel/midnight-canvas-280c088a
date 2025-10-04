@@ -82,16 +82,21 @@ class TabmangmentPopup {
 
                 if (webLogin) {
                     console.log('✅ Found login on web, syncing to extension...');
-                    // Sync successful, re-check auth and continue
-                    const nowAuthenticated = await this.checkAuthentication();
-                    if (nowAuthenticated) {
-                        // Continue with normal initialization
-                        console.log('✅ Successfully synced from web, continuing init...');
-                    } else {
-                        this.hideLoader();
-                        this.showLoginScreen();
-                        return;
-                    }
+                    // Sync successful, trust it and continue
+                    // Get the data we just saved
+                    const syncedData = await chrome.storage.local.get(['userEmail', 'userName', 'isPremium']);
+                    this.userEmail = syncedData.userEmail;
+                    this.userName = syncedData.userName;
+                    this.isPremium = syncedData.isPremium || false;
+
+                    console.log('✅ Successfully synced from web, continuing with:', {
+                        email: this.userEmail,
+                        name: this.userName,
+                        isPremium: this.isPremium
+                    });
+
+                    // Hide loader and continue with initialization
+                    // Don't re-check auth, we already validated via API
                 } else {
                     this.hideLoader(); // Hide loader before showing login screen
                     this.showLoginScreen();
