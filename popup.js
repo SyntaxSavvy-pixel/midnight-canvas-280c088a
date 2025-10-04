@@ -673,6 +673,20 @@ class TabmangmentPopup {
                 window.location.reload();
             }
         });
+
+        // Listen for storage changes (when user logs in from dashboard)
+        chrome.storage.onChanged.addListener((changes, areaName) => {
+            if (areaName === 'local' && changes.userEmail) {
+                const newEmail = changes.userEmail.newValue;
+                const oldEmail = changes.userEmail.oldValue;
+
+                // If email changed from nothing to something (user logged in)
+                if (!oldEmail && newEmail && !newEmail.startsWith('fallback_')) {
+                    console.log('🎉 User email detected - reloading extension');
+                    window.location.reload();
+                }
+            }
+        });
         this.setupControlButtons();
         this.setupContactModal();
         this.setupPremiumModal();
@@ -1719,6 +1733,8 @@ class TabmangmentPopup {
         try {
             const stored = await chrome.storage.local.get(['userEmail', 'authToken']);
 
+            console.log('🔍 Auth check - stored email:', stored.userEmail);
+
             // Check if user has email (not fallback)
             if (stored.userEmail && !stored.userEmail.startsWith('fallback_')) {
                 console.log('✅ User authenticated:', stored.userEmail);
@@ -1726,7 +1742,7 @@ class TabmangmentPopup {
                 return true;
             }
 
-            console.log('❌ No valid authentication found');
+            console.log('❌ No valid authentication found - showing login screen');
             return false;
         } catch (error) {
             console.error('❌ Auth check failed:', error);
@@ -1734,6 +1750,12 @@ class TabmangmentPopup {
         }
     }
     showLoginScreen() {
+        // Check if login screen already exists
+        const existingLoginScreen = document.getElementById('login-screen');
+        if (existingLoginScreen) {
+            return; // Already showing login screen
+        }
+
         // Hide the entire extension UI
         const header = document.querySelector('.header');
         const tabsContainer = document.getElementById('tabs-container');
