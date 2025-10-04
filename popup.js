@@ -60,6 +60,12 @@ class TabmangmentPopup {
         }
     }
     async init() {
+        // Fallback: Force hide loader after 5 seconds no matter what
+        setTimeout(() => {
+            this.hideLoader();
+            console.log('⏱️ Loader force-hidden after timeout');
+        }, 5000);
+
         try {
             // Setup event listeners FIRST - needed to detect login
             this.setupEventListeners();
@@ -67,6 +73,7 @@ class TabmangmentPopup {
             // CHECK AUTHENTICATION FIRST - Users must be logged in
             const isAuthenticated = await this.checkAuthentication();
             if (!isAuthenticated) {
+                this.hideLoader(); // Hide loader before showing login screen
                 this.showLoginScreen();
                 return; // Stop initialization - user must login first
             }
