@@ -76,9 +76,27 @@ class TabmangmentPopup {
             // CHECK AUTHENTICATION FIRST - Users must be logged in
             const isAuthenticated = await this.checkAuthentication();
             if (!isAuthenticated) {
-                this.hideLoader(); // Hide loader before showing login screen
-                this.showLoginScreen();
-                return; // Stop initialization - user must login first
+                // Before showing login screen, try to sync from web localStorage
+                console.log('🔍 Not authenticated in extension, checking web for existing login...');
+                const webLogin = await this.checkWebLoginStatus();
+
+                if (webLogin) {
+                    console.log('✅ Found login on web, syncing to extension...');
+                    // Sync successful, re-check auth and continue
+                    const nowAuthenticated = await this.checkAuthentication();
+                    if (nowAuthenticated) {
+                        // Continue with normal initialization
+                        console.log('✅ Successfully synced from web, continuing init...');
+                    } else {
+                        this.hideLoader();
+                        this.showLoginScreen();
+                        return;
+                    }
+                } else {
+                    this.hideLoader(); // Hide loader before showing login screen
+                    this.showLoginScreen();
+                    return; // Stop initialization - user must login first
+                }
             }
 
             this.initializeEmailJS();
@@ -1796,6 +1814,59 @@ class TabmangmentPopup {
             alert('Failed to logout. Please try again.');
         }
     }
+    async checkWebLoginStatus() {
+        try {
+            // Query all tabs for tabmangment.netlify.app
+            const tabs = await chrome.tabs.query({ url: '*://tabmangment.netlify.app/*' });
+
+            if (tabs.length === 0) {
+                console.log('ℹ️ No tabmangment web pages open');
+                return false;
+            }
+
+            console.log('📡 Found tabmangment tab, checking for login data...');
+
+            // Inject script to read localStorage
+            const results = await chrome.scripting.executeScript({
+                target: { tabId: tabs[0].id },
+                func: () => {
+                    const user = localStorage.getItem('tabmangment_user');
+                    const token = localStorage.getItem('tabmangment_token');
+                    if (user && token) {
+                        return { user: JSON.parse(user), token };
+                    }
+                    return null;
+                }
+            });
+
+            const webData = results[0]?.result;
+
+            if (webData && webData.user && webData.token) {
+                console.log('✅ Found login data on web:', webData.user.email);
+
+                // Save to extension storage
+                await chrome.storage.local.set({
+                    userEmail: webData.user.email,
+                    userName: webData.user.name || webData.user.email.split('@')[0],
+                    authToken: webData.token,
+                    isPremium: webData.user.isPro || false,
+                    planType: webData.user.plan || 'free',
+                    subscriptionActive: webData.user.isPro || false,
+                    userId: webData.user.id || webData.user.email
+                });
+
+                console.log('💾 Synced login from web to extension storage');
+                return true;
+            }
+
+            console.log('ℹ️ No login data found on web page');
+            return false;
+        } catch (error) {
+            console.error('❌ Failed to check web login status:', error);
+            return false;
+        }
+    }
+
     async checkAuthentication() {
         try {
             // Get ALL storage data for debugging
