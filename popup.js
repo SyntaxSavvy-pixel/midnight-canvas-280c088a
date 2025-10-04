@@ -1819,24 +1819,29 @@ class TabmangmentPopup {
             // FIRST: Try to validate existing token with Supabase/API
             const stored = await chrome.storage.local.get(['authToken', 'userEmail']);
 
-            if (stored.authToken && stored.userEmail) {
-                console.log('🔑 Found stored token, validating with API...');
+            console.log('🔍 Token check - authToken exists:', !!stored.authToken);
+            console.log('🔍 Token check - userEmail:', stored.userEmail);
+
+            if (stored.userEmail) {
+                console.log('🔑 Found stored user, validating with API...');
+                console.log('📧 Checking email:', stored.userEmail);
 
                 try {
-                    // Validate token with your API
-                    const response = await fetch('https://tabmangment.netlify.app/api/me', {
+                    // Validate user with your API (uses email query param)
+                    const response = await fetch(`https://tabmangment.netlify.app/api/me?email=${encodeURIComponent(stored.userEmail)}`, {
                         method: 'GET',
                         headers: {
-                            'Authorization': `Bearer ${stored.authToken}`,
                             'Content-Type': 'application/json'
                         }
                     });
 
+                    console.log('📡 API response status:', response.status);
+
                     if (response.ok) {
                         const userData = await response.json();
-                        console.log('✅ Token valid, user:', userData.email || stored.userEmail);
+                        console.log('✅ User validated, API response:', userData);
 
-                        // Update storage with fresh data
+                        // Update storage with fresh data from API
                         await chrome.storage.local.set({
                             userEmail: userData.email || stored.userEmail,
                             userName: userData.name || userData.email?.split('@')[0] || stored.userEmail.split('@')[0],
@@ -1845,16 +1850,22 @@ class TabmangmentPopup {
                             subscriptionActive: userData.isPro || userData.plan === 'pro' || false,
                         });
 
-                        console.log('💾 Updated user data from API');
+                        console.log('💾 Updated user data from API - User is valid!');
                         return true;
                     } else {
-                        console.log('❌ Token invalid or expired');
-                        // Clear invalid token
-                        await chrome.storage.local.remove(['authToken']);
+                        const errorText = await response.text();
+                        console.log('❌ User not found or error - Status:', response.status);
+                        console.log('❌ Error response:', errorText);
+                        // Don't clear userEmail immediately, just log the issue
                     }
                 } catch (apiError) {
-                    console.log('⚠️ API check failed:', apiError.message);
+                    console.error('⚠️ API check failed:', apiError);
+                    // If API fails, keep the stored user (might be network issue)
+                    console.log('ℹ️ Keeping stored user despite API error');
+                    return true; // Allow user to stay logged in if API is down
                 }
+            } else {
+                console.log('ℹ️ No stored user email found');
             }
 
             // SECOND: If no valid token, try to sync from open web page
