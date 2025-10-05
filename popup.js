@@ -2146,11 +2146,12 @@ class TabmangmentPopup {
                         this.hideLoader();
                     } else {
                         console.log('❌ Still no valid login in storage');
-                    refreshBtn.textContent = '❌ No login found';
-                    setTimeout(() => {
-                        refreshBtn.textContent = '🔄 Check Login Status';
-                        refreshBtn.disabled = false;
-                    }, 2000);
+                        refreshBtn.textContent = '❌ No login found';
+                        setTimeout(() => {
+                            refreshBtn.textContent = '🔄 Check Login Status';
+                            refreshBtn.disabled = false;
+                        }, 2000);
+                    }
                 }
             });
 
