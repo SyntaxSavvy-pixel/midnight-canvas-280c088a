@@ -2505,7 +2505,7 @@
         async function logout() {
             console.log('🚪 Logging out...');
 
-            // Set flag to indicate intentional logout
+            // Set flag to indicate intentional logout (will be read by auth page)
             sessionStorage.setItem('user_logged_out', 'true');
 
             // Clear all authentication data
@@ -2515,25 +2515,16 @@
             localStorage.removeItem('authToken');
             localStorage.removeItem('userEmail');
 
-            // Sign out from Supabase
-            if (typeof supabase !== 'undefined' && window.supabaseClient) {
-                try {
-                    await window.supabaseClient.auth.signOut();
-                    console.log('✅ Signed out from Supabase');
-                } catch (error) {
-                    console.error('❌ Supabase signout error:', error);
-                }
-            }
-
             // Notify extension about logout via window.postMessage
             console.log('📤 Sending logout event to extension...');
             window.postMessage({
                 type: 'USER_LOGGED_OUT'
             }, '*');
 
-            // Redirect to auth page (not home page, so user can login again)
+            // Redirect to auth page with logout parameter
+            // The auth page will handle Supabase signout
             console.log('🔄 Redirecting to login page...');
-            window.location.href = '/new-authentication';
+            window.location.href = '/new-authentication?logout=true';
         }
 
         // Set up bridge listener IMMEDIATELY (before DOMContentLoaded)

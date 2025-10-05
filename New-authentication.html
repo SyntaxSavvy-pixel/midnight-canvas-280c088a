@@ -966,10 +966,22 @@
             }
         });
 
-        // Check for existing session on page load
-        supabaseClient.auth.getSession().then(async ({ data: { session } }) => {
-            if (session) {
-                console.log('🔍 Existing session found:', session.user.email);
+        // Check for logout parameter (urlParams already declared earlier)
+        const isLoggingOut = urlParams.get('logout') === 'true';
+
+        if (isLoggingOut) {
+            console.log('🚪 Logout requested, signing out from Supabase...');
+            supabaseClient.auth.signOut().then(() => {
+                console.log('✅ Supabase session cleared');
+                // Remove logout param from URL
+                window.history.replaceState({}, document.title, '/new-authentication');
+                showNotification('Logged out successfully', 'success');
+            });
+        } else {
+            // Check for existing session on page load (only if not logging out)
+            supabaseClient.auth.getSession().then(async ({ data: { session } }) => {
+                if (session) {
+                    console.log('🔍 Existing session found:', session.user.email);
 
                 // Build user data object
                 const userData = {
@@ -998,6 +1010,7 @@
                 console.log('📭 No existing session');
             }
         });
+        } // End of isLoggingOut else block
 
         // Notification system
         function showNotification(message, type = 'info') {
