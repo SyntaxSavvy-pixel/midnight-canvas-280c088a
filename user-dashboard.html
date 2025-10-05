@@ -1413,7 +1413,11 @@
                     userData.stripeSubscriptionId = data.stripeSubscriptionId;
 
                     // Keep avatar URL if it exists (from OAuth), otherwise use initials
-                    if (!userData.avatarUrl) {
+                    if (userData.avatarUrl) {
+                        // Preserve the avatar URL in the avatar field for consistency
+                        userData.avatar = userData.avatarUrl;
+                    } else {
+                        // Generate initials for non-OAuth users
                         userData.avatar = userData.name.split(' ').map(n => n[0]).join('').toUpperCase();
                     }
 
@@ -1486,12 +1490,16 @@
         function updateUserDisplay() {
             const avatarEl = document.getElementById('user-avatar');
 
-            // Check if user has an avatar URL (from Google/GitHub OAuth)
-            if (userData.avatarUrl) {
+            // Check if avatar is a URL (from Google/GitHub OAuth)
+            const avatarUrl = userData.avatarUrl || userData.avatar;
+            const isUrl = avatarUrl && (avatarUrl.startsWith('http://') || avatarUrl.startsWith('https://'));
+
+            if (isUrl) {
                 // Replace text with image
-                avatarEl.innerHTML = `<img src="${userData.avatarUrl}" alt="${userData.name}" onerror="this.style.display='none'; this.parentElement.textContent='${userData.avatar || userData.name.charAt(0).toUpperCase()}'">`;
+                const initials = userData.name ? userData.name.split(' ').map(n => n[0]).join('').toUpperCase() : 'U';
+                avatarEl.innerHTML = `<img src="${avatarUrl}" alt="${userData.name}" onerror="this.style.display='none'; this.parentElement.textContent='${initials}'">`;
             } else {
-                // Fallback to initials
+                // Fallback to initials or avatar text
                 avatarEl.textContent = userData.avatar || userData.name.charAt(0).toUpperCase();
             }
 
