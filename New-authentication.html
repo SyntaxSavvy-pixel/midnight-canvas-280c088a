@@ -971,45 +971,71 @@
 
         if (isLoggingOut) {
             console.log('🚪 Logout requested, signing out from Supabase...');
-            supabaseClient.auth.signOut().then(() => {
-                console.log('✅ Supabase session cleared');
-                // Remove logout param from URL
-                window.history.replaceState({}, document.title, '/new-authentication');
-                showNotification('Logged out successfully', 'success');
-            });
+            // Use await to ensure signOut completes before anything else
+            (async () => {
+                try {
+                    await supabaseClient.auth.signOut();
+                    console.log('✅ Supabase session cleared');
+                    // Remove logout param from URL
+                    window.history.replaceState({}, document.title, '/new-authentication');
+                    showNotification('Logged out successfully', 'success');
+                } catch (error) {
+                    console.error('❌ Logout error:', error);
+                    showNotification('Logout completed', 'success');
+                }
+            })();
         } else {
             // Check for existing session on page load (only if not logging out)
             supabaseClient.auth.getSession().then(async ({ data: { session } }) => {
                 if (session) {
                     console.log('🔍 Existing session found:', session.user.email);
 
-                // Build user data object
-                const userData = {
-                    id: session.user.id,
-                    email: session.user.email,
-                    name: session.user.user_metadata?.full_name || session.user.user_metadata?.name || session.user.email.split('@')[0],
-                    provider: 'google',
-                    isPro: false,
-                    plan: 'free'
-                };
+                    // Don't auto-login if user just logged out
+                    const justLoggedOut = sessionStorage.getItem('user_logged_out');
+                    if (justLoggedOut) {
+                        console.log('⚠️ User just logged out, clearing session...');
+                        await supabaseClient.auth.signOut();
+                        sessionStorage.removeItem('user_logged_out');
+                        showNotification('Please log in again', 'info');
+                        return;
+                    }
 
-                // Save to localStorage
-                localStorage.setItem('tabmangment_user', JSON.stringify(userData));
-                localStorage.setItem('tabmangment_token', session.access_token);
+                    // Build user data object
+                    const userData = {
+                        id: session.user.id,
+                        email: session.user.email,
+                        name: session.user.user_metadata?.full_name || session.user.user_metadata?.name || session.user.user_metadata?.user_name || session.user.email.split('@')[0],
+                        provider: session.user.app_metadata?.provider || 'email',
+                        avatar: session.user.user_metadata?.avatar_url || session.user.user_metadata?.picture,
+                        isPro: false,
+                        plan: 'free'
+                    };
 
-                // Notify extension about existing session
-                console.log('📤 Sending existing session to extension...');
-                window.postMessage({
-                    type: 'USER_LOGGED_IN',
-                    userData: userData,
-                    token: session.access_token
-                }, '*');
+                    // Save to localStorage
+                    localStorage.setItem('tabmangment_user', JSON.stringify(userData));
+                    localStorage.setItem('tabmangment_token', session.access_token);
 
-                console.log('ℹ️ User already logged in - session synced with extension');
-            } else {
-                console.log('📭 No existing session');
-            }
-        });
+                    // Clear logout flag since we're re-logging in
+                    sessionStorage.removeItem('user_logged_out');
+
+                    // Notify extension about existing session
+                    console.log('📤 Sending existing session to extension...');
+                    window.postMessage({
+                        type: 'USER_LOGGED_IN',
+                        userData: userData,
+                        token: session.access_token
+                    }, '*');
+
+                    console.log('ℹ️ User already logged in - redirecting to dashboard...');
+
+                    // Redirect to dashboard after short delay
+                    setTimeout(() => {
+                        window.location.href = '/user-dashboard.html';
+                    }, 500);
+                } else {
+                    console.log('📭 No existing session');
+                }
+            });
         } // End of isLoggingOut else block
 
         // Notification system
