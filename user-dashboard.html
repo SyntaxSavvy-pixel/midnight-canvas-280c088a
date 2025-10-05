@@ -1222,13 +1222,18 @@
             if (storedUserData) {
                 try {
                     const parsedData = JSON.parse(storedUserData);
+                    console.log('📂 Loaded from localStorage:', parsedData);
                     userEmail = parsedData.email;
                     // Load avatar URL and provider if available
                     if (parsedData.avatar) {
                         userData.avatarUrl = parsedData.avatar;
+                        console.log('✅ Avatar URL loaded:', parsedData.avatar);
                     }
                     if (parsedData.provider) {
                         userData.provider = parsedData.provider;
+                        console.log('✅ Provider loaded:', parsedData.provider);
+                    } else {
+                        console.warn('⚠️ No provider in localStorage, defaulting to email');
                     }
                     if (parsedData.name) {
                         userData.name = parsedData.name;

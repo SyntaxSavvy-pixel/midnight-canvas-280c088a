@@ -897,6 +897,9 @@
 
                 // Store user data
                 const provider = user.app_metadata.provider || 'email';
+                console.log('🔍 Provider from app_metadata:', user.app_metadata.provider);
+                console.log('🔍 Full app_metadata:', user.app_metadata);
+
                 const userData = {
                     email: user.email,
                     name: user.user_metadata.full_name ||
@@ -908,7 +911,8 @@
                     avatar: user.user_metadata.avatar_url || user.user_metadata.picture
                 };
 
-                console.log('📦 User data:', userData);
+                console.log('📦 User data (SIGNED_IN):', userData);
+                console.log('📦 Provider set to:', userData.provider);
 
                 // Save to localStorage for dashboard access
                 localStorage.setItem('tabmangment_user', JSON.stringify(userData));
@@ -1001,15 +1005,22 @@
                     }
 
                     // Build user data object
+                    const detectedProvider = session.user.app_metadata?.provider || 'email';
+                    console.log('🔍 Existing session - Provider from app_metadata:', session.user.app_metadata?.provider);
+                    console.log('🔍 Existing session - Full app_metadata:', session.user.app_metadata);
+
                     const userData = {
                         id: session.user.id,
                         email: session.user.email,
                         name: session.user.user_metadata?.full_name || session.user.user_metadata?.name || session.user.user_metadata?.user_name || session.user.email.split('@')[0],
-                        provider: session.user.app_metadata?.provider || 'email',
+                        provider: detectedProvider,
                         avatar: session.user.user_metadata?.avatar_url || session.user.user_metadata?.picture,
                         isPro: false,
                         plan: 'free'
                     };
+
+                    console.log('📦 User data (existing session):', userData);
+                    console.log('📦 Provider set to:', userData.provider);
 
                     // Save to localStorage
                     localStorage.setItem('tabmangment_user', JSON.stringify(userData));
