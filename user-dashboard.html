@@ -1162,8 +1162,12 @@
             }
 
             if (!authToken || !userEmail) {
-                // Redirect to login if not authenticated
-                window.location.href = '/auth';
+                // Check if user just logged out (don't force redirect in a loop)
+                const justLoggedOut = sessionStorage.getItem('user_logged_out');
+                if (!justLoggedOut) {
+                    // Only redirect to login if user didn't intentionally log out
+                    window.location.href = '/new-authentication';
+                }
                 return;
             }
 
@@ -2500,6 +2504,9 @@
         // Logout function
         async function logout() {
             console.log('🚪 Logging out...');
+
+            // Set flag to indicate intentional logout
+            sessionStorage.setItem('user_logged_out', 'true');
 
             // Clear all authentication data
             localStorage.removeItem('tabmangment_token');

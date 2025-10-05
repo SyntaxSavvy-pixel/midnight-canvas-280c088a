@@ -744,6 +744,9 @@
                     localStorage.setItem('tabmangment_token', result.token);
                     localStorage.setItem('tabmangment_user', JSON.stringify(result.user));
 
+                    // Clear logout flag since user is logging back in
+                    sessionStorage.removeItem('user_logged_out');
+
                     showNotification('Login successful! Syncing with extension...', 'success');
 
                     // Notify extension about login via content script bridge
@@ -910,6 +913,10 @@
                 // Save to localStorage for dashboard access
                 localStorage.setItem('tabmangment_user', JSON.stringify(userData));
                 localStorage.setItem('tabmangment_token', session.access_token);
+
+                // Clear logout flag since user is logging in
+                sessionStorage.removeItem('user_logged_out');
+
                 console.log('✅ Saved to localStorage for dashboard');
 
                 // Save to database first
