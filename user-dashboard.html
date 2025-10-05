@@ -99,6 +99,13 @@
             color: white;
             font-weight: 600;
             cursor: pointer;
+            overflow: hidden;
+        }
+
+        .user-avatar img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
         }
 
         .logout-btn {
@@ -1002,6 +1009,7 @@
             plan: 'free', // 'free' or 'pro'
             joinDate: '',
             avatar: '',
+            avatarUrl: null, // Profile picture from OAuth
             isPro: false,
             subscriptionStatus: 'free',
             currentPeriodEnd: null,
@@ -1156,6 +1164,10 @@
                 try {
                     const parsedData = JSON.parse(storedUserData);
                     userEmail = parsedData.email;
+                    // Load avatar URL if available
+                    if (parsedData.avatar) {
+                        userData.avatarUrl = parsedData.avatar;
+                    }
                 } catch (e) {
                     console.error('Error parsing userData:', e);
                 }
@@ -1399,7 +1411,11 @@
                     userData.currentPeriodEnd = data.currentPeriodEnd;
                     userData.stripeCustomerId = data.stripeCustomerId;
                     userData.stripeSubscriptionId = data.stripeSubscriptionId;
-                    userData.avatar = userData.name.split(' ').map(n => n[0]).join('').toUpperCase();
+
+                    // Keep avatar URL if it exists (from OAuth), otherwise use initials
+                    if (!userData.avatarUrl) {
+                        userData.avatar = userData.name.split(' ').map(n => n[0]).join('').toUpperCase();
+                    }
 
                     // Save to localStorage
                     localStorage.setItem('tabmangment_user', JSON.stringify(userData));
@@ -1468,7 +1484,17 @@
 
         // Update user display
         function updateUserDisplay() {
-            document.getElementById('user-avatar').textContent = userData.avatar;
+            const avatarEl = document.getElementById('user-avatar');
+
+            // Check if user has an avatar URL (from Google/GitHub OAuth)
+            if (userData.avatarUrl) {
+                // Replace text with image
+                avatarEl.innerHTML = `<img src="${userData.avatarUrl}" alt="${userData.name}" onerror="this.style.display='none'; this.parentElement.textContent='${userData.avatar || userData.name.charAt(0).toUpperCase()}'">`;
+            } else {
+                // Fallback to initials
+                avatarEl.textContent = userData.avatar || userData.name.charAt(0).toUpperCase();
+            }
+
             document.getElementById('profile-name').value = userData.name;
             document.getElementById('profile-email').value = userData.email;
         }
