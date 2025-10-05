@@ -1477,7 +1477,8 @@
                     userData.stripeCustomerId = data.stripeCustomerId;
                     userData.stripeSubscriptionId = data.stripeSubscriptionId;
 
-                    // Keep avatar URL if it exists (from OAuth), otherwise use initials
+                    // Keep provider and avatar URL if they exist (from OAuth), otherwise use defaults
+                    // Note: API doesn't return provider/avatar, so we preserve what we loaded earlier
                     if (userData.avatarUrl) {
                         // Preserve the avatar URL in the avatar field for consistency
                         userData.avatar = userData.avatarUrl;
@@ -1486,7 +1487,10 @@
                         userData.avatar = userData.name.split(' ').map(n => n[0]).join('').toUpperCase();
                     }
 
-                    // Save to localStorage
+                    // Provider is already set from localStorage earlier, don't overwrite it
+                    // It was loaded in lines 1230-1232
+
+                    // Save to localStorage (includes provider and avatar from earlier load)
                     localStorage.setItem('tabmangment_user', JSON.stringify(userData));
                 } else {
                     throw new Error('Failed to load user data');
@@ -1594,6 +1598,14 @@
             const oauthInfoCard = document.getElementById('oauth-info-card');
             const oauthProviderName = document.getElementById('oauth-provider-name');
             const oauthProviderIcon = document.getElementById('oauth-provider-icon');
+
+            console.log('🔧 Updating provider display for:', provider);
+
+            // Safety check - make sure elements exist
+            if (!providerBadge) {
+                console.warn('⚠️ Provider badge element not found');
+                return;
+            }
 
             // Clear existing badge
             providerBadge.innerHTML = '';
