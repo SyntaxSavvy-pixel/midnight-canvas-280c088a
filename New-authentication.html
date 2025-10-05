@@ -829,8 +829,8 @@
         async function socialLogin(provider) {
             console.log(`${provider} login initiated`);
 
-            if (provider === 'google') {
-                try {
+            try {
+                if (provider === 'google') {
                     showNotification('Redirecting to Google...', 'info');
 
                     const { data, error } = await supabaseClient.auth.signInWithOAuth({
@@ -851,12 +851,29 @@
                     } else {
                         console.log('✅ Google OAuth initiated:', data);
                     }
-                } catch (error) {
-                    console.error('❌ Social login error:', error);
-                    showNotification('Authentication error. Please try again.', 'error');
+                } else if (provider === 'github') {
+                    showNotification('Redirecting to GitHub...', 'info');
+
+                    const { data, error } = await supabaseClient.auth.signInWithOAuth({
+                        provider: 'github',
+                        options: {
+                            redirectTo: 'https://tabmangment.netlify.app/new-authentication',
+                            scopes: 'user:email'
+                        }
+                    });
+
+                    if (error) {
+                        console.error('❌ GitHub sign-in error:', error);
+                        showNotification('Failed to sign in with GitHub: ' + error.message, 'error');
+                    } else {
+                        console.log('✅ GitHub OAuth initiated:', data);
+                    }
+                } else {
+                    showNotification(`${provider} login coming soon!`, 'info');
                 }
-            } else {
-                showNotification(`${provider} login coming soon!`, 'info');
+            } catch (error) {
+                console.error('❌ Social login error:', error);
+                showNotification('Authentication error. Please try again.', 'error');
             }
         }
 
@@ -876,11 +893,16 @@
                 console.log('✅ User signed in:', user.email);
 
                 // Store user data
+                const provider = user.app_metadata.provider || 'email';
                 const userData = {
                     email: user.email,
-                    name: user.user_metadata.full_name || user.user_metadata.name || user.email.split('@')[0],
+                    name: user.user_metadata.full_name ||
+                          user.user_metadata.name ||
+                          user.user_metadata.user_name ||
+                          user.email.split('@')[0],
                     id: user.id,
-                    provider: user.app_metadata.provider || 'google'
+                    provider: provider,
+                    avatar: user.user_metadata.avatar_url || user.user_metadata.picture
                 };
 
                 console.log('📦 User data:', userData);

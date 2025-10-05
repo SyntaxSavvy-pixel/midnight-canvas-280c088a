@@ -285,17 +285,6 @@ class PaymentStatusChecker {
         // Background script might not be available
       }
 
-      // Show success notification
-      try {
-        chrome.notifications.create({
-          type: 'basic',
-          iconUrl: 'icons/icon-48.png',
-          title: 'Tabmangment Pro Activated!',
-          message: 'All Pro features are now available. Thank you for upgrading!'
-        });
-      } catch (e) {
-        // Notifications might not be available
-      }
 
       console.log('✅ Pro features activated successfully!');
       return true;

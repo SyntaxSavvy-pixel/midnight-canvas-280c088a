@@ -55,15 +55,6 @@ window.manuallyActivatePro = async function(email) {
         console.log('✅ Pro status stored in extension');
       }
 
-      // 4. Notify user
-      if (typeof chrome !== 'undefined' && chrome.notifications) {
-        chrome.notifications.create({
-          type: 'basic',
-          iconUrl: 'icons/icon-48.png',
-          title: 'Tabmangment Pro Activated!',
-          message: 'Pro features are now active. Thank you for upgrading!'
-        });
-      }
 
       // 5. Send message to extension to refresh UI
       if (typeof chrome !== 'undefined' && chrome.runtime) {

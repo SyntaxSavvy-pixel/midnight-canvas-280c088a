@@ -276,14 +276,7 @@ class ImprovedPaymentHandler {
 
     // Show success notification
     showSuccessNotification() {
-        if (chrome.notifications) {
-            chrome.notifications.create({
-                type: 'basic',
-                iconUrl: 'icons/icon-48.png',
-                title: 'Tabmangment Pro Activated!',
-                message: 'Your Pro features are now available. Enjoy unlimited tab management!'
-            });
-        }
+        // Notification removed
     }
 
     // Check for existing payment on extension startup

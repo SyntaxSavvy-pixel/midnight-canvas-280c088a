@@ -1802,15 +1802,7 @@ class TabmangmentPopup {
                 // Dashboard may not be open, that's fine
             }
 
-            // Show notification
-            if (chrome.notifications) {
-                chrome.notifications.create({
-                    type: 'basic',
-                    iconUrl: 'icons/icon-48.png',
-                    title: 'Logged Out',
-                    message: 'You have been successfully logged out.'
-                });
-            }
+            // Notification disabled
 
             // Show login screen instead of reloading
             this.showLoginScreen();
@@ -4218,6 +4210,22 @@ class TabmangmentPopup {
         try {
             console.log('ACTIVATING PRO FEATURES FOR PAYMENT - USER:', userEmail);
 
+            // Check if user is already Pro - don't spam notifications
+            const currentStatus = await chrome.storage.local.get(['isPremium', 'proWelcomeShown']);
+
+            // If already Pro, just update UI silently
+            if (currentStatus.isPremium) {
+                console.log('⏭️ User already Pro - skipping notification');
+                this.isPremium = true;
+                await this.render();
+                this.updateUIForProUser();
+                await this.renderSubscriptionPlan();
+                return true;
+            }
+
+            // User is newly becoming Pro
+            const shouldShowNotification = !currentStatus.proWelcomeShown;
+
             const proData = {
                 isPremium: true,
                 subscriptionActive: true,
@@ -4230,7 +4238,8 @@ class TabmangmentPopup {
                 activatedVia: 'popup_auto_detection',
                 paymentDetected: true,
                 autoActivated: true,
-                detectionMethod: 'popup_scan'
+                detectionMethod: 'popup_scan',
+                proWelcomeShown: true  // Mark as shown immediately
             };
 
             await chrome.storage.local.set(proData);
@@ -4243,15 +4252,7 @@ class TabmangmentPopup {
             this.updateUIForProUser();
             await this.renderSubscriptionPlan();
 
-            // Show success notification
-            if (chrome.notifications) {
-                chrome.notifications.create({
-                    type: 'basic',
-                    iconUrl: 'icons/icon-48.png',
-                    title: 'Tabmangment Pro Activated!',
-                    message: 'Payment detected! Pro features are now available.'
-                });
-            }
+            // Notification removed - no spam
 
             if (this.showMessage) {
                 this.showMessage('🎉 Pro features activated! Payment detected.', 'success');
@@ -4412,6 +4413,19 @@ class TabmangmentPopup {
     }
     async upgradeToProPlan() {
         try {
+            // IMPORTANT: Check if already Pro - don't show welcome again
+            const currentStatus = await chrome.storage.local.get(['isPremium', 'hasProPlan', 'proWelcomeShown']);
+
+            // If already Pro, just update UI silently (no notification)
+            if (currentStatus.isPremium || currentStatus.hasProPlan) {
+                console.log('⏭️ Already Pro - skipping upgrade notification');
+                this.isPremium = true;
+                this.updateUIForProUser();
+                return; // Don't show welcome message again
+            }
+
+            // User is newly upgrading to Pro
+            const shouldShowWelcome = !currentStatus.proWelcomeShown;
 
             await chrome.storage.local.set({
                 hasProPlan: true,
@@ -4419,14 +4433,15 @@ class TabmangmentPopup {
                 subscriptionActive: true,
                 planType: 'pro',
                 proUpgradedAt: new Date().toISOString(),
-                proFeatures: ['unlimited_tabs', 'advanced_management', 'premium_themes']
+                proFeatures: ['unlimited_tabs', 'advanced_management', 'premium_themes'],
+                proWelcomeShown: true  // Mark as shown to prevent spam
             });
 
             await chrome.storage.local.remove(['expecting_payment', 'payment_success']);
 
             this.isPremium = true;
 
-            this.showProSuccessMessage();
+            // Welcome notification removed - no spam
             this.updateUIForProUser();
 
             const paymentBtn = document.getElementById('payment-completion-btn');
@@ -4440,45 +4455,9 @@ class TabmangmentPopup {
         }
     }
     async showProSuccessMessage() {
-        // Only show welcome message ONCE when user first upgrades
-        const { proWelcomeShown } = await chrome.storage.local.get(['proWelcomeShown']);
-
-        if (proWelcomeShown) {
-            console.log('⏭️ Pro welcome already shown, skipping...');
-            return; // Already shown, don't spam
-        }
-
-        // Mark as shown so it never shows again
-        await chrome.storage.local.set({ proWelcomeShown: true });
-
-        const successModal = document.createElement('div');
-        successModal.style.cssText = `
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.5); display: flex; align-items: center;
-            justify-content: center; z-index: 10000; backdrop-filter: blur(8px);
-            -webkit-backdrop-filter: blur(8px); transition: all 0.3s ease; pointer-events: all;
-        `;
-        successModal.innerHTML = `
-            <div style="background: linear-gradient(135deg, #4CAF50, #45a049); padding: 40px; border-radius: 16px; text-align: center; color: white; max-width: 400px; margin: 20px;">
-                <div style="font-size: 64px; margin-bottom: 20px;">🎉</div>
-                <h2 style="margin: 0 0 15px; font-size: 24px;">Welcome to Tabmangment Pro!</h2>
-                <p style="margin: 0 0 20px; font-size: 16px; opacity: 0.9;">
-                    Your payment was successful! You now have access to:
-                </p>
-                <ul style="text-align: left; margin: 0 0 25px; padding-left: 20px; font-size: 14px;">
-                    <li>✅ Unlimited tabs</li>
-                    <li>✅ Advanced tab management</li>
-                    <li>✅ Premium themes</li>
-                    <li>✅ Priority support</li>
-                </ul>
-                <p style="margin: 0; font-size: 14px; opacity: 0.8;">Extension will refresh in 3 seconds...</p>
-            </div>
-        `;
-        document.body.appendChild(successModal);
-
-        setTimeout(() => {
-            successModal.remove();
-        }, 3000);
+        // Function disabled - no notifications/modals
+        console.log('✅ Pro activated (notifications disabled)');
+        return;
     }
     async updateUIForProUser() {
 

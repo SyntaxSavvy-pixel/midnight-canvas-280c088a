@@ -256,13 +256,6 @@ class ProManager {
         this.showMessage('🎉 Pro features activated! Welcome to Pro!', 'success');
         this.onProActivated();
 
-        chrome.notifications.create({
-          type: 'basic',
-          iconUrl: 'icons/icon-48.png',
-          title: 'Welcome to Pro!',
-          message: '🎉 Your Pro features are now active!'
-        });
-
         return;
       }
 

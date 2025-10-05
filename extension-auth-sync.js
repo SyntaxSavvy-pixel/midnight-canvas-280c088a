@@ -137,15 +137,6 @@ class ExtensionAuthSync {
     // Sync latest user data
     await this.syncUserData();
 
-    // Show notification
-    if (chrome.notifications) {
-      chrome.notifications.create({
-        type: 'basic',
-        iconUrl: 'icons/icon-48.png',
-        title: 'Tabmangment Login',
-        message: `Welcome back, ${user.name}! Your account is now synced.`
-      });
-    }
   }
 
   async handleStorageChange(changes) {

@@ -94,13 +94,6 @@ class TabManager {
         chrome.runtime.onStartup.addListener(() => this.loadExistingTabs());
         chrome.runtime.onInstalled.addListener((details) => this.handleInstalled(details));
 
-        chrome.notifications.onButtonClicked.addListener((notificationId, buttonIndex) => {
-            this.handleNotificationButtonClick(notificationId, buttonIndex);
-        });
-
-        chrome.notifications.onClicked.addListener((notificationId) => {
-            this.handleNotificationClick(notificationId);
-        });
     }
 
     async loadExistingTabs() {
@@ -450,6 +443,11 @@ class TabManager {
                 return;
             }
 
+            // Check if user is already Pro - don't spam notifications
+            const currentStatus = await chrome.storage.local.get(['isPremium', 'proWelcomeShown']);
+
+            const shouldShowNotification = !currentStatus.isPremium && !currentStatus.proWelcomeShown;
+
             await chrome.storage.local.set({
                 payment_success: {
                     sessionId: sessionId,
@@ -458,17 +456,13 @@ class TabManager {
                     processed: false
                 },
                 userEmail: email,
-                paymentInitiated: Date.now()
+                paymentInitiated: Date.now(),
+                proWelcomeShown: true  // Mark as shown to prevent spam
             });
 
             await this.checkAndActivateSubscription(email);
 
-            chrome.notifications.create({
-                type: 'basic',
-                iconUrl: 'icons/icon-48.png',
-                title: 'Tabmangment Pro Activated!',
-                message: '🎉 Your Pro features are now active. Enjoy unlimited tabs and premium functionality!'
-            });
+            // Pro notification removed - no spam
 
         } catch (error) {
 
@@ -1112,25 +1106,7 @@ class TabManager {
             const title = tab.title || 'Unknown Tab';
             const domain = this.extractDomain(tab.url);
 
-            const notificationId = `timer-warning-${tabId}`;
-
-            await chrome.notifications.create(notificationId, {
-                type: 'basic',
-                iconUrl: 'icons/icon-48.png',
-                title: '⏰ Tab Closing Soon!',
-                message: `"${this.truncateText(title, 50)}" will close in ${seconds} second${seconds === 1 ? '' : 's'}`,
-                contextMessage: `Domain: ${domain}`,
-                priority: 2,
-                requireInteraction: true,
-                buttons: [
-                    { title: 'Cancel Timer' },
-                    { title: 'Add 5 Minutes' }
-                ]
-            });
-
-            setTimeout(() => {
-                chrome.notifications.clear(notificationId);
-            }, 10000);
+            // Timer notification disabled
 
         } catch (error) {
         }
@@ -1161,76 +1137,6 @@ class TabManager {
         return text.substring(0, maxLength - 3) + '...';
     }
 
-    async handleNotificationButtonClick(notificationId, buttonIndex) {
-        try {
-            if (notificationId.startsWith('timer-warning-')) {
-                const tabIdStr = notificationId.replace('timer-warning-', '');
-                const tabId = parseInt(tabIdStr);
-                if (isNaN(tabId) || tabId <= 0) {
-                    return;
-                }
-
-                if (buttonIndex === 0) {
-                    await this.clearTabTimer(tabId);
-                } else if (buttonIndex === 1) {
-                    const tabInfo = this.tabData.get(tabId);
-                    if (tabInfo && tabInfo.timerActive) {
-                        const newCloseTime = tabInfo.autoCloseTime + (5 * 60 * 1000);
-                        tabInfo.autoCloseTime = newCloseTime;
-
-                        if (tabInfo.timer) {
-                            clearTimeout(tabInfo.timer);
-                        }
-
-                        const timeRemaining = newCloseTime - Date.now();
-                        tabInfo.timer = setTimeout(async () => {
-                            try {
-                                if (!tabInfo.protected) {
-                                    await this.closeTab(tabId, true); // true = auto-close
-                                }
-                            } catch (error) {
-                            }
-                        }, timeRemaining);
-
-                        this.tabData.set(tabId, tabInfo);
-                    }
-                }
-
-                chrome.notifications.clear(notificationId);
-
-                this.notificationSettings.notifiedTabs.delete(tabId);
-            }
-            else {
-                chrome.notifications.clear(notificationId);
-            }
-
-        } catch (error) {
-        }
-    }
-
-    async handleNotificationClick(notificationId) {
-        try {
-            if (notificationId.startsWith('timer-warning-')) {
-                const tabIdStr = notificationId.replace('timer-warning-', '');
-                const tabId = parseInt(tabIdStr);
-                if (isNaN(tabId) || tabId <= 0) {
-                    return;
-                }
-
-                const tab = await chrome.tabs.get(tabId).catch(() => null);
-                if (tab) {
-                    await chrome.tabs.update(tabId, { active: true });
-                    await chrome.windows.update(tab.windowId, { focused: true });
-                }
-            }
-            else {
-            }
-
-            chrome.notifications.clear(notificationId);
-
-        } catch (error) {
-        }
-    }
 
     handleInstalled(details) {
         if (details.reason === 'install') {
@@ -1708,16 +1614,7 @@ class SmartTabAnalytics {
         }
 
         try {
-            await chrome.notifications.create(notificationId, {
-                type: 'basic',
-                iconUrl: '/icons/icon-48.png',
-                title: '🤖 SmartTab AI',
-                message: recommendation.message,
-                buttons: [
-                    { title: '✨ Optimize Now' },
-                    { title: '⏰ Remind Later' }
-                ]
-            });
+            // SmartTab AI notification disabled
 
             this.notificationCooldown.set(recommendation.type, Date.now());
             this.recordNotification('general_notifications');
@@ -1898,16 +1795,7 @@ class SmartTabAnalytics {
         const notificationId = `performance_boost_${Date.now()}`;
 
         try {
-            await chrome.notifications.create(notificationId, {
-                type: 'basic',
-                iconUrl: '/icons/icon-48.png',
-                title: '⚡ Tabmangment Performance Boost',
-                message: recommendation.message,
-                buttons: [
-                    { title: '🚀 Boost Now' },
-                    { title: '⏰ Remind Later' }
-                ]
-            });
+            // Performance boost notification disabled
 
             this.performanceMonitor.lastPerformanceBoost = Date.now();
             this.recordNotification('performance_alerts');
@@ -1921,41 +1809,6 @@ class SmartTabAnalytics {
     }
 }
 
-chrome.notifications.onButtonClicked.addListener(async (notificationId, buttonIndex) => {
-    if (notificationId.startsWith('smart_')) {
-        try {
-            const recommendation = await chrome.storage.local.get(`pending_recommendation_${notificationId}`);
-
-            if (buttonIndex === 0) {
-                await smartAnalytics.executeRecommendation(recommendation[`pending_recommendation_${notificationId}`]);
-            } else {
-                setTimeout(() => {
-                    smartAnalytics.sendSmartNotification(recommendation[`pending_recommendation_${notificationId}`]);
-                }, 30 * 60 * 1000);
-            }
-
-            await chrome.storage.local.remove(`pending_recommendation_${notificationId}`);
-
-        } catch (error) {
-        }
-    } else if (notificationId.startsWith('performance_boost_')) {
-        try {
-            const recommendation = await chrome.storage.local.get(`pending_performance_${notificationId}`);
-
-            if (buttonIndex === 0) {
-                await smartAnalytics.executePerformanceBoost(recommendation[`pending_performance_${notificationId}`]);
-            } else {
-                setTimeout(() => {
-                    smartAnalytics.sendPerformanceBoostNotification(recommendation[`pending_performance_${notificationId}`]);
-                }, 30 * 60 * 1000);
-            }
-
-            await chrome.storage.local.remove(`pending_performance_${notificationId}`);
-
-        } catch (error) {
-        }
-    }
-});
 
 SmartTabAnalytics.prototype.executeRecommendation = async function(recommendation) {
     switch (recommendation.action) {
@@ -1967,12 +1820,7 @@ SmartTabAnalytics.prototype.executeRecommendation = async function(recommendatio
                 }
             }
             if (tabManager.shouldShowNotification('general_notifications')) {
-                await chrome.notifications.create('optimization_complete', {
-                    type: 'basic',
-                    iconUrl: '/icons/icon-48.png',
-                    title: '✨ Optimization Complete',
-                    message: `Closed ${recommendation.tabs.length} zombie tabs`
-                });
+                // Optimization notification disabled
                 tabManager.recordNotification('general_notifications');
             }
             break;
@@ -2053,32 +1901,17 @@ SmartTabAnalytics.prototype.executePerformanceBoost = async function(recommendat
         }
 
         if (tabsClosed === 0 && this.shouldShowNotification('performance_alerts')) {
-            await chrome.notifications.create('performance_boost_complete', {
-                type: 'basic',
-                iconUrl: '/icons/icon-48.png',
-                title: '✅ Performance Optimized',
-                message: `🚀 Browser optimized! Memory management improved and background processes optimized. Your browser should now run faster and smoother.`
-            });
+            // Performance notification disabled
             this.recordNotification('performance_alerts');
         } else if (tabsClosed > 0 && this.shouldShowNotification('performance_alerts')) {
-            await chrome.notifications.create('performance_boost_complete', {
-                type: 'basic',
-                iconUrl: '/icons/icon-48.png',
-                title: '✅ Performance Boost Complete',
-                message: `🚀 Successfully optimized! Closed ${tabsClosed} tabs, saved ~${memorySaved}MB memory. Your browser should now run faster and smoother.`
-            });
+            // Performance notification disabled
             this.recordNotification('performance_alerts');
         }
 
     } catch (error) {
 
         if (this.shouldShowNotification('general_notifications')) {
-            await chrome.notifications.create('performance_boost_error', {
-                type: 'basic',
-                iconUrl: '/icons/icon-48.png',
-                title: '❌ Performance Boost Error',
-                message: 'There was an issue optimizing your tabs. Please try again.'
-            });
+            // Error notification disabled
             this.recordNotification('general_notifications');
         }
     };

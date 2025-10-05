@@ -330,28 +330,12 @@ class StripeProIntegration {
 
     // Show checkout error
     showCheckoutError(message) {
-        if (chrome && chrome.notifications) {
-            chrome.notifications.create({
-                type: 'basic',
-                iconUrl: 'icons/icon-48.png',
-                title: 'Checkout Error',
-                message: message || 'Failed to start checkout. Please try again.'
-            });
-        } else {
-            alert('Checkout Error: ' + message);
-        }
+        alert('Checkout Error: ' + message);
     }
 
     // Show Pro activated notification
     showProActivatedNotification() {
-        if (chrome && chrome.notifications) {
-            chrome.notifications.create({
-                type: 'basic',
-                iconUrl: 'icons/icon-48.png',
-                title: 'Pro Activated!',
-                message: '🎉 Welcome to Tabmangment Pro! All features are now unlocked.'
-            });
-        }
+        // Notification removed
     }
 
     // Public method to manually refresh user status

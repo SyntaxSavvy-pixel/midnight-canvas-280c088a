@@ -204,15 +204,6 @@ class SimpleAuth {
             });
         }
 
-        // Show notification
-        if (chrome && chrome.notifications) {
-            chrome.notifications.create({
-                type: 'basic',
-                iconUrl: 'icons/icon-48.png',
-                title: 'Pro Features Activated!',
-                message: '🎉 Welcome to Tabmangment Pro! All features unlocked.'
-            });
-        }
 
         console.log('✅ Pro features activated');
     }

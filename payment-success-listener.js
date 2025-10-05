@@ -93,15 +93,6 @@ class PaymentSuccessListener {
                     proActivationSignal: Date.now()
                 });
 
-                if (chrome.notifications) {
-                    chrome.notifications.create({
-                        type: 'basic',
-                        iconUrl: 'icons/icon-48.png',
-                        title: 'Welcome to Tabmangment Pro! 🎉',
-                        message: 'Your Pro features are now active!'
-                    });
-                }
-
                 setTimeout(() => {
                     if (chrome.tabs) {
                         chrome.tabs.remove(tabId).catch(() => {
