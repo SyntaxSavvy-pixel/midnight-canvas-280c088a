@@ -75,33 +75,44 @@ class TabmangmentPopup {
 
             // CHECK AUTHENTICATION FIRST - Users must be logged in
             const isAuthenticated = await this.checkAuthentication();
+
             if (!isAuthenticated) {
-                // Before showing login screen, try to sync from web localStorage
-                console.log('🔍 Not authenticated in extension, checking web for existing login...');
+                // Not found in extension storage - try to sync from web as last resort
+                console.log('🔍 Not authenticated in extension storage');
+                console.log('🌐 Attempting to sync from web (if page is open)...');
+
                 const webLogin = await this.checkWebLoginStatus();
 
                 if (webLogin) {
-                    console.log('✅ Found login on web, syncing to extension...');
-                    // Sync successful, trust it and continue
-                    // Get the data we just saved
+                    console.log('✅ Successfully synced from web!');
+                    // Get the newly synced data
                     const syncedData = await chrome.storage.local.get(['userEmail', 'userName', 'isPremium']);
-                    this.userEmail = syncedData.userEmail;
-                    this.userName = syncedData.userName;
-                    this.isPremium = syncedData.isPremium || false;
 
-                    console.log('✅ Successfully synced from web, continuing with:', {
-                        email: this.userEmail,
-                        name: this.userName,
-                        isPremium: this.isPremium
-                    });
+                    if (syncedData.userEmail) {
+                        this.userEmail = syncedData.userEmail;
+                        this.userName = syncedData.userName;
+                        this.isPremium = syncedData.isPremium || false;
 
-                    // Hide loader and continue with initialization
-                    // Don't re-check auth, we already validated via API
+                        console.log('✅ Continuing with synced data:', {
+                            email: this.userEmail,
+                            name: this.userName,
+                            isPremium: this.isPremium
+                        });
+                        // Continue with initialization
+                    } else {
+                        console.log('⚠️ Web sync claimed success but no email in storage');
+                        this.hideLoader();
+                        this.showLoginScreen();
+                        return;
+                    }
                 } else {
-                    this.hideLoader(); // Hide loader before showing login screen
+                    console.log('❌ No login found - showing login screen');
+                    this.hideLoader();
                     this.showLoginScreen();
                     return; // Stop initialization - user must login first
                 }
+            } else {
+                console.log('✅ User authenticated from storage - proceeding');
             }
 
             this.initializeEmailJS();
@@ -1918,8 +1929,15 @@ class TabmangmentPopup {
 
     async checkAuthentication() {
         try {
+            console.log('🔍 ============ AUTH CHECK START ============');
+
             // Get ALL storage data for debugging
             const allData = await chrome.storage.local.get(null);
+            console.log('🔍 ALL storage data:', allData);
+            console.log('🔍 Storage keys present:', Object.keys(allData));
+            console.log('🔍 userEmail value:', allData.userEmail);
+            console.log('🔍 authToken present:', !!allData.authToken);
+            console.log('🔍 isPremium:', allData.isPremium);
 
             // ONE-TIME CLEANUP: Remove fallback emails
             if (allData.userEmail && (allData.userEmail.startsWith('fallback_') || allData.userEmail.startsWith('user_'))) {
@@ -1931,12 +1949,6 @@ class TabmangmentPopup {
                 console.log('🔍 Storage after cleanup:', cleanData);
                 return false; // Show login screen
             }
-
-            console.log('🔍 ============ AUTH CHECK START ============');
-            console.log('🔍 ALL storage data:', allData);
-            console.log('🔍 userEmail value:', allData.userEmail);
-            console.log('🔍 authToken present:', !!allData.authToken);
-            console.log('🔍 isPremium:', allData.isPremium);
 
             const stored = await chrome.storage.local.get(['userEmail', 'authToken', 'userName', 'isPremium', 'planType']);
 
