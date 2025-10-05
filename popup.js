@@ -2102,12 +2102,15 @@ class TabmangmentPopup {
                 refreshBtn.textContent = '🔄 Checking...';
                 refreshBtn.disabled = true;
 
-                // Check storage again
-                const stored = await chrome.storage.local.get(['userEmail', 'authToken', 'userName', 'isPremium', 'planType']);
-                console.log('🔄 Manual refresh - storage check:', stored);
+                // First try to sync from web
+                console.log('🔄 Manual refresh - trying to sync from web...');
+                const webLogin = await this.checkWebLoginStatus();
 
-                if (stored.userEmail && !stored.userEmail.startsWith('fallback_') && !stored.userEmail.startsWith('user_')) {
-                    console.log('✅ Found valid login in storage!');
+                if (webLogin) {
+                    console.log('✅ Successfully synced from web!');
+
+                    // Get the synced data
+                    const stored = await chrome.storage.local.get(['userEmail', 'authToken', 'userName', 'isPremium', 'planType']);
 
                     // Update state
                     this.userEmail = stored.userEmail;
@@ -2122,7 +2125,27 @@ class TabmangmentPopup {
                     await this.render();
                     this.hideLoader();
                 } else {
-                    console.log('❌ Still no valid login in storage');
+                    // Check storage again as fallback
+                    const stored = await chrome.storage.local.get(['userEmail', 'authToken', 'userName', 'isPremium', 'planType']);
+                    console.log('🔄 Manual refresh - storage check:', stored);
+
+                    if (stored.userEmail && !stored.userEmail.startsWith('fallback_') && !stored.userEmail.startsWith('user_')) {
+                        console.log('✅ Found valid login in storage!');
+
+                        // Update state
+                        this.userEmail = stored.userEmail;
+                        this.userName = stored.userName || stored.userEmail.split('@')[0];
+                        this.isPremium = stored.isPremium || false;
+
+                        // Hide login screen
+                        this.hideLoginScreen();
+
+                        // Initialize
+                        await this.loadData();
+                        await this.render();
+                        this.hideLoader();
+                    } else {
+                        console.log('❌ Still no valid login in storage');
                     refreshBtn.textContent = '❌ No login found';
                     setTimeout(() => {
                         refreshBtn.textContent = '🔄 Check Login Status';
