@@ -1952,7 +1952,14 @@ chrome.storage.onChanged.addListener((changes, areaName) => {
         // Log if userEmail is being removed
         if (changes.userEmail && !changes.userEmail.newValue) {
             console.error('⚠️ WARNING: userEmail was REMOVED from storage!');
+            console.error('⚠️ Old value was:', changes.userEmail.oldValue);
             console.trace('Stack trace for userEmail removal');
+
+            // Dump all current storage to see what else was removed
+            chrome.storage.local.get(null).then(allData => {
+                console.error('⚠️ ALL storage after removal:', allData);
+                console.error('⚠️ Storage keys remaining:', Object.keys(allData));
+            });
         }
     }
 });
