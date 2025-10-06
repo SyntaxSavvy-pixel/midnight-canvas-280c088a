@@ -975,16 +975,34 @@
 
                 // Check if email confirmation is required
                 if (data.user && !data.session) {
-                    showNotification('Please check your email to confirm your account!', 'success');
-                } else {
-                    showNotification('Account created successfully! Please sign in.', 'success');
-                }
+                    // Email confirmation is required
+                    console.log('⚠️ Email confirmation required');
+                    showNotification('Please check your email to confirm your account before signing in!', 'success');
 
-                // Switch to login tab after delay
-                setTimeout(() => {
-                    switchToLogin();
-                    document.getElementById('login-email').value = email;
-                }, 2000);
+                    // Switch to login tab after delay
+                    setTimeout(() => {
+                        switchToLogin();
+                        document.getElementById('login-email').value = email;
+                    }, 3000);
+                } else if (data.session) {
+                    // User is auto-logged in (confirmation disabled)
+                    console.log('✅ User auto-logged in (no confirmation required)');
+                    showNotification('Account created successfully! Redirecting...', 'success');
+
+                    // User is already signed in, redirect to dashboard
+                    setTimeout(() => {
+                        window.location.href = '/user-dashboard.html';
+                    }, 1500);
+                } else {
+                    // Account created, need to sign in
+                    console.log('✅ Account created, please sign in');
+                    showNotification('Account created successfully! Please sign in.', 'success');
+
+                    setTimeout(() => {
+                        switchToLogin();
+                        document.getElementById('login-email').value = email;
+                    }, 2000);
+                }
 
             } catch (error) {
                 console.error('❌ Registration error:', error);
