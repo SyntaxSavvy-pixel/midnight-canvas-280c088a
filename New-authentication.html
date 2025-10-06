@@ -186,6 +186,10 @@
             color: #e2e8f0;
         }
 
+        .form-input.with-toggle {
+            padding-right: 3rem;
+        }
+
         .form-input::placeholder {
             color: #64748b;
         }
@@ -194,6 +198,79 @@
             outline: none;
             border-color: #14b8a6;
             background: #0f172a;
+        }
+
+        .password-toggle {
+            position: absolute;
+            right: 1rem;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            color: #64748b;
+            cursor: pointer;
+            padding: 0.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: color 0.3s ease;
+        }
+
+        .password-toggle:hover {
+            color: #14b8a6;
+        }
+
+        .password-toggle svg {
+            width: 20px;
+            height: 20px;
+        }
+
+        .password-strength {
+            margin-top: 0.5rem;
+            height: 4px;
+            background: #1e293b;
+            border-radius: 2px;
+            overflow: hidden;
+        }
+
+        .password-strength-bar {
+            height: 100%;
+            transition: all 0.3s ease;
+            border-radius: 2px;
+        }
+
+        .password-strength-bar.weak {
+            width: 33%;
+            background: #ef4444;
+        }
+
+        .password-strength-bar.medium {
+            width: 66%;
+            background: #f59e0b;
+        }
+
+        .password-strength-bar.strong {
+            width: 100%;
+            background: #10b981;
+        }
+
+        .password-hint {
+            font-size: 0.75rem;
+            color: #64748b;
+            margin-top: 0.5rem;
+        }
+
+        .password-match {
+            font-size: 0.75rem;
+            margin-top: 0.5rem;
+        }
+
+        .password-match.match {
+            color: #10b981;
+        }
+
+        .password-match.no-match {
+            color: #ef4444;
         }
 
         .checkbox-group {
@@ -671,15 +748,38 @@
                     <div class="form-group">
                         <label for="signup-password">Password</label>
                         <div class="input-container">
-                            <input type="password" id="signup-password" class="form-input" placeholder="Create a password" required>
+                            <input type="password" id="signup-password" class="form-input with-toggle" placeholder="Create a password" required>
+                            <button type="button" class="password-toggle" data-target="signup-password">
+                                <svg class="eye-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                </svg>
+                                <svg class="eye-off-icon" style="display: none;" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
+                                </svg>
+                            </button>
                         </div>
+                        <div class="password-strength">
+                            <div id="password-strength-bar" class="password-strength-bar"></div>
+                        </div>
+                        <div id="password-hint" class="password-hint">At least 8 characters</div>
                     </div>
 
                     <div class="form-group">
                         <label for="signup-confirm">Confirm Password</label>
                         <div class="input-container">
-                            <input type="password" id="signup-confirm" class="form-input" placeholder="Confirm your password" required>
+                            <input type="password" id="signup-confirm" class="form-input with-toggle" placeholder="Confirm your password" required>
+                            <button type="button" class="password-toggle" data-target="signup-confirm">
+                                <svg class="eye-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                </svg>
+                                <svg class="eye-off-icon" style="display: none;" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
+                                </svg>
+                            </button>
                         </div>
+                        <div id="password-match" class="password-match"></div>
                     </div>
 
                     <button type="submit" class="btn btn-primary">
@@ -1120,6 +1220,91 @@
                 notification.remove();
             }, 3000);
         }
+        // Password toggle functionality
+        document.addEventListener('DOMContentLoaded', function() {
+            // Toggle password visibility
+            document.querySelectorAll('.password-toggle').forEach(button => {
+                button.addEventListener('click', function() {
+                    const targetId = this.getAttribute('data-target');
+                    const input = document.getElementById(targetId);
+                    const eyeIcon = this.querySelector('.eye-icon');
+                    const eyeOffIcon = this.querySelector('.eye-off-icon');
+
+                    if (input.type === 'password') {
+                        input.type = 'text';
+                        eyeIcon.style.display = 'none';
+                        eyeOffIcon.style.display = 'block';
+                    } else {
+                        input.type = 'password';
+                        eyeIcon.style.display = 'block';
+                        eyeOffIcon.style.display = 'none';
+                    }
+                });
+            });
+
+            // Password strength checker
+            const passwordInput = document.getElementById('signup-password');
+            const strengthBar = document.getElementById('password-strength-bar');
+            const passwordHint = document.getElementById('password-hint');
+
+            if (passwordInput && strengthBar) {
+                passwordInput.addEventListener('input', function() {
+                    const password = this.value;
+                    let strength = 0;
+
+                    if (password.length >= 8) strength++;
+                    if (password.match(/[a-z]/) && password.match(/[A-Z]/)) strength++;
+                    if (password.match(/[0-9]/)) strength++;
+                    if (password.match(/[^a-zA-Z0-9]/)) strength++;
+
+                    // Remove all classes
+                    strengthBar.className = 'password-strength-bar';
+
+                    if (password.length === 0) {
+                        passwordHint.textContent = 'At least 8 characters';
+                        passwordHint.style.color = '#64748b';
+                    } else if (strength <= 2) {
+                        strengthBar.classList.add('weak');
+                        passwordHint.textContent = 'Weak password';
+                        passwordHint.style.color = '#ef4444';
+                    } else if (strength === 3) {
+                        strengthBar.classList.add('medium');
+                        passwordHint.textContent = 'Medium strength';
+                        passwordHint.style.color = '#f59e0b';
+                    } else {
+                        strengthBar.classList.add('strong');
+                        passwordHint.textContent = 'Strong password';
+                        passwordHint.style.color = '#10b981';
+                    }
+                });
+            }
+
+            // Password match checker
+            const confirmInput = document.getElementById('signup-confirm');
+            const matchIndicator = document.getElementById('password-match');
+
+            if (confirmInput && matchIndicator && passwordInput) {
+                const checkPasswordMatch = () => {
+                    const password = passwordInput.value;
+                    const confirm = confirmInput.value;
+
+                    if (confirm.length === 0) {
+                        matchIndicator.textContent = '';
+                        matchIndicator.className = 'password-match';
+                    } else if (password === confirm) {
+                        matchIndicator.textContent = '✓ Passwords match';
+                        matchIndicator.className = 'password-match match';
+                    } else {
+                        matchIndicator.textContent = '✗ Passwords do not match';
+                        matchIndicator.className = 'password-match no-match';
+                    }
+                };
+
+                confirmInput.addEventListener('input', checkPasswordMatch);
+                passwordInput.addEventListener('input', checkPasswordMatch);
+            }
+        });
+
         // Support modal functionality - wait for DOM to be ready
         document.addEventListener('DOMContentLoaded', function() {
             const supportLink = document.getElementById('support-link');
