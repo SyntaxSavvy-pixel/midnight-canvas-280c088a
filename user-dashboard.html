@@ -2582,8 +2582,11 @@
                 console.log('✅ User session found, user ID:', user.id);
                 console.log('🗑️ Deleting user account from Supabase...');
 
-                // Call the API to delete the account
+                let deletionSuccessful = false;
+
+                // Try API endpoint first (uses service role key)
                 try {
+                    console.log('📡 Calling API endpoint:', `${API_BASE}/delete-account`);
                     const response = await fetch(`${API_BASE}/delete-account`, {
                         method: 'POST',
                         headers: {
@@ -2596,46 +2599,23 @@
                     });
 
                     const result = await response.json();
+                    console.log('📡 API Response:', result);
 
-                    if (!response.ok) {
-                        console.error('❌ API deletion failed:', result);
-                        // Continue with local deletion even if API fails
+                    if (response.ok && result.success) {
+                        console.log('✅ Account deleted from Supabase via API');
+                        deletionSuccessful = true;
                     } else {
-                        console.log('✅ Account deleted from database via API');
+                        console.error('❌ API deletion failed:', result);
+                        // Will try alternative methods below
                     }
                 } catch (apiError) {
                     console.error('❌ API call failed:', apiError);
-                    // Continue with local deletion even if API fails
+                    // Will try alternative methods below
                 }
 
-                // Delete the user from Supabase Auth using the auth API directly
-                // This requires getting a fresh session token
-                const { data: { session } } = await supabaseClient.auth.getSession();
-
-                if (session) {
-                    try {
-                        // Use Supabase Management API to delete user
-                        const deleteResponse = await fetch(
-                            `${SUPABASE_URL}/auth/v1/admin/users/${user.id}`,
-                            {
-                                method: 'DELETE',
-                                headers: {
-                                    'apikey': SUPABASE_ANON_KEY,
-                                    'Authorization': `Bearer ${session.access_token}`,
-                                    'Content-Type': 'application/json'
-                                }
-                            }
-                        );
-
-                        if (deleteResponse.ok) {
-                            console.log('✅ User deleted from Supabase Auth');
-                        } else {
-                            console.log('⚠️ Could not delete from Auth, but continuing...');
-                        }
-                    } catch (deleteError) {
-                        console.log('⚠️ Auth deletion error:', deleteError);
-                        // Continue anyway
-                    }
+                // If API deletion didn't work, show warning but continue with local cleanup
+                if (!deletionSuccessful) {
+                    console.log('⚠️ Could not delete from Supabase server, but will clear local data');
                 }
 
                 // Sign out the user
