@@ -3237,29 +3237,12 @@
         }
 
         // Open Stripe billing portal
-        async function openBillingPortal() {
-            try {
-                const response = await fetch(`${API_BASE}/billing-portal`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${authToken}`
-                    },
-                    body: JSON.stringify({
-                        returnUrl: window.location.href
-                    })
-                });
-
-                if (response.ok) {
-                    const data = await response.json();
-                    // Open billing portal in new tab
-                    window.open(data.url, '_blank');
-                } else {
-                    throw new Error('Failed to create billing portal session');
-                }
-            } catch (error) {
-                console.error('Error opening billing portal:', error);
-            }
+        function openBillingPortal() {
+            // Open Stripe customer billing portal
+            // Users can manage subscriptions, payment methods, invoices, etc.
+            const billingPortalUrl = 'https://billing.stripe.com/p/login/dRm5kEgDE1R29cPgM84Rq00';
+            window.open(billingPortalUrl, '_blank');
+            console.log('🔗 Opened Stripe billing portal');
         }
 
         // Load billing history
