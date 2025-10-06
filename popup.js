@@ -1905,6 +1905,7 @@ class TabmangmentPopup {
                 console.log('✅ Found login data on web:', webData.user.email);
 
                 // Save to extension storage
+                console.log('💾 Saving web data to extension storage:', webData.user);
                 await chrome.storage.local.set({
                     userEmail: webData.user.email,
                     userName: webData.user.name || webData.user.email.split('@')[0],
@@ -1912,10 +1913,14 @@ class TabmangmentPopup {
                     isPremium: webData.user.isPro || false,
                     planType: webData.user.plan || 'free',
                     subscriptionActive: webData.user.isPro || false,
-                    userId: webData.user.id || webData.user.email
+                    userId: webData.user.id || webData.user.email,
+                    provider: webData.user.provider || 'email',
+                    loginTimestamp: Date.now()
                 });
 
-                console.log('💾 Synced login from web to extension storage');
+                console.log('✅ Synced login from web to extension storage');
+                console.log('✅ Saved userEmail:', webData.user.email);
+                console.log('✅ Saved provider:', webData.user.provider);
                 return true;
             }
 
