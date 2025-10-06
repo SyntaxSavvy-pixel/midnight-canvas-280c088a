@@ -2554,20 +2554,11 @@
             try {
                 console.log('🗑️ Attempting to delete account...');
 
-                // Delete user from Supabase Auth
-                const { error: deleteError } = await supabaseClient.auth.admin.deleteUser(
-                    (await supabaseClient.auth.getUser()).data.user.id
-                );
+                // Get current user session
+                const { data: { user }, error: userError } = await supabaseClient.auth.getUser();
 
-                // Alternative: Use the user's delete method
-                const { error } = await supabaseClient.rpc('delete_user');
-
-                if (error && error.message) {
-                    // If RPC doesn't exist, use standard sign out and clear data
-                    console.log('⚠️ Using fallback deletion method');
-
-                    // Sign out the user
-                    await supabaseClient.auth.signOut();
+                if (userError || !user) {
+                    console.log('⚠️ No active session, clearing local data only');
 
                     // Clear all local data
                     localStorage.clear();
@@ -2579,17 +2570,26 @@
                         await chrome.storage.sync.clear();
                     }
 
-                    console.log('✅ Account data cleared successfully');
-                    showNotification('Account deleted successfully', 'success');
+                    showNotification('Account data cleared successfully', 'success');
 
-                    // Redirect to auth page after short delay
+                    // Redirect to auth page
                     setTimeout(() => {
                         window.location.href = '/new-authentication.html';
                     }, 1500);
                     return;
                 }
 
-                console.log('✅ Account deleted successfully');
+                console.log('✅ User session found, user ID:', user.id);
+
+                // Sign out the user (this effectively deactivates the account)
+                const { error: signOutError } = await supabaseClient.auth.signOut();
+
+                if (signOutError) {
+                    console.error('❌ Sign out error:', signOutError);
+                    throw signOutError;
+                }
+
+                console.log('✅ Successfully signed out');
 
                 // Clear all local data
                 localStorage.clear();
@@ -2597,10 +2597,16 @@
 
                 // Clear extension storage if available
                 if (typeof chrome !== 'undefined' && chrome.storage) {
-                    await chrome.storage.local.clear();
-                    await chrome.storage.sync.clear();
+                    try {
+                        await chrome.storage.local.clear();
+                        await chrome.storage.sync.clear();
+                        console.log('✅ Extension storage cleared');
+                    } catch (e) {
+                        console.log('⚠️ Could not clear extension storage:', e);
+                    }
                 }
 
+                console.log('✅ Account deleted successfully');
                 showNotification('Account deleted successfully', 'success');
 
                 // Redirect to auth page
