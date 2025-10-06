@@ -9,6 +9,9 @@
     <link rel="icon" type="image/png" sizes="32x32" href="/icons/icon-32.png">
     <link rel="icon" type="image/png" sizes="16x16" href="/icons/icon-16.png">
 
+    <!-- Supabase JavaScript Client -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
     <script src="https://unpkg.com/feather-icons"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
@@ -1181,6 +1184,15 @@
     </div>
 
     <script>
+        // Initialize Supabase
+        const SUPABASE_URL = 'https://voislxlhfepnllamagxm.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZvaXNseGxoZmVwbmxsYW1hZ3htIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTkwMTI4MDcsImV4cCI6MjA3NDU4ODgwN30.mDdMdGg4JAInS7kXNL6-edvRaQ_mVuMGRjU7rX-hMCM';
+
+        const { createClient } = supabase;
+        const supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        console.log('✅ Supabase client initialized');
+
         // Initialize
         feather.replace();
 
@@ -2059,33 +2071,161 @@
             }
         });
 
-        function updatePassword() {
+        async function updatePassword() {
             const current = document.getElementById('current-password').value;
             const newPass = document.getElementById('new-password').value;
             const confirm = document.getElementById('confirm-password').value;
 
             if (!current || !newPass || !confirm) {
-                alert('Please fill in all password fields');
+                showNotification('Please fill in all password fields', 'error');
                 return;
             }
 
             if (newPass !== confirm) {
-                alert('New passwords do not match');
+                showNotification('New passwords do not match', 'error');
                 return;
             }
 
             if (newPass.length < 8) {
-                alert('Password must be at least 8 characters long');
+                showNotification('Password must be at least 8 characters long', 'error');
                 return;
             }
 
-            // TODO: Implement password change via Supabase
-            alert('Password change functionality coming soon!');
+            // Show loading state
+            const updateBtn = event?.target || document.querySelector('.card-action[onclick="updatePassword()"]');
+            const originalText = updateBtn?.textContent;
+            if (updateBtn) {
+                updateBtn.disabled = true;
+                updateBtn.textContent = 'Updating...';
+            }
 
-            // Clear fields
-            document.getElementById('current-password').value = '';
-            document.getElementById('new-password').value = '';
-            document.getElementById('confirm-password').value = '';
+            try {
+                console.log('🔐 Attempting to update password...');
+
+                // First, verify current password by attempting to sign in
+                const { data: signInData, error: signInError } = await supabaseClient.auth.signInWithPassword({
+                    email: userData.email,
+                    password: current
+                });
+
+                if (signInError) {
+                    console.error('❌ Current password verification failed:', signInError);
+                    showNotification('Current password is incorrect', 'error');
+                    if (updateBtn) {
+                        updateBtn.disabled = false;
+                        updateBtn.textContent = originalText;
+                    }
+                    return;
+                }
+
+                console.log('✅ Current password verified');
+
+                // Now update to new password
+                const { data: updateData, error: updateError } = await supabaseClient.auth.updateUser({
+                    password: newPass
+                });
+
+                if (updateError) {
+                    console.error('❌ Password update failed:', updateError);
+                    showNotification('Failed to update password: ' + updateError.message, 'error');
+                    if (updateBtn) {
+                        updateBtn.disabled = false;
+                        updateBtn.textContent = originalText;
+                    }
+                    return;
+                }
+
+                console.log('✅ Password updated successfully');
+                showNotification('Password updated successfully!', 'success');
+
+                // Clear all password fields
+                document.getElementById('current-password').value = '';
+                document.getElementById('new-password').value = '';
+                document.getElementById('confirm-password').value = '';
+
+                // Reset strength bar and hint
+                const strengthBar = document.getElementById('new-password-strength-bar');
+                const passwordHint = document.getElementById('new-password-hint');
+                if (strengthBar) {
+                    strengthBar.className = 'password-strength-bar';
+                }
+                if (passwordHint) {
+                    passwordHint.textContent = 'At least 8 characters';
+                    passwordHint.style.color = '#64748b';
+                }
+
+            } catch (error) {
+                console.error('❌ Unexpected error updating password:', error);
+                showNotification('Error updating password: ' + error.message, 'error');
+            } finally {
+                if (updateBtn) {
+                    updateBtn.disabled = false;
+                    updateBtn.textContent = originalText;
+                }
+            }
+        }
+
+        // Notification helper function
+        function showNotification(message, type = 'info') {
+            // Check if notification exists already, remove it
+            const existingNotif = document.querySelector('.password-notification');
+            if (existingNotif) {
+                existingNotif.remove();
+            }
+
+            const notification = document.createElement('div');
+            notification.className = 'password-notification';
+            notification.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                background: ${type === 'success' ? '#10b981' : type === 'error' ? '#ef4444' : '#3b82f6'};
+                color: white;
+                padding: 1rem 1.5rem;
+                border-radius: 0.5rem;
+                box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+                z-index: 10000;
+                font-weight: 500;
+                animation: slideIn 0.3s ease-out;
+            `;
+            notification.textContent = message;
+
+            // Add animation
+            const style = document.createElement('style');
+            style.textContent = `
+                @keyframes slideIn {
+                    from {
+                        transform: translateX(100%);
+                        opacity: 0;
+                    }
+                    to {
+                        transform: translateX(0);
+                        opacity: 1;
+                    }
+                }
+                @keyframes slideOut {
+                    from {
+                        transform: translateX(0);
+                        opacity: 1;
+                    }
+                    to {
+                        transform: translateX(100%);
+                        opacity: 0;
+                    }
+                }
+            `;
+            if (!document.querySelector('#notification-style')) {
+                style.id = 'notification-style';
+                document.head.appendChild(style);
+            }
+
+            document.body.appendChild(notification);
+
+            // Auto remove after 4 seconds
+            setTimeout(() => {
+                notification.style.animation = 'slideOut 0.3s ease-out';
+                setTimeout(() => notification.remove(), 300);
+            }, 4000);
         }
 
         // Export user data
