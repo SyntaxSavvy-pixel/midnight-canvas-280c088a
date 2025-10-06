@@ -455,6 +455,148 @@
             color: #64748b;
         }
 
+        /* Support Modal */
+        .support-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            z-index: 10000;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .support-modal.active {
+            display: flex;
+        }
+
+        .support-modal-content {
+            background: #1e293b;
+            border-radius: 1rem;
+            padding: 2.5rem;
+            max-width: 500px;
+            width: 90%;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
+            position: relative;
+            animation: modalSlideIn 0.3s ease;
+        }
+
+        @keyframes modalSlideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .support-modal-close {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            background: none;
+            border: none;
+            color: #94a3b8;
+            font-size: 2rem;
+            cursor: pointer;
+            transition: color 0.3s ease;
+            line-height: 1;
+            padding: 0;
+            width: 32px;
+            height: 32px;
+        }
+
+        .support-modal-close:hover {
+            color: #e2e8f0;
+        }
+
+        .support-modal h3 {
+            color: #f8fafc;
+            font-size: 1.75rem;
+            margin-bottom: 0.5rem;
+            font-weight: 700;
+        }
+
+        .support-modal > .support-modal-content > p {
+            color: #94a3b8;
+            margin-bottom: 2rem;
+            font-size: 1rem;
+        }
+
+        .support-methods {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .support-method {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            padding: 1.25rem;
+            background: #0f172a;
+            border-radius: 0.75rem;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            border: 1px solid #334155;
+        }
+
+        .support-method:hover {
+            background: #14b8a6;
+            border-color: #14b8a6;
+            transform: translateX(8px);
+        }
+
+        .support-method-icon {
+            width: 48px;
+            height: 48px;
+            background: #14b8a6;
+            border-radius: 0.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            transition: all 0.3s ease;
+        }
+
+        .support-method:hover .support-method-icon {
+            background: white;
+        }
+
+        .support-method-icon svg {
+            width: 24px;
+            height: 24px;
+            stroke: white;
+            transition: stroke 0.3s ease;
+        }
+
+        .support-method:hover .support-method-icon svg {
+            stroke: #14b8a6;
+        }
+
+        .support-method-text h4 {
+            color: #f8fafc;
+            font-size: 1.125rem;
+            margin-bottom: 0.25rem;
+            font-weight: 600;
+        }
+
+        .support-method-text p {
+            color: #94a3b8;
+            font-size: 0.875rem;
+            margin: 0;
+        }
+
+        .support-method:hover .support-method-text h4,
+        .support-method:hover .support-method-text p {
+            color: white;
+        }
+
         .get-started-cta {
             text-align: center;
             margin-bottom: 2rem;
@@ -522,8 +664,8 @@
                 <li><a href="#pricing">Pricing</a></li>
                 <li><a href="#faq">FAQ</a></li>
             </ul>
-            <a href="/new-authentication" class="get-started-btn">
-                Sign In
+            <a href="#" id="support-link" class="get-started-btn">
+                Support
             </a>
         </nav>
     </header>
@@ -801,7 +943,76 @@
                 if (window.va) window.va('track', 'Plan Click', { plan: planType });
             });
         });
+        // Support modal functionality
+        const supportLink = document.getElementById('support-link');
+        const supportModal = document.getElementById('support-modal');
+        const supportModalClose = document.getElementById('support-modal-close');
+
+        if (supportLink) {
+            supportLink.addEventListener('click', (e) => {
+                e.preventDefault();
+                supportModal.classList.add('active');
+            });
+        }
+
+        if (supportModalClose) {
+            supportModalClose.addEventListener('click', () => {
+                supportModal.classList.remove('active');
+            });
+        }
+
+        if (supportModal) {
+            supportModal.addEventListener('click', (e) => {
+                if (e.target === supportModal) {
+                    supportModal.classList.remove('active');
+                }
+            });
+        }
     </script>
+
+    <!-- Support Modal -->
+    <div id="support-modal" class="support-modal">
+        <div class="support-modal-content">
+            <button id="support-modal-close" class="support-modal-close">&times;</button>
+            <h3>Contact Us</h3>
+            <p>Get in touch with our support team through the extension</p>
+            <div class="support-methods">
+                <a href="mailto:support@tabmanagement.com" class="support-method">
+                    <div class="support-method-icon">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75" />
+                        </svg>
+                    </div>
+                    <div class="support-method-text">
+                        <h4>Email Support</h4>
+                        <p>support@tabmanagement.com</p>
+                    </div>
+                </a>
+                <a href="https://discord.gg/tabmanagement" target="_blank" class="support-method">
+                    <div class="support-method-icon">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M8.625 12a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H8.25m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H12m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0h-.375M21 12c0 4.556-4.03 8.25-9 8.25a9.764 9.764 0 01-2.555-.337A5.972 5.972 0 015.41 20.97a5.969 5.969 0 01-.474-.065 4.48 4.48 0 00.978-2.025c.09-.457-.133-.901-.467-1.226C3.93 16.178 3 14.189 3 12c0-4.556 4.03-8.25 9-8.25s9 3.694 9 8.25z" />
+                        </svg>
+                    </div>
+                    <div class="support-method-text">
+                        <h4>Discord Community</h4>
+                        <p>Join our Discord server</p>
+                    </div>
+                </a>
+                <a href="https://github.com/yourusername/tabmanagement/issues" target="_blank" class="support-method">
+                    <div class="support-method-icon">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
+                        </svg>
+                    </div>
+                    <div class="support-method-text">
+                        <h4>Report an Issue</h4>
+                        <p>GitHub Issues</p>
+                    </div>
+                </a>
+            </div>
+        </div>
+    </div>
 
     <script defer src="/_vercel/insights/script.js"></script>
 </body>
