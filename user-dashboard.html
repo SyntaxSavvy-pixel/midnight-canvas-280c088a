@@ -388,9 +388,90 @@
             color: #e2e8f0;
         }
 
+        .control-input.with-toggle {
+            padding-right: 3rem;
+        }
+
         .control-input:focus {
             outline: none;
             border-color: #14b8a6;
+        }
+
+        .password-input-container {
+            position: relative;
+        }
+
+        .password-toggle-btn {
+            position: absolute;
+            right: 0.75rem;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            color: #64748b;
+            cursor: pointer;
+            padding: 0.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: color 0.3s ease;
+        }
+
+        .password-toggle-btn:hover {
+            color: #14b8a6;
+        }
+
+        .password-toggle-btn svg {
+            width: 20px;
+            height: 20px;
+        }
+
+        .password-strength-bar-container {
+            margin-top: 0.5rem;
+            height: 4px;
+            background: #1e293b;
+            border-radius: 2px;
+            overflow: hidden;
+        }
+
+        .password-strength-bar {
+            height: 100%;
+            transition: all 0.3s ease;
+            border-radius: 2px;
+        }
+
+        .password-strength-bar.weak {
+            width: 33%;
+            background: #ef4444;
+        }
+
+        .password-strength-bar.medium {
+            width: 66%;
+            background: #f59e0b;
+        }
+
+        .password-strength-bar.strong {
+            width: 100%;
+            background: #10b981;
+        }
+
+        .password-hint {
+            font-size: 0.75rem;
+            color: #64748b;
+            margin-top: 0.5rem;
+        }
+
+        .password-match-indicator {
+            font-size: 0.75rem;
+            margin-top: 0.5rem;
+        }
+
+        .password-match-indicator.match {
+            color: #10b981;
+        }
+
+        .password-match-indicator.no-match {
+            color: #ef4444;
         }
 
         .toggle-switch {
@@ -969,20 +1050,62 @@
                         <h2 class="card-title">Security</h2>
                         <p style="color: #94a3b8; font-size: 0.875rem; margin-top: 0.5rem;">Change your password to keep your account secure</p>
                     </div>
+
                     <div class="control-group" style="margin-bottom: 1.5rem;">
                         <label class="control-label" for="current-password">Current Password</label>
-                        <input type="password" id="current-password" class="control-input" placeholder="Enter current password">
+                        <div class="password-input-container">
+                            <input type="password" id="current-password" class="control-input with-toggle" placeholder="Enter current password">
+                            <button type="button" class="password-toggle-btn" data-target="current-password">
+                                <svg class="eye-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                </svg>
+                                <svg class="eye-off-icon" style="display: none;" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
+                                </svg>
+                            </button>
+                        </div>
                     </div>
+
                     <div class="tab-controls">
                         <div class="control-group">
                             <label class="control-label" for="new-password">New Password</label>
-                            <input type="password" id="new-password" class="control-input" placeholder="Enter new password">
+                            <div class="password-input-container">
+                                <input type="password" id="new-password" class="control-input with-toggle" placeholder="Enter new password">
+                                <button type="button" class="password-toggle-btn" data-target="new-password">
+                                    <svg class="eye-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                    </svg>
+                                    <svg class="eye-off-icon" style="display: none;" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
+                                    </svg>
+                                </button>
+                            </div>
+                            <div class="password-strength-bar-container">
+                                <div id="new-password-strength-bar" class="password-strength-bar"></div>
+                            </div>
+                            <div id="new-password-hint" class="password-hint">At least 8 characters</div>
                         </div>
+
                         <div class="control-group">
                             <label class="control-label" for="confirm-password">Confirm Password</label>
-                            <input type="password" id="confirm-password" class="control-input" placeholder="Confirm new password">
+                            <div class="password-input-container">
+                                <input type="password" id="confirm-password" class="control-input with-toggle" placeholder="Confirm new password">
+                                <button type="button" class="password-toggle-btn" data-target="confirm-password">
+                                    <svg class="eye-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                    </svg>
+                                    <svg class="eye-off-icon" style="display: none;" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
+                                    </svg>
+                                </button>
+                            </div>
+                            <div id="confirm-password-match" class="password-match-indicator"></div>
                         </div>
                     </div>
+
                     <button class="card-action" style="margin-top: 1rem;" onclick="updatePassword()">
                         <i data-feather="lock"></i>
                         Update Password
@@ -1850,6 +1973,91 @@
             userData.avatar = userData.name.split(' ').map(n => n[0]).join('').toUpperCase();
             updateUserDisplay();
         }
+
+        // Password toggle and validation functionality
+        document.addEventListener('DOMContentLoaded', function() {
+            // Toggle password visibility for dashboard password fields
+            document.querySelectorAll('.password-toggle-btn').forEach(button => {
+                button.addEventListener('click', function() {
+                    const targetId = this.getAttribute('data-target');
+                    const input = document.getElementById(targetId);
+                    const eyeIcon = this.querySelector('.eye-icon');
+                    const eyeOffIcon = this.querySelector('.eye-off-icon');
+
+                    if (input.type === 'password') {
+                        input.type = 'text';
+                        eyeIcon.style.display = 'none';
+                        eyeOffIcon.style.display = 'block';
+                    } else {
+                        input.type = 'password';
+                        eyeIcon.style.display = 'block';
+                        eyeOffIcon.style.display = 'none';
+                    }
+                });
+            });
+
+            // Password strength checker for new password
+            const newPasswordInput = document.getElementById('new-password');
+            const strengthBar = document.getElementById('new-password-strength-bar');
+            const passwordHint = document.getElementById('new-password-hint');
+
+            if (newPasswordInput && strengthBar) {
+                newPasswordInput.addEventListener('input', function() {
+                    const password = this.value;
+                    let strength = 0;
+
+                    if (password.length >= 8) strength++;
+                    if (password.match(/[a-z]/) && password.match(/[A-Z]/)) strength++;
+                    if (password.match(/[0-9]/)) strength++;
+                    if (password.match(/[^a-zA-Z0-9]/)) strength++;
+
+                    // Remove all classes
+                    strengthBar.className = 'password-strength-bar';
+
+                    if (password.length === 0) {
+                        passwordHint.textContent = 'At least 8 characters';
+                        passwordHint.style.color = '#64748b';
+                    } else if (strength <= 2) {
+                        strengthBar.classList.add('weak');
+                        passwordHint.textContent = 'Weak password';
+                        passwordHint.style.color = '#ef4444';
+                    } else if (strength === 3) {
+                        strengthBar.classList.add('medium');
+                        passwordHint.textContent = 'Medium strength';
+                        passwordHint.style.color = '#f59e0b';
+                    } else {
+                        strengthBar.classList.add('strong');
+                        passwordHint.textContent = 'Strong password';
+                        passwordHint.style.color = '#10b981';
+                    }
+                });
+            }
+
+            // Password match checker
+            const confirmInput = document.getElementById('confirm-password');
+            const matchIndicator = document.getElementById('confirm-password-match');
+
+            if (confirmInput && matchIndicator && newPasswordInput) {
+                const checkPasswordMatch = () => {
+                    const password = newPasswordInput.value;
+                    const confirm = confirmInput.value;
+
+                    if (confirm.length === 0) {
+                        matchIndicator.textContent = '';
+                        matchIndicator.className = 'password-match-indicator';
+                    } else if (password === confirm) {
+                        matchIndicator.textContent = '✓ Passwords match';
+                        matchIndicator.className = 'password-match-indicator match';
+                    } else {
+                        matchIndicator.textContent = '✗ Passwords do not match';
+                        matchIndicator.className = 'password-match-indicator no-match';
+                    }
+                };
+
+                confirmInput.addEventListener('input', checkPasswordMatch);
+                newPasswordInput.addEventListener('input', checkPasswordMatch);
+            }
+        });
 
         function updatePassword() {
             const current = document.getElementById('current-password').value;
