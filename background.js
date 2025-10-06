@@ -581,9 +581,27 @@ class TabManager {
 
                 case 'USER_LOGGED_OUT':
                     // User logged out from web - clear storage
-                    console.log('🚪 Background: User logged out from web');
+                    console.log('🚪 Background: Received USER_LOGGED_OUT message');
+                    console.log('🚪 Sender:', sender);
+                    console.log('🚪 Message data:', message);
+
+                    // CRITICAL FIX: Only clear storage if this is an explicit logout
+                    // with the confirmed flag, not from tab close/unload
+                    if (message.confirmed !== true) {
+                        console.warn('⚠️ Ignoring USER_LOGGED_OUT without confirmed flag - probably tab close');
+                        console.warn('⚠️ Tab/page URL:', sender.url);
+                        console.warn('⚠️ Not clearing storage to preserve login');
+                        sendResponse({ success: false, reason: 'not_confirmed' });
+                        break;
+                    }
+
+                    // Safety check: Only clear if message came from a real logout action
+                    const currentStorage = await chrome.storage.local.get(['userEmail']);
+                    console.log('🚪 Current userEmail in storage:', currentStorage.userEmail);
+
                     await chrome.storage.local.clear();
-                    console.log('✅ Background: Storage cleared');
+                    console.log('✅ Background: Storage cleared after explicit logout');
+
                     sendResponse({ success: true });
                     break;
 

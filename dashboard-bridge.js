@@ -106,10 +106,12 @@ window.addEventListener('message', async (event) => {
     // Handle USER_LOGGED_OUT event from dashboard
     if (message.type === 'USER_LOGGED_OUT') {
         console.log('🚪 Bridge detected logout event');
+        console.log('🚪 Confirmed flag:', message.confirmed);
 
         try {
             const response = await chrome.runtime.sendMessage({
-                type: 'USER_LOGGED_OUT'
+                type: 'USER_LOGGED_OUT',
+                confirmed: message.confirmed || false  // Forward the confirmed flag
             });
             console.log('✅ Logout forwarded to extension:', response);
         } catch (error) {
