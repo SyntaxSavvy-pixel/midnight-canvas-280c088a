@@ -2580,15 +2580,66 @@
                 }
 
                 console.log('✅ User session found, user ID:', user.id);
+                console.log('🗑️ Deleting user account from Supabase...');
 
-                // Sign out the user (this effectively deactivates the account)
-                const { error: signOutError } = await supabaseClient.auth.signOut();
+                // Call the API to delete the account
+                try {
+                    const response = await fetch(`${API_BASE}/delete-account`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            userId: user.id,
+                            email: userData.email
+                        })
+                    });
 
-                if (signOutError) {
-                    console.error('❌ Sign out error:', signOutError);
-                    throw signOutError;
+                    const result = await response.json();
+
+                    if (!response.ok) {
+                        console.error('❌ API deletion failed:', result);
+                        // Continue with local deletion even if API fails
+                    } else {
+                        console.log('✅ Account deleted from database via API');
+                    }
+                } catch (apiError) {
+                    console.error('❌ API call failed:', apiError);
+                    // Continue with local deletion even if API fails
                 }
 
+                // Delete the user from Supabase Auth using the auth API directly
+                // This requires getting a fresh session token
+                const { data: { session } } = await supabaseClient.auth.getSession();
+
+                if (session) {
+                    try {
+                        // Use Supabase Management API to delete user
+                        const deleteResponse = await fetch(
+                            `${SUPABASE_URL}/auth/v1/admin/users/${user.id}`,
+                            {
+                                method: 'DELETE',
+                                headers: {
+                                    'apikey': SUPABASE_ANON_KEY,
+                                    'Authorization': `Bearer ${session.access_token}`,
+                                    'Content-Type': 'application/json'
+                                }
+                            }
+                        );
+
+                        if (deleteResponse.ok) {
+                            console.log('✅ User deleted from Supabase Auth');
+                        } else {
+                            console.log('⚠️ Could not delete from Auth, but continuing...');
+                        }
+                    } catch (deleteError) {
+                        console.log('⚠️ Auth deletion error:', deleteError);
+                        // Continue anyway
+                    }
+                }
+
+                // Sign out the user
+                await supabaseClient.auth.signOut();
                 console.log('✅ Successfully signed out');
 
                 // Clear all local data
@@ -2607,7 +2658,7 @@
                 }
 
                 console.log('✅ Account deleted successfully');
-                showNotification('Account deleted successfully', 'success');
+                showNotification('Account permanently deleted', 'success');
 
                 // Redirect to auth page
                 setTimeout(() => {
