@@ -1,13 +1,12 @@
-// Netlify Scheduled Function to permanently delete accounts after 24 hours
-// This runs automatically via Netlify's scheduled functions
+// Netlify Function to permanently delete accounts after 24 hours
+// Can be triggered manually via: POST /api/cleanup-deleted-accounts
+// Or set up with an external cron service (e.g., cron-job.org) to call it hourly
 
 const { createClient } = require('@supabase/supabase-js');
 
 const supabaseUrl = process.env.SUPABASE_URL || 'https://voislxlhfepnllamagxm.supabase.co';
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-// This function is triggered by Netlify's scheduled functions
-// Configure in netlify.toml with: schedule = "@hourly" or "0 * * * *"
 exports.handler = async (event, context) => {
     const headers = {
         'Content-Type': 'application/json'

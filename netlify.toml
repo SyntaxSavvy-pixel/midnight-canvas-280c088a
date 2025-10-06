@@ -7,11 +7,6 @@
 [functions]
   node_bundler = "esbuild"
 
-# Scheduled function to cleanup deleted accounts every hour
-[[functions]]
-  path = "cleanup-deleted-accounts"
-  schedule = "@hourly"
-
 [[redirects]]
   from = "/api/*"
   to = "/.netlify/functions/:splat"
