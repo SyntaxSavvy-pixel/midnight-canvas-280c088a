@@ -664,8 +664,8 @@
                 <li><a href="#pricing">Pricing</a></li>
                 <li><a href="#faq">FAQ</a></li>
             </ul>
-            <a href="#" id="support-link" class="get-started-btn">
-                Support
+            <a href="/new-authentication" class="get-started-btn">
+                Get Started
             </a>
         </nav>
     </header>
@@ -896,6 +896,7 @@
                     <ul>
                         <li><a href="/privacy.html">Privacy Policy</a></li>
                         <li><a href="https://chrome.google.com/webstore/detail/my-extension/abplhccmjhdcofakcolniimgbfjlkohn" target="_blank">Chrome Store</a></li>
+                        <li><a href="#" id="support-link">Support</a></li>
                     </ul>
                 </div>
             </div>
@@ -942,31 +943,36 @@
                 if (window.va) window.va('track', 'Plan Click', { plan: planType });
             });
         });
-        // Support modal functionality
-        const supportLink = document.getElementById('support-link');
-        const supportModal = document.getElementById('support-modal');
-        const supportModalClose = document.getElementById('support-modal-close');
+        // Support modal functionality - wait for DOM to be ready
+        document.addEventListener('DOMContentLoaded', function() {
+            const supportLink = document.getElementById('support-link');
+            const supportModal = document.getElementById('support-modal');
+            const supportModalClose = document.getElementById('support-modal-close');
 
-        if (supportLink) {
-            supportLink.addEventListener('click', (e) => {
-                e.preventDefault();
-                supportModal.classList.add('active');
-            });
-        }
+            if (supportLink) {
+                supportLink.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    supportModal.classList.add('active');
+                    console.log('Support modal opened');
+                });
+            }
 
-        if (supportModalClose) {
-            supportModalClose.addEventListener('click', () => {
-                supportModal.classList.remove('active');
-            });
-        }
-
-        if (supportModal) {
-            supportModal.addEventListener('click', (e) => {
-                if (e.target === supportModal) {
+            if (supportModalClose) {
+                supportModalClose.addEventListener('click', () => {
                     supportModal.classList.remove('active');
-                }
-            });
-        }
+                    console.log('Support modal closed');
+                });
+            }
+
+            if (supportModal) {
+                supportModal.addEventListener('click', (e) => {
+                    if (e.target === supportModal) {
+                        supportModal.classList.remove('active');
+                        console.log('Support modal closed by clicking outside');
+                    }
+                });
+            }
+        });
     </script>
 
     <!-- Support Modal -->
