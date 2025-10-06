@@ -547,6 +547,7 @@ class TabManager {
                     console.log('📧 Email:', message.userData?.email);
                     console.log('👤 Name:', message.userData?.name);
                     console.log('🔑 Token:', message.token ? 'Present' : 'Missing');
+                    console.log('🔑 Provider:', message.userData?.provider);
 
                     const loginData = {
                         userEmail: message.userData.email,
@@ -555,18 +556,27 @@ class TabManager {
                         isPremium: message.userData.isPro || false,
                         planType: message.userData.plan || 'free',
                         subscriptionActive: message.userData.isPro || false,
-                        userId: message.userData.id || message.userData.email
+                        userId: message.userData.id || message.userData.email,
+                        provider: message.userData.provider || 'email',
+                        loginTimestamp: Date.now() // Add timestamp for debugging
                     };
 
-                    console.log('💾 Saving to storage:', loginData);
+                    console.log('💾 Saving to chrome.storage.local:', loginData);
 
-                    await chrome.storage.local.set(loginData);
+                    try {
+                        await chrome.storage.local.set(loginData);
 
-                    // Verify it was saved
-                    const saved = await chrome.storage.local.get(['userEmail', 'userName']);
-                    console.log('✅ Background: User data saved and verified:', saved);
+                        // Immediately verify it was saved
+                        const verification = await chrome.storage.local.get(null);
+                        console.log('✅ Background: ALL storage after save:', verification);
+                        console.log('✅ Background: User email verified:', verification.userEmail);
+                        console.log('✅ Background: Login timestamp:', new Date(verification.loginTimestamp).toLocaleString());
 
-                    sendResponse({ success: true });
+                        sendResponse({ success: true, saved: verification });
+                    } catch (error) {
+                        console.error('❌ Background: Failed to save to storage:', error);
+                        sendResponse({ success: false, error: error.message });
+                    }
                     break;
 
                 case 'USER_LOGGED_OUT':
@@ -1919,3 +1929,30 @@ SmartTabAnalytics.prototype.executePerformanceBoost = async function(recommendat
 
 const tabManager = new TabManager();
 const smartAnalytics = new SmartTabAnalytics();
+
+// Monitor storage changes to debug persistence issues
+chrome.storage.onChanged.addListener((changes, areaName) => {
+    if (areaName === 'local') {
+        console.log('🔄 Storage changed:', changes);
+
+        if (changes.userEmail) {
+            console.log('📧 userEmail changed:',
+                'Old:', changes.userEmail.oldValue,
+                'New:', changes.userEmail.newValue
+            );
+        }
+
+        if (changes.authToken) {
+            console.log('🔑 authToken changed:',
+                'Old:', changes.authToken.oldValue ? 'Present' : 'Missing',
+                'New:', changes.authToken.newValue ? 'Present' : 'Missing'
+            );
+        }
+
+        // Log if userEmail is being removed
+        if (changes.userEmail && !changes.userEmail.newValue) {
+            console.error('⚠️ WARNING: userEmail was REMOVED from storage!');
+            console.trace('Stack trace for userEmail removal');
+        }
+    }
+});
