@@ -786,6 +786,17 @@ class TabManager {
             // Filter to only valid tabs (same logic as popup.js)
             const validTabs = allBrowserTabs.filter(tab => this.isValidTab(tab));
 
+            // Debug: Log all tabs and their validity
+            console.log('📊 Tab validation details:');
+            console.log('  All browser tabs:', allBrowserTabs.length);
+            console.log('  Valid tabs:', validTabs.length);
+            console.log('  Invalid tabs:', allBrowserTabs.length - validTabs.length);
+
+            const invalidTabs = allBrowserTabs.filter(tab => !this.isValidTab(tab));
+            if (invalidTabs.length > 0) {
+                console.log('  Invalid tab URLs:', invalidTabs.map(t => t.url));
+            }
+
             const trackedTabs = await this.getAllTabData();
             const storage = await chrome.storage.local.get(['tabsClosedAuto', 'totalTabsOpened', 'tabsClosedToday']);
 

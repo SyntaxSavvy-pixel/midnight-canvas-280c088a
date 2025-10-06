@@ -1658,21 +1658,34 @@ class TabmangmentPopup {
         }
     }
     updateProBadges() {
+        console.log('🏷️ updateProBadges called - isPremium:', this.isPremium);
 
         const proFeatureButtons = ['collapse-btn', 'bookmark-all-btn'];
         proFeatureButtons.forEach(buttonId => {
             const button = document.getElementById(buttonId);
-            if (!button) return;
+            if (!button) {
+                console.log('❌ Button not found:', buttonId);
+                return;
+            }
             const badge = button.querySelector('.pro-badge');
+            console.log(`🔍 ${buttonId} - badge found:`, !!badge);
 
             if (this.isPremium) {
                 // Hide badge for Pro users
-                if (badge) badge.style.display = 'none';
+                if (badge) {
+                    badge.style.display = 'none';
+                    console.log(`✅ ${buttonId} - badge hidden (Pro user)`);
+                }
                 button.classList.remove('disabled');
                 button.title = button.textContent.trim();
             } else {
                 // Show badge for Free users
-                if (badge) badge.style.display = 'block';
+                if (badge) {
+                    badge.style.display = 'block';
+                    console.log(`✅ ${buttonId} - badge shown (Free user)`);
+                } else {
+                    console.log(`⚠️ ${buttonId} - no badge element found!`);
+                }
                 button.classList.add('disabled');
                 const buttonText = button.textContent.replace('PRO', '').trim();
                 button.title = `${buttonText} - Pro Feature`;
