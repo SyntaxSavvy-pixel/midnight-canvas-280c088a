@@ -4314,6 +4314,16 @@ class TabmangmentPopup {
 
     async getUserEmail() {
         try {
+            // CRITICAL: Check if user already has a real email from web login
+            // NEVER overwrite a real email with a fallback!
+            const stored = await chrome.storage.local.get(['userEmail']);
+            if (stored.userEmail &&
+                !stored.userEmail.startsWith('fallback_') &&
+                !stored.userEmail.startsWith('user_')) {
+                console.log('✅ Using existing real email from storage:', stored.userEmail);
+                return stored.userEmail;
+            }
+
             // Initialize email detector if not already done
             if (!this.emailDetector) {
                 this.emailDetector = new EmailDetector();
@@ -4340,6 +4350,15 @@ class TabmangmentPopup {
                 return uniqueUserId;
             }
         } catch (error) {
+            // CRITICAL: Before generating fallback, check if real email exists
+            const stored = await chrome.storage.local.get(['userEmail']);
+            if (stored.userEmail &&
+                !stored.userEmail.startsWith('fallback_') &&
+                !stored.userEmail.startsWith('user_')) {
+                console.log('✅ Keeping real email despite error:', stored.userEmail);
+                return stored.userEmail;
+            }
+
             // Generate fallback unique ID instead of prompting
             const fallbackId = 'fallback_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
             await chrome.storage.local.set({
