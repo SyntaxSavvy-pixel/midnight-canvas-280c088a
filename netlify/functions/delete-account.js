@@ -1,4 +1,4 @@
-// Netlify Function to delete user account
+// Netlify Function to delete user account permanently from Supabase
 // POST /api/delete-account
 // Body: { userId, email }
 
