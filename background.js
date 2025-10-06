@@ -544,10 +544,20 @@ class TabManager {
                 case 'USER_LOGGED_IN':
                     // User logged in from web - save to storage
                     console.log('🔐 Background: Received USER_LOGGED_IN message');
+                    console.log('📦 Full message:', message);
                     console.log('📧 Email:', message.userData?.email);
                     console.log('👤 Name:', message.userData?.name);
                     console.log('🔑 Token:', message.token ? 'Present' : 'Missing');
                     console.log('🔑 Provider:', message.userData?.provider);
+                    console.log('📍 Sender URL:', sender?.url);
+                    console.log('📍 Sender tab:', sender?.tab?.id);
+
+                    // Validate email exists
+                    if (!message.userData?.email) {
+                        console.error('❌ NO EMAIL IN MESSAGE! Cannot save login data.');
+                        sendResponse({ success: false, error: 'No email provided' });
+                        break;
+                    }
 
                     const loginData = {
                         userEmail: message.userData.email,
@@ -562,15 +572,24 @@ class TabManager {
                     };
 
                     console.log('💾 Saving to chrome.storage.local:', loginData);
+                    console.log('💾 userEmail value:', loginData.userEmail, 'Type:', typeof loginData.userEmail);
 
                     try {
                         await chrome.storage.local.set(loginData);
+                        console.log('✅ chrome.storage.local.set() completed');
 
                         // Immediately verify it was saved
                         const verification = await chrome.storage.local.get(null);
                         console.log('✅ Background: ALL storage after save:', verification);
                         console.log('✅ Background: User email verified:', verification.userEmail);
+                        console.log('✅ Background: Provider verified:', verification.provider);
                         console.log('✅ Background: Login timestamp:', new Date(verification.loginTimestamp).toLocaleString());
+
+                        if (verification.userEmail !== loginData.userEmail) {
+                            console.error('❌ VERIFICATION FAILED! Email mismatch!');
+                            console.error('   Expected:', loginData.userEmail);
+                            console.error('   Got:', verification.userEmail);
+                        }
 
                         sendResponse({ success: true, saved: verification });
                     } catch (error) {
