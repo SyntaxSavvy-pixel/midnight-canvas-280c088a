@@ -87,6 +87,10 @@ window.addEventListener('message', async (event) => {
     if (message.type === 'USER_LOGGED_IN') {
         console.log('🔐 Bridge detected login event');
         console.log('📧 User email:', message.userData?.email);
+        console.log('👤 User name:', message.userData?.name);
+        console.log('🔑 Provider:', message.userData?.provider);
+        console.log('🔑 Token present:', !!message.token);
+        console.log('📦 Full userData:', message.userData);
 
         try {
             const response = await chrome.runtime.sendMessage({
@@ -94,10 +98,14 @@ window.addEventListener('message', async (event) => {
                 userData: message.userData,
                 token: message.token
             });
-            console.log('✅ Login forwarded to extension:', response);
+            console.log('✅ Login forwarded to extension successfully!');
+            console.log('✅ Extension response:', response);
         } catch (error) {
             if (!isExtensionUnavailableError(error)) {
-                console.error('❌ Failed to forward login:', error.message);
+                console.error('❌ Failed to forward login to extension:', error.message);
+                console.error('❌ Full error:', error);
+            } else {
+                console.warn('⚠️ Extension not available (may have been reloaded)');
             }
         }
         return;

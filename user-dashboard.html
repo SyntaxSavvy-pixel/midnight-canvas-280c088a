@@ -1282,33 +1282,32 @@
                 await verifyStripeSession(sessionId, userEmail);
             }
 
-            // ALWAYS sync user email to extension (replace fallback email with real email)
+            // CRITICAL: Sync login to extension when dashboard loads
+            // This ensures extension storage is updated with user data
             if (bridgeReady && extensionId && userEmail) {
-                console.log('📧 Syncing user email to extension:', userEmail);
-                setTimeout(async () => {
-                    // Send USER_LOGIN message to sync real email
-                    await sendMessageToExtension('USER_LOGIN', {
-                        email: userEmail,
-                        name: userData.name,
-                        plan: userData.plan,
-                        isPro: userData.isPro
-                    });
+                console.log('📧 Syncing user login to extension:', userEmail);
 
-                    // If user is Pro, also send subscription update
-                    if (userData.isPro) {
-                        console.log('🔄 User is Pro - ensuring extension is synced...');
-                        await sendMessageToExtension('SUBSCRIPTION_UPDATE', {
-                            plan: 'pro',
-                            isPro: true,
-                            status: 'active',
-                            user: {
-                                email: userEmail,
-                                plan: 'pro',
-                                isPro: true
-                            }
-                        });
-                    }
-                }, 500);
+                // Get full user data from localStorage
+                const storedUser = JSON.parse(localStorage.getItem('tabmangment_user') || '{}');
+                const storedToken = localStorage.getItem('tabmangment_token');
+
+                // Send USER_LOGGED_IN message (same format as auth page)
+                console.log('🔐 Sending USER_LOGGED_IN to extension via postMessage...');
+                window.postMessage({
+                    type: 'USER_LOGGED_IN',
+                    userData: {
+                        email: userEmail,
+                        name: userData.name || storedUser.name,
+                        id: storedUser.id || userEmail,
+                        provider: userData.provider || storedUser.provider || 'email',
+                        avatar: userData.avatarUrl || storedUser.avatar,
+                        isPro: userData.isPro,
+                        plan: userData.plan
+                    },
+                    token: storedToken
+                }, '*');
+
+                console.log('✅ USER_LOGGED_IN message sent to bridge');
             }
 
             if (!isBridgeReady) {

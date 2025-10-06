@@ -980,12 +980,15 @@
                 try {
                     await supabaseClient.auth.signOut();
                     console.log('✅ Supabase session cleared');
+                    // Set a flag in sessionStorage to prevent auto-login
+                    sessionStorage.setItem('just_logged_out', 'true');
                     // Remove logout param from URL
                     window.history.replaceState({}, document.title, '/new-authentication');
                     showNotification('Logged out successfully', 'success');
                 } catch (error) {
                     console.error('❌ Logout error:', error);
                     showNotification('Logout completed', 'success');
+                    sessionStorage.setItem('just_logged_out', 'true');
                 }
             })();
         } else {
@@ -995,12 +998,11 @@
                     console.log('🔍 Existing session found:', session.user.email);
 
                     // Don't auto-login if user just logged out
-                    const justLoggedOut = sessionStorage.getItem('user_logged_out');
+                    const justLoggedOut = sessionStorage.getItem('just_logged_out');
                     if (justLoggedOut) {
-                        console.log('⚠️ User just logged out, clearing session...');
-                        await supabaseClient.auth.signOut();
-                        sessionStorage.removeItem('user_logged_out');
-                        showNotification('Please log in again', 'info');
+                        console.log('⚠️ User just logged out - preventing auto-login');
+                        sessionStorage.removeItem('just_logged_out');
+                        showNotification('You have been logged out', 'info');
                         return;
                     }
 
