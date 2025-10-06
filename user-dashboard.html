@@ -1284,6 +1284,8 @@
 
             // CRITICAL: Sync login to extension when dashboard loads
             // This ensures extension storage is updated with user data
+            console.log('🔍 Sync check - bridgeReady:', bridgeReady, 'extensionId:', extensionId, 'userEmail:', userEmail);
+
             if (bridgeReady && extensionId && userEmail) {
                 console.log('📧 Syncing user login to extension:', userEmail);
 
@@ -1291,8 +1293,21 @@
                 const storedUser = JSON.parse(localStorage.getItem('tabmangment_user') || '{}');
                 const storedToken = localStorage.getItem('tabmangment_token');
 
+                console.log('📦 storedUser:', storedUser);
+                console.log('🔑 storedToken present:', !!storedToken);
+
                 // Send USER_LOGGED_IN message (same format as auth page)
                 console.log('🔐 Sending USER_LOGGED_IN to extension via postMessage...');
+                console.log('📤 Message payload:', {
+                    type: 'USER_LOGGED_IN',
+                    userData: {
+                        email: userEmail,
+                        name: userData.name || storedUser.name,
+                        provider: userData.provider || storedUser.provider
+                    },
+                    hasToken: !!storedToken
+                });
+
                 window.postMessage({
                     type: 'USER_LOGGED_IN',
                     userData: {
@@ -1308,6 +1323,12 @@
                 }, '*');
 
                 console.log('✅ USER_LOGGED_IN message sent to bridge');
+            } else {
+                console.warn('⚠️ Skipping sync - missing requirements:', {
+                    bridgeReady,
+                    extensionId,
+                    userEmail
+                });
             }
 
             if (!isBridgeReady) {
