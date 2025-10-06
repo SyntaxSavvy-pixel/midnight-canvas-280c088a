@@ -1616,6 +1616,13 @@
                     const parsedData = JSON.parse(storedUserData);
                     console.log('📂 Loaded from localStorage:', parsedData);
                     userEmail = parsedData.email;
+
+                    // Load user ID (critical for restore/delete functions)
+                    if (parsedData.id) {
+                        userData.id = parsedData.id;
+                        console.log('✅ User ID loaded:', parsedData.id);
+                    }
+
                     // Load avatar URL and provider if available
                     if (parsedData.avatar) {
                         userData.avatarUrl = parsedData.avatar;
@@ -1629,6 +1636,12 @@
                     }
                     if (parsedData.name) {
                         userData.name = parsedData.name;
+                    }
+
+                    // Load deletion schedule if exists
+                    if (parsedData.deletionScheduledAt) {
+                        userData.deletionScheduledAt = parsedData.deletionScheduledAt;
+                        console.log('⚠️ Account scheduled for deletion:', parsedData.deletionScheduledAt);
                     }
                 } catch (e) {
                     console.error('Error parsing userData:', e);
@@ -2539,6 +2552,20 @@
         // Restore account function
         async function restoreAccount() {
             try {
+                console.log('♻️ Restore account called. UserData:', {
+                    id: userData.id,
+                    email: userData.email,
+                    hasId: !!userData.id,
+                    hasEmail: !!userData.email
+                });
+
+                // Validate we have the required data
+                if (!userData.id || !userData.email) {
+                    console.error('❌ Missing user ID or email:', userData);
+                    showNotification('Session error. Please log out and log back in.', 'error');
+                    return;
+                }
+
                 showNotification('Restoring your account...', 'info');
 
                 const response = await fetch(`${API_BASE}/restore-account`, {
@@ -2553,6 +2580,7 @@
                 });
 
                 const result = await response.json();
+                console.log('♻️ Restore response:', result);
 
                 if (response.ok && result.success) {
                     showNotification('Account restored successfully!', 'success');
