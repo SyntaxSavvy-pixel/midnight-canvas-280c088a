@@ -1,5 +1,5 @@
-// Netlify Function to mark account for deletion (24-hour grace period)
-// POST /api/delete-account
+// Netlify Function to restore account marked for deletion
+// POST /api/restore-account
 // Body: { userId, email }
 
 const { createClient } = require('@supabase/supabase-js');
@@ -30,7 +30,7 @@ exports.handler = async (event, context) => {
     try {
         const { userId, email } = JSON.parse(event.body);
 
-        console.log('🗑️ MARK ACCOUNT FOR DELETION - userId:', userId, 'email:', email);
+        console.log('♻️ RESTORE ACCOUNT REQUEST - userId:', userId, 'email:', email);
 
         if (!userId || !email) {
             console.error('❌ Missing required fields');
@@ -65,52 +65,65 @@ exports.handler = async (event, context) => {
             }
         });
 
-        // Mark user for deletion in 24 hours by updating user metadata
-        const deletionTime = new Date();
-        deletionTime.setHours(deletionTime.getHours() + 24);
+        // Remove deletion metadata to restore account
+        console.log('♻️ Removing deletion schedule from user metadata...');
 
-        console.log('⏰ Scheduling deletion for:', deletionTime.toISOString());
+        const { data: userData, error: fetchError } = await supabase.auth.admin.getUserById(userId);
 
-        const { data: updateData, error: updateError } = await supabase.auth.admin.updateUserById(
-            userId,
-            {
-                user_metadata: {
-                    deletion_scheduled_at: deletionTime.toISOString(),
-                    deletion_requested_at: new Date().toISOString()
-                }
-            }
-        );
-
-        if (updateError) {
-            console.error('❌ Error marking user for deletion:', updateError);
+        if (fetchError) {
+            console.error('❌ Error fetching user:', fetchError);
             return {
                 statusCode: 500,
                 headers,
                 body: JSON.stringify({
                     success: false,
-                    error: 'Failed to schedule account deletion',
+                    error: 'Failed to fetch user data',
+                    details: fetchError.message
+                })
+            };
+        }
+
+        // Get existing metadata and remove deletion fields
+        const currentMetadata = userData.user.user_metadata || {};
+        delete currentMetadata.deletion_scheduled_at;
+        delete currentMetadata.deletion_requested_at;
+
+        const { data: updateData, error: updateError } = await supabase.auth.admin.updateUserById(
+            userId,
+            {
+                user_metadata: currentMetadata
+            }
+        );
+
+        if (updateError) {
+            console.error('❌ Error restoring account:', updateError);
+            return {
+                statusCode: 500,
+                headers,
+                body: JSON.stringify({
+                    success: false,
+                    error: 'Failed to restore account',
                     details: updateError.message
                 })
             };
         }
 
-        console.log('✅ User marked for deletion in 24 hours');
+        console.log('✅ Account restored successfully');
 
         return {
             statusCode: 200,
             headers,
             body: JSON.stringify({
                 success: true,
-                message: 'Account scheduled for deletion in 24 hours',
+                message: 'Account restored successfully',
                 userId: userId,
                 email: email,
-                deletionScheduledAt: deletionTime.toISOString(),
-                canRestore: true
+                restored: true
             })
         };
 
     } catch (error) {
-        console.error('❌ CRITICAL ERROR in delete-account handler:', error);
+        console.error('❌ CRITICAL ERROR in restore-account handler:', error);
         return {
             statusCode: 500,
             headers,

@@ -278,6 +278,49 @@
             transform: translateY(0);
         }
 
+        /* Restore Account Button */
+        .restore-account-btn {
+            padding: 0.75rem 1.5rem;
+            background: transparent;
+            color: #10b981;
+            border: 2px solid #10b981;
+            border-radius: 0.5rem;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 0.95rem;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.625rem;
+        }
+
+        .restore-account-btn:hover {
+            background: rgba(16, 185, 129, 0.1);
+            border-color: #059669;
+            color: #059669;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.2);
+        }
+
+        .restore-account-btn:active {
+            transform: translateY(0);
+        }
+
+        /* Deletion Warning Banner */
+        .deletion-warning-banner {
+            background: linear-gradient(135deg, rgba(239, 68, 68, 0.1) 0%, rgba(239, 68, 68, 0.05) 100%);
+            border: 2px solid #ef4444;
+            border-radius: 0.75rem;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.8; }
+        }
+
         /* Delete Modal */
         .delete-modal {
             display: none;
@@ -1313,19 +1356,11 @@
                 <!-- Account Actions -->
                 <div class="card" style="margin-top: 2rem; border: 1px solid #475569;">
                     <div class="card-header" style="margin-bottom: 1.5rem;">
-                        <h2 class="card-title">Danger Zone</h2>
-                        <p style="color: #94a3b8; font-size: 0.875rem; margin-top: 0.5rem;">Irreversible actions that will permanently affect your account</p>
+                        <h2 class="card-title" id="danger-zone-title">Danger Zone</h2>
+                        <p style="color: #94a3b8; font-size: 0.875rem; margin-top: 0.5rem;" id="danger-zone-description">Irreversible actions that will permanently affect your account</p>
                     </div>
-                    <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
-                        <button class="delete-account-btn" onclick="showDeleteModal()">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                <polyline points="3 6 5 6 21 6"></polyline>
-                                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
-                                <line x1="10" y1="11" x2="10" y2="17"></line>
-                                <line x1="14" y1="11" x2="14" y2="17"></line>
-                            </svg>
-                            Delete Account
-                        </button>
+                    <div style="display: flex; gap: 1rem; flex-wrap: wrap;" id="account-action-buttons">
+                        <!-- This will be dynamically filled based on account status -->
                     </div>
                 </div>
             </div>
@@ -1615,6 +1650,7 @@
 
             updateUserDisplay();
             updatePlanDisplay();
+            updateAccountActionButtons(); // Check if account is marked for deletion
             initChart();
             loadUserSettings();
             loadBillingHistory();
@@ -2450,6 +2486,92 @@
             }, 4000);
         }
 
+        // Update account action buttons based on deletion status
+        function updateAccountActionButtons() {
+            const buttonsContainer = document.getElementById('account-action-buttons');
+            const titleEl = document.getElementById('danger-zone-title');
+            const descEl = document.getElementById('danger-zone-description');
+
+            // Check if account is marked for deletion
+            const deletionScheduledAt = userData.deletionScheduledAt;
+
+            if (deletionScheduledAt) {
+                const deletionTime = new Date(deletionScheduledAt);
+                const now = new Date();
+                const hoursRemaining = Math.max(0, Math.ceil((deletionTime - now) / (1000 * 60 * 60)));
+
+                // Update title and description
+                titleEl.textContent = 'Account Restoration';
+                titleEl.style.color = '#f59e0b';
+                descEl.innerHTML = `<strong style="color: #ef4444;">⚠️ Your account is scheduled for deletion in ${hoursRemaining} hours</strong><br>You can restore your account at any time before it's permanently deleted.`;
+
+                // Show restore button
+                buttonsContainer.innerHTML = `
+                    <button class="restore-account-btn" onclick="restoreAccount()">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="23 4 23 10 17 10"></polyline>
+                            <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
+                        </svg>
+                        Restore My Account
+                    </button>
+                `;
+            } else {
+                // Reset to default
+                titleEl.textContent = 'Danger Zone';
+                titleEl.style.color = '';
+                descEl.textContent = 'Irreversible actions that will permanently affect your account';
+
+                // Show delete button
+                buttonsContainer.innerHTML = `
+                    <button class="delete-account-btn" onclick="showDeleteModal()">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="3 6 5 6 21 6"></polyline>
+                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                            <line x1="10" y1="11" x2="10" y2="17"></line>
+                            <line x1="14" y1="11" x2="14" y2="17"></line>
+                        </svg>
+                        Delete Account
+                    </button>
+                `;
+            }
+        }
+
+        // Restore account function
+        async function restoreAccount() {
+            try {
+                showNotification('Restoring your account...', 'info');
+
+                const response = await fetch(`${API_BASE}/restore-account`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        userId: userData.id,
+                        email: userData.email
+                    })
+                });
+
+                const result = await response.json();
+
+                if (response.ok && result.success) {
+                    showNotification('Account restored successfully!', 'success');
+
+                    // Remove deletion flag from userData
+                    userData.deletionScheduledAt = null;
+                    localStorage.setItem('tabmangment_user', JSON.stringify(userData));
+
+                    // Update the buttons
+                    updateAccountActionButtons();
+                } else {
+                    showNotification(result.error || 'Failed to restore account', 'error');
+                }
+            } catch (error) {
+                console.error('❌ Error restoring account:', error);
+                showNotification('Error restoring account. Please try again.', 'error');
+            }
+        }
+
         // Export user data
         function exportData() {
             const data = {
@@ -2602,48 +2724,34 @@
                     console.log('📡 API Response:', result);
 
                     if (response.ok && result.success) {
-                        console.log('✅ Account deleted from Supabase via API');
+                        console.log('✅ Account marked for deletion (24-hour grace period)');
                         deletionSuccessful = true;
+
+                        // Update userData with deletion timestamp
+                        userData.deletionScheduledAt = result.deletionScheduledAt;
+                        localStorage.setItem('tabmangment_user', JSON.stringify(userData));
+
+                        // Close modal
+                        closeDeleteModal();
+
+                        // Show success message
+                        showNotification('Your account will be deleted in 24 hours. You can restore it anytime before then.', 'success');
+
+                        // Update the UI to show restore button
+                        updateAccountActionButtons();
+
                     } else {
-                        console.error('❌ API deletion failed:', result);
-                        // Will try alternative methods below
+                        console.error('❌ API deletion scheduling failed:', result);
+                        showNotification(result.error || 'Failed to schedule account deletion', 'error');
+                        confirmBtn.disabled = false;
+                        confirmBtn.textContent = 'Delete Account';
                     }
                 } catch (apiError) {
                     console.error('❌ API call failed:', apiError);
-                    // Will try alternative methods below
+                    showNotification('Error scheduling account deletion', 'error');
+                    confirmBtn.disabled = false;
+                    confirmBtn.textContent = 'Delete Account';
                 }
-
-                // If API deletion didn't work, show warning but continue with local cleanup
-                if (!deletionSuccessful) {
-                    console.log('⚠️ Could not delete from Supabase server, but will clear local data');
-                }
-
-                // Sign out the user
-                await supabaseClient.auth.signOut();
-                console.log('✅ Successfully signed out');
-
-                // Clear all local data
-                localStorage.clear();
-                sessionStorage.clear();
-
-                // Clear extension storage if available
-                if (typeof chrome !== 'undefined' && chrome.storage) {
-                    try {
-                        await chrome.storage.local.clear();
-                        await chrome.storage.sync.clear();
-                        console.log('✅ Extension storage cleared');
-                    } catch (e) {
-                        console.log('⚠️ Could not clear extension storage:', e);
-                    }
-                }
-
-                console.log('✅ Account deleted successfully');
-                showNotification('Account permanently deleted', 'success');
-
-                // Redirect to auth page
-                setTimeout(() => {
-                    window.location.href = '/new-authentication.html';
-                }, 1500);
 
             } catch (error) {
                 console.error('❌ Error deleting account:', error);

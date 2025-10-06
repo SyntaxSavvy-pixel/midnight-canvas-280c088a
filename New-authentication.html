@@ -907,6 +907,18 @@
                 const user = data.user;
                 const session = data.session;
 
+                // Check if account is marked for deletion
+                if (user.user_metadata.deletion_scheduled_at) {
+                    console.log('⚠️ Account is marked for deletion');
+                    const deletionTime = new Date(user.user_metadata.deletion_scheduled_at);
+                    const now = new Date();
+                    const hoursRemaining = Math.ceil((deletionTime - now) / (1000 * 60 * 60));
+
+                    if (hoursRemaining > 0) {
+                        showNotification(`Your account is scheduled for deletion in ${hoursRemaining} hours. You can restore it from your dashboard.`, 'info');
+                    }
+                }
+
                 // Prepare user data
                 const userData = {
                     email: user.email,
@@ -915,7 +927,8 @@
                           user.email.split('@')[0],
                     id: user.id,
                     provider: user.app_metadata.provider || 'email',
-                    avatar: user.user_metadata.avatar_url || user.user_metadata.picture
+                    avatar: user.user_metadata.avatar_url || user.user_metadata.picture,
+                    deletionScheduledAt: user.user_metadata.deletion_scheduled_at || null
                 };
 
                 // Store user data and token
