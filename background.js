@@ -751,10 +751,41 @@ class TabManager {
         };
     }
 
+    isValidTab(tab) {
+        if (!tab.id || !tab.url) return false;
+        if (tab.url.startsWith('chrome-extension:') ||
+            tab.url.startsWith('moz-extension:') ||
+            tab.url.startsWith('chrome://extensions/') ||
+            tab.url.startsWith('chrome://settings/') ||
+            tab.url.startsWith('chrome://flags/') ||
+            tab.url.startsWith('chrome://history/') ||
+            tab.url.startsWith('chrome://downloads/')) {
+            return false;
+        }
+        if (tab.url.startsWith('chrome://newtab/') ||
+            tab.url.startsWith('chrome://new-tab-page/') ||
+            tab.url.startsWith('chrome-search://local-ntp/local-ntp.html')) {
+            return true;
+        }
+        if (!tab.url.startsWith('chrome://') &&
+            !tab.url.startsWith('about:') &&
+            !tab.url.startsWith('edge://')) {
+            return true;
+        }
+        if (tab.url === 'about:blank' || tab.url === 'about:newtab') {
+            return true;
+        }
+        return false;
+    }
+
     async getRealTimeStats() {
         try {
             // Get ACTUAL current tabs from browser (not just tracked ones)
             const allBrowserTabs = await chrome.tabs.query({});
+
+            // Filter to only valid tabs (same logic as popup.js)
+            const validTabs = allBrowserTabs.filter(tab => this.isValidTab(tab));
+
             const trackedTabs = await this.getAllTabData();
             const storage = await chrome.storage.local.get(['tabsClosedAuto', 'totalTabsOpened', 'tabsClosedToday']);
 
@@ -769,16 +800,17 @@ class TabManager {
             const memorySaved = Math.round(totalClosed * 75); // More accurate estimate: 75MB per tab
 
             console.log('📊 Real-time stats calculated:', {
-                totalTabs: allBrowserTabs.length,
+                totalTabs: validTabs.length,
+                allTabs: allBrowserTabs.length,
                 autoClosedToday,
                 memorySaved
             });
 
             return {
-                totalTabs: allBrowserTabs.length, // Actual browser tab count
+                totalTabs: validTabs.length, // Valid manageable tabs count (matches popup display)
                 autoClosed: autoClosedToday, // Only today's auto-closed tabs
                 memorySaved: memorySaved,
-                activeTabs: allBrowserTabs.filter(tab => tab.active).length,
+                activeTabs: validTabs.filter(tab => tab.active).length,
                 scheduledTabs: trackedTabs.filter(tab => tab.timerActive && tab.autoCloseTime).length,
                 protectedTabs: trackedTabs.filter(tab => tab.protected).length,
                 timestamp: Date.now()
