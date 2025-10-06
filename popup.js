@@ -1663,20 +1663,18 @@ class TabmangmentPopup {
         proFeatureButtons.forEach(buttonId => {
             const button = document.getElementById(buttonId);
             if (!button) return;
-            const existingBadge = button.querySelector('.pro-badge');
-            if (existingBadge) {
-                existingBadge.remove();
-            }
+            const badge = button.querySelector('.pro-badge');
+
             if (this.isPremium) {
+                // Hide badge for Pro users
+                if (badge) badge.style.display = 'none';
                 button.classList.remove('disabled');
                 button.title = button.textContent.trim();
             } else {
+                // Show badge for Free users
+                if (badge) badge.style.display = 'block';
                 button.classList.add('disabled');
-                const proBadge = document.createElement('div');
-                proBadge.className = 'pro-badge';
-                proBadge.textContent = 'PRO';
-                button.appendChild(proBadge);
-                const buttonText = button.textContent.trim();
+                const buttonText = button.textContent.replace('PRO', '').trim();
                 button.title = `${buttonText} - Pro Feature`;
             }
         });
