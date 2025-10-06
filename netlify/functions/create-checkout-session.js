@@ -33,37 +33,44 @@ exports.handler = async (event, context) => {
     }
 
     try {
-        // Get authenticated user from token
+        // Get authenticated user from Supabase Auth token
         const authHeader = event.headers.authorization;
         let authenticatedUser = null;
+        let userEmail = null;
 
         if (authHeader) {
             const token = authHeader.replace('Bearer ', '');
-            try {
-                // Decode simple token
-                const tokenData = JSON.parse(Buffer.from(token, 'base64').toString());
-                if (tokenData.email && tokenData.exp > Math.floor(Date.now() / 1000)) {
-                    // Get user from Supabase
-                    try {
-                        const { data, error } = await supabase
-                            .from('users')
-                            .select('*')
-                            .eq('email', tokenData.email)
-                            .single();
 
-                        if (!error) {
-                            authenticatedUser = data;
-                        }
-                    } catch (dbError) {
-                        console.error('❌ Database error:', dbError);
-                    }
+            // Try Supabase Auth token first
+            try {
+                const { data: { user }, error: authError } = await supabase.auth.getUser(token);
+
+                if (!authError && user) {
+                    console.log('✅ Authenticated user from Supabase Auth:', user.email);
+                    userEmail = user.email;
+                    authenticatedUser = {
+                        email: user.email,
+                        name: user.user_metadata?.full_name || user.user_metadata?.name || user.email.split('@')[0]
+                    };
                 }
             } catch (authError) {
-                console.log('⚠️ Auth token invalid:', authError.message);
+                console.log('⚠️ Supabase Auth failed, trying legacy token...');
+
+                // Fallback to legacy token format
+                try {
+                    const tokenData = JSON.parse(Buffer.from(token, 'base64').toString());
+                    if (tokenData.email && tokenData.exp > Math.floor(Date.now() / 1000)) {
+                        userEmail = tokenData.email;
+                        authenticatedUser = { email: userEmail };
+                    }
+                } catch (legacyError) {
+                    console.log('⚠️ Legacy token also invalid');
+                }
             }
         }
 
         if (!authenticatedUser) {
+            console.error('❌ No authenticated user found');
             return {
                 statusCode: 401,
                 headers,
@@ -72,6 +79,8 @@ exports.handler = async (event, context) => {
                 })
             };
         }
+
+        console.log('✅ User authenticated:', userEmail);
 
         const { priceId } = JSON.parse(event.body || '{}');
 
