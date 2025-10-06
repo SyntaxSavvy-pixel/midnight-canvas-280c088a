@@ -117,91 +117,30 @@ class TabmangmentPopup {
 
             this.initializeEmailJS();
             this.setupPaymentListener();
-            await this.checkServiceWorkerHealth();
-            await new Promise(resolve => setTimeout(resolve, 100));
-            await this.loadData();
 
-            await this.checkPendingActivation();
+            // Load and show cached data IMMEDIATELY (non-blocking)
+            this.loadData().then(() => {
+                this.render();
+                this.hideLoader();
+            }).catch(err => {
+                console.error('Failed to load data:', err);
+                this.hideLoader();
+            });
 
-            // Simple subscription status check
-            await this.checkSubscription();
+            // Do background checks without blocking UI
+            this.checkServiceWorkerHealth().catch(e => console.warn('SW check failed:', e));
+            this.checkPendingActivation().catch(e => console.warn('Pending activation check failed:', e));
+            this.checkSubscription().catch(e => console.warn('Subscription check failed:', e));
 
-            // DISABLED: Old payment system checks - now using Supabase
-            // await this.checkForSubscriptionUpdates();
-            // await this.forceSubscriptionCheck();
+            // Background subscription check (non-blocking, updates UI when done)
+            this.checkSubscriptionStatusBackground();
 
-            // DEBUG: Check storage BEFORE calling API
-            const preCheck = await chrome.storage.local.get(['isPremium', 'planType', 'subscriptionActive']);
-            console.log('🔍 INIT: Storage BEFORE checkSubscriptionStatus:', preCheck);
+            // Initialize timer system in background
+            this.initializeTimerSystem().catch(e => console.warn('Timer init failed:', e));
 
-            // Use the authenticated email (already set in checkAuthentication)
-            const userEmail = this.userEmail;
-            if (userEmail) {
-                const status = await this.checkSubscriptionStatus(userEmail);
-                console.log('📊 INIT: checkSubscriptionStatus returned:', status);
-
-                if (status.isActive && status.plan === 'pro') {
-                    console.log('✅ INIT: Setting Pro from API');
-                    const nextBillingDate = new Date(status.currentPeriodEnd).getTime();
-                    await chrome.storage.local.set({
-                        isPremium: true,
-                        subscriptionActive: true,
-                        planType: 'pro',
-                        subscriptionType: 'monthly',
-                        nextBillingDate: nextBillingDate,
-                        subscriptionExpiry: nextBillingDate,
-                        currentPeriodEnd: nextBillingDate,
-                        subscriptionId: status.subscriptionId,
-                        userEmail: userEmail
-                    });
-                    this.isPremium = true;
-                } else {
-                    console.log('⚠️ INIT: API says not Pro, checking storage again...');
-                    // API says not Pro, but check storage one more time to be sure
-                    const storageCheck = await chrome.storage.local.get(['isPremium', 'planType']);
-                    if (storageCheck.isPremium || storageCheck.planType === 'pro') {
-                        console.log('✅ INIT: Storage says Pro - keeping Pro status');
-                        this.isPremium = true;
-                    } else {
-                        console.log('❌ INIT: Both API and storage say Free');
-                    }
-                }
-            } else {
-                console.log('⚠️ INIT: No user email found');
-            }
-            const debugSub = await chrome.storage.local.get(['isPremium', 'subscriptionActive']);
-            const refundCheck = await chrome.storage.local.get(['refundProcessed', 'subscriptionRefunded']);
-            if (refundCheck.refundProcessed || refundCheck.subscriptionRefunded) {
-                await chrome.storage.local.set({
-                    isPremium: false,
-                    subscriptionActive: false,
-                    planType: 'free'
-                });
-                this.isPremium = false;
-            }
-            // DISABLED: Old payment system checks - moved to line 77-78
-            // await this.checkForSubscriptionUpdates();
-            // await this.forceSubscriptionCheck();
-            await this.render();
-
-            this.removeAllProBadges();
-            if (this.isPremium) {
-                this.updateUIForProUser();
-            }
-            await this.renderSubscriptionPlan();
+            // Start real-time updates
             this.startRealTimeUpdates();
             this.startSubscriptionStatusRefresh();
-
-            // DISABLED: checkAndApplySubscriptionStatus can overwrite Pro status
-            // Storage is now source of truth, not API
-            // await this.checkAndApplySubscriptionStatus();
-
-            await this.initializeTimerSystem();
-
-            // Dashboard sync already started before auth check
-
-            // Hide loader and show content smoothly
-            this.hideLoader();
         } catch (error) {
             this.showError('Failed to initialize extension: ' + error.message);
             this.hideLoader(); // Hide loader even on error
@@ -1134,18 +1073,11 @@ class TabmangmentPopup {
             const realTabIds = new Set(realTabs.map(tab => tab.id));
             let tabsResponse, statsResponse, subscriptionData;
             try {
-                try {
-                    await this.sendMessageWithTimeout('ping', 1000);
-                    } catch (pingError) {
-                    chrome.runtime.sendMessage({ action: 'ping' }, () => {
-                        if (chrome.runtime.lastError) {
-                        }
-                    });
-                    await new Promise(resolve => setTimeout(resolve, 500));
-                }
+                // Removed ping - unnecessary delay
+                // Get data with shorter timeout for faster response
                 const promises = [
-                    this.sendMessageWithTimeout('getTabData', 3000),
-                    this.sendMessageWithTimeout('getStats', 3000),
+                    this.sendMessageWithTimeout('getTabData', 1500),
+                    this.sendMessageWithTimeout('getStats', 1500),
                     chrome.storage.local.get([
                         'isPremium',
                         'subscriptionActive',
@@ -4137,6 +4069,54 @@ class TabmangmentPopup {
     }
 
     // Simple subscription check
+    async checkSubscriptionStatusBackground() {
+        try {
+            // Get cached premium status first
+            const cached = await chrome.storage.local.get(['isPremium', 'planType', 'subscriptionActive']);
+            console.log('💾 Cached subscription status:', cached);
+
+            // If user has email, check with API in background
+            if (this.userEmail) {
+                const status = await this.checkSubscriptionStatus(this.userEmail);
+                console.log('📊 Background: API subscription status:', status);
+
+                if (status.isActive && status.plan === 'pro') {
+                    const nextBillingDate = new Date(status.currentPeriodEnd).getTime();
+                    await chrome.storage.local.set({
+                        isPremium: true,
+                        subscriptionActive: true,
+                        planType: 'pro',
+                        subscriptionType: 'monthly',
+                        nextBillingDate: nextBillingDate,
+                        subscriptionExpiry: nextBillingDate,
+                        currentPeriodEnd: nextBillingDate,
+                        subscriptionId: status.subscriptionId
+                    });
+                    this.isPremium = true;
+
+                    // Update UI with Pro features
+                    this.removeAllProBadges();
+                    this.updateUIForProUser();
+                    this.renderSubscriptionPlan();
+                }
+            }
+
+            // Check for refunds
+            const refundCheck = await chrome.storage.local.get(['refundProcessed', 'subscriptionRefunded']);
+            if (refundCheck.refundProcessed || refundCheck.subscriptionRefunded) {
+                await chrome.storage.local.set({
+                    isPremium: false,
+                    subscriptionActive: false,
+                    planType: 'free'
+                });
+                this.isPremium = false;
+                this.render(); // Re-render to show free tier
+            }
+        } catch (error) {
+            console.warn('Background subscription check failed:', error);
+        }
+    }
+
     async checkSubscription() {
         try {
             const userEmail = await this.getUserEmail();
