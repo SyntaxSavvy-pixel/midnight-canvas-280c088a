@@ -1935,9 +1935,14 @@ class TabmangmentPopup {
             const allData = await chrome.storage.local.get(null);
             console.log('🔍 ALL storage data:', allData);
             console.log('🔍 Storage keys present:', Object.keys(allData));
-            console.log('🔍 userEmail value:', allData.userEmail);
-            console.log('🔍 authToken present:', !!allData.authToken);
-            console.log('🔍 isPremium:', allData.isPremium);
+            console.log('🔍 CRITICAL - Storage key details:');
+            console.log('   - userEmail:', allData.userEmail);
+            console.log('   - userName:', allData.userName);
+            console.log('   - authToken:', allData.authToken ? 'Present' : 'Missing');
+            console.log('   - isPremium:', allData.isPremium);
+            console.log('   - planType:', allData.planType);
+            console.log('   - provider:', allData.provider);
+            console.log('   - loginTimestamp:', allData.loginTimestamp ? new Date(allData.loginTimestamp).toLocaleString() : 'Missing');
 
             // ONE-TIME CLEANUP: Remove fallback emails
             if (allData.userEmail && (allData.userEmail.startsWith('fallback_') || allData.userEmail.startsWith('user_'))) {
