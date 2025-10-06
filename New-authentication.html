@@ -880,48 +880,69 @@
             try {
                 showNotification('Signing in...', 'info');
 
-                const response = await fetch('/api/me', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        action: 'login',
-                        email: email,
-                        password: password
-                    })
+                console.log('🔐 Attempting Supabase login for:', email);
+
+                // Use Supabase Auth for login (NOT the old /api/me endpoint)
+                const { data, error } = await supabaseClient.auth.signInWithPassword({
+                    email: email,
+                    password: password
                 });
 
-                const result = await response.json();
+                if (error) {
+                    console.error('❌ Supabase login error:', error);
 
-                if (result.success) {
-                    // Store user data and token (use consistent key names)
-                    localStorage.setItem('tabmangment_token', result.token);
-                    localStorage.setItem('tabmangment_user', JSON.stringify(result.user));
-
-                    // Clear logout flag since user is logging back in
-                    sessionStorage.removeItem('user_logged_out');
-
-                    showNotification('Login successful! Syncing with extension...', 'success');
-
-                    // Notify extension about login via content script bridge
-                    console.log('🔐 Sending login event to extension...');
-                    window.postMessage({
-                        type: 'USER_LOGGED_IN',
-                        userData: result.user,
-                        token: result.token
-                    }, '*');
-
-                    // Wait for extension to receive the message, then redirect
-                    setTimeout(() => {
-                        console.log('✅ Redirecting to dashboard...');
-                        window.location.href = '/user-dashboard.html';
-                    }, 500);
-                } else {
-                    showNotification(result.message || 'Login failed', 'error');
+                    // Show user-friendly error messages
+                    if (error.message.includes('Invalid login credentials')) {
+                        showNotification('Invalid email or password', 'error');
+                    } else if (error.message.includes('Email not confirmed')) {
+                        showNotification('Please confirm your email before signing in', 'error');
+                    } else {
+                        showNotification(error.message || 'Login failed', 'error');
+                    }
+                    return;
                 }
+
+                console.log('✅ Supabase login successful:', data.user.email);
+
+                const user = data.user;
+                const session = data.session;
+
+                // Prepare user data
+                const userData = {
+                    email: user.email,
+                    name: user.user_metadata.full_name ||
+                          user.user_metadata.name ||
+                          user.email.split('@')[0],
+                    id: user.id,
+                    provider: user.app_metadata.provider || 'email',
+                    avatar: user.user_metadata.avatar_url || user.user_metadata.picture
+                };
+
+                // Store user data and token
+                localStorage.setItem('tabmangment_token', session.access_token);
+                localStorage.setItem('tabmangment_user', JSON.stringify(userData));
+
+                // Clear logout flag since user is logging back in
+                sessionStorage.removeItem('user_logged_out');
+
+                showNotification('Login successful! Redirecting...', 'success');
+
+                // Notify extension about login via content script bridge
+                console.log('🔐 Sending login event to extension...');
+                window.postMessage({
+                    type: 'USER_LOGGED_IN',
+                    userData: userData,
+                    token: session.access_token
+                }, '*');
+
+                // Redirect to dashboard
+                setTimeout(() => {
+                    console.log('✅ Redirecting to dashboard...');
+                    window.location.href = '/user-dashboard.html';
+                }, 500);
+
             } catch (error) {
-                console.error('Login error:', error);
+                console.error('❌ Login error:', error);
                 showNotification('Network error. Please try again.', 'error');
             }
         }
