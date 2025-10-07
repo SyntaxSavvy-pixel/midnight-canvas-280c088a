@@ -506,6 +506,45 @@
             transform: scale(1.05);
         }
 
+        .stat-number.memory-saving {
+            animation: pulse-green 0.8s ease-in-out;
+        }
+
+        @keyframes pulse-green {
+            0%, 100% {
+                color: #f8fafc;
+                transform: scale(1);
+            }
+            50% {
+                color: #10b981;
+                transform: scale(1.15);
+                text-shadow: 0 0 20px rgba(16, 185, 129, 0.5);
+            }
+        }
+
+        .memory-saved-indicator {
+            display: inline-block;
+            margin-left: 8px;
+            padding: 2px 8px;
+            background: linear-gradient(135deg, #10b981, #059669);
+            border-radius: 12px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            color: white;
+            animation: slide-in 0.3s ease-out;
+        }
+
+        @keyframes slide-in {
+            from {
+                opacity: 0;
+                transform: translateX(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
         .stat-label {
             color: #94a3b8;
             font-size: 0.9rem;
@@ -1026,7 +1065,7 @@
                         <div class="stat-number" id="auto-closed">0</div>
                         <div class="stat-label">Auto-closed Today</div>
                     </div>
-                    <div class="stat-card">
+                    <div class="stat-card" title="Estimated memory saved from auto-closed tabs (~75MB per tab)">
                         <div class="stat-icon">
                             <i data-feather="zap"></i>
                         </div>
@@ -3050,11 +3089,42 @@
             }
 
             if (isFirstLoad || lastStats.memorySaved !== memorySaved) {
-                memorySavedEl.innerHTML = memorySaved + 'MB';
                 memorySavedEl.classList.remove('loading', 'error', 'disconnected');
-                if (!isFirstLoad) {
-                    memorySavedEl.classList.add('stat-updated');
-                    setTimeout(() => memorySavedEl.classList.remove('stat-updated'), 500);
+
+                if (!isFirstLoad && memorySaved > lastStats.memorySaved) {
+                    // Animate from old value to new value
+                    const oldValue = lastStats.memorySaved;
+                    const newValue = memorySaved;
+                    const duration = 600; // ms
+                    const startTime = Date.now();
+
+                    memorySavedEl.classList.add('memory-saving');
+
+                    const animate = () => {
+                        const elapsed = Date.now() - startTime;
+                        const progress = Math.min(elapsed / duration, 1);
+                        const currentValue = Math.round(oldValue + (newValue - oldValue) * progress);
+
+                        memorySavedEl.innerHTML = currentValue + 'MB';
+
+                        if (progress < 1) {
+                            requestAnimationFrame(animate);
+                        } else {
+                            memorySavedEl.innerHTML = newValue + 'MB <span class="memory-saved-indicator">+' + (newValue - oldValue) + 'MB</span>';
+                            setTimeout(() => {
+                                memorySavedEl.innerHTML = newValue + 'MB';
+                                memorySavedEl.classList.remove('memory-saving');
+                            }, 2000);
+                        }
+                    };
+
+                    animate();
+                } else {
+                    memorySavedEl.innerHTML = memorySaved + 'MB';
+                    if (!isFirstLoad) {
+                        memorySavedEl.classList.add('stat-updated');
+                        setTimeout(() => memorySavedEl.classList.remove('stat-updated'), 500);
+                    }
                 }
                 hasChanges = true;
             }
