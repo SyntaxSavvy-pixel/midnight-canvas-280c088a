@@ -13,7 +13,12 @@
         .left-side { flex: 1; background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%); position: relative; overflow: hidden; display: flex; flex-direction: column; justify-content: space-between; padding: 60px; color: white; }
         .gradient-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: radial-gradient(circle at 20% 50%, rgba(255, 255, 255, 0.1) 0%, transparent 50%), radial-gradient(circle at 80% 80%, rgba(255, 255, 255, 0.1) 0%, transparent 50%); animation: float 6s ease-in-out infinite; }
         @keyframes float { 0%, 100% { transform: translateY(0px); } 50% { transform: translateY(-20px); } }
-        .brand { position: relative; z-index: 10; font-size: 14px; font-weight: 500; letter-spacing: 2px; text-transform: uppercase; opacity: 0.9; }
+        .brand-link { position: relative; z-index: 10; display: inline-flex; align-items: center; gap: 12px; text-decoration: none; color: white; padding: 12px 20px; background: rgba(255, 255, 255, 0.1); border-radius: 12px; backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.2); transition: all 0.3s ease; cursor: pointer; }
+        .brand-link:hover { background: rgba(255, 255, 255, 0.15); border-color: rgba(255, 255, 255, 0.3); transform: translateY(-2px); box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2); }
+        .brand-link:active { transform: translateY(0); }
+        .brand-icon { font-size: 24px; line-height: 1; animation: float-icon 3s ease-in-out infinite; }
+        @keyframes float-icon { 0%, 100% { transform: translateY(0px) rotate(0deg); } 50% { transform: translateY(-5px) rotate(5deg); } }
+        .brand-text { font-size: 16px; font-weight: 600; letter-spacing: 1px; text-transform: uppercase; }
         .hero-content { position: relative; z-index: 10; margin-bottom: 100px; }
         .hero-content h1 { font-size: 72px; font-weight: 700; line-height: 1.1; margin-bottom: 30px; animation: slideUp 0.8s ease-out; }
         @keyframes slideUp { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
@@ -134,7 +139,7 @@
     <div class="container">
         <div class="left-side">
             <div class="gradient-overlay"></div>
-            <div class="brand">TabMangment</div>
+            <a href="/" class="brand-link"><span class="brand-icon">📑</span><span class="brand-text">TabMangment</span></a>
             <div class="hero-content">
                 <h1>Organize<br>Everything<br>You Need</h1>
                 <p>Master your browser tabs with intelligent management. Work smarter, stay focused, and never lose track again.</p>
