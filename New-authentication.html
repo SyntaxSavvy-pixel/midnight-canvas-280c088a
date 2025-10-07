@@ -341,9 +341,23 @@ async function handleLogin(event) {
         if (user.user_metadata.deletion_scheduled_at) {
             const deletionTime = new Date(user.user_metadata.deletion_scheduled_at);
             const now = new Date();
-            const hoursRemaining = Math.ceil((deletionTime - now) / (1000 * 60 * 60));
-            if (hoursRemaining > 0) {
-                showNotification(`Your account is scheduled for deletion in ${hoursRemaining} hours. Restore it from your dashboard.`, 'info');
+            const timeRemaining = Math.max(0, deletionTime - now);
+
+            const hours = Math.floor(timeRemaining / (1000 * 60 * 60));
+            const minutes = Math.floor((timeRemaining % (1000 * 60 * 60)) / (1000 * 60));
+            const seconds = Math.floor((timeRemaining % (1000 * 60)) / 1000);
+
+            let timeText;
+            if (hours > 0) {
+                timeText = `${hours} hour${hours !== 1 ? 's' : ''}`;
+            } else if (minutes > 0) {
+                timeText = `${minutes} minute${minutes !== 1 ? 's' : ''} ${seconds} second${seconds !== 1 ? 's' : ''}`;
+            } else {
+                timeText = `${seconds} second${seconds !== 1 ? 's' : ''}`;
+            }
+
+            if (timeRemaining > 0) {
+                showNotification(`Your account is scheduled for deletion in ${timeText}. Restore it from your dashboard.`, 'info');
             }
         }
         const userData = {
