@@ -1,0 +1,56 @@
+-- TabManagement Database Setup
+-- Run this in your Supabase SQL Editor
+
+-- Drop old tables if they exist
+DROP TABLE IF EXISTS users CASCADE;
+DROP TABLE IF EXISTS "users-authentication" CASCADE;
+
+-- Create clean users_auth table
+CREATE TABLE IF NOT EXISTS users_auth (
+    id uuid PRIMARY KEY,
+    email text UNIQUE NOT NULL,
+    name text,
+    is_pro boolean DEFAULT false,
+    plan_type text DEFAULT 'free',
+    subscription_status text DEFAULT 'inactive',
+    stripe_customer_id text,
+    stripe_subscription_id text,
+    stripe_session_id text,
+    pro_activated_at timestamptz,
+    current_period_start timestamptz,
+    current_period_end timestamptz,
+    cancelled_at timestamptz,
+    last_payment_date timestamptz,
+    last_payment_amount numeric,
+    last_failed_payment_at timestamptz,
+    created_at timestamptz DEFAULT now()
+);
+
+-- Create index on email for faster lookups
+CREATE INDEX IF NOT EXISTS idx_users_auth_email ON users_auth(email);
+
+-- Create index on subscription status
+CREATE INDEX IF NOT EXISTS idx_users_auth_subscription_status ON users_auth(subscription_status);
+
+-- Enable Row Level Security (RLS)
+ALTER TABLE users_auth ENABLE ROW LEVEL SECURITY;
+
+-- Create policy: Users can read their own data
+CREATE POLICY "Users can view own data" ON users_auth
+    FOR SELECT
+    USING (auth.uid() = id);
+
+-- Create policy: Service role can do everything (for Netlify functions)
+CREATE POLICY "Service role has full access" ON users_auth
+    FOR ALL
+    USING (auth.role() = 'service_role');
+
+-- Grant permissions
+GRANT ALL ON users_auth TO service_role;
+GRANT SELECT ON users_auth TO authenticated;
+
+-- Success message
+DO $$
+BEGIN
+    RAISE NOTICE 'Database setup complete! users_auth table created successfully.';
+END $$;
