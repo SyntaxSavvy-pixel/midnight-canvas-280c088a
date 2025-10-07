@@ -1448,7 +1448,6 @@
         const { createClient } = supabase;
         const supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-        console.log('✅ Supabase client initialized');
 
         // Initialize
         feather.replace();
@@ -1475,7 +1474,6 @@
 
         // Wait for bridge to be ready
         async function waitForBridge(timeout = 10000) {
-            console.log('⏳ Waiting for bridge... Current state:', {
                 bridgeReady,
                 extensionId,
                 windowBridge: window.TABMANGMENT_BRIDGE,
@@ -1485,7 +1483,6 @@
 
             // Check if bridge is already ready via window object
             if (window.TABMANGMENT_BRIDGE?.ready) {
-                console.log('✅ Bridge already ready on window!');
                 extensionId = window.TABMANGMENT_BRIDGE.extensionId;
                 bridgeReady = true;
                 extensionConnected = true;
@@ -1496,7 +1493,6 @@
             while (!bridgeReady && (Date.now() - startTime) < timeout) {
                 // Check window.TABMANGMENT_BRIDGE each iteration
                 if (window.TABMANGMENT_BRIDGE?.ready) {
-                    console.log('✅ Bridge became ready!');
                     extensionId = window.TABMANGMENT_BRIDGE.extensionId;
                     bridgeReady = true;
                     extensionConnected = true;
@@ -1505,7 +1501,6 @@
                 await new Promise(resolve => setTimeout(resolve, 100));
             }
 
-            console.log('Bridge wait result:', {
                 bridgeReady,
                 extensionId,
                 windowBridge: window.TABMANGMENT_BRIDGE,
@@ -1518,29 +1513,20 @@
         // Try direct connection to extension (fallback method)
         async function tryDirectExtensionConnection() {
             try {
-                console.log('🔌 Attempting direct extension connection...');
-                console.log('Chrome object:', typeof chrome);
-                console.log('Chrome.runtime:', typeof chrome?.runtime);
-                console.log('Extension ID:', extensionId);
 
                 // Check if chrome.runtime is available
                 if (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.sendMessage) {
                     // Need extension ID to call from webpage
                     if (!extensionId) {
-                        console.warn('⚠️ Extension ID not available yet, waiting for bridge...');
                         return;
                     }
 
-                    console.log('✅ chrome.runtime available, sending GET_STATS message to extension:', extensionId);
 
                     // Try to get stats directly from extension (must include extension ID when calling from webpage)
                     chrome.runtime.sendMessage(extensionId, {
                         type: 'GET_STATS'
                     }, (response) => {
                         if (chrome.runtime.lastError) {
-                            console.error('❌ Extension error:', chrome.runtime.lastError.message);
-                            console.log('⚠️ Extension might not be installed or not responding');
-                            console.log('Setting stats to 0...');
                             updateStatsDisplay({
                                 totalTabs: 0,
                                 autoClosed: 0,
@@ -1549,20 +1535,15 @@
                             return;
                         }
 
-                        console.log('📨 Direct response from extension:', JSON.stringify(response, null, 2));
 
                         if (response && response.success && response.data) {
-                            console.log('✅ Got stats via direct connection!', response.data);
                             updateStatsDisplay(response.data);
                             extensionConnected = true;
                         } else if (response && response.data) {
                             // Sometimes response.success might not be set
-                            console.log('✅ Got stats (no success flag):', response.data);
                             updateStatsDisplay(response.data);
                             extensionConnected = true;
                         } else {
-                            console.warn('⚠️ Invalid response from extension:', response);
-                            console.log('Setting stats to 0...');
                             updateStatsDisplay({
                                 totalTabs: 0,
                                 autoClosed: 0,
@@ -1571,9 +1552,6 @@
                         }
                     });
                 } else {
-                    console.warn('⚠️ chrome.runtime not available');
-                    console.log('This means the extension is not installed or page is not allowed to communicate');
-                    console.log('Setting stats to 0...');
                     updateStatsDisplay({
                         totalTabs: 0,
                         autoClosed: 0,
@@ -1581,7 +1559,6 @@
                     });
                 }
             } catch (error) {
-                console.error('❌ Direct connection error:', error);
                 updateStatsDisplay({
                     totalTabs: 0,
                     autoClosed: 0,
@@ -1592,7 +1569,6 @@
 
         // Initialize dashboard
         async function initDashboard() {
-            console.log('🚀 Initializing dashboard...');
 
             // Fetch configuration from API
             try {
@@ -1600,10 +1576,8 @@
                 if (configResponse.ok) {
                     const config = await configResponse.json();
                     STRIPE_PRICE_ID = config.stripePriceId;
-                    console.log('✅ Configuration loaded');
                 }
             } catch (error) {
-                console.error('⚠️ Failed to load config:', error);
             }
 
             // Check authentication
@@ -1614,25 +1588,20 @@
             if (storedUserData) {
                 try {
                     const parsedData = JSON.parse(storedUserData);
-                    console.log('📂 Loaded from localStorage:', parsedData);
                     userEmail = parsedData.email;
 
                     // Load user ID (critical for restore/delete functions)
                     if (parsedData.id) {
                         userData.id = parsedData.id;
-                        console.log('✅ User ID loaded:', parsedData.id);
                     }
 
                     // Load avatar URL and provider if available
                     if (parsedData.avatar) {
                         userData.avatarUrl = parsedData.avatar;
-                        console.log('✅ Avatar URL loaded:', parsedData.avatar);
                     }
                     if (parsedData.provider) {
                         userData.provider = parsedData.provider;
-                        console.log('✅ Provider loaded:', parsedData.provider);
                     } else {
-                        console.warn('⚠️ No provider in localStorage, defaulting to email');
                     }
                     if (parsedData.name) {
                         userData.name = parsedData.name;
@@ -1641,10 +1610,8 @@
                     // Load deletion schedule if exists
                     if (parsedData.deletionScheduledAt) {
                         userData.deletionScheduledAt = parsedData.deletionScheduledAt;
-                        console.log('⚠️ Account scheduled for deletion:', parsedData.deletionScheduledAt);
                     }
                 } catch (e) {
-                    console.error('Error parsing userData:', e);
                 }
             }
 
@@ -1670,41 +1637,30 @@
             loadPaymentMethod();
 
             // Wait for bridge to be ready FIRST before checking payment
-            console.log('⏳ Waiting for extension bridge...');
             const isBridgeReady = await waitForBridge(5000);
 
             if (!isBridgeReady) {
-                console.warn('⚠️ Bridge not ready after 5 seconds');
-                console.log('Extension might not be installed or bridge script not loading');
             } else {
-                console.log('✅ Bridge ready with extension ID:', extensionId);
             }
 
             // Check if returning from payment (AFTER bridge is ready)
             const urlParams = new URLSearchParams(window.location.search);
             const sessionId = urlParams.get('session_id');
             if (sessionId) {
-                console.log('💳 Returning from Stripe checkout, verifying payment...');
                 await verifyStripeSession(sessionId, userEmail);
             }
 
             // CRITICAL: Sync login to extension when dashboard loads
             // This ensures extension storage is updated with user data
-            console.log('🔍 Sync check - bridgeReady:', bridgeReady, 'extensionId:', extensionId, 'userEmail:', userEmail);
 
             if (bridgeReady && extensionId && userEmail) {
-                console.log('📧 Syncing user login to extension:', userEmail);
 
                 // Get full user data from localStorage
                 const storedUser = JSON.parse(localStorage.getItem('tabmangment_user') || '{}');
                 const storedToken = localStorage.getItem('tabmangment_token');
 
-                console.log('📦 storedUser:', storedUser);
-                console.log('🔑 storedToken present:', !!storedToken);
 
                 // Send USER_LOGGED_IN message (same format as auth page)
-                console.log('🔐 Sending USER_LOGGED_IN to extension via postMessage...');
-                console.log('📤 Message payload:', {
                     type: 'USER_LOGGED_IN',
                     userData: {
                         email: userEmail,
@@ -1728,9 +1684,7 @@
                     token: storedToken
                 }, '*');
 
-                console.log('✅ USER_LOGGED_IN message sent to bridge');
             } else {
-                console.warn('⚠️ Skipping sync - missing requirements:', {
                     bridgeReady,
                     extensionId,
                     userEmail
@@ -1746,7 +1700,6 @@
                 return;
             }
 
-            console.log('✅ Bridge ready, starting sync...');
 
             // Start real-time listener for extension messages
             startRealtimeListener();
@@ -1755,14 +1708,12 @@
             try {
                 await syncWithExtension();
             } catch (error) {
-                console.error('Initial sync failed:', error);
             }
 
             // If stats don't load within 1 second, show zeros instead of loading dots
             setTimeout(() => {
                 const totalTabsEl = document.getElementById('total-tabs');
                 if (totalTabsEl && totalTabsEl.innerHTML.includes('loading-dots')) {
-                    console.log('⏱️ Loading timeout - showing zeros');
                     updateStatsDisplay({
                         totalTabs: 0,
                         autoClosed: 0,
@@ -1773,7 +1724,6 @@
 
             // Quick retry once after 2 seconds to get real data
             setTimeout(async () => {
-                console.log('🔄 Second sync attempt...');
                 await syncWithExtension();
             }, 2000);
 
@@ -1872,7 +1822,6 @@
                 `;
 
             } catch (error) {
-                console.error('Error loading payment method:', error);
                 const container = document.getElementById('payment-method-container');
                 if (container) {
                     container.innerHTML = `
@@ -1927,7 +1876,6 @@
                     throw new Error('Failed to load user data');
                 }
             } catch (error) {
-                console.error('Error loading user data:', error);
 
                 // Try to load from localStorage as fallback
                 const storedUserData = localStorage.getItem('tabmangment_user');
@@ -2030,11 +1978,9 @@
             const oauthProviderName = document.getElementById('oauth-provider-name');
             const oauthProviderIcon = document.getElementById('oauth-provider-icon');
 
-            console.log('🔧 Updating provider display for:', provider);
 
             // Safety check - make sure elements exist
             if (!providerBadge) {
-                console.warn('⚠️ Provider badge element not found');
                 return;
             }
 
@@ -2109,7 +2055,6 @@
             const proStatus = document.getElementById('pro-status');
 
             if (!planBadge) {
-                console.warn('⚠️ Plan badge element not found');
                 return;
             }
 
@@ -2174,7 +2119,6 @@
                     throw new Error(errorData.error || 'Failed to create checkout session');
                 }
             } catch (error) {
-                console.error('Error creating checkout session:', error);
             }
         }
 
@@ -2222,7 +2166,6 @@
                 const closeTimer = document.getElementById('close-timer');
                 if (closeTimer) closeTimer.value = settings.defaultTimer || 30;
             } catch (error) {
-                console.error('Error loading user settings:', error);
             }
         }
 
@@ -2371,7 +2314,6 @@
             }
 
             try {
-                console.log('🔐 Attempting to update password...');
 
                 // First, verify current password by attempting to sign in
                 const { data: signInData, error: signInError } = await supabaseClient.auth.signInWithPassword({
@@ -2380,7 +2322,6 @@
                 });
 
                 if (signInError) {
-                    console.error('❌ Current password verification failed:', signInError);
                     showNotification('Current password is incorrect', 'error');
                     if (updateBtn) {
                         updateBtn.disabled = false;
@@ -2389,7 +2330,6 @@
                     return;
                 }
 
-                console.log('✅ Current password verified');
 
                 // Now update to new password
                 const { data: updateData, error: updateError } = await supabaseClient.auth.updateUser({
@@ -2397,7 +2337,6 @@
                 });
 
                 if (updateError) {
-                    console.error('❌ Password update failed:', updateError);
                     showNotification('Failed to update password: ' + updateError.message, 'error');
                     if (updateBtn) {
                         updateBtn.disabled = false;
@@ -2406,7 +2345,6 @@
                     return;
                 }
 
-                console.log('✅ Password updated successfully');
                 showNotification('Password updated successfully!', 'success');
 
                 // Clear all password fields
@@ -2426,7 +2364,6 @@
                 }
 
             } catch (error) {
-                console.error('❌ Unexpected error updating password:', error);
                 showNotification('Error updating password: ' + error.message, 'error');
             } finally {
                 if (updateBtn) {
@@ -2552,7 +2489,6 @@
         // Restore account function
         async function restoreAccount() {
             try {
-                console.log('♻️ Restore account called. UserData:', {
                     id: userData.id,
                     email: userData.email,
                     hasId: !!userData.id,
@@ -2561,7 +2497,6 @@
 
                 // Validate we have the required data
                 if (!userData.id || !userData.email) {
-                    console.error('❌ Missing user ID or email:', userData);
                     showNotification('Session error. Please log out and log back in.', 'error');
                     return;
                 }
@@ -2580,7 +2515,6 @@
                 });
 
                 const result = await response.json();
-                console.log('♻️ Restore response:', result);
 
                 if (response.ok && result.success) {
                     showNotification('Account restored successfully!', 'success');
@@ -2595,7 +2529,6 @@
                     showNotification(result.error || 'Failed to restore account', 'error');
                 }
             } catch (error) {
-                console.error('❌ Error restoring account:', error);
                 showNotification('Error restoring account. Please try again.', 'error');
             }
         }
@@ -2702,13 +2635,11 @@
             confirmBtn.textContent = 'Deleting...';
 
             try {
-                console.log('🗑️ Attempting to delete account...');
 
                 // Get current user session
                 const { data: { user }, error: userError } = await supabaseClient.auth.getUser();
 
                 if (userError || !user) {
-                    console.log('⚠️ No active session, clearing local data only');
 
                     // Clear all local data
                     localStorage.clear();
@@ -2729,14 +2660,11 @@
                     return;
                 }
 
-                console.log('✅ User session found, user ID:', user.id);
-                console.log('🗑️ Deleting user account from Supabase...');
 
                 let deletionSuccessful = false;
 
                 // Try API endpoint first (uses service role key)
                 try {
-                    console.log('📡 Calling API endpoint:', `${API_BASE}/delete-account`);
                     const response = await fetch(`${API_BASE}/delete-account`, {
                         method: 'POST',
                         headers: {
@@ -2749,10 +2677,8 @@
                     });
 
                     const result = await response.json();
-                    console.log('📡 API Response:', result);
 
                     if (response.ok && result.success) {
-                        console.log('✅ Account marked for deletion (24-hour grace period)');
                         deletionSuccessful = true;
 
                         // Update userData with deletion timestamp
@@ -2769,20 +2695,17 @@
                         updateAccountActionButtons();
 
                     } else {
-                        console.error('❌ API deletion scheduling failed:', result);
                         showNotification(result.error || 'Failed to schedule account deletion', 'error');
                         confirmBtn.disabled = false;
                         confirmBtn.textContent = 'Delete Account';
                     }
                 } catch (apiError) {
-                    console.error('❌ API call failed:', apiError);
                     showNotification('Error scheduling account deletion', 'error');
                     confirmBtn.disabled = false;
                     confirmBtn.textContent = 'Delete Account';
                 }
 
             } catch (error) {
-                console.error('❌ Error deleting account:', error);
                 errorMsg.textContent = 'Failed to delete account. Please try again or contact support.';
                 errorMsg.style.display = 'block';
                 confirmBtn.disabled = false;
@@ -2832,20 +2755,17 @@
 
             // Log ALL messages to debug
             if (message && message.type && message.type.startsWith('TABMANGMENT_')) {
-                console.log('🔔 Received message:', message.type, message);
             }
 
             if (!message || !message.type) return;
 
             // Handle bridge ready
             if (message.type === 'TABMANGMENT_BRIDGE_READY') {
-                console.log('✅ Bridge ready, extension ID:', message.extensionId);
                 extensionId = message.extensionId;
                 bridgeReady = true;
                 extensionConnected = true;
 
                 // Immediately sync
-                console.log('🚀 Bridge connected! Syncing now...');
                 syncWithExtension();
                 return;
             }
@@ -2868,7 +2788,6 @@
 
             // Handle real-time updates from extension
             if (message.type === 'TABMANGMENT_STATS_UPDATE') {
-                console.log('📊 Real-time stats update received:', message);
                 // The stats can be in message.data.data OR message.data
                 const statsData = message.data?.data || message.data;
                 if (statsData) {
@@ -2878,7 +2797,6 @@
             }
 
             if (message.type === 'TABMANGMENT_EXTENSION_READY') {
-                console.log('✅ Extension ready signal received');
                 extensionConnected = true;
                 syncWithExtension();
                 return;
@@ -2889,7 +2807,6 @@
         async function checkExtensionInstalled() {
             try {
                 if (!bridgeReady) {
-                    console.warn('Bridge not ready');
                     return { installed: false, pinned: false };
                 }
 
@@ -2903,7 +2820,6 @@
                 // Extension is installed and responding
                 return { installed: true, pinned: true };
             } catch (error) {
-                console.error('Extension check error:', error);
                 return { installed: false, pinned: false };
             }
         }
@@ -2950,7 +2866,6 @@
         // Real-time extension sync with requirements check
         async function syncWithExtension() {
             try {
-                console.log('🔄 Starting extension sync...');
 
                 // Set loading state
                 setStatsLoading(true);
@@ -2959,7 +2874,6 @@
                 const extensionStatus = await checkExtensionInstalled();
 
                 if (!extensionStatus.installed) {
-                    console.warn('⚠️ Extension not installed');
                     setStatsLoading(false);
                     setStatsDisconnected();
                     extensionConnected = false;
@@ -2968,7 +2882,6 @@
                 }
 
                 if (!extensionStatus.pinned) {
-                    console.warn('⚠️ Extension not pinned or not responding');
                     setStatsLoading(false);
                     setStatsDisconnected();
                     extensionConnected = false;
@@ -2995,7 +2908,6 @@
                         timestamp: Date.now()
                     });
 
-                    console.log('📊 Raw stats response:', stats);
 
                     // Handle different response formats
                     let statsData = null;
@@ -3013,20 +2925,16 @@
                         updateStatsDisplay(statsData);
                         extensionConnected = true;
                         retryCount = 0; // Reset retry count on success
-                        console.log('✅ Extension sync completed!', statsData);
                     } else {
-                        console.warn('⚠️ No valid stats data found in response:', stats);
                         throw new Error('Invalid stats response');
                     }
 
                 } catch (extensionError) {
-                    console.error('Extension communication error:', extensionError);
                     extensionConnected = false;
 
                     // Implement retry logic
                     if (retryCount < MAX_RETRIES) {
                         retryCount++;
-                        console.log(`🔄 Retry attempt ${retryCount}/${MAX_RETRIES}...`);
                         setStatsLoading(true);
                         setTimeout(() => {
                             syncWithExtension();
@@ -3043,7 +2951,6 @@
                 localStorage.setItem('lastSyncTime', Date.now().toString());
 
             } catch (error) {
-                console.error('❌ Sync error:', error);
                 extensionConnected = false;
                 setStatsLoading(false);
             }
@@ -3075,7 +2982,6 @@
 
         function performStatsUpdate(stats) {
             if (!stats) {
-                console.warn('⚠️ No stats provided');
                 setStatsDisconnected();
                 return;
             }
@@ -3085,7 +2991,6 @@
             const memorySavedEl = document.getElementById('memory-saved');
 
             if (!totalTabsEl || !autoClosedEl || !memorySavedEl) {
-                console.warn('⚠️ Stats elements not found');
                 return;
             }
 
@@ -3134,7 +3039,6 @@
             lastStats = { totalTabs, autoClosed, memorySaved };
 
             if (hasChanges) {
-                console.log('📊 Stats updated:', { totalTabs, autoClosed, memorySaved });
             }
 
             // Remove loading state
@@ -3165,7 +3069,6 @@
 
         // Listen for real-time updates from extension (now handled by window.addEventListener above)
         function startRealtimeListener() {
-            console.log('👂 Real-time listener started (using bridge)');
             // The actual listener is in the window.addEventListener('message') above
             // This function is kept for compatibility but does nothing now
         }
@@ -3193,7 +3096,6 @@
                 if (lastUpdate) {
                     const timeSinceUpdate = Date.now() - parseInt(lastUpdate);
                     if (timeSinceUpdate > 60000) { // More than 1 minute
-                        console.warn('⚠️ Stats stale, reconnecting...');
                         extensionConnected = false;
                         retryCount = 0;
                         await syncWithExtension();
@@ -3203,12 +3105,10 @@
 
             // Start with active interval
             syncInterval = setInterval(performSync, currentSyncInterval);
-            console.log(`⏰ Periodic sync started (every ${currentSyncInterval/1000}s)`);
 
             // Adaptive interval switching based on visibility
             document.addEventListener('visibilitychange', async () => {
                 if (!document.hidden) {
-                    console.log('👁️ Page visible - switching to fast sync (5s)');
                     currentSyncInterval = ACTIVE_SYNC_INTERVAL;
 
                     // Restart interval with new timing
@@ -3219,7 +3119,6 @@
                     retryCount = 0;
                     await syncWithExtension();
                 } else {
-                    console.log('😴 Page hidden - switching to slow sync (30s)');
                     currentSyncInterval = IDLE_SYNC_INTERVAL;
 
                     // Restart interval with new timing
@@ -3230,7 +3129,6 @@
 
             // Sync on window focus (immediate)
             window.addEventListener('focus', async () => {
-                console.log('🔍 Window focused, syncing now...');
                 retryCount = 0;
                 await syncWithExtension();
             });
@@ -3242,7 +3140,6 @@
             // Users can manage subscriptions, payment methods, invoices, etc.
             const billingPortalUrl = 'https://billing.stripe.com/p/login/dRm5kEgDE1R29cPgM84Rq00';
             window.open(billingPortalUrl, '_blank');
-            console.log('🔗 Opened Stripe billing portal');
         }
 
         // Load billing history
@@ -3288,7 +3185,6 @@
                         timeoutPromise
                     ]);
                 } catch (error) {
-                    console.log('ℹ️ Extension not available, showing empty analytics');
                     analyticsData = {
                         domains: ['No Data'],
                         hours: [0]
@@ -3378,9 +3274,7 @@
                     }
                 });
 
-                console.log('📊 Chart initialized with real data');
             } catch (error) {
-                console.error('Chart init error:', error);
                 const loadingEl = document.getElementById('chart-loading');
                 if (loadingEl) {
                     loadingEl.innerHTML = '<p style="color: #ef4444;">Unable to load analytics data</p>';
@@ -3410,7 +3304,6 @@
                     hours: [0]
                 };
             } catch (error) {
-                console.error('Failed to get analytics:', error);
                 return {
                     domains: ['No data yet'],
                     hours: [0]
@@ -3443,7 +3336,6 @@
                     hours: sorted.map(item => item.totalTime / (1000 * 60 * 60)) // Convert ms to hours
                 };
             } catch (error) {
-                console.error('Error processing analytics:', error);
                 return {
                     domains: ['Error loading data'],
                     hours: [0]
@@ -3462,9 +3354,7 @@
                 usageChart.data.datasets[0].data = analyticsData.hours;
                 usageChart.update('none'); // Update without animation for smoothness
 
-                console.log('📊 Chart updated');
             } catch (error) {
-                console.error('Chart update error:', error);
             }
         }
 
@@ -3472,7 +3362,6 @@
         // Verify Stripe session immediately on return from payment
         async function verifyStripeSession(sessionId, userEmail) {
             try {
-                console.log('🔐 Verifying Stripe session:', sessionId);
 
                 const response = await fetch(`${API_BASE}/verify-session`, {
                     method: 'POST',
@@ -3489,11 +3378,9 @@
                 }
 
                 const result = await response.json();
-                console.log('📋 Verification result:', result);
 
                 if (result.success && result.paid && result.isPro) {
                     // Payment verified and Pro activated!
-                    console.log('✅ Payment verified! Activating Pro immediately...');
 
                     // Update local data
                     userData.plan = 'pro';
@@ -3513,7 +3400,6 @@
 
                     // Notify extension IMMEDIATELY
                     if (bridgeReady && extensionId) {
-                        console.log('📡 Notifying extension of Pro activation');
                         await sendMessageToExtension('SUBSCRIPTION_UPDATE', {
                             plan: 'pro',
                             isPro: true,
@@ -3535,11 +3421,9 @@
                 }
 
                 // If verification didn't return Pro, fall back to polling
-                console.log('⚠️ Session verification incomplete, starting polling...');
                 startSubscriptionPolling(userEmail);
 
             } catch (error) {
-                console.error('❌ Session verification error:', error);
                 // Fall back to polling
                 startSubscriptionPolling(userEmail);
             }
@@ -3550,23 +3434,19 @@
             let pollAttempts = 0;
             const maxAttempts = 60; // Poll for up to 60 seconds (every 1s)
 
-            console.log('🔄 Starting subscription polling for:', userEmail);
 
             const pollInterval = setInterval(async () => {
                 pollAttempts++;
-                console.log(`🔍 Poll attempt ${pollAttempts}/${maxAttempts}`);
 
                 try {
                     const response = await fetch(`${API_BASE}/status?email=${encodeURIComponent(userEmail)}`);
                     if (response.ok) {
                         const data = await response.json();
-                        console.log('📊 Subscription status:', data);
 
                         // Check if plan is now Pro
                         if (data.active && data.plan === 'pro') {
                             clearInterval(pollInterval);
 
-                            console.log('✅ Pro plan detected! Activating...');
 
                             // Update local data
                             userData.plan = 'pro';
@@ -3581,7 +3461,6 @@
 
                             // Notify extension to refresh plan - WITH USER DATA
                             if (bridgeReady && extensionId) {
-                                console.log('📡 Sending SUBSCRIPTION_UPDATE to extension');
                                 await sendMessageToExtension('SUBSCRIPTION_UPDATE', {
                                     plan: 'pro',
                                     isPro: true,
@@ -3606,13 +3485,11 @@
                         }
                     }
                 } catch (error) {
-                    console.error('Subscription polling error:', error);
                 }
 
                 // Stop polling after max attempts
                 if (pollAttempts >= maxAttempts) {
                     clearInterval(pollInterval);
-                    console.warn('⏱️ Polling timed out - refreshing page');
                     // Force reload to get fresh data
                     setTimeout(() => window.location.reload(), 2000);
                 }
@@ -3628,7 +3505,6 @@
 
         // Logout function
         async function logout() {
-            console.log('🚪 Logging out...');
 
             // Set flag to indicate intentional logout (will be read by auth page)
             sessionStorage.setItem('user_logged_out', 'true');
@@ -3641,7 +3517,6 @@
             localStorage.removeItem('userEmail');
 
             // Notify extension about logout via window.postMessage
-            console.log('📤 Sending logout event to extension...');
             window.postMessage({
                 type: 'USER_LOGGED_OUT',
                 confirmed: true  // CRITICAL: Flag to prevent storage clear on tab close
@@ -3649,17 +3524,14 @@
 
             // Redirect to auth page with logout parameter
             // The auth page will handle Supabase signout
-            console.log('🔄 Redirecting to login page...');
             window.location.href = '/new-authentication?logout=true';
         }
 
         // Set up bridge listener IMMEDIATELY (before DOMContentLoaded)
         // This ensures we catch the BRIDGE_READY message from the extension
-        console.log('🎧 Setting up bridge listener early...');
 
         // Initialize dashboard on load
         document.addEventListener('DOMContentLoaded', () => {
-            console.log('📄 DOM loaded, initializing dashboard...');
             initDashboard();
         });
 

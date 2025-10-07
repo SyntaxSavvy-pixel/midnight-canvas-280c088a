@@ -473,7 +473,6 @@ class TabManager {
         try {
             // Skip API check for fallback emails - they're always free plan
             if (email && email.startsWith('fallback_')) {
-                console.log('📧 Fallback email detected - skipping subscription check');
                 return false;
             }
 
@@ -543,18 +542,9 @@ class TabManager {
 
                 case 'USER_LOGGED_IN':
                     // User logged in from web - save to storage
-                    console.log('🔐 Background: Received USER_LOGGED_IN message');
-                    console.log('📦 Full message:', message);
-                    console.log('📧 Email:', message.userData?.email);
-                    console.log('👤 Name:', message.userData?.name);
-                    console.log('🔑 Token:', message.token ? 'Present' : 'Missing');
-                    console.log('🔑 Provider:', message.userData?.provider);
-                    console.log('📍 Sender URL:', sender?.url);
-                    console.log('📍 Sender tab:', sender?.tab?.id);
 
                     // Validate email exists
                     if (!message.userData?.email) {
-                        console.error('❌ NO EMAIL IN MESSAGE! Cannot save login data.');
                         sendResponse({ success: false, error: 'No email provided' });
                         break;
                     }
@@ -571,55 +561,35 @@ class TabManager {
                         loginTimestamp: Date.now() // Add timestamp for debugging
                     };
 
-                    console.log('💾 Saving to chrome.storage.local:', loginData);
-                    console.log('💾 userEmail value:', loginData.userEmail, 'Type:', typeof loginData.userEmail);
-
                     try {
                         await chrome.storage.local.set(loginData);
-                        console.log('✅ chrome.storage.local.set() completed');
 
                         // Immediately verify it was saved
                         const verification = await chrome.storage.local.get(null);
-                        console.log('✅ Background: ALL storage after save:', verification);
-                        console.log('✅ Background: User email verified:', verification.userEmail);
-                        console.log('✅ Background: Provider verified:', verification.provider);
-                        console.log('✅ Background: Login timestamp:', new Date(verification.loginTimestamp).toLocaleString());
 
                         if (verification.userEmail !== loginData.userEmail) {
-                            console.error('❌ VERIFICATION FAILED! Email mismatch!');
-                            console.error('   Expected:', loginData.userEmail);
-                            console.error('   Got:', verification.userEmail);
                         }
 
                         sendResponse({ success: true, saved: verification });
                     } catch (error) {
-                        console.error('❌ Background: Failed to save to storage:', error);
                         sendResponse({ success: false, error: error.message });
                     }
                     break;
 
                 case 'USER_LOGGED_OUT':
                     // User logged out from web - clear storage
-                    console.log('🚪 Background: Received USER_LOGGED_OUT message');
-                    console.log('🚪 Sender:', sender);
-                    console.log('🚪 Message data:', message);
 
                     // CRITICAL FIX: Only clear storage if this is an explicit logout
                     // with the confirmed flag, not from tab close/unload
                     if (message.confirmed !== true) {
-                        console.warn('⚠️ Ignoring USER_LOGGED_OUT without confirmed flag - probably tab close');
-                        console.warn('⚠️ Tab/page URL:', sender.url);
-                        console.warn('⚠️ Not clearing storage to preserve login');
                         sendResponse({ success: false, reason: 'not_confirmed' });
                         break;
                     }
 
                     // Safety check: Only clear if message came from a real logout action
                     const currentStorage = await chrome.storage.local.get(['userEmail']);
-                    console.log('🚪 Current userEmail in storage:', currentStorage.userEmail);
 
                     await chrome.storage.local.clear();
-                    console.log('✅ Background: Storage cleared after explicit logout');
 
                     sendResponse({ success: true });
                     break;
@@ -786,17 +756,6 @@ class TabManager {
             // Filter to only valid tabs (same logic as popup.js)
             const validTabs = allBrowserTabs.filter(tab => this.isValidTab(tab));
 
-            // Debug: Log all tabs and their validity
-            console.log('📊 Tab validation details:');
-            console.log('  All browser tabs:', allBrowserTabs.length);
-            console.log('  Valid tabs:', validTabs.length);
-            console.log('  Invalid tabs:', allBrowserTabs.length - validTabs.length);
-
-            const invalidTabs = allBrowserTabs.filter(tab => !this.isValidTab(tab));
-            if (invalidTabs.length > 0) {
-                console.log('  Invalid tab URLs:', invalidTabs.map(t => t.url));
-            }
-
             const trackedTabs = await this.getAllTabData();
             const storage = await chrome.storage.local.get(['tabsClosedAuto', 'totalTabsOpened', 'tabsClosedToday']);
 
@@ -810,13 +769,6 @@ class TabManager {
             const totalClosed = storage.tabsClosedAuto || 0;
             const memorySaved = Math.round(totalClosed * 75); // More accurate estimate: 75MB per tab
 
-            console.log('📊 Real-time stats calculated:', {
-                totalTabs: validTabs.length,
-                allTabs: allBrowserTabs.length,
-                autoClosedToday,
-                memorySaved
-            });
-
             return {
                 totalTabs: validTabs.length, // Valid manageable tabs count (matches popup display)
                 autoClosed: autoClosedToday, // Only today's auto-closed tabs
@@ -827,7 +779,6 @@ class TabManager {
                 timestamp: Date.now()
             };
         } catch (error) {
-            console.error('Error getting real-time stats:', error);
             return {
                 totalTabs: 0,
                 autoClosed: 0,
@@ -842,8 +793,6 @@ class TabManager {
 
     async handleSubscriptionUpdate(message) {
         try {
-            console.log('🔄 Received subscription update:', message);
-
             // Update subscription data in storage
             const now = Date.now();
             const updateData = {
@@ -867,8 +816,6 @@ class TabManager {
 
             await chrome.storage.local.set(updateData);
 
-            console.log('✅ Subscription data updated in storage:', updateData);
-
             // DON'T call CHECK_USER_PLAN here - it would query the API which might not be updated yet
             // Storage is the source of truth, and we just updated it above
             // extension-simple-auth will see the updated storage when needed
@@ -879,9 +826,7 @@ class TabManager {
             // Broadcast stats update back to dashboard
             this.broadcastStatsUpdate();
 
-            console.log('🎉 Extension features updated for plan:', message.plan);
         } catch (error) {
-            console.error('Error handling subscription update:', error);
         }
     }
 
@@ -897,7 +842,6 @@ class TabManager {
                 // Dashboard might not be open, that's okay
             });
         } catch (error) {
-            console.error('Error broadcasting stats:', error);
         }
     }
 
@@ -957,12 +901,9 @@ class TabManager {
                 tabsClosedToday: tabsClosedToday
             });
 
-            console.log(`📊 Auto-closed tab tracked. Today: ${tabsClosedToday[today]}, Total: ${totalClosed}`);
-
             // Broadcast updated stats
             this.broadcastStatsUpdate();
         } catch (error) {
-            console.error('Error tracking auto-closed tab:', error);
         }
     }
 
@@ -2013,32 +1954,16 @@ const smartAnalytics = new SmartTabAnalytics();
 // Monitor storage changes to debug persistence issues
 chrome.storage.onChanged.addListener((changes, areaName) => {
     if (areaName === 'local') {
-        console.log('🔄 Storage changed:', changes);
-
         if (changes.userEmail) {
-            console.log('📧 userEmail changed:',
-                'Old:', changes.userEmail.oldValue,
-                'New:', changes.userEmail.newValue
-            );
         }
 
         if (changes.authToken) {
-            console.log('🔑 authToken changed:',
-                'Old:', changes.authToken.oldValue ? 'Present' : 'Missing',
-                'New:', changes.authToken.newValue ? 'Present' : 'Missing'
-            );
         }
 
         // Log if userEmail is being removed
         if (changes.userEmail && !changes.userEmail.newValue) {
-            console.error('⚠️ WARNING: userEmail was REMOVED from storage!');
-            console.error('⚠️ Old value was:', changes.userEmail.oldValue);
-            console.trace('Stack trace for userEmail removal');
-
             // Dump all current storage to see what else was removed
             chrome.storage.local.get(null).then(allData => {
-                console.error('⚠️ ALL storage after removal:', allData);
-                console.error('⚠️ Storage keys remaining:', Object.keys(allData));
             });
         }
     }
