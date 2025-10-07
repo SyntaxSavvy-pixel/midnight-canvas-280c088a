@@ -42,27 +42,45 @@
             position: relative;
         }
 
-        .cursor-ring {
+        .cursor-glow {
             position: fixed;
-            border: 2px solid rgba(148, 163, 184, 0.3);
+            width: 400px;
+            height: 400px;
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 9998;
+            background: radial-gradient(
+                circle,
+                rgba(100, 116, 139, 0.15) 0%,
+                rgba(71, 85, 105, 0.08) 25%,
+                rgba(51, 65, 85, 0.04) 50%,
+                transparent 70%
+            );
+            transform: translate(-50%, -50%);
+            transition: opacity 0.3s ease;
+        }
+
+        .cursor-trail {
+            position: fixed;
+            width: 8px;
+            height: 8px;
             border-radius: 50%;
             pointer-events: none;
             z-index: 9999;
-            animation: pulse-ring 1.5s ease-out forwards;
+            background: radial-gradient(circle, rgba(148, 163, 184, 0.8) 0%, rgba(71, 85, 105, 0.4) 50%, transparent 100%);
+            box-shadow: 0 0 10px rgba(148, 163, 184, 0.6), 0 0 20px rgba(100, 116, 139, 0.3);
+            transform: translate(-50%, -50%) scale(1);
+            animation: trail-fade 0.6s ease-out forwards;
         }
 
-        @keyframes pulse-ring {
+        @keyframes trail-fade {
             0% {
-                width: 20px;
-                height: 20px;
                 opacity: 1;
-                box-shadow: 0 0 20px rgba(148, 163, 184, 0.4);
+                transform: translate(-50%, -50%) scale(1);
             }
             100% {
-                width: 100px;
-                height: 100px;
                 opacity: 0;
-                box-shadow: 0 0 40px rgba(148, 163, 184, 0);
+                transform: translate(-50%, -50%) scale(0.3);
             }
         }
 
@@ -1029,29 +1047,46 @@
 
     <script defer src="/_vercel/insights/script.js"></script>
     <script>
-        // Mouse tracking ring effect
-        let lastRingTime = 0;
-        const ringDelay = 50; // milliseconds between rings
+        // Create persistent glow element
+        const glow = document.createElement('div');
+        glow.className = 'cursor-glow';
+        document.body.appendChild(glow);
+
+        let lastTrailTime = 0;
+        const trailDelay = 30; // milliseconds between trail dots
 
         document.addEventListener('mousemove', (e) => {
             const now = Date.now();
 
-            // Throttle ring creation
-            if (now - lastRingTime < ringDelay) return;
-            lastRingTime = now;
+            // Update glow position smoothly
+            glow.style.left = e.clientX + 'px';
+            glow.style.top = e.clientY + 'px';
 
-            // Create ring element
-            const ring = document.createElement('div');
-            ring.className = 'cursor-ring';
-            ring.style.left = (e.clientX - 10) + 'px';
-            ring.style.top = (e.clientY - 10) + 'px';
+            // Throttle trail creation
+            if (now - lastTrailTime < trailDelay) return;
+            lastTrailTime = now;
 
-            document.body.appendChild(ring);
+            // Create trail dot
+            const trail = document.createElement('div');
+            trail.className = 'cursor-trail';
+            trail.style.left = e.clientX + 'px';
+            trail.style.top = e.clientY + 'px';
 
-            // Remove ring after animation completes
+            document.body.appendChild(trail);
+
+            // Remove trail after animation
             setTimeout(() => {
-                ring.remove();
-            }, 1500);
+                trail.remove();
+            }, 600);
+        });
+
+        // Hide glow when mouse leaves window
+        document.addEventListener('mouseleave', () => {
+            glow.style.opacity = '0';
+        });
+
+        document.addEventListener('mouseenter', () => {
+            glow.style.opacity = '1';
         });
 
         // Feather icons initialization
