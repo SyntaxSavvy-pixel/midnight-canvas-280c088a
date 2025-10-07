@@ -343,6 +343,14 @@ async function handleLogin(event) {
             const now = new Date();
             const timeRemaining = Math.max(0, deletionTime - now);
 
+            // If account is already deleted, prevent login
+            if (timeRemaining <= 0) {
+                await supabaseClient.auth.signOut();
+                showNotification('Your account has been deleted. Please contact support if you need assistance.', 'error');
+                showLoading(false);
+                return;
+            }
+
             const hours = Math.floor(timeRemaining / (1000 * 60 * 60));
             const minutes = Math.floor((timeRemaining % (1000 * 60 * 60)) / (1000 * 60));
             const seconds = Math.floor((timeRemaining % (1000 * 60)) / 1000);
@@ -356,9 +364,7 @@ async function handleLogin(event) {
                 timeText = `${seconds} second${seconds !== 1 ? 's' : ''}`;
             }
 
-            if (timeRemaining > 0) {
-                showNotification(`Your account is scheduled for deletion in ${timeText}. Restore it from your dashboard.`, 'info');
-            }
+            showNotification(`Your account is scheduled for deletion in ${timeText}. Restore it from your dashboard.`, 'info');
         }
         const userData = {
             email: user.email,
@@ -479,7 +485,22 @@ async function handleGithubLogin() {
     if (session) {
         // User is logged in (either from OAuth or existing session)
         const user = session.user;
-        
+
+        // Check if account is deleted
+        if (user.user_metadata.deletion_scheduled_at) {
+            const deletionTime = new Date(user.user_metadata.deletion_scheduled_at);
+            const now = new Date();
+
+            if (deletionTime <= now) {
+                // Account is deleted - log out and show message
+                await supabaseClient.auth.signOut();
+                localStorage.removeItem('tabmangment_user');
+                localStorage.removeItem('tabmangment_token');
+                showNotification('Your account has been deleted. Please contact support if you need assistance.', 'error');
+                return;
+            }
+        }
+
         // Save user data
         const userData = {
             email: user.email,
@@ -489,17 +510,17 @@ async function handleGithubLogin() {
             avatar: user.user_metadata.avatar_url || user.user_metadata.picture,
             deletionScheduledAt: user.user_metadata.deletion_scheduled_at || null
         };
-        
+
         localStorage.setItem('tabmangment_user', JSON.stringify(userData));
         localStorage.setItem('tabmangment_token', session.access_token);
-        
+
         // Send login message to extension
         window.postMessage({
             type: 'USER_LOGGED_IN',
             userData: userData,
             token: session.access_token
         }, '*');
-        
+
         // Redirect to dashboard
         window.location.href = '/user-dashboard.html';
     }
