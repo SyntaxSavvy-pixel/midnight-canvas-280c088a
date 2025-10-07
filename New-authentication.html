@@ -54,7 +54,7 @@
         .brand-link { position: relative; z-index: 10; display: inline-flex; align-items: center; gap: 12px; text-decoration: none; color: white; padding: 12px 20px; background: rgba(255, 255, 255, 0.1); border-radius: 12px; backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.2); transition: all 0.3s ease; cursor: pointer; }
         .brand-link:hover { background: rgba(255, 255, 255, 0.15); border-color: rgba(255, 255, 255, 0.3); transform: translateY(-2px); box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2); }
         .brand-link:active { transform: translateY(0); }
-        .brand-icon { font-size: 24px; line-height: 1; animation: float-icon 3s ease-in-out infinite; }
+        .brand-icon { width: 24px; height: 24px; animation: float-icon 3s ease-in-out infinite; }
         @keyframes float-icon { 0%, 100% { transform: translateY(0px) rotate(0deg); } 50% { transform: translateY(-5px) rotate(5deg); } }
         .brand-text { font-size: 16px; font-weight: 600; letter-spacing: 1px; text-transform: uppercase; }
         .hero-content { position: absolute; z-index: 10; top: 120px; }
@@ -178,7 +178,7 @@
     <div class="container">
         <div class="left-side">
             <div class="gradient-overlay"></div>
-            <a href="/" class="brand-link"><span class="brand-icon">📑</span><span class="brand-text">TabMangment</span></a>
+            <a href="/" class="brand-link"><img src="/icons/icon-32.png" alt="TabMangment" class="brand-icon"><span class="brand-text">TabMangment</span></a>
             <div class="hero-content">
                 <h1>Master Your<br>Browser Tabs</h1>
                 <p>Intelligent tab management for focus and productivity.</p>
