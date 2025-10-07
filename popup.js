@@ -88,11 +88,6 @@ class TabmangmentPopup {
                         this.userEmail = syncedData.userEmail;
                         this.userName = syncedData.userName;
                         this.isPremium = syncedData.isPremium || false;
-
-                            email: this.userEmail,
-                            name: this.userName,
-                            isPremium: this.isPremium
-                        });
                         // Continue with initialization
                     } else {
                         this.hideLoader();
@@ -1836,13 +1831,6 @@ class TabmangmentPopup {
             }
 
             const stored = await chrome.storage.local.get(['userEmail', 'authToken', 'userName', 'isPremium', 'planType']);
-
-                email: stored.userEmail,
-                hasToken: !!stored.authToken,
-                userName: stored.userName,
-                isPremium: stored.isPremium,
-                planType: stored.planType
-            });
 
             // Check if user has email (not fallback or anonymous)
             if (stored.userEmail &&
