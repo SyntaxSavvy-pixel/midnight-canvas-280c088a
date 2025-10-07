@@ -12,7 +12,6 @@ class SimpleAuth {
     }
 
     async init() {
-        console.log('🔐 Simple auth starting...');
 
         // Check if we have stored user email
         await this.loadStoredAuth();
@@ -33,7 +32,6 @@ class SimpleAuth {
         // Disabled periodic plan checks - storage is now the source of truth
         // Only Stripe webhooks should update subscription status
         // This prevents flickering and race conditions with payment processing
-        console.log('✅ Periodic plan checks disabled - using storage as source of truth');
     }
 
     async loadStoredAuth() {
@@ -44,11 +42,9 @@ class SimpleAuth {
                 if (result.userEmail) {
                     this.userEmail = result.userEmail;
                     this.isLoggedIn = true;
-                    console.log('📧 Found stored email:', this.userEmail);
                 }
             }
         } catch (error) {
-            console.error('❌ Failed to load stored auth:', error);
         }
     }
 
@@ -72,7 +68,6 @@ class SimpleAuth {
             return;
         }
 
-        console.log('📨 Extension message:', message.type);
 
         switch (message.type) {
             case 'USER_LOGGED_IN':
@@ -99,7 +94,6 @@ class SimpleAuth {
 
             case 'USER_LOGIN':
                 // Dashboard is syncing real user email to replace fallback
-                console.log('📧 Received USER_LOGIN from dashboard:', message.email);
                 await this.handleUserLogin({
                     email: message.email,
                     name: message.name
@@ -115,14 +109,12 @@ class SimpleAuth {
             default:
                 // Only log unknown messages that aren't internal Chrome messages
                 if (!message.type || !message.type.startsWith('_')) {
-                    console.log('⚠️ Unknown message type:', message.type);
                 }
                 sendResponse({ success: false, message: 'Unknown message type' });
         }
     }
 
     async handleUserLogin(user, token) {
-        console.log('🎉 User logged in:', user.email);
 
         this.userEmail = user.email;
         this.isLoggedIn = true;
@@ -139,30 +131,25 @@ class SimpleAuth {
         // Check their plan status
         await this.checkUserPlan();
 
-        console.log('✅ Login processed, isPro:', this.isPro);
     }
 
     async checkUserPlan() {
         if (!this.userEmail) {
-            console.log('⚠️ No email to check plan for');
             return;
         }
 
         try {
             // FIRST: If using fallback email, set to free
             if (this.userEmail.startsWith('fallback_')) {
-                console.log('📧 Fallback email detected - setting to free plan');
                 this.isPro = false;
                 await this.deactivateProFeatures();
                 return;
             }
 
-            console.log('🔍 Checking plan via API for:', this.userEmail);
 
             const response = await fetch(`${this.apiUrl}/api/me?email=${encodeURIComponent(this.userEmail)}`);
 
             if (!response.ok) {
-                console.warn('⚠️ API returned status:', response.status);
                 // If API fails, default to free
                 this.isPro = false;
                 await this.deactivateProFeatures();
@@ -171,22 +158,18 @@ class SimpleAuth {
 
             const userData = await response.json();
 
-            console.log('📊 Plan check response:', userData);
 
             // CRITICAL: API is now the source of truth - sync plan status
             // This allows both upgrading AND downgrading based on actual subscription status
             if (userData.plan === 'pro' || userData.isPro === true) {
-                console.log('✅ API says Pro - activating Pro features');
                 this.isPro = true;
                 await this.activateProFeatures();
             } else {
-                console.log('📱 API says Free - deactivating Pro features');
                 this.isPro = false;
                 await this.deactivateProFeatures();
             }
 
         } catch (error) {
-            console.error('❌ Failed to check user plan:', error);
             // On error, default to free to be safe
             this.isPro = false;
             await this.deactivateProFeatures();
@@ -194,7 +177,6 @@ class SimpleAuth {
     }
 
     async activateProFeatures() {
-        console.log('🎉 Activating Pro features');
 
         if (chrome && chrome.storage) {
             await chrome.storage.local.set({
@@ -205,11 +187,9 @@ class SimpleAuth {
         }
 
 
-        console.log('✅ Pro features activated');
     }
 
     async deactivateProFeatures() {
-        console.log('📱 Setting free plan features');
 
         if (chrome && chrome.storage) {
             await chrome.storage.local.set({
@@ -219,11 +199,9 @@ class SimpleAuth {
             });
         }
 
-        console.log('✅ Free plan set');
     }
 
     async logout() {
-        console.log('👋 Logging out...');
 
         this.userEmail = null;
         this.isLoggedIn = false;
@@ -240,7 +218,6 @@ class SimpleAuth {
             ]);
         }
 
-        console.log('✅ Logout complete');
     }
 
     // Public methods
@@ -277,4 +254,3 @@ if (typeof chrome !== 'undefined' && chrome.runtime) {
     window.logoutUser = () => simpleAuth?.logout();
 }
 
-console.log('✅ Simple auth system loaded');
