@@ -119,11 +119,15 @@ class TabmangmentPopup {
             });
 
             // Do background checks without blocking UI
+            this.checkServiceWorkerHealth().catch(e => {});
+            this.checkPendingActivation().catch(e => {});
+            this.checkSubscription().catch(e => {});
 
             // Background subscription check (non-blocking, updates UI when done)
             this.checkSubscriptionStatusBackground();
 
             // Initialize timer system in background
+            this.initializeTimerSystem().catch(e => {});
 
             // Start real-time updates
             this.startRealTimeUpdates();
