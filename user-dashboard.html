@@ -2419,6 +2419,23 @@
 
             if (deletionScheduledAt) {
                 const deletionTime = new Date(deletionScheduledAt);
+                const now = new Date();
+
+                // Check if already deleted
+                if (deletionTime <= now) {
+                    titleEl.textContent = 'Account Deleted';
+                    titleEl.style.color = '#ef4444';
+                    descEl.innerHTML = `<strong style="color: #ef4444;">⚠️ Your account has been deleted</strong><br>Logging you out...`;
+
+                    setTimeout(async () => {
+                        await supabaseClient.auth.signOut();
+                        localStorage.removeItem('tabmangment_user');
+                        localStorage.removeItem('tabmangment_token');
+                        sessionStorage.setItem('user_logged_out', 'true');
+                        window.location.href = '/new-authentication?logout=true';
+                    }, 2000);
+                    return;
+                }
 
                 // Function to update countdown in real-time
                 function updateDeletionCountdown() {
@@ -2441,8 +2458,17 @@
                     descEl.innerHTML = `<strong style="color: #ef4444;">⚠️ Your account is scheduled for deletion in ${timeText}</strong><br>You can restore your account at any time before it's permanently deleted.`;
 
                     if (timeRemaining <= 0) {
-                        descEl.innerHTML = `<strong style="color: #ef4444;">⚠️ Your account has been deleted</strong><br>Please contact support if you need assistance.`;
+                        descEl.innerHTML = `<strong style="color: #ef4444;">⚠️ Your account has been deleted</strong><br>Logging you out...`;
                         clearInterval(window.deletionCountdownInterval);
+
+                        // Log out user after 2 seconds
+                        setTimeout(async () => {
+                            await supabaseClient.auth.signOut();
+                            localStorage.removeItem('tabmangment_user');
+                            localStorage.removeItem('tabmangment_token');
+                            sessionStorage.setItem('user_logged_out', 'true');
+                            window.location.href = '/new-authentication?logout=true';
+                        }, 2000);
                     }
                 }
 
