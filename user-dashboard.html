@@ -1474,13 +1474,6 @@
 
         // Wait for bridge to be ready
         async function waitForBridge(timeout = 10000) {
-                bridgeReady,
-                extensionId,
-                windowBridge: window.TABMANGMENT_BRIDGE,
-                hasChrome: typeof chrome !== 'undefined',
-                hasRuntime: typeof chrome?.runtime !== 'undefined'
-            });
-
             // Check if bridge is already ready via window object
             if (window.TABMANGMENT_BRIDGE?.ready) {
                 extensionId = window.TABMANGMENT_BRIDGE.extensionId;
@@ -1500,12 +1493,6 @@
                 }
                 await new Promise(resolve => setTimeout(resolve, 100));
             }
-
-                bridgeReady,
-                extensionId,
-                windowBridge: window.TABMANGMENT_BRIDGE,
-                waitTime: Date.now() - startTime
-            });
 
             return bridgeReady;
         }
@@ -1659,17 +1646,7 @@
                 const storedUser = JSON.parse(localStorage.getItem('tabmangment_user') || '{}');
                 const storedToken = localStorage.getItem('tabmangment_token');
 
-
                 // Send USER_LOGGED_IN message (same format as auth page)
-                    type: 'USER_LOGGED_IN',
-                    userData: {
-                        email: userEmail,
-                        name: userData.name || storedUser.name,
-                        provider: userData.provider || storedUser.provider
-                    },
-                    hasToken: !!storedToken
-                });
-
                 window.postMessage({
                     type: 'USER_LOGGED_IN',
                     userData: {
@@ -1684,11 +1661,6 @@
                     token: storedToken
                 }, '*');
 
-            } else {
-                    bridgeReady,
-                    extensionId,
-                    userEmail
-                });
             }
 
             if (!isBridgeReady) {
