@@ -38,6 +38,32 @@
             color: #e2e8f0;
             background: #0f172a;
             min-height: 100vh;
+            overflow-x: hidden;
+            position: relative;
+        }
+
+        .cursor-ring {
+            position: fixed;
+            border: 2px solid rgba(148, 163, 184, 0.3);
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 9999;
+            animation: pulse-ring 1.5s ease-out forwards;
+        }
+
+        @keyframes pulse-ring {
+            0% {
+                width: 20px;
+                height: 20px;
+                opacity: 1;
+                box-shadow: 0 0 20px rgba(148, 163, 184, 0.4);
+            }
+            100% {
+                width: 100px;
+                height: 100px;
+                opacity: 0;
+                box-shadow: 0 0 40px rgba(148, 163, 184, 0);
+            }
         }
 
         .container {
@@ -1002,5 +1028,36 @@
     </div>
 
     <script defer src="/_vercel/insights/script.js"></script>
+    <script>
+        // Mouse tracking ring effect
+        let lastRingTime = 0;
+        const ringDelay = 50; // milliseconds between rings
+
+        document.addEventListener('mousemove', (e) => {
+            const now = Date.now();
+
+            // Throttle ring creation
+            if (now - lastRingTime < ringDelay) return;
+            lastRingTime = now;
+
+            // Create ring element
+            const ring = document.createElement('div');
+            ring.className = 'cursor-ring';
+            ring.style.left = (e.clientX - 10) + 'px';
+            ring.style.top = (e.clientY - 10) + 'px';
+
+            document.body.appendChild(ring);
+
+            // Remove ring after animation completes
+            setTimeout(() => {
+                ring.remove();
+            }, 1500);
+        });
+
+        // Feather icons initialization
+        if (typeof feather !== 'undefined') {
+            feather.replace();
+        }
+    </script>
 </body>
 </html>
