@@ -2489,12 +2489,6 @@
         // Restore account function
         async function restoreAccount() {
             try {
-                    id: userData.id,
-                    email: userData.email,
-                    hasId: !!userData.id,
-                    hasEmail: !!userData.email
-                });
-
                 // Validate we have the required data
                 if (!userData.id || !userData.email) {
                     showNotification('Session error. Please log out and log back in.', 'error');
