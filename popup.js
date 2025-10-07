@@ -1920,10 +1920,6 @@ class TabmangmentPopup {
             <p style="margin: 16px 0 0 0; font-size: 12px; opacity: 0.7;">
                 Your tabs will sync across all your devices
             </p>
-
-            <p id="auto-sync-status" style="margin: 12px 0 0 0; font-size: 11px; opacity: 0.5; display: none;">
-                🔄 Auto-syncing...
-            </p>
         `;
 
         document.body.appendChild(loginScreen);
@@ -1958,64 +1954,6 @@ class TabmangmentPopup {
                 loginBtn.style.boxShadow = '0 4px 12px rgba(0,0,0,0.2)';
             });
 
-            // Auto-sync login status when dashboard is open
-            const autoSyncStatus = document.getElementById('auto-sync-status');
-
-            // Check if user is on dashboard page
-            const checkDashboardAndSync = async () => {
-                const tabs = await chrome.tabs.query({ url: '*://tabmangment.netlify.app/*' });
-
-                if (tabs.length > 0) {
-                    // User has dashboard open - auto-sync
-                    if (autoSyncStatus) {
-                        autoSyncStatus.style.display = 'block';
-                    }
-
-                    const webLogin = await this.checkWebLoginStatus();
-
-                    if (webLogin) {
-                        // Get the synced data
-                        const stored = await chrome.storage.local.get(['userEmail', 'authToken', 'userName', 'isPremium', 'planType']);
-
-                        // Update state
-                        this.userEmail = stored.userEmail;
-                        this.userName = stored.userName || stored.userEmail.split('@')[0];
-                        this.isPremium = stored.isPremium || false;
-
-                        // Hide login screen
-                        this.hideLoginScreen();
-
-                        // Initialize
-                        await this.loadData();
-                        await this.render();
-                        this.hideLoader();
-                    }
-                } else {
-                    // No dashboard open - check storage
-                    const stored = await chrome.storage.local.get(['userEmail', 'authToken', 'userName', 'isPremium', 'planType']);
-
-                    if (stored.userEmail && !stored.userEmail.startsWith('fallback_') && !stored.userEmail.startsWith('user_')) {
-                        // Update state
-                        this.userEmail = stored.userEmail;
-                        this.userName = stored.userName || stored.userEmail.split('@')[0];
-                        this.isPremium = stored.isPremium || false;
-
-                        // Hide login screen
-                        this.hideLoginScreen();
-
-                        // Initialize
-                        await this.loadData();
-                        await this.render();
-                        this.hideLoader();
-                    }
-                }
-            };
-
-            // Run initial check
-            checkDashboardAndSync();
-
-            // Set up interval to check every 2 seconds if dashboard is open
-            this.dashboardSyncInterval = setInterval(checkDashboardAndSync, 2000);
         }, 100); // End of setTimeout for all button handlers
     }
 
@@ -6644,11 +6582,6 @@ if (document.readyState === 'loading') {
 window.addEventListener('beforeunload', () => {
     if (popup) {
         popup.stopRealTimeUpdates();
-
-        // Clear dashboard sync interval
-        if (popup.dashboardSyncInterval) {
-            clearInterval(popup.dashboardSyncInterval);
-        }
     }
 });
 // Dashboard sync functionality for TabmangmentPopup
