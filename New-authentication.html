@@ -485,6 +485,26 @@ async function handleSignup(event) {
         if (data.user && !data.session) {
             showNotification('Please check your email to confirm your account!', 'success');
         } else if (data.session) {
+            // Sync user to database
+            try {
+                await fetch('/.netlify/functions/sync-user', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${data.session.access_token}`
+                    },
+                    body: JSON.stringify({
+                        email: data.user.email,
+                        name: name,
+                        userId: data.user.id,
+                        provider: 'email'
+                    })
+                });
+            } catch (syncError) {
+                console.error('Failed to sync user to database:', syncError);
+                // Continue even if sync fails
+            }
+
             const userData = {
                 email: data.user.email,
                 name: name,
@@ -594,6 +614,26 @@ async function handleGithubLogin() {
             avatar: user.user_metadata.avatar_url || user.user_metadata.picture,
             deletionScheduledAt: user.user_metadata.deletion_scheduled_at || null
         };
+
+        // Sync user to database (for OAuth logins)
+        try {
+            await fetch('/.netlify/functions/sync-user', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${session.access_token}`
+                },
+                body: JSON.stringify({
+                    email: userData.email,
+                    name: userData.name,
+                    userId: userData.id,
+                    provider: userData.provider
+                })
+            });
+        } catch (syncError) {
+            console.error('Failed to sync OAuth user to database:', syncError);
+            // Continue even if sync fails
+        }
 
         localStorage.setItem('tabmangment_user', JSON.stringify(userData));
         localStorage.setItem('tabmangment_token', session.access_token);
