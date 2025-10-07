@@ -383,10 +383,27 @@ async function handleGithubLogin() {
 
 // Check for OAuth callback and handle session
 (async function() {
+    // Check for logout parameter in URL
+    const urlParams = new URLSearchParams(window.location.search);
+    const isLogout = urlParams.has('logout');
+    
+    // Check if user just logged out
+    const justLoggedOut = sessionStorage.getItem('user_logged_out');
+    
+    if (justLoggedOut || isLogout) {
+        sessionStorage.removeItem('user_logged_out');
+        // Clear any existing session
+        await supabaseClient.auth.signOut();
+        // Clear URL parameter
+        if (isLogout) {
+            window.history.replaceState({}, '', '/new-authentication');
+        }
+        return;
+    }
+    
     const { data: { session }, error } = await supabaseClient.auth.getSession();
     
     if (error) {
-        showNotification('Authentication error: ' + error.message, 'error');
         return;
     }
     
