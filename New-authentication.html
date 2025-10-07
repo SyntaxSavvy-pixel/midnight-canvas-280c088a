@@ -229,7 +229,195 @@
         </div>
     </div>
     <script>
-const SUPABASE_URL='https://osfzdafwmmfcrsaxafnk.supabase.co';const SUPABASE_ANON_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9zZnpkYWZ3bW1mY3JzYXhhZm5rIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Mzc2NTM5NzAsImV4cCI6MjA1MzIyOTk3MH0.YBt0gAyX4AV-GFc_tULSC-rxqC5l5F7P_FwEqJIzDKY';const supabaseClient=supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY);function switchTab(tab){const tabs=document.querySelectorAll('.tab-btn');const contents=document.querySelectorAll('.form-content');tabs.forEach(t=>t.classList.remove('active'));contents.forEach(c=>c.classList.remove('active'));if(tab==='login'){tabs[0].classList.add('active');document.getElementById('login-form').classList.add('active');document.querySelector('.auth-header h2').textContent='Welcome Back';document.querySelector('.auth-header p').textContent='Enter your email and password to access your account'}else{tabs[1].classList.add('active');document.getElementById('signup-form').classList.add('active');document.querySelector('.auth-header h2').textContent='Create Account';document.querySelector('.auth-header p').textContent='Get started with TabMangment today'}}function togglePassword(inputId){const input=document.getElementById(inputId);input.type=input.type==='password'?'text':'password'}function showNotification(message,type='info'){const existing=document.querySelector('.notification');if(existing)existing.remove();const notification=document.createElement('div');notification.className=`notification ${type}`;notification.textContent=message;document.body.appendChild(notification);setTimeout(()=>notification.remove(),4000)}function showLoading(show=true){document.getElementById('loading').classList.toggle('active',show)}async function handleLogin(event){event.preventDefault();showLoading(true);const email=document.getElementById('login-email').value;const password=document.getElementById('login-password').value;try{const{data,error}=await supabaseClient.auth.signInWithPassword({email:email,password:password});if(error)throw error;const user=data.user;const session=data.session;if(user.user_metadata.deletion_scheduled_at){const deletionTime=new Date(user.user_metadata.deletion_scheduled_at);const now=new Date();const hoursRemaining=Math.ceil((deletionTime-now)/(1000*60*60));if(hoursRemaining>0){showNotification(`Your account is scheduled for deletion in ${hoursRemaining} hours. Restore it from your dashboard.`,'info')}}const userData={email:user.email,name:user.user_metadata.full_name||user.user_metadata.name||email.split('@')[0],id:user.id,provider:'email',deletionScheduledAt:user.user_metadata.deletion_scheduled_at||null};localStorage.setItem('tabmangment_user',JSON.stringify(userData));localStorage.setItem('tabmangment_token',session.access_token);window.postMessage({type:'USER_LOGGED_IN',userData:userData,token:session.access_token},'*');showNotification('Login successful!','success');setTimeout(()=>{window.location.href='/user-dashboard.html'},1000)}catch(error){showNotification(error.message,'error')}finally{showLoading(false)}}async function handleSignup(event){event.preventDefault();showLoading(true);const name=document.getElementById('signup-name').value;const email=document.getElementById('signup-email').value;const password=document.getElementById('signup-password').value;try{const{data,error}=await supabaseClient.auth.signUp({email:email,password:password,options:{data:{full_name:name,name:name}}});if(error)throw error;if(data.user&&!data.session){showNotification('Please check your email to confirm your account!','success')}else if(data.session){const userData={email:data.user.email,name:name,id:data.user.id,provider:'email'};localStorage.setItem('tabmangment_user',JSON.stringify(userData));localStorage.setItem('tabmangment_token',data.session.access_token);window.postMessage({type:'USER_LOGGED_IN',userData:userData,token:data.session.access_token},'*');showNotification('Account created successfully!','success');setTimeout(()=>{window.location.href='/user-dashboard.html'},1000)}}catch(error){showNotification(error.message,'error')}finally{showLoading(false)}}async function handleGoogleLogin(){showLoading(true);try{const{data,error}=await supabaseClient.auth.signInWithOAuth({provider:'google',options:{redirectTo:window.location.origin+'/user-dashboard.html'}});if(error)throw error}catch(error){showNotification(error.message,'error');showLoading(false)}}async function handleGithubLogin(){showLoading(true);try{const{data,error}=await supabaseClient.auth.signInWithOAuth({provider:'github',options:{redirectTo:window.location.origin+'/user-dashboard.html'}});if(error)throw error}catch(error){showNotification(error.message,'error');showLoading(false)}}(async function(){const{data:{session}}=await supabaseClient.auth.getSession();if(session){window.location.href='/user-dashboard.html'}})();
+const SUPABASE_URL = 'https://osfzdafwmmfcrsaxafnk.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9zZnpkYWZ3bW1mY3JzYXhhZm5rIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Mzc2NTM5NzAsImV4cCI6MjA1MzIyOTk3MH0.YBt0gAyX4AV-GFc_tULSC-rxqC5l5F7P_FwEqJIzDKY';
+const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+function switchTab(tab) {
+    const tabs = document.querySelectorAll('.tab-btn');
+    const contents = document.querySelectorAll('.form-content');
+    tabs.forEach(t => t.classList.remove('active'));
+    contents.forEach(c => c.classList.remove('active'));
+    if (tab === 'login') {
+        tabs[0].classList.add('active');
+        document.getElementById('login-form').classList.add('active');
+        document.querySelector('.auth-header h2').textContent = 'Welcome Back';
+        document.querySelector('.auth-header p').textContent = 'Enter your email and password to access your account';
+    } else {
+        tabs[1].classList.add('active');
+        document.getElementById('signup-form').classList.add('active');
+        document.querySelector('.auth-header h2').textContent = 'Create Account';
+        document.querySelector('.auth-header p').textContent = 'Get started with TabMangment today';
+    }
+}
+
+function togglePassword(inputId) {
+    const input = document.getElementById(inputId);
+    input.type = input.type === 'password' ? 'text' : 'password';
+}
+
+function showNotification(message, type = 'info') {
+    const existing = document.querySelector('.notification');
+    if (existing) existing.remove();
+    const notification = document.createElement('div');
+    notification.className = `notification ${type}`;
+    notification.textContent = message;
+    document.body.appendChild(notification);
+    setTimeout(() => notification.remove(), 4000);
+}
+
+function showLoading(show = true) {
+    document.getElementById('loading').classList.toggle('active', show);
+}
+
+async function handleLogin(event) {
+    event.preventDefault();
+    showLoading(true);
+    const email = document.getElementById('login-email').value;
+    const password = document.getElementById('login-password').value;
+    try {
+        const { data, error } = await supabaseClient.auth.signInWithPassword({
+            email: email,
+            password: password
+        });
+        if (error) throw error;
+        const user = data.user;
+        const session = data.session;
+        if (user.user_metadata.deletion_scheduled_at) {
+            const deletionTime = new Date(user.user_metadata.deletion_scheduled_at);
+            const now = new Date();
+            const hoursRemaining = Math.ceil((deletionTime - now) / (1000 * 60 * 60));
+            if (hoursRemaining > 0) {
+                showNotification(`Your account is scheduled for deletion in ${hoursRemaining} hours. Restore it from your dashboard.`, 'info');
+            }
+        }
+        const userData = {
+            email: user.email,
+            name: user.user_metadata.full_name || user.user_metadata.name || email.split('@')[0],
+            id: user.id,
+            provider: 'email',
+            deletionScheduledAt: user.user_metadata.deletion_scheduled_at || null
+        };
+        localStorage.setItem('tabmangment_user', JSON.stringify(userData));
+        localStorage.setItem('tabmangment_token', session.access_token);
+        window.postMessage({ type: 'USER_LOGGED_IN', userData: userData, token: session.access_token }, '*');
+        showNotification('Login successful!', 'success');
+        setTimeout(() => { window.location.href = '/user-dashboard.html'; }, 1000);
+    } catch (error) {
+        showNotification(error.message, 'error');
+    } finally {
+        showLoading(false);
+    }
+}
+
+async function handleSignup(event) {
+    event.preventDefault();
+    showLoading(true);
+    const name = document.getElementById('signup-name').value;
+    const email = document.getElementById('signup-email').value;
+    const password = document.getElementById('signup-password').value;
+    try {
+        const { data, error } = await supabaseClient.auth.signUp({
+            email: email,
+            password: password,
+            options: { data: { full_name: name, name: name } }
+        });
+        if (error) throw error;
+        if (data.user && !data.session) {
+            showNotification('Please check your email to confirm your account!', 'success');
+        } else if (data.session) {
+            const userData = {
+                email: data.user.email,
+                name: name,
+                id: data.user.id,
+                provider: 'email'
+            };
+            localStorage.setItem('tabmangment_user', JSON.stringify(userData));
+            localStorage.setItem('tabmangment_token', data.session.access_token);
+            window.postMessage({ type: 'USER_LOGGED_IN', userData: userData, token: data.session.access_token }, '*');
+            showNotification('Account created successfully!', 'success');
+            setTimeout(() => { window.location.href = '/user-dashboard.html'; }, 1000);
+        }
+    } catch (error) {
+        showNotification(error.message, 'error');
+    } finally {
+        showLoading(false);
+    }
+}
+
+async function handleGoogleLogin() {
+    try {
+        showLoading(true);
+        const { data, error } = await supabaseClient.auth.signInWithOAuth({
+            provider: 'google',
+            options: {
+                redirectTo: window.location.origin + '/user-dashboard.html',
+                queryParams: {
+                    access_type: 'offline',
+                    prompt: 'consent'
+                }
+            }
+        });
+        if (error) throw error;
+    } catch (error) {
+        showNotification(error.message, 'error');
+        showLoading(false);
+    }
+}
+
+async function handleGithubLogin() {
+    try {
+        showLoading(true);
+        const { data, error } = await supabaseClient.auth.signInWithOAuth({
+            provider: 'github',
+            options: {
+                redirectTo: window.location.origin + '/user-dashboard.html'
+            }
+        });
+        if (error) throw error;
+    } catch (error) {
+        showNotification(error.message, 'error');
+        showLoading(false);
+    }
+}
+
+// Check for OAuth callback and handle session
+(async function() {
+    const { data: { session }, error } = await supabaseClient.auth.getSession();
+    
+    if (error) {
+        showNotification('Authentication error: ' + error.message, 'error');
+        return;
+    }
+    
+    if (session) {
+        // User is logged in (either from OAuth or existing session)
+        const user = session.user;
+        
+        // Save user data
+        const userData = {
+            email: user.email,
+            name: user.user_metadata.full_name || user.user_metadata.name || user.user_metadata.preferred_username || user.email.split('@')[0],
+            id: user.id,
+            provider: user.app_metadata.provider || 'email',
+            avatar: user.user_metadata.avatar_url || user.user_metadata.picture,
+            deletionScheduledAt: user.user_metadata.deletion_scheduled_at || null
+        };
+        
+        localStorage.setItem('tabmangment_user', JSON.stringify(userData));
+        localStorage.setItem('tabmangment_token', session.access_token);
+        
+        // Send login message to extension
+        window.postMessage({
+            type: 'USER_LOGGED_IN',
+            userData: userData,
+            token: session.access_token
+        }, '*');
+        
+        // Redirect to dashboard
+        window.location.href = '/user-dashboard.html';
+    }
+})();
     </script>
 </body>
 </html>
