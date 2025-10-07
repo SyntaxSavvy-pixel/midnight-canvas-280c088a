@@ -449,7 +449,39 @@ async function handleSignup(event) {
             password: password,
             options: { data: { full_name: name, name: name } }
         });
+
+        // Check if error is "User already registered"
+        if (error && error.message.includes('User already registered')) {
+            // Try to sign in to check if account is deleted
+            try {
+                const { data: loginData, error: loginError } = await supabaseClient.auth.signInWithPassword({
+                    email: email,
+                    password: password
+                });
+
+                if (loginData?.user?.user_metadata?.deletion_scheduled_at) {
+                    const deletionTime = new Date(loginData.user.user_metadata.deletion_scheduled_at);
+                    const now = new Date();
+
+                    if (deletionTime <= now) {
+                        // Account is deleted - show appropriate message
+                        await supabaseClient.auth.signOut();
+                        showNotification('This email was previously registered but the account has been deleted. Please contact support to reactivate your account or use a different email.', 'error');
+                        showLoading(false);
+                        return;
+                    }
+                }
+
+                // Account exists and is active
+                throw new Error('User already registered. Please sign in instead.');
+            } catch (loginError) {
+                // If login fails, show generic message
+                throw new Error('User already registered. Please sign in instead.');
+            }
+        }
+
         if (error) throw error;
+
         if (data.user && !data.session) {
             showNotification('Please check your email to confirm your account!', 'success');
         } else if (data.session) {
