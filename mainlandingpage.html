@@ -3,19 +3,19 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tabmangment - Tame your tabs. Boost your focus.</title>
+    <title>Tabmangment - Organize, plan, and track all in one place</title>
     <meta name="description" content="Professional tab management with auto-closing, timers, and premium features. Organize your browser tabs efficiently with Tabmangment.">
     <meta name="keywords" content="chrome extension, tab management, productivity, browser tabs, auto-close tabs">
 
     <meta property="og:type" content="website">
     <meta property="og:url" content="https://tabmangment.netlify.app/">
-    <meta property="og:title" content="Tabmangment - Tame your tabs. Boost your focus.">
+    <meta property="og:title" content="Tabmangment - Organize, plan, and track all in one place">
     <meta property="og:description" content="Professional tab management with auto-closing, timers, and premium features.">
     <meta property="og:image" content="https://tabmangment.netlify.app/icons/icon-128.png">
 
     <meta property="twitter:card" content="summary_large_image">
     <meta property="twitter:url" content="https://tabmangment.netlify.app/">
-    <meta property="twitter:title" content="Tabmangment - Tame your tabs. Boost your focus.">
+    <meta property="twitter:title" content="Tabmangment - Organize, plan, and track all in one place">
     <meta property="twitter:description" content="Professional tab management with auto-closing, timers, and premium features.">
     <meta property="twitter:image" content="https://tabmangment.netlify.app/icons/icon-128.png">
 
@@ -33,71 +33,49 @@
         }
 
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'SF Pro Display', Roboto, Helvetica, Arial, sans-serif;
             line-height: 1.6;
-            color: #e2e8f0;
-            background: #0f172a;
+            color: #1e293b;
+            background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 50%, #f1f5f9 100%);
             min-height: 100vh;
             overflow-x: hidden;
             position: relative;
         }
 
-        .cursor-glow {
+        /* Subtle animated gradient background */
+        body::before {
+            content: '';
             position: fixed;
-            width: 400px;
-            height: 400px;
-            border-radius: 50%;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background:
+                radial-gradient(circle at 20% 50%, rgba(99, 102, 241, 0.08) 0%, transparent 50%),
+                radial-gradient(circle at 80% 80%, rgba(139, 92, 246, 0.08) 0%, transparent 50%),
+                radial-gradient(circle at 40% 20%, rgba(168, 85, 247, 0.05) 0%, transparent 50%);
+            z-index: 0;
             pointer-events: none;
-            z-index: 9998;
-            background: radial-gradient(
-                circle,
-                rgba(100, 116, 139, 0.15) 0%,
-                rgba(71, 85, 105, 0.08) 25%,
-                rgba(51, 65, 85, 0.04) 50%,
-                transparent 70%
-            );
-            transform: translate(-50%, -50%);
-            transition: opacity 0.3s ease;
-        }
-
-        .cursor-trail {
-            position: fixed;
-            width: 8px;
-            height: 8px;
-            border-radius: 50%;
-            pointer-events: none;
-            z-index: 9999;
-            background: radial-gradient(circle, rgba(148, 163, 184, 0.8) 0%, rgba(71, 85, 105, 0.4) 50%, transparent 100%);
-            box-shadow: 0 0 10px rgba(148, 163, 184, 0.6), 0 0 20px rgba(100, 116, 139, 0.3);
-            transform: translate(-50%, -50%) scale(1);
-            animation: trail-fade 0.6s ease-out forwards;
-        }
-
-        @keyframes trail-fade {
-            0% {
-                opacity: 1;
-                transform: translate(-50%, -50%) scale(1);
-            }
-            100% {
-                opacity: 0;
-                transform: translate(-50%, -50%) scale(0.3);
-            }
         }
 
         .container {
             max-width: 1200px;
             margin: 0 auto;
-            padding: 0 20px;
+            padding: 0 24px;
+            position: relative;
+            z-index: 1;
         }
 
         /* Header */
         header {
-            background: #0f172a;
-            border-bottom: 1px solid rgba(148, 163, 184, 0.1);
-            padding: 1rem 0;
+            padding: 1.5rem 0;
             position: sticky;
             top: 0;
             z-index: 1000;
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(20px) saturate(180%);
+            border-bottom: 1px solid rgba(226, 232, 240, 0.8);
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
         }
 
         nav {
@@ -109,16 +87,34 @@
         .logo {
             display: flex;
             align-items: center;
+            gap: 12px;
             font-size: 1.5rem;
-            font-weight: 600;
-            color: #e2e8f0;
+            font-weight: 700;
+            color: #1e293b;
             text-decoration: none;
+            transition: transform 0.3s ease;
         }
 
-        .logo img {
-            width: 32px;
-            height: 32px;
-            margin-right: 8px;
+        .logo:hover {
+            transform: translateY(-2px);
+        }
+
+        .logo-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 12px;
+            padding: 8px;
+            background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #a855f7 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+        }
+
+        .logo-icon img {
+            width: 24px;
+            height: 24px;
+            filter: brightness(0) invert(1);
         }
 
         .nav-links {
@@ -128,68 +124,98 @@
         }
 
         .nav-links a {
-            color: #94a3b8;
+            color: #64748b;
             text-decoration: none;
             font-weight: 500;
-            transition: color 0.3s ease;
+            font-size: 0.95rem;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .nav-links a::after {
+            content: '';
+            position: absolute;
+            bottom: -4px;
+            left: 0;
+            width: 0;
+            height: 2px;
+            background: linear-gradient(90deg, #6366f1, #8b5cf6);
+            transition: width 0.3s ease;
         }
 
         .nav-links a:hover {
-            color: #e2e8f0;
+            color: #6366f1;
         }
 
-        .get-started-btn {
-            background: #14b8a6;
+        .nav-links a:hover::after {
+            width: 100%;
+        }
+
+        .cta-button {
+            background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #a855f7 100%);
             color: white;
-            padding: 0.75rem 1.5rem;
-            border-radius: 0.5rem;
+            padding: 0.75rem 1.75rem;
+            border-radius: 12px;
             text-decoration: none;
             font-weight: 600;
+            font-size: 0.95rem;
             transition: all 0.3s ease;
+            box-shadow: 0 4px 14px rgba(99, 102, 241, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.2);
         }
 
-        .get-started-btn:hover {
-            background: #0d9488;
-            transform: translateY(-1px);
+        .cta-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(99, 102, 241, 0.4);
         }
 
         /* Hero Section */
         .hero {
-            padding: 120px 0 80px;
+            padding: 100px 0 60px;
             text-align: center;
+            position: relative;
         }
 
         .hero h1 {
             font-size: 4rem;
-            font-weight: 700;
+            font-weight: 800;
             margin-bottom: 1.5rem;
-            color: #f8fafc;
+            color: #0f172a;
             line-height: 1.1;
+            letter-spacing: -0.02em;
         }
 
-        .hero p {
-            font-size: 1.25rem;
-            color: #94a3b8;
+        .hero .gradient-text {
+            background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #a855f7 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .hero .subtitle {
+            font-size: 1.35rem;
+            color: #64748b;
             margin-bottom: 3rem;
-            max-width: 600px;
+            max-width: 700px;
             margin-left: auto;
             margin-right: auto;
+            font-weight: 400;
         }
 
         .hero-buttons {
             display: flex;
-            gap: 1rem;
+            gap: 1.25rem;
             justify-content: center;
             flex-wrap: wrap;
-            margin-bottom: 4rem;
+            margin-bottom: 5rem;
         }
 
         .btn {
             display: inline-flex;
             align-items: center;
             gap: 0.5rem;
-            padding: 0.875rem 1.75rem;
-            border-radius: 0.5rem;
+            padding: 1rem 2rem;
+            border-radius: 12px;
             text-decoration: none;
             font-weight: 600;
             font-size: 1rem;
@@ -199,30 +225,153 @@
         }
 
         .btn-primary {
-            background: #14b8a6;
+            background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #a855f7 100%);
             color: white;
+            box-shadow: 0 4px 14px rgba(99, 102, 241, 0.3);
         }
 
         .btn-primary:hover {
-            background: #0d9488;
-            transform: translateY(-1px);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(99, 102, 241, 0.4);
         }
 
         .btn-secondary {
-            background: transparent;
-            color: #94a3b8;
-            border: 1px solid #334155;
+            background: white;
+            color: #6366f1;
+            border: 2px solid #e2e8f0;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
         }
 
         .btn-secondary:hover {
-            background: #1e293b;
-            color: #e2e8f0;
+            background: #f8fafc;
+            border-color: #6366f1;
+            transform: translateY(-2px);
+        }
+
+        /* Hero Visual */
+        .hero-visual {
+            max-width: 900px;
+            margin: 0 auto;
+            position: relative;
+            perspective: 1000px;
+        }
+
+        .browser-mockup {
+            background: white;
+            border-radius: 16px;
+            padding: 40px 30px 30px;
+            box-shadow:
+                0 20px 60px rgba(0, 0, 0, 0.15),
+                0 0 0 1px rgba(0, 0, 0, 0.05);
+            position: relative;
+            animation: float 6s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0px) rotateX(5deg); }
+            50% { transform: translateY(-20px) rotateX(5deg); }
+        }
+
+        .browser-dots {
+            position: absolute;
+            top: 15px;
+            left: 20px;
+            display: flex;
+            gap: 8px;
+        }
+
+        .dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+        }
+
+        .dot:nth-child(1) { background: #ff5f57; }
+        .dot:nth-child(2) { background: #ffbd2e; }
+        .dot:nth-child(3) { background: #28ca42; }
+
+        .tabs-preview {
+            display: grid;
+            gap: 12px;
+        }
+
+        .tab-card {
+            background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 16px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            transition: all 0.3s ease;
+            animation: slideInRight 0.6s ease-out;
+            animation-fill-mode: both;
+        }
+
+        .tab-card:nth-child(1) { animation-delay: 0.1s; }
+        .tab-card:nth-child(2) { animation-delay: 0.2s; }
+        .tab-card:nth-child(3) { animation-delay: 0.3s; }
+
+        @keyframes slideInRight {
+            from {
+                opacity: 0;
+                transform: translateX(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        .tab-card:hover {
+            transform: translateX(5px);
+            box-shadow: 0 4px 12px rgba(99, 102, 241, 0.15);
+            border-color: #6366f1;
+        }
+
+        .tab-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 8px;
+            background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            flex-shrink: 0;
+        }
+
+        .tab-info {
+            flex: 1;
+            text-align: left;
+        }
+
+        .tab-title {
+            font-weight: 600;
+            color: #1e293b;
+            font-size: 0.95rem;
+            margin-bottom: 4px;
+        }
+
+        .tab-url {
+            font-size: 0.85rem;
+            color: #64748b;
+        }
+
+        .tab-status {
+            background: #ecfdf5;
+            color: #059669;
+            padding: 4px 12px;
+            border-radius: 8px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
         }
 
         /* Features Section */
         .features {
             padding: 80px 0;
-            background: #0f172a;
         }
 
         .section-header {
@@ -231,166 +380,213 @@
         }
 
         .section-title {
-            font-size: 2.5rem;
-            font-weight: 700;
-            color: #f8fafc;
+            font-size: 2.75rem;
+            font-weight: 800;
+            color: #0f172a;
             margin-bottom: 1rem;
+            letter-spacing: -0.02em;
         }
 
         .section-subtitle {
-            font-size: 1.125rem;
-            color: #94a3b8;
+            font-size: 1.25rem;
+            color: #64748b;
+            max-width: 600px;
+            margin: 0 auto;
         }
 
         .features-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
             gap: 2rem;
         }
 
         .feature-card {
-            background: #1e293b;
-            padding: 2rem;
-            border-radius: 0.75rem;
-            border: 1px solid #334155;
+            background: white;
+            padding: 2.5rem;
+            border-radius: 16px;
+            border: 1px solid #e2e8f0;
             transition: all 0.3s ease;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
         }
 
         .feature-card:hover {
-            transform: translateY(-2px);
-            border-color: #14b8a6;
+            transform: translateY(-8px);
+            box-shadow: 0 12px 28px rgba(99, 102, 241, 0.15);
+            border-color: #6366f1;
         }
 
         .feature-icon {
-            width: 48px;
-            height: 48px;
-            background: #14b8a6;
-            border-radius: 0.5rem;
+            width: 56px;
+            height: 56px;
+            background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #a855f7 100%);
+            border-radius: 12px;
             display: flex;
             align-items: center;
             justify-content: center;
             color: white;
-            margin-bottom: 1rem;
+            margin-bottom: 1.5rem;
+            box-shadow: 0 4px 14px rgba(99, 102, 241, 0.3);
         }
 
         .feature-card h3 {
-            font-size: 1.25rem;
-            font-weight: 600;
-            color: #f8fafc;
+            font-size: 1.35rem;
+            font-weight: 700;
+            color: #0f172a;
             margin-bottom: 0.75rem;
         }
 
         .feature-card p {
-            color: #94a3b8;
-            line-height: 1.6;
+            color: #64748b;
+            line-height: 1.7;
+            font-size: 1rem;
         }
 
-        /* Testimonials */
-        .testimonials {
+        /* Stats Section */
+        .stats-section {
             padding: 80px 0;
-            background: #0f172a;
+            background: white;
+            position: relative;
+            overflow: hidden;
         }
 
-        .testimonials-grid {
+        .stats-section::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background:
+                radial-gradient(circle at 10% 20%, rgba(99, 102, 241, 0.05) 0%, transparent 50%),
+                radial-gradient(circle at 90% 80%, rgba(168, 85, 247, 0.05) 0%, transparent 50%);
+            pointer-events: none;
+        }
+
+        .stats-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 2rem;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 3rem;
+            text-align: center;
+            position: relative;
         }
 
-        .testimonial-card {
-            background: #1e293b;
-            padding: 2rem;
-            border-radius: 0.75rem;
-            border: 1px solid #334155;
+        .stat-item {
+            animation: fadeInUp 0.6s ease-out;
+            animation-fill-mode: both;
         }
 
-        .testimonial-text {
-            color: #e2e8f0;
-            margin-bottom: 1.5rem;
-            font-style: italic;
-            line-height: 1.6;
+        .stat-item:nth-child(1) { animation-delay: 0.1s; }
+        .stat-item:nth-child(2) { animation-delay: 0.2s; }
+        .stat-item:nth-child(3) { animation-delay: 0.3s; }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
         }
 
-        .testimonial-author {
-            display: flex;
-            align-items: center;
-            gap: 1rem;
+        .stat-number {
+            font-size: 3.5rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #a855f7 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 0.5rem;
+            line-height: 1;
         }
 
-        .author-avatar {
-            width: 40px;
-            height: 40px;
-            background: #14b8a6;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: white;
-            font-weight: 600;
-        }
-
-        .author-info h5 {
-            color: #f8fafc;
-            font-weight: 600;
-            margin-bottom: 0.25rem;
-        }
-
-        .author-info p {
-            color: #94a3b8;
-            font-size: 0.875rem;
+        .stat-label {
+            font-size: 1.1rem;
+            color: #64748b;
+            font-weight: 500;
         }
 
         /* Pricing */
         .pricing {
             padding: 80px 0;
-            background: #0f172a;
         }
 
         .pricing-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
             gap: 2rem;
-            max-width: 800px;
+            max-width: 900px;
             margin: 0 auto;
         }
 
         .pricing-card {
-            background: #1e293b;
-            padding: 2.5rem 2rem;
-            border-radius: 0.75rem;
-            border: 1px solid #334155;
+            background: white;
+            padding: 3rem 2.5rem;
+            border-radius: 20px;
+            border: 2px solid #e2e8f0;
             text-align: center;
             position: relative;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+        }
+
+        .pricing-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 20px 40px rgba(99, 102, 241, 0.15);
         }
 
         .pricing-card.featured {
-            border-color: #14b8a6;
-            background: linear-gradient(135deg, #1e293b 0%, #0f766e 100%);
+            border-color: #6366f1;
+            background: linear-gradient(135deg, rgba(99, 102, 241, 0.03) 0%, rgba(168, 85, 247, 0.03) 100%);
+            box-shadow: 0 8px 24px rgba(99, 102, 241, 0.15);
+        }
+
+        .popular-badge {
+            position: absolute;
+            top: -12px;
+            right: 30px;
+            background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+            color: white;
+            padding: 6px 16px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            box-shadow: 0 4px 12px rgba(99, 102, 241, 0.4);
         }
 
         .plan-name {
-            font-size: 1.5rem;
+            font-size: 1.75rem;
             font-weight: 700;
-            color: #f8fafc;
+            color: #0f172a;
             margin-bottom: 1rem;
         }
 
         .plan-price {
-            font-size: 3rem;
-            font-weight: 700;
-            color: #14b8a6;
-            margin-bottom: 1rem;
+            font-size: 3.5rem;
+            font-weight: 800;
+            color: #6366f1;
+            margin-bottom: 0.5rem;
+            line-height: 1;
         }
 
         .plan-price .period {
             font-size: 1rem;
-            color: #94a3b8;
-            font-weight: 400;
+            color: #64748b;
+            font-weight: 500;
+        }
+
+        .plan-description {
+            color: #64748b;
+            margin-bottom: 2rem;
+            font-size: 0.95rem;
         }
 
         .plan-features {
             list-style: none;
-            margin-bottom: 2rem;
+            margin-bottom: 2.5rem;
             text-align: left;
         }
 
@@ -398,80 +594,49 @@
             display: flex;
             align-items: center;
             gap: 0.75rem;
-            padding: 0.5rem 0;
-            color: #e2e8f0;
+            padding: 0.75rem 0;
+            color: #475569;
+            font-size: 0.95rem;
         }
 
         .plan-features .check {
-            width: 16px;
-            height: 16px;
-            color: #14b8a6;
-        }
-
-        /* FAQ */
-        .faq {
-            padding: 80px 0;
-            background: #0f172a;
-        }
-
-        .faq-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
-            gap: 2rem;
-            max-width: 1000px;
-            margin: 0 auto;
-        }
-
-        .faq-item {
-            background: #1e293b;
-            padding: 2rem;
-            border-radius: 0.75rem;
-            border: 1px solid #334155;
-        }
-
-        .faq-question {
-            font-size: 1.125rem;
-            font-weight: 600;
-            color: #f8fafc;
-            margin-bottom: 1rem;
-        }
-
-        .faq-answer {
-            color: #94a3b8;
-            line-height: 1.6;
+            width: 20px;
+            height: 20px;
+            color: #6366f1;
+            flex-shrink: 0;
         }
 
         /* Footer */
         footer {
-            background: #020617;
-            padding: 3rem 0 1.5rem;
-            border-top: 1px solid #334155;
+            background: #0f172a;
+            padding: 4rem 0 2rem;
+            color: #94a3b8;
         }
 
         .footer-content {
             display: grid;
             grid-template-columns: 2fr 1fr;
-            gap: 3rem;
-            margin-bottom: 2rem;
+            gap: 4rem;
+            margin-bottom: 3rem;
         }
 
         .footer-brand h3 {
-            font-size: 1.5rem;
+            font-size: 1.75rem;
             font-weight: 700;
-            color: #f8fafc;
+            color: white;
             margin-bottom: 1rem;
         }
 
         .footer-brand p {
-            color: #94a3b8;
-            line-height: 1.6;
+            line-height: 1.7;
+            max-width: 400px;
         }
 
         .footer-links h4 {
             font-size: 1.125rem;
             font-weight: 600;
-            color: #f8fafc;
-            margin-bottom: 1rem;
+            color: white;
+            margin-bottom: 1.25rem;
         }
 
         .footer-links ul {
@@ -479,7 +644,7 @@
         }
 
         .footer-links ul li {
-            margin-bottom: 0.5rem;
+            margin-bottom: 0.75rem;
         }
 
         .footer-links ul li a {
@@ -489,12 +654,12 @@
         }
 
         .footer-links ul li a:hover {
-            color: #14b8a6;
+            color: #6366f1;
         }
 
         .footer-bottom {
             text-align: center;
-            padding-top: 2rem;
+            padding-top: 2.5rem;
             border-top: 1px solid #334155;
             color: #64748b;
         }
@@ -507,7 +672,8 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(0, 0, 0, 0.8);
+            background: rgba(15, 23, 42, 0.8);
+            backdrop-filter: blur(8px);
             z-index: 10000;
             justify-content: center;
             align-items: center;
@@ -518,12 +684,12 @@
         }
 
         .support-modal-content {
-            background: #1e293b;
-            border-radius: 1rem;
-            padding: 2.5rem;
+            background: white;
+            border-radius: 20px;
+            padding: 3rem;
             max-width: 500px;
             width: 90%;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
             position: relative;
             animation: modalSlideIn 0.3s ease;
         }
@@ -531,136 +697,80 @@
         @keyframes modalSlideIn {
             from {
                 opacity: 0;
-                transform: translateY(-20px);
+                transform: translateY(-30px) scale(0.95);
             }
             to {
                 opacity: 1;
-                transform: translateY(0);
+                transform: translateY(0) scale(1);
             }
         }
 
         .support-modal-close {
             position: absolute;
-            top: 1rem;
-            right: 1rem;
-            background: none;
+            top: 1.5rem;
+            right: 1.5rem;
+            background: #f1f5f9;
             border: none;
-            color: #94a3b8;
-            font-size: 2rem;
+            color: #64748b;
+            font-size: 1.5rem;
             cursor: pointer;
-            transition: color 0.3s ease;
-            line-height: 1;
-            padding: 0;
-            width: 32px;
-            height: 32px;
-        }
-
-        .support-modal-close:hover {
-            color: #e2e8f0;
-        }
-
-        .support-modal h3 {
-            color: #f8fafc;
-            font-size: 1.75rem;
-            margin-bottom: 0.5rem;
-            font-weight: 700;
-        }
-
-        .support-modal > .support-modal-content > p {
-            color: #94a3b8;
-            margin-bottom: 2rem;
-            font-size: 1rem;
-        }
-
-        .support-methods {
-            display: flex;
-            flex-direction: column;
-            gap: 1rem;
-        }
-
-        .support-method {
-            display: flex;
-            align-items: center;
-            gap: 1rem;
-            padding: 1.25rem;
-            background: #0f172a;
-            border-radius: 0.75rem;
-            text-decoration: none;
             transition: all 0.3s ease;
-            border: 1px solid #334155;
-        }
-
-        .support-method:hover {
-            background: #14b8a6;
-            border-color: #14b8a6;
-            transform: translateX(8px);
-        }
-
-        .support-method-icon {
-            width: 48px;
-            height: 48px;
-            background: #14b8a6;
-            border-radius: 0.5rem;
+            line-height: 1;
+            padding: 8px;
+            width: 36px;
+            height: 36px;
+            border-radius: 8px;
             display: flex;
             align-items: center;
             justify-content: center;
-            flex-shrink: 0;
-            transition: all 0.3s ease;
         }
 
-        .support-method:hover .support-method-icon {
-            background: white;
+        .support-modal-close:hover {
+            background: #6366f1;
+            color: white;
         }
 
-        .support-method-icon svg {
-            width: 24px;
-            height: 24px;
-            stroke: white;
-            transition: stroke 0.3s ease;
+        .support-modal h3 {
+            color: #0f172a;
+            font-size: 2rem;
+            margin-bottom: 0.75rem;
+            font-weight: 700;
         }
 
-        .support-method:hover .support-method-icon svg {
-            stroke: #14b8a6;
+        .support-modal p {
+            color: #64748b;
+            margin-bottom: 2rem;
+            font-size: 1.05rem;
+            line-height: 1.6;
         }
 
-        .support-method-text h4 {
-            color: #f8fafc;
-            font-size: 1.125rem;
-            margin-bottom: 0.25rem;
-            font-weight: 600;
+        .support-info {
+            background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 1.5rem;
+            text-align: center;
         }
 
-        .support-method-text p {
-            color: #94a3b8;
-            font-size: 0.875rem;
+        .support-info p {
+            color: #475569;
+            font-size: 0.95rem;
             margin: 0;
         }
 
-        .support-method:hover .support-method-text h4,
-        .support-method:hover .support-method-text p {
-            color: white;
-        }
-
-        .get-started-cta {
-            text-align: center;
-            margin-bottom: 2rem;
-        }
-
-        .get-started-cta .btn {
-            background: #14b8a6;
-            color: white;
-            padding: 1rem 2rem;
-            font-size: 1.125rem;
-        }
-
-        .get-started-cta .btn:hover {
-            background: #0d9488;
+        .support-info strong {
+            color: #6366f1;
+            font-weight: 600;
         }
 
         /* Responsive */
         @media (max-width: 768px) {
             .hero h1 {
                 font-size: 2.5rem;
+            }
+
+            .hero .subtitle {
+                font-size: 1.1rem;
             }
 
             .nav-links {
@@ -676,21 +786,25 @@
                 grid-template-columns: 1fr;
             }
 
-            .testimonials-grid {
-                grid-template-columns: 1fr;
-            }
-
             .pricing-grid {
-                grid-template-columns: 1fr;
-            }
-
-            .faq-grid {
                 grid-template-columns: 1fr;
             }
 
             .footer-content {
                 grid-template-columns: 1fr;
                 text-align: center;
+            }
+
+            .section-title {
+                font-size: 2rem;
+            }
+
+            .stats-grid {
+                gap: 2rem;
+            }
+
+            .stat-number {
+                font-size: 2.5rem;
             }
         }
     </style>
@@ -700,15 +814,17 @@
     <header>
         <nav class="container">
             <a href="#" class="logo">
-                <img src="/icons/icon-32.png" alt="Tabmangment Logo">
-                Tabmangment
+                <div class="logo-icon">
+                    <img src="/icons/icon-32.png" alt="Tabmangment Logo">
+                </div>
+                <span>Tabmangment</span>
             </a>
             <ul class="nav-links">
                 <li><a href="#features">Features</a></li>
                 <li><a href="#pricing">Pricing</a></li>
-                <li><a href="#faq">FAQ</a></li>
+                <li><a href="#" id="support-link">Support</a></li>
             </ul>
-            <a href="/new-authentication" class="get-started-btn">
+            <a href="/new-authentication" class="cta-button">
                 Get Started
             </a>
         </nav>
@@ -717,17 +833,79 @@
     <!-- Hero Section -->
     <section class="hero">
         <div class="container">
-            <h1>Tame your tabs Boost your focus</h1>
-            <p>Professional tab management that syncs across all your devices. Sign in once and manage your tabs seamlessly from anywhere.</p>
+            <h1>
+                <span class="gradient-text">Organize, plan, and track</span><br>
+                all in one place
+            </h1>
+            <p class="subtitle">Efficiently manage your tabs and boost productivity with smart timers, auto-closing, and seamless sync across all your devices</p>
 
             <div class="hero-buttons">
                 <a href="/new-authentication" class="btn btn-primary">
-                    <i data-feather="user"></i>
-                    Sign Up Free
+                    <i data-feather="zap"></i>
+                    Get Started Free
                 </a>
-                <a href="#features" class="btn btn-secondary">
-                    Learn More
-                </a>
+            </div>
+
+            <div class="hero-visual">
+                <div class="browser-mockup">
+                    <div class="browser-dots">
+                        <div class="dot"></div>
+                        <div class="dot"></div>
+                        <div class="dot"></div>
+                    </div>
+                    <div class="tabs-preview">
+                        <div class="tab-card">
+                            <div class="tab-icon">
+                                <i data-feather="file-text"></i>
+                            </div>
+                            <div class="tab-info">
+                                <div class="tab-title">Project Documentation</div>
+                                <div class="tab-url">docs.example.com</div>
+                            </div>
+                            <div class="tab-status">Active</div>
+                        </div>
+                        <div class="tab-card">
+                            <div class="tab-icon">
+                                <i data-feather="code"></i>
+                            </div>
+                            <div class="tab-info">
+                                <div class="tab-title">GitHub Repository</div>
+                                <div class="tab-url">github.com/project</div>
+                            </div>
+                            <div class="tab-status">Active</div>
+                        </div>
+                        <div class="tab-card">
+                            <div class="tab-icon">
+                                <i data-feather="mail"></i>
+                            </div>
+                            <div class="tab-info">
+                                <div class="tab-title">Email Dashboard</div>
+                                <div class="tab-url">mail.example.com</div>
+                            </div>
+                            <div class="tab-status">Active</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Stats Section -->
+    <section class="stats-section">
+        <div class="container">
+            <div class="stats-grid">
+                <div class="stat-item">
+                    <div class="stat-number">10K+</div>
+                    <div class="stat-label">Active Users</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-number">50K+</div>
+                    <div class="stat-label">Tabs Managed</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-number">99%</div>
+                    <div class="stat-label">Satisfaction Rate</div>
+                </div>
             </div>
         </div>
     </section>
@@ -736,8 +914,8 @@
     <section class="features" id="features">
         <div class="container">
             <div class="section-header">
-                <h2 class="section-title">Powerful features</h2>
-                <p class="section-subtitle">Everything you need to manage your tabs and stay focused while browsing.</p>
+                <h2 class="section-title">Powerful features for productivity</h2>
+                <p class="section-subtitle">Everything you need to manage your tabs and stay focused while browsing</p>
             </div>
 
             <div class="features-grid">
@@ -745,8 +923,8 @@
                     <div class="feature-icon">
                         <i data-feather="clock"></i>
                     </div>
-                    <h3>Smart Timers (Pro)</h3>
-                    <p>Set custom closing timers on individual tabs to automatically close them after a set duration. Perfect for time-sensitive tasks.</p>
+                    <h3>Smart Timers</h3>
+                    <p>Set custom closing timers on individual tabs to automatically close them after a set duration. Perfect for time-sensitive tasks and maintaining focus.</p>
                 </div>
 
                 <div class="feature-card">
@@ -754,84 +932,39 @@
                         <i data-feather="layout"></i>
                     </div>
                     <h3>Tab Organization</h3>
-                    <p>View and manage all your open tabs in a clean, organized interface. See exactly what you have open at a glance.</p>
+                    <p>View and manage all your open tabs in a clean, organized interface. See exactly what you have open at a glance with beautiful visual cards.</p>
                 </div>
 
                 <div class="feature-card">
                     <div class="feature-icon">
                         <i data-feather="bar-chart-2"></i>
                     </div>
-                    <h3>Real-time Stats</h3>
-                    <p>Track how many tabs are open and how many are scheduled to close soon. Stay informed about your browser usage.</p>
+                    <h3>Real-time Analytics</h3>
+                    <p>Track how many tabs are open and how many are scheduled to close soon. Stay informed about your browser usage with detailed statistics.</p>
                 </div>
 
                 <div class="feature-card">
                     <div class="feature-icon">
-                        <i data-feather="users"></i>
+                        <i data-feather="cloud"></i>
                     </div>
-                    <h3>Account-Based Sync</h3>
-                    <p>Sign in once and your tabs, settings, and subscription sync across all devices automatically. Switch computers seamlessly.</p>
+                    <h3>Cross-Device Sync</h3>
+                    <p>Sign in once and your tabs, settings, and subscription sync across all devices automatically. Switch between computers seamlessly.</p>
                 </div>
 
                 <div class="feature-card">
                     <div class="feature-icon">
                         <i data-feather="bookmark"></i>
                     </div>
-                    <h3>Bookmark All (Pro)</h3>
-                    <p>Save all your open tabs as bookmarks with one click. Never lose important research or workflow sessions.</p>
+                    <h3>Quick Bookmarks</h3>
+                    <p>Save all your open tabs as bookmarks with one click. Never lose important research or workflow sessions ever again.</p>
                 </div>
 
                 <div class="feature-card">
                     <div class="feature-icon">
                         <i data-feather="minimize-2"></i>
                     </div>
-                    <h3>Collapse All (Pro)</h3>
-                    <p>Collapse all tab groups instantly to declutter your browser and focus on what matters most.</p>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- Why it works -->
-    <!-- Testimonials -->
-    <section class="testimonials">
-        <div class="container">
-            <div class="section-header">
-                <h2 class="section-title">Loved by focused people</h2>
-            </div>
-
-            <div class="testimonials-grid">
-                <div class="testimonial-card">
-                    <p class="testimonial-text">"Tabmangment has completely transformed how I browse. I used to have 50+ tabs open, now I stay focused with just what I need."</p>
-                    <div class="testimonial-author">
-                        <div class="author-avatar">S</div>
-                        <div class="author-info">
-                            <h5>Sarah Chen</h5>
-                            <p>Product Designer</p>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="testimonial-card">
-                    <p class="testimonial-text">"As a developer, I constantly have documentation tabs open. This extension helps me keep only the relevant ones active."</p>
-                    <div class="testimonial-author">
-                        <div class="author-avatar">M</div>
-                        <div class="author-info">
-                            <h5>Mike Rodriguez</h5>
-                            <p>Software Engineer</p>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="testimonial-card">
-                    <p class="testimonial-text">"The auto-close feature is genius. My browser runs so much faster now and I don't get overwhelmed by tab chaos."</p>
-                    <div class="testimonial-author">
-                        <div class="author-avatar">E</div>
-                        <div class="author-info">
-                            <h5>Emily Johnson</h5>
-                            <p>Marketing Manager</p>
-                        </div>
-                    </div>
+                    <h3>Collapse Groups</h3>
+                    <p>Collapse all tab groups instantly to declutter your browser and focus on what matters most to your current task.</p>
                 </div>
             </div>
         </div>
@@ -841,80 +974,38 @@
     <section class="pricing" id="pricing">
         <div class="container">
             <div class="section-header">
-                <h2 class="section-title">Simple pricing</h2>
+                <h2 class="section-title">Simple, transparent pricing</h2>
+                <p class="section-subtitle">Choose the plan that works best for you</p>
             </div>
 
             <div class="pricing-grid">
                 <div class="pricing-card featured">
+                    <div class="popular-badge">Popular</div>
                     <div class="plan-name">Free</div>
                     <div class="plan-price">$0<span class="period">/month</span></div>
+                    <p class="plan-description">Perfect for getting started</p>
                     <ul class="plan-features">
                         <li><i data-feather="check" class="check"></i> Manage up to 10 tabs</li>
                         <li><i data-feather="check" class="check"></i> Cross-device sync</li>
                         <li><i data-feather="check" class="check"></i> Tab organization</li>
-                        <li><i data-feather="check" class="check"></i> Basic features</li>
+                        <li><i data-feather="check" class="check"></i> Basic analytics</li>
                     </ul>
-                    <a href="/new-authentication" class="btn btn-primary">Get Started Free</a>
+                    <a href="/new-authentication" class="btn btn-primary" style="width: 100%; justify-content: center;">Get Started Free</a>
                 </div>
 
                 <div class="pricing-card">
                     <div class="plan-name">Pro</div>
                     <div class="plan-price">$4.99<span class="period">/month</span></div>
+                    <p class="plan-description">For power users who need more</p>
                     <ul class="plan-features">
                         <li><i data-feather="check" class="check"></i> Unlimited tabs</li>
                         <li><i data-feather="check" class="check"></i> Custom timers</li>
-                        <li><i data-feather="check" class="check"></i> Advanced features</li>
+                        <li><i data-feather="check" class="check"></i> Advanced analytics</li>
                         <li><i data-feather="check" class="check"></i> Priority support</li>
                         <li><i data-feather="check" class="check"></i> Bookmark all tabs</li>
-                        <li><i data-feather="check" class="check"></i> Collapse all tabs</li>
+                        <li><i data-feather="check" class="check"></i> Collapse all groups</li>
                     </ul>
-                    <a href="/new-authentication?plan=pro" class="btn btn-primary">Upgrade to Pro</a>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- FAQ -->
-    <section class="faq" id="faq">
-        <div class="container">
-            <div class="section-header">
-                <h2 class="section-title">Frequently asked questions</h2>
-            </div>
-
-            <div class="faq-grid">
-                <div class="faq-item">
-                    <h4 class="faq-question">Do I need an account to use Tabmangment?</h4>
-                    <p class="faq-answer">Yes, you need to sign in with an account to use Tabmangment. This allows us to sync your tabs and settings across all your devices seamlessly. Creating an account is quick and free!</p>
-                </div>
-
-                <div class="faq-item">
-                    <h4 class="faq-question">How does the Free plan work?</h4>
-                    <p class="faq-answer">The Free plan gives you access to basic tab management for up to 10 tabs. You can view, organize, and manage your tabs with ease. Upgrade to Pro for unlimited tabs, custom timers, and advanced features!</p>
-                </div>
-
-                <div class="faq-item">
-                    <h4 class="faq-question">Does it sync across devices?</h4>
-                    <p class="faq-answer">Yes! Your tabs, settings, and subscription status automatically sync across all devices where you're signed in. Switch between computers seamlessly without losing your workflow.</p>
-                </div>
-
-                <div class="faq-item">
-                    <h4 class="faq-question">What happens if I cancel my Pro subscription?</h4>
-                    <p class="faq-answer">If you cancel your Pro subscription, you'll be automatically downgraded to the Free plan. You'll retain access to your first 10 tabs and basic features. You can resubscribe anytime to regain Pro features!</p>
-                </div>
-
-                <div class="faq-item">
-                    <h4 class="faq-question">How do I save important tabs?</h4>
-                    <p class="faq-answer">Use the "Bookmark All" feature (Pro only) to save all your important tabs with one click. This creates bookmarks of your tabs so you can safely close them and reopen anytime. Perfect for research sessions or important work you want to preserve!</p>
-                </div>
-
-                <div class="faq-item">
-                    <h4 class="faq-question">Can I sign out and use a different account?</h4>
-                    <p class="faq-answer">Absolutely! Click the logout button in the extension to sign out completely. You can then sign in with a different account or create a new one. Each account keeps its own separate data and subscription status.</p>
-                </div>
-
-                <div class="faq-item">
-                    <h4 class="faq-question">What data do you collect?</h4>
-                    <p class="faq-answer">We only collect your email for authentication and basic tab data to provide sync functionality. We never access your browsing history or personal information. Your privacy is our priority.</p>
+                    <a href="/new-authentication?plan=pro" class="btn btn-primary" style="width: 100%; justify-content: center;">Upgrade to Pro</a>
                 </div>
             </div>
         </div>
@@ -923,32 +1014,37 @@
     <!-- Footer -->
     <footer>
         <div class="container">
-            <div class="get-started-cta">
-                <a href="/new-authentication" class="btn">
-                    <i data-feather="user"></i>
-                    Get Started Free
-                </a>
-            </div>
-
             <div class="footer-content">
                 <div class="footer-brand">
                     <h3>Tabmangment</h3>
-                    <p>Professional tab management for productive browsing. Take control of your tabs and boost your focus today.</p>
+                    <p>Professional tab management for productive browsing. Take control of your tabs and boost your focus today with our powerful extension.</p>
                 </div>
                 <div class="footer-links">
-                    <h4>Links</h4>
+                    <h4>Quick Links</h4>
                     <ul>
                         <li><a href="/privacy.html">Privacy Policy</a></li>
                         <li><a href="https://chrome.google.com/webstore/detail/my-extension/abplhccmjhdcofakcolniimgbfjlkohn" target="_blank">Chrome Store</a></li>
-                        <li><a href="#" id="support-link">Support</a></li>
+                        <li><a href="#" id="support-link-footer">Support</a></li>
                     </ul>
                 </div>
             </div>
             <div class="footer-bottom">
-                <p>&copy; <span id="currentYear">2024</span> Tabmangment. All rights reserved.</p>
+                <p>&copy; <span id="currentYear">2025</span> Tabmangment. All rights reserved.</p>
             </div>
         </div>
     </footer>
+
+    <!-- Support Modal -->
+    <div id="support-modal" class="support-modal">
+        <div class="support-modal-content">
+            <button id="support-modal-close" class="support-modal-close">&times;</button>
+            <h3>Get Support</h3>
+            <p>Need help? Contact us through the extension for quick assistance</p>
+            <div class="support-info">
+                <p>Open the <strong>Tabmangment extension</strong> and use the built-in contact features to reach our support team.</p>
+            </div>
+        </div>
+    </div>
 
     <script>
         // Initialize Feather icons
@@ -971,6 +1067,40 @@
             });
         });
 
+        // Support modal functionality
+        const supportModal = document.getElementById('support-modal');
+        const supportLink = document.getElementById('support-link');
+        const supportLinkFooter = document.getElementById('support-link-footer');
+        const supportModalClose = document.getElementById('support-modal-close');
+
+        if (supportLink) {
+            supportLink.addEventListener('click', (e) => {
+                e.preventDefault();
+                supportModal.classList.add('active');
+            });
+        }
+
+        if (supportLinkFooter) {
+            supportLinkFooter.addEventListener('click', (e) => {
+                e.preventDefault();
+                supportModal.classList.add('active');
+            });
+        }
+
+        if (supportModalClose) {
+            supportModalClose.addEventListener('click', () => {
+                supportModal.classList.remove('active');
+            });
+        }
+
+        if (supportModal) {
+            supportModal.addEventListener('click', (e) => {
+                if (e.target === supportModal) {
+                    supportModal.classList.remove('active');
+                }
+            });
+        }
+
         // Track analytics
         window.va = window.va || function () { (window.vaq = window.vaq || []).push(arguments); };
 
@@ -987,112 +1117,8 @@
                 if (window.va) window.va('track', 'Plan Click', { plan: planType });
             });
         });
-        // Support modal functionality - wait for DOM to be ready
-        document.addEventListener('DOMContentLoaded', function() {
-            const supportLink = document.getElementById('support-link');
-            const supportModal = document.getElementById('support-modal');
-            const supportModalClose = document.getElementById('support-modal-close');
-
-            if (supportLink) {
-                supportLink.addEventListener('click', (e) => {
-                    e.preventDefault();
-                    supportModal.classList.add('active');
-                    console.log('Support modal opened');
-                });
-            }
-
-            if (supportModalClose) {
-                supportModalClose.addEventListener('click', () => {
-                    supportModal.classList.remove('active');
-                    console.log('Support modal closed');
-                });
-            }
-
-            if (supportModal) {
-                supportModal.addEventListener('click', (e) => {
-                    if (e.target === supportModal) {
-                        supportModal.classList.remove('active');
-                        console.log('Support modal closed by clicking outside');
-                    }
-                });
-            }
-        });
     </script>
-
-    <!-- Support Modal -->
-    <div id="support-modal" class="support-modal">
-        <div class="support-modal-content" style="text-align: center; max-width: 450px;">
-            <button id="support-modal-close" class="support-modal-close">&times;</button>
-
-            <div style="margin-bottom: 1.5rem;">
-                <svg xmlns="http://www.w3.org/2000/svg" width="80" height="80" viewBox="0 0 24 24" fill="none" stroke="#14b8a6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin: 0 auto;">
-                    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
-                    <line x1="9" y1="10" x2="15" y2="10"></line>
-                    <line x1="12" y1="7" x2="12" y2="13"></line>
-                </svg>
-            </div>
-
-            <h3 style="margin-bottom: 1rem; color: #f8fafc; font-size: 1.75rem;">Contact Us</h3>
-            <p style="color: #94a3b8; font-size: 1.125rem; line-height: 1.6; margin-bottom: 2rem;">
-                Please contact us through the extension for support and assistance.
-            </p>
-
-            <div style="background: #0f172a; border: 1px solid #334155; border-radius: 0.75rem; padding: 1.5rem;">
-                <p style="color: #cbd5e1; font-size: 0.95rem; margin: 0;">
-                    Open the <strong style="color: #14b8a6;">Tabmangment extension</strong> and use the built-in support features to get help.
-                </p>
-            </div>
-        </div>
-    </div>
 
     <script defer src="/_vercel/insights/script.js"></script>
-    <script>
-        // Create persistent glow element
-        const glow = document.createElement('div');
-        glow.className = 'cursor-glow';
-        document.body.appendChild(glow);
-
-        let lastTrailTime = 0;
-        const trailDelay = 30; // milliseconds between trail dots
-
-        document.addEventListener('mousemove', (e) => {
-            const now = Date.now();
-
-            // Update glow position smoothly
-            glow.style.left = e.clientX + 'px';
-            glow.style.top = e.clientY + 'px';
-
-            // Throttle trail creation
-            if (now - lastTrailTime < trailDelay) return;
-            lastTrailTime = now;
-
-            // Create trail dot
-            const trail = document.createElement('div');
-            trail.className = 'cursor-trail';
-            trail.style.left = e.clientX + 'px';
-            trail.style.top = e.clientY + 'px';
-
-            document.body.appendChild(trail);
-
-            // Remove trail after animation
-            setTimeout(() => {
-                trail.remove();
-            }, 600);
-        });
-
-        // Hide glow when mouse leaves window
-        document.addEventListener('mouseleave', () => {
-            glow.style.opacity = '0';
-        });
-
-        document.addEventListener('mouseenter', () => {
-            glow.style.opacity = '1';
-        });
-
-        // Feather icons initialization
-        if (typeof feather !== 'undefined') {
-            feather.replace();
-        }
-    </script>
 </body>
 </html>
