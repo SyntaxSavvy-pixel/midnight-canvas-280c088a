@@ -86,8 +86,11 @@
         // Only process messages from our dashboard
         if (message.source !== 'tabmangment-dashboard') return;
 
+        console.log('[Bridge] Received message from dashboard:', message.type);
+
         // Check if extension APIs are available
         if (typeof chrome === 'undefined' || !chrome.runtime || !chrome.runtime.sendMessage) {
+            console.log('[Bridge] Extension APIs not available');
             // Extension not available - send error response
             window.postMessage({
                 type: 'EXTENSION_TABS_DATA_RESPONSE',
@@ -101,11 +104,13 @@
         // Handle different message types from dashboard
         switch (message.type) {
             case 'DASHBOARD_REQUEST_TABS_DATA':
+                console.log('[Bridge] Requesting tabs data from background script...');
                 // Request tabs data from extension
                 chrome.runtime.sendMessage({
                     type: 'GET_TABS_DATA'
                 }, (response) => {
                     if (chrome.runtime.lastError) {
+                        console.log('[Bridge] Extension error:', chrome.runtime.lastError.message);
                         window.postMessage({
                             type: 'EXTENSION_TABS_DATA_RESPONSE',
                             source: 'tabmangment-extension',
@@ -115,6 +120,7 @@
                         return;
                     }
 
+                    console.log('[Bridge] Got response from background script:', response);
                     // Forward extension response to dashboard
                     window.postMessage({
                         type: 'EXTENSION_TABS_DATA_RESPONSE',

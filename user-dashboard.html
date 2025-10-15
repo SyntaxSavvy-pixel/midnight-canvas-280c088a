@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <!-- Version: 3.0.1 - Fixed Smart Suggestions timeout and message filtering -->
+    <!-- Version: 3.0.2 - Added debug console logs to diagnose data loading -->
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard - TabManagement</title>
@@ -1890,6 +1890,8 @@
 
             let responseReceived = false;
 
+            console.log('[Smart Suggestions] Requesting tabs data from extension...');
+
             // Request data from extension via content script bridge
             window.postMessage({
                 type: 'DASHBOARD_REQUEST_TABS_DATA',
@@ -1899,14 +1901,17 @@
             // Listen for response from content script
             const messageHandler = (event) => {
                 if (event.data.type === 'EXTENSION_TABS_DATA_RESPONSE' && event.data.source === 'tabmangment-extension') {
+                    console.log('[Smart Suggestions] Received response:', event.data);
                     window.removeEventListener('message', messageHandler);
                     responseReceived = true;
 
                     if (event.data.success && event.data.data) {
+                        console.log('[Smart Suggestions] Data loaded successfully:', event.data.data);
                         smartTabsData = { ...smartTabsData, ...event.data.data };
                         renderSmartSuggestions();
                         renderSmartActivity();
                     } else {
+                        console.log('[Smart Suggestions] Extension error:', event.data.error);
                         showSmartSuggestionsError();
                     }
                 }
