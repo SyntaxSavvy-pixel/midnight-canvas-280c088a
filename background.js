@@ -1985,6 +1985,8 @@ TabManager.prototype.getSmartTabsData = async function() {
         let inactiveTabs = 0;
         let estimatedMemory = 0;
 
+        // Collect tab data with last accessed time
+        const tabsWithAccess = [];
         for (const tab of allTabs) {
             if (this.tabData.has(tab.id)) {
                 const tabInfo = this.tabData.get(tab.id);
@@ -1995,8 +1997,20 @@ TabManager.prototype.getSmartTabsData = async function() {
                     // Estimate 15MB per inactive tab
                     estimatedMemory += 15;
                 }
+
+                // Add to recent tabs list with access time
+                tabsWithAccess.push({
+                    title: tab.title,
+                    url: tab.url,
+                    favIconUrl: tab.favIconUrl,
+                    lastAccessed: tabInfo.lastActiveTime || tabInfo.createdAt
+                });
             }
         }
+
+        // Sort by most recently accessed and take top 10
+        tabsWithAccess.sort((a, b) => b.lastAccessed - a.lastAccessed);
+        const recentTabs = tabsWithAccess.slice(0, 10);
 
         const storage = await chrome.storage.local.get(['autoCleanEnabled', 'lastCleanupTime', 'totalTabsClosed']);
 
@@ -2006,7 +2020,8 @@ TabManager.prototype.getSmartTabsData = async function() {
             memorySaved: estimatedMemory,
             autoCleanEnabled: storage.autoCleanEnabled || false,
             lastCleanup: storage.lastCleanupTime ? new Date(storage.lastCleanupTime) : null,
-            totalManagedThisWeek: storage.totalTabsClosed || 0
+            totalManagedThisWeek: storage.totalTabsClosed || 0,
+            recentTabs: recentTabs
         };
     } catch (error) {
         console.error('Error getting tabs data:', error);
@@ -2016,7 +2031,8 @@ TabManager.prototype.getSmartTabsData = async function() {
             memorySaved: 0,
             autoCleanEnabled: false,
             lastCleanup: null,
-            totalManagedThisWeek: 0
+            totalManagedThisWeek: 0,
+            recentTabs: []
         };
     }
 };
