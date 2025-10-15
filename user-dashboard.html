@@ -1771,49 +1771,35 @@
         };
 
         async function initSmartDashboard() {
-            console.log('🎯 Initializing Smart Dashboard...');
-            console.log('📊 userData:', userData);
-
             // Update user name display - get from multiple sources
             let displayName = 'User';
 
             // Try to get from userData object first
-            if (userData.name) {
+            if (userData && userData.name) {
                 displayName = userData.name;
-                console.log('✅ Got name from userData.name:', displayName);
-            } else if (userData.email) {
+            } else if (userData && userData.email) {
                 displayName = userData.email.split('@')[0];
-                console.log('✅ Got name from userData.email:', displayName);
             } else {
                 // Fallback to localStorage
-                const storedUserData = localStorage.getItem('tabmangment_user');
-                if (storedUserData) {
-                    try {
+                try {
+                    const storedUserData = localStorage.getItem('tabmangment_user');
+                    if (storedUserData) {
                         const parsedData = JSON.parse(storedUserData);
-                        console.log('📦 Stored user data:', parsedData);
-                        displayName = parsedData.name || parsedData.email?.split('@')[0] || 'User';
-                        console.log('✅ Got name from localStorage:', displayName);
-                    } catch (e) {
-                        console.error('❌ Error parsing stored user data:', e);
+                        if (parsedData.name) {
+                            displayName = parsedData.name;
+                        } else if (parsedData.email) {
+                            displayName = parsedData.email.split('@')[0];
+                        }
                     }
-                } else if (window.sessionManager) {
-                    // Try session manager as last resort
-                    const sessionUser = window.sessionManager.getUser();
-                    if (sessionUser) {
-                        displayName = sessionUser.name || sessionUser.email?.split('@')[0] || 'User';
-                        console.log('✅ Got name from sessionManager:', displayName);
-                    }
+                } catch (e) {
+                    // Fallback to default
                 }
             }
 
-            console.log('👤 Final display name:', displayName);
-
+            // Update the DOM element
             const userNameEl = document.getElementById('user-name-display');
             if (userNameEl) {
                 userNameEl.textContent = displayName;
-                console.log('✅ Updated user-name-display element to:', displayName);
-            } else {
-                console.error('❌ Could not find user-name-display element!');
             }
 
             // Load tabs data from extension
