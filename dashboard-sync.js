@@ -1,5 +1,6 @@
-// Dashboard Sync Script
+// Dashboard Sync Script v2.0.1
 // This script runs on the dashboard page and automatically syncs user data to the extension
+// No console logs - clean production code
 
 (async function() {
     // Wait for page to fully load
