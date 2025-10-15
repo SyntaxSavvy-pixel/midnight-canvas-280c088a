@@ -6,6 +6,7 @@
     <title>Sign In - TabMangment</title>
     <link rel="icon" type="image/png" sizes="32x32" href="/icons/icon-32.png">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="/session-manager.js"></script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; height: 100vh; display: flex; overflow: hidden; }
@@ -453,10 +454,17 @@ async function handleLogin(event) {
             provider: 'email',
             deletionScheduledAt: user.user_metadata.deletion_scheduled_at || null
         };
-        localStorage.setItem('tabmangment_user', JSON.stringify(userData));
-        localStorage.setItem('tabmangment_token', session.access_token);
+        // Save session with persistence
+        if (window.sessionManager) {
+            window.sessionManager.saveSession(userData, session.access_token, true);
+        } else {
+            localStorage.setItem('tabmangment_user', JSON.stringify(userData));
+            localStorage.setItem('tabmangment_token', session.access_token);
+            localStorage.setItem('tabmangment_remember', 'true');
+        }
+
         window.postMessage({ type: 'USER_LOGGED_IN', userData: { email: userData.email, name: userData.name, id: userData.id } }, '*');
-        showNotification('Login successful!', 'success');
+        showNotification('Login successful! You will stay logged in.', 'success');
         setTimeout(() => { window.location.href = '/user-dashboard.html'; }, 1000);
     } catch (error) {
         showNotification(error.message, 'error');
@@ -537,12 +545,22 @@ async function handleSignup(event) {
                 email: data.user.email,
                 name: name,
                 id: data.user.id,
-                provider: 'email'
+                provider: 'email',
+                isPro: false,
+                plan: 'free'
             };
-            localStorage.setItem('tabmangment_user', JSON.stringify(userData));
-            localStorage.setItem('tabmangment_token', data.session.access_token);
+
+            // Save session with persistence
+            if (window.sessionManager) {
+                window.sessionManager.saveSession(userData, data.session.access_token, true);
+            } else {
+                localStorage.setItem('tabmangment_user', JSON.stringify(userData));
+                localStorage.setItem('tabmangment_token', data.session.access_token);
+                localStorage.setItem('tabmangment_remember', 'true');
+            }
+
             window.postMessage({ type: 'USER_LOGGED_IN', userData: { email: userData.email, name: userData.name, id: userData.id } }, '*');
-            showNotification('Account created successfully!', 'success');
+            showNotification('Account created! You will stay logged in.', 'success');
             setTimeout(() => { window.location.href = '/user-dashboard.html'; }, 1000);
         }
     } catch (error) {
@@ -663,8 +681,14 @@ async function handleGithubLogin() {
             // Continue even if sync fails
         }
 
-        localStorage.setItem('tabmangment_user', JSON.stringify(userData));
-        localStorage.setItem('tabmangment_token', session.access_token);
+        // Save session with persistence
+        if (window.sessionManager) {
+            window.sessionManager.saveSession(userData, session.access_token, true);
+        } else {
+            localStorage.setItem('tabmangment_user', JSON.stringify(userData));
+            localStorage.setItem('tabmangment_token', session.access_token);
+            localStorage.setItem('tabmangment_remember', 'true');
+        }
 
         // Send login message to extension
         window.postMessage({
