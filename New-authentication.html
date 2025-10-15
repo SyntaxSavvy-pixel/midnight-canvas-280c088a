@@ -293,9 +293,10 @@ const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 // Check if user is already logged in and redirect to dashboard
 (async function checkExistingSession() {
     try {
-        // Check if user is intentionally logging out
+        // Check URL parameters
         const urlParams = new URLSearchParams(window.location.search);
         const isLoggingOut = urlParams.get('logout') === 'true';
+        const hasOAuthParams = urlParams.has('code') || urlParams.has('access_token') || urlParams.has('error');
 
         // If user is logging out, don't redirect them
         if (isLoggingOut) {
@@ -304,6 +305,16 @@ const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
             window.history.replaceState({}, document.title, window.location.pathname);
             return;
         }
+
+        // If OAuth callback in progress, wait for it to complete
+        if (hasOAuthParams) {
+            console.log('OAuth callback detected, waiting for processing...');
+            // Don't check session yet - let the OAuth handler at the bottom run first
+            return;
+        }
+
+        // Small delay to let any pending auth complete
+        await new Promise(resolve => setTimeout(resolve, 500));
 
         const { data: { session }, error } = await supabaseClient.auth.getSession();
 
@@ -608,13 +619,14 @@ async function handleGithubLogin() {
 
 // Check for OAuth callback and handle session
 (async function() {
-    // Check for logout parameter in URL
+    // Check URL parameters
     const urlParams = new URLSearchParams(window.location.search);
     const isLogout = urlParams.has('logout');
-    
+    const hasOAuthParams = urlParams.has('code') || urlParams.has('access_token') || urlParams.has('error');
+
     // Check if user just logged out
     const justLoggedOut = sessionStorage.getItem('user_logged_out');
-    
+
     if (justLoggedOut || isLogout) {
         sessionStorage.removeItem('user_logged_out');
         // Clear any existing session
@@ -625,7 +637,17 @@ async function handleGithubLogin() {
         }
         return;
     }
-    
+
+    // If OAuth callback, show loading immediately
+    if (hasOAuthParams) {
+        console.log('Processing OAuth callback...');
+        document.body.style.opacity = '0.5';
+        const loadingDiv = document.createElement('div');
+        loadingDiv.style.cssText = 'position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center; z-index: 9999;';
+        loadingDiv.innerHTML = '<div style="font-size: 18px; color: #6366f1;">Completing sign in...</div>';
+        document.body.appendChild(loadingDiv);
+    }
+
     const { data: { session }, error } = await supabaseClient.auth.getSession();
     
     if (error) {
@@ -696,8 +718,9 @@ async function handleGithubLogin() {
             userData: { email: userData.email, name: userData.name, id: userData.id }
         }, '*');
 
-        // Redirect to dashboard
-        window.location.href = '/user-dashboard.html';
+        // Immediate redirect to dashboard (no delay for OAuth)
+        console.log('OAuth login successful, redirecting to dashboard...');
+        window.location.replace('/user-dashboard.html');
     }
 })();
     </script>
