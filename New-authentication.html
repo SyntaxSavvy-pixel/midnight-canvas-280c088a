@@ -289,6 +289,22 @@ const SUPABASE_URL = 'https://voislxlhfepnllamagxm.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZvaXNseGxoZmVwbmxsYW1hZ3htIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTkwMTI4MDcsImV4cCI6MjA3NDU4ODgwN30.mDdMdGg4JAInS7kXNL6-edvRaQ_mVuMGRjU7rX-hMCM';
 const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
+// Check if user is already logged in and redirect to dashboard
+(async function checkExistingSession() {
+    try {
+        const { data: { session }, error } = await supabaseClient.auth.getSession();
+
+        if (!error && session && session.user) {
+            // User is already logged in, redirect to dashboard
+            console.log('User already logged in, redirecting to dashboard...');
+            window.location.href = '/dashboard';
+        }
+    } catch (error) {
+        console.error('Error checking session:', error);
+        // Continue to login page if there's an error
+    }
+})();
+
 function switchTab(tab) {
     const tabs = document.querySelectorAll('.tab-btn');
     const contents = document.querySelectorAll('.form-content');
@@ -429,7 +445,7 @@ async function handleLogin(event) {
         localStorage.setItem('tabmangment_token', session.access_token);
         window.postMessage({ type: 'USER_LOGGED_IN', userData: { email: userData.email, name: userData.name, id: userData.id } }, '*');
         showNotification('Login successful!', 'success');
-        setTimeout(() => { window.location.href = '/user-dashboard.html'; }, 1000);
+        setTimeout(() => { window.location.href = '/dashboard'; }, 1000);
     } catch (error) {
         showNotification(error.message, 'error');
     } finally {
@@ -515,7 +531,7 @@ async function handleSignup(event) {
             localStorage.setItem('tabmangment_token', data.session.access_token);
             window.postMessage({ type: 'USER_LOGGED_IN', userData: { email: userData.email, name: userData.name, id: userData.id } }, '*');
             showNotification('Account created successfully!', 'success');
-            setTimeout(() => { window.location.href = '/user-dashboard.html'; }, 1000);
+            setTimeout(() => { window.location.href = '/dashboard'; }, 1000);
         }
     } catch (error) {
         showNotification(error.message, 'error');
@@ -530,7 +546,7 @@ async function handleGoogleLogin() {
         const { data, error } = await supabaseClient.auth.signInWithOAuth({
             provider: 'google',
             options: {
-                redirectTo: window.location.origin + '/user-dashboard.html',
+                redirectTo: window.location.origin + '/dashboard',
                 queryParams: {
                     access_type: 'offline',
                     prompt: 'consent'
@@ -645,7 +661,7 @@ async function handleGithubLogin() {
         }, '*');
 
         // Redirect to dashboard
-        window.location.href = '/user-dashboard.html';
+        window.location.href = '/dashboard';
     }
 })();
     </script>

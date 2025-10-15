@@ -4,7 +4,7 @@
 
 class ExtensionAuthSync {
   constructor() {
-    this.apiBaseUrl = 'https://tabmangment.netlify.app/api';
+    this.apiBaseUrl = 'https://tabmangment.com/api';
     this.syncInterval = null;
     this.isLoggedIn = false;
     this.currentUser = null;
