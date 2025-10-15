@@ -111,76 +111,104 @@
             case 'DASHBOARD_REQUEST_TABS_DATA':
                 console.log('[Bridge] Requesting tabs data from background script...');
                 // Request tabs data from extension
-                chrome.runtime.sendMessage({
-                    type: 'GET_TABS_DATA'
-                }, (response) => {
-                    if (chrome.runtime.lastError) {
-                        console.log('[Bridge] Extension error:', chrome.runtime.lastError.message);
+                try {
+                    chrome.runtime.sendMessage({
+                        type: 'GET_TABS_DATA'
+                    }, (response) => {
+                        if (chrome.runtime.lastError) {
+                            console.log('[Bridge] Extension error:', chrome.runtime.lastError.message);
+                            window.postMessage({
+                                type: 'EXTENSION_TABS_DATA_RESPONSE',
+                                source: 'tabmangment-extension',
+                                success: false,
+                                error: chrome.runtime.lastError.message
+                            }, '*');
+                            return;
+                        }
+
+                        console.log('[Bridge] Got response from background script:', response);
+                        // Forward extension response to dashboard
                         window.postMessage({
                             type: 'EXTENSION_TABS_DATA_RESPONSE',
                             source: 'tabmangment-extension',
-                            success: false,
-                            error: chrome.runtime.lastError.message
+                            success: response.success,
+                            data: response.data
                         }, '*');
-                        return;
-                    }
-
-                    console.log('[Bridge] Got response from background script:', response);
-                    // Forward extension response to dashboard
+                    });
+                } catch (error) {
+                    console.log('[Bridge] Extension context invalidated:', error.message);
                     window.postMessage({
                         type: 'EXTENSION_TABS_DATA_RESPONSE',
                         source: 'tabmangment-extension',
-                        success: response.success,
-                        data: response.data
+                        success: false,
+                        error: 'Extension context invalidated. Please refresh the page.'
                     }, '*');
-                });
+                }
                 break;
 
             case 'DASHBOARD_CLEAN_TABS':
                 // Clean inactive tabs
-                chrome.runtime.sendMessage({
-                    type: 'CLEAN_INACTIVE_TABS'
-                }, (response) => {
-                    if (chrome.runtime.lastError) {
+                try {
+                    chrome.runtime.sendMessage({
+                        type: 'CLEAN_INACTIVE_TABS'
+                    }, (response) => {
+                        if (chrome.runtime.lastError) {
+                            window.postMessage({
+                                type: 'EXTENSION_CLEAN_TABS_RESPONSE',
+                                source: 'tabmangment-extension',
+                                success: false,
+                                error: chrome.runtime.lastError.message
+                            }, '*');
+                            return;
+                        }
+
                         window.postMessage({
                             type: 'EXTENSION_CLEAN_TABS_RESPONSE',
                             source: 'tabmangment-extension',
-                            success: false,
-                            error: chrome.runtime.lastError.message
+                            success: response.success,
+                            data: response
                         }, '*');
-                        return;
-                    }
-
+                    });
+                } catch (error) {
                     window.postMessage({
                         type: 'EXTENSION_CLEAN_TABS_RESPONSE',
                         source: 'tabmangment-extension',
-                        success: response.success,
-                        data: response
+                        success: false,
+                        error: 'Extension context invalidated. Please refresh the page.'
                     }, '*');
-                });
+                }
                 break;
 
             case 'DASHBOARD_ENABLE_AUTO_CLEAN':
                 // Enable auto-clean
-                chrome.runtime.sendMessage({
-                    type: 'ENABLE_AUTO_CLEAN'
-                }, (response) => {
-                    if (chrome.runtime.lastError) {
+                try {
+                    chrome.runtime.sendMessage({
+                        type: 'ENABLE_AUTO_CLEAN'
+                    }, (response) => {
+                        if (chrome.runtime.lastError) {
+                            window.postMessage({
+                                type: 'EXTENSION_AUTO_CLEAN_RESPONSE',
+                                source: 'tabmangment-extension',
+                                success: false,
+                                error: chrome.runtime.lastError.message
+                            }, '*');
+                            return;
+                        }
+
                         window.postMessage({
                             type: 'EXTENSION_AUTO_CLEAN_RESPONSE',
                             source: 'tabmangment-extension',
-                            success: false,
-                            error: chrome.runtime.lastError.message
+                            success: response.success
                         }, '*');
-                        return;
-                    }
-
+                    });
+                } catch (error) {
                     window.postMessage({
                         type: 'EXTENSION_AUTO_CLEAN_RESPONSE',
                         source: 'tabmangment-extension',
-                        success: response.success
+                        success: false,
+                        error: 'Extension context invalidated. Please refresh the page.'
                     }, '*');
-                });
+                }
                 break;
         }
     });
