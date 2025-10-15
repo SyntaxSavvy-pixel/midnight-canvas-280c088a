@@ -1972,11 +1972,12 @@ SmartTabAnalytics.prototype.executePerformanceBoost = async function(recommendat
             // Error notification disabled
             this.recordNotification('general_notifications');
         }
-    };
+    }
+};
 
-    // Smart Dashboard Methods
-    async getSmartTabsData() {
-        try {
+// Smart Dashboard Methods
+SmartTabAnalytics.prototype.getSmartTabsData = async function() {
+    try {
             const allTabs = await chrome.tabs.query({});
             const now = Date.now();
             const inactiveThreshold = 30 * 60 * 1000; // 30 minutes
@@ -2018,10 +2019,13 @@ SmartTabAnalytics.prototype.executePerformanceBoost = async function(recommendat
                 totalManagedThisWeek: 0
             };
         }
+    } catch (error) {
+        return null;
     }
+};
 
-    async cleanInactiveTabs() {
-        try {
+SmartTabAnalytics.prototype.cleanInactiveTabs = async function() {
+    try {
             const allTabs = await chrome.tabs.query({});
             const now = Date.now();
             const inactiveThreshold = 30 * 60 * 1000; // 30 minutes
@@ -2056,12 +2060,11 @@ SmartTabAnalytics.prototype.executePerformanceBoost = async function(recommendat
                 count: tabsToClose.length,
                 memorySaved: tabsToClose.length * 15 // Estimate 15MB per tab
             };
-        } catch (error) {
-            console.error('Error cleaning tabs:', error);
-            return { count: 0, memorySaved: 0 };
-        }
+    } catch (error) {
+        console.error('Error cleaning tabs:', error);
+        return { count: 0, memorySaved: 0 };
     }
-}
+};
 
 const tabManager = new TabManager();
 const smartAnalytics = new SmartTabAnalytics();
