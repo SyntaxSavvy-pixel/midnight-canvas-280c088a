@@ -292,6 +292,18 @@ const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 // Check if user is already logged in and redirect to dashboard
 (async function checkExistingSession() {
     try {
+        // Check if user is intentionally logging out
+        const urlParams = new URLSearchParams(window.location.search);
+        const isLoggingOut = urlParams.get('logout') === 'true';
+
+        // If user is logging out, don't redirect them
+        if (isLoggingOut) {
+            console.log('User is logging out, staying on auth page...');
+            // Clear the logout parameter from URL
+            window.history.replaceState({}, document.title, window.location.pathname);
+            return;
+        }
+
         const { data: { session }, error } = await supabaseClient.auth.getSession();
 
         if (!error && session && session.user) {
