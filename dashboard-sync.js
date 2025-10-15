@@ -29,6 +29,12 @@
             const user = JSON.parse(userStr);
             console.log('✅ Found user data:', user.email);
 
+            // Check if extension is available
+            if (typeof chrome === 'undefined' || !chrome.runtime || !chrome.runtime.sendMessage) {
+                console.log('ℹ️ Extension not available');
+                return;
+            }
+
             // Send message to extension
             chrome.runtime.sendMessage({
                 type: 'USER_DATA_SYNC',
@@ -47,12 +53,23 @@
                     syncTimestamp: Date.now()
                 }
             }, (response) => {
+                // Handle chrome.runtime errors
                 if (chrome.runtime.lastError) {
-                    console.error('❌ Sync error:', chrome.runtime.lastError);
-                } else if (response && response.success) {
-                    console.log('✅ User data synced to extension successfully');
+                    // Silent fail - extension might be reloading or disabled
+                    return;
+                }
+
+                // No response means extension didn't handle the message
+                if (!response) {
+                    return;
+                }
+
+                // Success
+                if (response.success) {
+                    console.log('✅ Synced:', user.email, '-', response.saved?.isPremium ? 'Pro' : 'Free');
                 } else {
-                    console.warn('⚠️ Sync response:', response);
+                    // Only log actual errors, not undefined responses
+                    console.error('❌ Sync failed:', response.error || 'Unknown error');
                 }
             });
 
