@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <!-- Version: 2.0.1 - Smart Dashboard with fixed user name display -->
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard - TabManagement</title>
@@ -1760,7 +1761,16 @@
             startSubscriptionStatusRefresh();
 
             // Initialize Smart Dashboard (call after userData is loaded)
-            await initSmartDashboard();
+            try {
+                await initSmartDashboard();
+            } catch (error) {
+                // Fallback: try to update name even if Smart Dashboard fails
+                const userNameEl = document.getElementById('user-name-display');
+                if (userNameEl && userData && userData.email) {
+                    const displayName = userData.name || userData.email.split('@')[0];
+                    userNameEl.textContent = displayName;
+                }
+            }
         }
 
         // Smart Dashboard Functions
