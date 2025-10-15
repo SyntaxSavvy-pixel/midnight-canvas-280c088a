@@ -46,7 +46,7 @@ exports.handler = async (event, context) => {
                 const { data: { user }, error: authError } = await supabase.auth.getUser(token);
 
                 if (!authError && user) {
-                    console.log('✅ Authenticated user from Supabase Auth:', user.email);
+                    console.log('✅ Authenticated user from Supabase Auth');
                     userEmail = user.email;
                     authenticatedUser = {
                         email: user.email,
@@ -80,7 +80,7 @@ exports.handler = async (event, context) => {
             };
         }
 
-        console.log('✅ User authenticated:', userEmail);
+        console.log('✅ User authenticated');
 
         const { priceId } = JSON.parse(event.body || '{}');
 
@@ -94,11 +94,7 @@ exports.handler = async (event, context) => {
             };
         }
 
-        console.log('Creating checkout session for:', {
-            email: authenticatedUser.email,
-            name: authenticatedUser.name,
-            priceId
-        });
+        console.log('Creating checkout session');
 
         // Get the current domain for success/cancel URLs
         const currentDomain = event.headers.origin || 'https://tabmangment.netlify.app';

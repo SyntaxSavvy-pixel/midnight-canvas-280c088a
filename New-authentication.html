@@ -427,7 +427,7 @@ async function handleLogin(event) {
         };
         localStorage.setItem('tabmangment_user', JSON.stringify(userData));
         localStorage.setItem('tabmangment_token', session.access_token);
-        window.postMessage({ type: 'USER_LOGGED_IN', userData: userData, token: session.access_token }, '*');
+        window.postMessage({ type: 'USER_LOGGED_IN', userData: { email: userData.email, name: userData.name, id: userData.id } }, '*');
         showNotification('Login successful!', 'success');
         setTimeout(() => { window.location.href = '/user-dashboard.html'; }, 1000);
     } catch (error) {
@@ -513,7 +513,7 @@ async function handleSignup(event) {
             };
             localStorage.setItem('tabmangment_user', JSON.stringify(userData));
             localStorage.setItem('tabmangment_token', data.session.access_token);
-            window.postMessage({ type: 'USER_LOGGED_IN', userData: userData, token: data.session.access_token }, '*');
+            window.postMessage({ type: 'USER_LOGGED_IN', userData: { email: userData.email, name: userData.name, id: userData.id } }, '*');
             showNotification('Account created successfully!', 'success');
             setTimeout(() => { window.location.href = '/user-dashboard.html'; }, 1000);
         }
@@ -641,8 +641,7 @@ async function handleGithubLogin() {
         // Send login message to extension
         window.postMessage({
             type: 'USER_LOGGED_IN',
-            userData: userData,
-            token: session.access_token
+            userData: { email: userData.email, name: userData.name, id: userData.id }
         }, '*');
 
         // Redirect to dashboard

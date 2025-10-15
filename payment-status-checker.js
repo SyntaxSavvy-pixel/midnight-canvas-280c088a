@@ -168,11 +168,11 @@ class PaymentStatusChecker {
           const paymentSuccess = localStorage.getItem('tabmangment_payment_success');
           if (paymentSuccess) {
             const data = JSON.parse(paymentSuccess);
-            console.log('💳 Found payment success data:', data);
+            console.log('💳 Found payment success data');
             if (data.email && data.email.includes('@')) {
               userIdentifier = data.email;
               await chrome.storage.local.set({ userEmail: data.email });
-              console.log('✅ Got email from payment success:', userIdentifier);
+              console.log('✅ Got email from payment success');
             }
           }
 
@@ -182,7 +182,7 @@ class PaymentStatusChecker {
             if (storedEmail && storedEmail.includes('@')) {
               userIdentifier = storedEmail;
               await chrome.storage.local.set({ userEmail: storedEmail });
-              console.log('✅ Got email from stored email:', userIdentifier);
+              console.log('✅ Got email from stored email');
             }
           }
 
@@ -191,11 +191,11 @@ class PaymentStatusChecker {
             const sessionPayment = sessionStorage.getItem('tabmangment_payment_success');
             if (sessionPayment) {
               const data = JSON.parse(sessionPayment);
-              console.log('💳 Found session payment data:', data);
+              console.log('💳 Found session payment data');
               if (data.email && data.email.includes('@')) {
                 userIdentifier = data.email;
                 await chrome.storage.local.set({ userEmail: data.email });
-                console.log('✅ Got email from session payment:', userIdentifier);
+                console.log('✅ Got email from session payment');
               }
             }
           }
@@ -214,7 +214,7 @@ class PaymentStatusChecker {
             if (emailFromUrl && emailFromUrl.includes('@')) {
               userIdentifier = emailFromUrl;
               await chrome.storage.local.set({ userEmail: emailFromUrl });
-              console.log('✅ Found email in current tab URL:', userIdentifier);
+              console.log('✅ Found email in current tab URL');
             } else {
               console.log('🔍 Current URL:', tabs[0].url);
               console.log('🔍 No email found in URL parameters');
@@ -232,7 +232,7 @@ class PaymentStatusChecker {
           if (response && response.email && response.email.includes('@')) {
             userIdentifier = response.email;
             await chrome.storage.local.set({ userEmail: response.email });
-            console.log('✅ Got email from extension popup:', userIdentifier);
+            console.log('✅ Got email from extension popup');
           }
         } catch (e) {
           console.log('⚠️ Cannot get email from popup');
@@ -247,7 +247,7 @@ class PaymentStatusChecker {
           needsRealEmail: true
         });
         userIdentifier = tempId;
-        console.log('⚠️ Generated temporary ID - payment may not activate without real email:', tempId);
+        console.log('⚠️ Generated temporary ID - payment may not activate without real email');
       }
 
       return userIdentifier;

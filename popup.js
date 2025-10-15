@@ -42,19 +42,6 @@ class TabmangmentPopup {
             this.timerIntervals = {};
             this.init();
 
-
-            // Add global activation function for emergency use
-            window.activateProFeatures = async (email) => {
-                if (!email) {
-                    email = await this.getUserEmail();
-                }
-                if (email) {
-                    return await this.forceActivateProFeatures(email);
-                } else {
-                    return false;
-                }
-            };
-
         } catch (error) {
             throw error;
         }
@@ -3747,37 +3734,8 @@ class TabmangmentPopup {
             }
         });
     }
-    // Manual Pro activation function - Force activate Pro features immediately
-    async forceActivateProFeatures(email) {
-        try {
-
-            const proData = {
-                isPremium: true,
-                subscriptionActive: true,
-                planType: 'pro',
-                userEmail: email,
-                activatedAt: new Date().toISOString(),
-                activatedBy: 'manual_activation',
-                nextBillingDate: Date.now() + (30 * 24 * 60 * 60 * 1000), // 30 days from now
-                subscriptionId: 'manual_' + Date.now(),
-                features: ['unlimited_tabs', 'advanced_management', 'premium_themes', 'export_features']
-            };
-
-            await chrome.storage.local.set(proData);
-            this.isPremium = true;
-
-            await this.render();
-            this.updateUIForProUser();
-            await this.renderSubscriptionPlan();
-
-            this.showMessage('🎉 Pro features activated! Payment confirmed - enjoy unlimited access.', 'success');
-
-            return true;
-        } catch (error) {
-            this.showMessage('❌ Failed to activate Pro features. Contact support.', 'error');
-            return false;
-        }
-    }
+    // Pro activation is now handled only by payment verification from backend
+    // Manual activation has been removed for security
 
     async checkSubscriptionStatus(userEmail) {
         try {

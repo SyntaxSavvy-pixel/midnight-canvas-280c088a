@@ -42,7 +42,7 @@ class ExtensionAuthSync {
 
         if (isValid) {
           this.isLoggedIn = true;
-          console.log('✅ User authenticated:', this.currentUser.email);
+          console.log('✅ User authenticated');
           await this.syncUserData();
         } else {
           console.log('⚠️ Token expired, clearing storage');
@@ -116,7 +116,7 @@ class ExtensionAuthSync {
   }
 
   async handleUserLogin(user, token) {
-    console.log('🎉 User logged in:', user.email);
+    console.log('🎉 User logged in');
 
     this.currentUser = user;
     this.token = token;
@@ -204,11 +204,7 @@ class ExtensionAuthSync {
           lastSyncAt: new Date().toISOString()
         });
 
-        console.log('✅ User data synced:', {
-          email: user.email,
-          isPro: user.isPro,
-          planType: user.planType
-        });
+        console.log('✅ User data synced');
       } else {
         console.log('⚠️ Token invalid, logging out');
         await this.logout();

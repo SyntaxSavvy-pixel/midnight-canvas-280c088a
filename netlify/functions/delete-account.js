@@ -30,7 +30,7 @@ exports.handler = async (event, context) => {
     try {
         const { userId, email } = JSON.parse(event.body);
 
-        console.log('🗑️ MARK ACCOUNT FOR DELETION - userId:', userId, 'email:', email);
+        console.log('🗑️ MARK ACCOUNT FOR DELETION');
 
         if (!userId || !email) {
             console.error('❌ Missing required fields');

@@ -71,8 +71,13 @@ class SimpleAuth {
 
         switch (message.type) {
             case 'USER_LOGGED_IN':
-                await this.handleUserLogin(message.user, message.token);
-                sendResponse({ success: true });
+                if (message.user && message.user.email) {
+                    await this.handleUserLogin(message.user, message.token);
+                    sendResponse({ success: true });
+                } else {
+                    console.error('USER_LOGGED_IN message missing user data');
+                    sendResponse({ success: false, error: 'Missing user data' });
+                }
                 break;
 
             case 'GET_USER_STATUS':
@@ -94,11 +99,16 @@ class SimpleAuth {
 
             case 'USER_LOGIN':
                 // Dashboard is syncing real user email to replace fallback
-                await this.handleUserLogin({
-                    email: message.email,
-                    name: message.name
-                }, null);
-                sendResponse({ success: true });
+                if (message.email) {
+                    await this.handleUserLogin({
+                        email: message.email,
+                        name: message.name || 'User'
+                    }, null);
+                    sendResponse({ success: true });
+                } else {
+                    console.error('USER_LOGIN message missing email');
+                    sendResponse({ success: false, error: 'Missing email' });
+                }
                 break;
 
             case 'LOGOUT_USER':
@@ -115,6 +125,11 @@ class SimpleAuth {
     }
 
     async handleUserLogin(user, token) {
+        // Validate user object exists
+        if (!user || typeof user !== 'object') {
+            console.error('Invalid user object in handleUserLogin');
+            return;
+        }
 
         this.userEmail = user.email;
         this.isLoggedIn = true;

@@ -45,7 +45,7 @@
         const email = urlParams.get('email') || urlParams.get('customer_email');
         const userSession = urlParams.get('user_session');
 
-        console.log('💳 Payment details from URL:', { sessionId, email, userSession });
+        console.log('💳 Payment details from URL');
 
         // Store activation data for extension to pick up
         this.storeActivationData(email, sessionId, userSession);
@@ -143,7 +143,7 @@
 
         if (emailMatch) {
           const detectedEmail = emailMatch[0];
-          console.log('📧 Email detected from page:', detectedEmail);
+          console.log('📧 Email detected from page');
 
           this.storeActivationData(detectedEmail, null, null);
           this.notifyExtension(detectedEmail, null, null);

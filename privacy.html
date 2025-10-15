@@ -4,11 +4,13 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Privacy Policy - Tabmangment</title>
-    <meta name="description" content="Privacy Policy for Tabmangment Chrome Extension - Your privacy is our priority">
+    <meta name="description" content="Privacy Policy for Tabmangment - Your privacy is our priority. Learn how we protect your data.">
 
     <link rel="icon" type="image/png" sizes="32x32" href="/icons/icon-32.png">
     <link rel="icon" type="image/png" sizes="16x16" href="/icons/icon-16.png">
     <link rel="apple-touch-icon" sizes="128x128" href="/icons/icon-128.png">
+
+    <script src="https://unpkg.com/feather-icons"></script>
 
     <style>
         * {
@@ -18,312 +20,341 @@
         }
 
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            line-height: 1.7;
-            color: #333;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'SF Pro Display', Roboto, Helvetica, Arial, sans-serif;
+            line-height: 1.6;
+            color: #1e293b;
+            background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 50%, #f1f5f9 100%);
             min-height: 100vh;
             overflow-x: hidden;
+            position: relative;
         }
 
-        .container {
-            max-width: 800px;
-            margin: 0 auto;
-            padding: 0 20px;
-        }
-
-        /* Header */
-        header {
-            background: rgba(255, 255, 255, 0.08);
-            backdrop-filter: blur(20px);
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-            padding: 1.2rem 0;
+        /* Subtle animated gradient background */
+        body::before {
+            content: '';
             position: fixed;
             top: 0;
             left: 0;
             right: 0;
-            z-index: 1000;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            bottom: 0;
+            background:
+                radial-gradient(circle at 20% 50%, rgba(99, 102, 241, 0.08) 0%, transparent 50%),
+                radial-gradient(circle at 80% 80%, rgba(139, 92, 246, 0.08) 0%, transparent 50%),
+                radial-gradient(circle at 40% 20%, rgba(168, 85, 247, 0.05) 0%, transparent 50%);
+            z-index: 0;
+            pointer-events: none;
         }
 
-        header.scrolled {
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(25px);
-            border-bottom: 1px solid rgba(0, 0, 0, 0.08);
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
-            padding: 0.8rem 0;
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 24px;
+            position: relative;
+            z-index: 1;
+        }
+
+        /* Header */
+        header {
+            padding: 1.5rem 0;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(20px) saturate(180%);
+            border-bottom: 1px solid rgba(226, 232, 240, 0.8);
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
         }
 
         nav {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            transition: all 0.3s ease;
         }
 
         .logo {
             display: flex;
             align-items: center;
-            font-size: 1.6rem;
+            gap: 12px;
+            font-size: 1.5rem;
             font-weight: 700;
-            color: white;
-            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            letter-spacing: -0.5px;
-            cursor: pointer;
+            color: #1e293b;
             text-decoration: none;
+            transition: transform 0.3s ease;
         }
 
-        header.scrolled .logo {
-            color: #333;
-            text-shadow: none;
-            font-size: 1.4rem;
-        }
-
-        .logo img {
-            width: 36px;
-            height: 36px;
-            margin-right: 10px;
-            transition: all 0.3s ease;
-            filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));
-        }
-
-        header.scrolled .logo img {
-            width: 32px;
-            height: 32px;
-            filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.1));
-        }
-
-        .back-btn {
-            background: rgba(255, 255, 255, 0.2);
-            color: white;
-            border: 2px solid rgba(255, 255, 255, 0.3);
-            padding: 8px 20px;
-            border-radius: 25px;
-            text-decoration: none;
-            font-weight: 500;
-            transition: all 0.3s ease;
-            font-size: 0.9rem;
-        }
-
-        .back-btn:hover {
-            background: rgba(255, 255, 255, 0.3);
+        .logo:hover {
             transform: translateY(-2px);
         }
 
-        header.scrolled .back-btn {
-            background: rgba(66, 133, 244, 0.1);
-            color: #4285f4;
-            border-color: rgba(66, 133, 244, 0.3);
+        .logo-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 12px;
+            padding: 8px;
+            background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #a855f7 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
         }
 
-        header.scrolled .back-btn:hover {
-            background: rgba(66, 133, 244, 0.2);
+        .logo-icon img {
+            width: 24px;
+            height: 24px;
+            filter: brightness(0) invert(1);
+        }
+
+        .back-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #a855f7 100%);
+            color: white;
+            padding: 0.75rem 1.75rem;
+            border-radius: 12px;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 0.95rem;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 14px rgba(99, 102, 241, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .back-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(99, 102, 241, 0.4);
         }
 
         /* Main Content */
         .main-content {
-            padding: 140px 0 80px;
-            animation: fadeInUp 0.8s ease-out;
+            padding: 60px 0 80px;
+            position: relative;
+            z-index: 1;
         }
 
-        @keyframes fadeInUp {
-            0% {
-                opacity: 0;
-                transform: translateY(30px);
-            }
-            100% {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        .privacy-container {
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(20px);
-            border-radius: 20px;
-            padding: 3rem;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.1);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            animation: slideIn 0.6s ease-out 0.2s both;
-        }
-
-        @keyframes slideIn {
-            0% {
-                opacity: 0;
-                transform: scale(0.95) translateY(20px);
-            }
-            100% {
-                opacity: 1;
-                transform: scale(1) translateY(0);
-            }
-        }
-
-        .privacy-header {
+        .privacy-hero {
             text-align: center;
-            margin-bottom: 3rem;
-            animation: fadeIn 0.6s ease-out 0.4s both;
+            padding: 60px 0;
+            max-width: 800px;
+            margin: 0 auto;
         }
 
-        .privacy-header h1 {
-            font-size: 2.5rem;
-            font-weight: 700;
-            color: #333;
-            margin-bottom: 1rem;
-            background: linear-gradient(135deg, #4285f4, #667eea);
+        .privacy-hero h1 {
+            font-size: 3.5rem;
+            font-weight: 800;
+            margin-bottom: 1.5rem;
+            color: #0f172a;
+            line-height: 1.1;
+            letter-spacing: -0.02em;
+        }
+
+        .privacy-hero .gradient-text {
+            background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #a855f7 100%);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
         }
 
-        .privacy-header p {
-            font-size: 1.1rem;
-            color: #666;
+        .privacy-hero p {
+            font-size: 1.25rem;
+            color: #64748b;
             max-width: 600px;
+            margin: 0 auto;
+            font-weight: 400;
+        }
+
+        .privacy-content {
+            max-width: 900px;
             margin: 0 auto;
         }
 
-        .privacy-section {
-            margin-bottom: 2.5rem;
-            animation: fadeInUp 0.6s ease-out both;
-            animation-delay: var(--delay, 0.6s);
+        .privacy-card {
+            background: white;
+            border-radius: 20px;
+            padding: 3rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+            border: 1px solid rgba(226, 232, 240, 0.8);
+            transition: all 0.3s ease;
+            animation: fadeInUp 0.6s ease-out;
+            animation-fill-mode: both;
         }
 
-        .privacy-section:nth-child(3) { --delay: 0.6s; }
-        .privacy-section:nth-child(4) { --delay: 0.7s; }
-        .privacy-section:nth-child(5) { --delay: 0.8s; }
-        .privacy-section:nth-child(6) { --delay: 0.9s; }
-        .privacy-section:nth-child(7) { --delay: 1.0s; }
-        .privacy-section:nth-child(8) { --delay: 1.1s; }
+        .privacy-card:nth-child(1) { animation-delay: 0.1s; }
+        .privacy-card:nth-child(2) { animation-delay: 0.2s; }
+        .privacy-card:nth-child(3) { animation-delay: 0.3s; }
+        .privacy-card:nth-child(4) { animation-delay: 0.4s; }
+        .privacy-card:nth-child(5) { animation-delay: 0.5s; }
+        .privacy-card:nth-child(6) { animation-delay: 0.6s; }
 
-        .privacy-section h2 {
-            font-size: 1.5rem;
-            font-weight: 600;
-            color: #333;
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .privacy-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 12px 28px rgba(99, 102, 241, 0.15);
+            border-color: rgba(99, 102, 241, 0.3);
+        }
+
+        .privacy-card-header {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .privacy-icon {
+            width: 56px;
+            height: 56px;
+            background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #a855f7 100%);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            box-shadow: 0 4px 14px rgba(99, 102, 241, 0.3);
+            flex-shrink: 0;
+        }
+
+        .privacy-card h2 {
+            font-size: 1.75rem;
+            font-weight: 700;
+            color: #0f172a;
+            margin: 0;
+        }
+
+        .privacy-card p {
+            color: #64748b;
+            line-height: 1.8;
+            font-size: 1rem;
             margin-bottom: 1rem;
-            position: relative;
-            padding-left: 20px;
         }
 
-        .privacy-section h2::before {
-            content: '';
-            position: absolute;
-            left: 0;
-            top: 50%;
-            transform: translateY(-50%);
-            width: 4px;
-            height: 20px;
-            background: linear-gradient(135deg, #4285f4, #667eea);
-            border-radius: 2px;
+        .privacy-card p:last-child {
+            margin-bottom: 0;
         }
 
-        .privacy-section p {
-            color: #555;
-            margin-bottom: 1rem;
-            padding-left: 20px;
-            line-height: 1.7;
-        }
-
-        .highlight {
-            background: linear-gradient(135deg, rgba(66, 133, 244, 0.1), rgba(102, 126, 234, 0.1));
+        .highlight-box {
+            background: linear-gradient(135deg, rgba(99, 102, 241, 0.05) 0%, rgba(168, 85, 247, 0.05) 100%);
+            border-left: 4px solid #6366f1;
             padding: 1.5rem;
             border-radius: 12px;
-            border-left: 4px solid #4285f4;
-            margin: 1rem 0;
+            margin: 1.5rem 0;
         }
 
-        .contact-info {
-            background: linear-gradient(135deg, #f8f9fa, #e9ecef);
-            padding: 2rem;
-            border-radius: 15px;
+        .highlight-box p {
+            margin: 0;
+            font-weight: 500;
+            color: #1e293b;
+        }
+
+        .contact-card {
+            background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #a855f7 100%);
+            color: white;
             text-align: center;
-            margin-top: 2rem;
-            border: 2px solid rgba(66, 133, 244, 0.1);
+            padding: 3rem;
+            border-radius: 20px;
+            box-shadow: 0 8px 32px rgba(99, 102, 241, 0.3);
+            margin-top: 3rem;
         }
 
-        .contact-info h3 {
-            color: #333;
+        .contact-card h3 {
+            font-size: 1.75rem;
+            font-weight: 700;
             margin-bottom: 1rem;
-            font-size: 1.3rem;
+        }
+
+        .contact-card p {
+            color: rgba(255, 255, 255, 0.9);
+            font-size: 1.1rem;
         }
 
         .last-updated {
             text-align: center;
             margin-top: 3rem;
-            padding-top: 2rem;
-            border-top: 1px solid rgba(0, 0, 0, 0.1);
-            color: #666;
+            padding: 2rem;
+            color: #64748b;
             font-style: italic;
+            font-size: 0.95rem;
         }
 
-        .year-display {
-            position: relative;
-            display: inline-block;
-            font-weight: 600;
-            transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+        /* Footer */
+        footer {
+            background: #0f172a;
+            padding: 3rem 0 2rem;
+            color: #94a3b8;
+            margin-top: 80px;
         }
 
-        .year-changing {
-            animation: yearFlip 0.8s ease-in-out;
+        .footer-content {
+            text-align: center;
         }
 
-        @keyframes yearFlip {
-            0% {
-                transform: rotateX(0deg) scale(1);
-                opacity: 1;
-            }
-            25% {
-                transform: rotateX(90deg) scale(0.8);
-                opacity: 0.3;
-            }
-            50% {
-                transform: rotateX(180deg) scale(0.6);
-                opacity: 0;
-                color: #4285f4;
-            }
-            75% {
-                transform: rotateX(270deg) scale(0.8);
-                opacity: 0.3;
-                color: #4285f4;
-            }
-            100% {
-                transform: rotateX(360deg) scale(1);
-                opacity: 1;
-                color: inherit;
-            }
+        .footer-content p {
+            margin-bottom: 1rem;
+        }
+
+        .footer-links {
+            display: flex;
+            justify-content: center;
+            gap: 2rem;
+            margin-top: 1.5rem;
+        }
+
+        .footer-links a {
+            color: #94a3b8;
+            text-decoration: none;
+            transition: color 0.3s ease;
+        }
+
+        .footer-links a:hover {
+            color: #6366f1;
         }
 
         /* Responsive */
         @media (max-width: 768px) {
-            .privacy-container {
-                padding: 2rem 1.5rem;
-                margin: 0 10px;
+            .privacy-hero h1 {
+                font-size: 2.5rem;
             }
 
-            .privacy-header h1 {
-                font-size: 2rem;
+            .privacy-hero p {
+                font-size: 1.1rem;
+            }
+
+            .privacy-card {
+                padding: 2rem 1.5rem;
+            }
+
+            .privacy-card h2 {
+                font-size: 1.35rem;
+            }
+
+            .privacy-icon {
+                width: 48px;
+                height: 48px;
             }
 
             nav {
                 flex-direction: column;
                 gap: 1rem;
-                padding: 1rem 0;
             }
 
-            .main-content {
-                padding: 180px 0 80px;
+            .footer-links {
+                flex-direction: column;
+                gap: 1rem;
             }
         }
 
-        /* Smooth scroll behavior */
         html {
             scroll-behavior: smooth;
-        }
-
-        @keyframes fadeIn {
-            0% { opacity: 0; }
-            100% { opacity: 1; }
         }
     </style>
 </head>
@@ -332,121 +363,137 @@
     <header>
         <nav class="container">
             <a href="/" class="logo">
-                <img src="/icons/icon-32.png" alt="Tabmangment Logo">
-                Tabmangment
+                <div class="logo-icon">
+                    <img src="/icons/icon-32.png" alt="Tabmangment Logo">
+                </div>
+                <span>Tabmangment</span>
             </a>
-            <a href="/" class="back-btn">← Back to Home</a>
+            <a href="/" class="back-btn">
+                <i data-feather="arrow-left"></i>
+                Back to Home
+            </a>
         </nav>
     </header>
 
     <main class="main-content">
         <div class="container">
-            <div class="privacy-container">
-                <div class="privacy-header">
-                    <h1>Privacy Policy</h1>
-                    <p>This extension is designed to improve your browsing experience by providing tab organization.</p>
-                </div>
+            <div class="privacy-hero">
+                <h1>
+                    <span class="gradient-text">Privacy</span> Policy
+                </h1>
+                <p>Your privacy matters to us. Learn how we protect your data and respect your trust.</p>
+            </div>
 
-                <div class="privacy-section">
-                    <h2>Data Collection</h2>
-                    <div class="highlight">
-                        <p>This extension does not collect, sell, or share personal information.</p>
+            <div class="privacy-content">
+                <div class="privacy-card">
+                    <div class="privacy-card-header">
+                        <div class="privacy-icon">
+                            <i data-feather="shield"></i>
+                        </div>
+                        <h2>Data Collection</h2>
                     </div>
-                </div>
-
-                <div class="privacy-section">
-                    <h2>Local Storage</h2>
-                    <p>Any settings or preferences are stored locally on your device and are never transmitted to external servers.</p>
-                </div>
-
-                <div class="privacy-section">
-                    <h2>Permissions</h2>
-                    <p>The extension may request access to tabs and storage solely to provide its functionality. These permissions are used only for the intended purpose.</p>
-                </div>
-
-                <div class="privacy-section">
-                    <h2>Third Parties</h2>
-                    <p>No information is shared with third-party companies or advertisers.</p>
-                </div>
-
-                <div class="privacy-section">
-                    <h2>Contact Information</h2>
-                    <div class="contact-info">
-                        <h3>Questions or Concerns?</h3>
-                        <p>If you have any questions or concerns, you can contact us through the extension.</p>
+                    <div class="highlight-box">
+                        <p>This extension does not collect, sell, or share any personal information. Your privacy is our top priority.</p>
                     </div>
+                    <p>We believe in complete transparency. Tabmangment operates entirely on your device with zero external data transmission.</p>
+                </div>
+
+                <div class="privacy-card">
+                    <div class="privacy-card-header">
+                        <div class="privacy-icon">
+                            <i data-feather="database"></i>
+                        </div>
+                        <h2>Local Storage</h2>
+                    </div>
+                    <p>All your settings, preferences, and tab management data are stored locally on your device using Chrome's secure storage API.</p>
+                    <p>This data never leaves your computer and is never transmitted to external servers. You have full control over your information.</p>
+                </div>
+
+                <div class="privacy-card">
+                    <div class="privacy-card-header">
+                        <div class="privacy-icon">
+                            <i data-feather="lock"></i>
+                        </div>
+                        <h2>Permissions</h2>
+                    </div>
+                    <p>The extension requests the following permissions to provide its functionality:</p>
+                    <p><strong>Tabs:</strong> To manage, organize, and close tabs based on your preferences.</p>
+                    <p><strong>Storage:</strong> To save your settings and timer configurations locally on your device.</p>
+                    <p>These permissions are used solely for the intended purpose of tab management and nothing else.</p>
+                </div>
+
+                <div class="privacy-card">
+                    <div class="privacy-card-header">
+                        <div class="privacy-icon">
+                            <i data-feather="users"></i>
+                        </div>
+                        <h2>Third Parties</h2>
+                    </div>
+                    <p>We do not share, sell, or transmit any information to third-party companies, advertisers, or data brokers.</p>
+                    <p>Your browsing habits, tab data, and usage patterns remain completely private and are never accessible to anyone but you.</p>
+                </div>
+
+                <div class="privacy-card">
+                    <div class="privacy-card-header">
+                        <div class="privacy-icon">
+                            <i data-feather="user-check"></i>
+                        </div>
+                        <h2>User Authentication</h2>
+                    </div>
+                    <p>If you choose to use premium features, authentication is handled securely through Stripe and Firebase.</p>
+                    <p>We only store the minimal information necessary to verify your subscription status. Payment details are handled entirely by Stripe and never stored by us.</p>
+                </div>
+
+                <div class="privacy-card">
+                    <div class="privacy-card-header">
+                        <div class="privacy-icon">
+                            <i data-feather="refresh-cw"></i>
+                        </div>
+                        <h2>Updates to This Policy</h2>
+                    </div>
+                    <p>We may update this privacy policy from time to time to reflect changes in our practices or for legal compliance.</p>
+                    <p>Any changes will be posted on this page with an updated revision date. We encourage you to review this policy periodically.</p>
+                </div>
+
+                <div class="contact-card">
+                    <h3>Questions or Concerns?</h3>
+                    <p>If you have any questions about this privacy policy or how we handle your data, please contact us through the extension's built-in contact feature.</p>
                 </div>
 
                 <div class="last-updated">
-                    <p>Last updated: September <span id="currentYear" class="year-display">2025</span></p>
+                    <p>Last updated: october <span id="currentYear">2025</span></p>
                 </div>
             </div>
         </div>
     </main>
 
-    <script>
-        window.va = window.va || function () { (window.vaq = window.vaq || []).push(arguments); };
-    </script>
-    <script defer src="/_vercel/insights/script.js"></script>
+    <footer>
+        <div class="container">
+            <div class="footer-content">
+                <p>&copy; <span id="footerYear">2025</span> Tabmangment. All rights reserved.</p>
+                <div class="footer-links">
+                    <a href="/">Home</a>
+                    <a href="/privacy.html">Privacy Policy</a>
+                    <a href="https://chrome.google.com/webstore/detail/my-extension/abplhccmjhdcofakcolniimgbfjlkohn" target="_blank">Chrome Store</a>
+                </div>
+            </div>
+        </div>
+    </footer>
 
     <script>
-        // Header scroll animation
-        const header = document.querySelector('header');
-        window.addEventListener('scroll', function() {
-            const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
-            if (scrollTop > 50) {
-                header.classList.add('scrolled');
-            } else {
-                header.classList.remove('scrolled');
-            }
-        }, { passive: true });
+        // Initialize Feather icons
+        feather.replace();
 
-        // Automatic year update with animation
-        function updateYear() {
-            const yearElement = document.getElementById('currentYear');
-            const currentYear = new Date().getFullYear();
-            const displayedYear = parseInt(yearElement.textContent);
-
-            if (currentYear !== displayedYear) {
-                yearElement.classList.add('year-changing');
-                setTimeout(() => {
-                    yearElement.textContent = currentYear;
-                }, 400);
-                setTimeout(() => {
-                    yearElement.classList.remove('year-changing');
-                }, 800);
-                if (window.va) window.va('track', 'Privacy Year Updated', {
-                    from: displayedYear,
-                    to: currentYear
-                });
-            }
-        }
-
-        // Check for year update
-        document.addEventListener('DOMContentLoaded', updateYear);
-        setInterval(updateYear, 3600000);
+        // Update current year
+        const currentYear = new Date().getFullYear();
+        document.getElementById('currentYear').textContent = currentYear;
+        document.getElementById('footerYear').textContent = currentYear;
 
         // Track page view
+        window.va = window.va || function () { (window.vaq = window.vaq || []).push(arguments); };
         if (window.va) window.va('track', 'Privacy Policy View');
-
-        // Intersection Observer for staggered animations
-        const observerOptions = {
-            threshold: 0.1,
-            rootMargin: '0px 0px -50px 0px'
-        };
-
-        const observer = new IntersectionObserver((entries) => {
-            entries.forEach(entry => {
-                if (entry.isIntersecting) {
-                    entry.target.style.animationPlayState = 'running';
-                }
-            });
-        }, observerOptions);
-
-        // Observe all privacy sections
-        document.querySelectorAll('.privacy-section').forEach(section => {
-            observer.observe(section);
-        });
     </script>
+
+    <script defer src="/_vercel/insights/script.js"></script>
 </body>
 </html>

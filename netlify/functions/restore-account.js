@@ -30,7 +30,7 @@ exports.handler = async (event, context) => {
     try {
         const { userId, email } = JSON.parse(event.body);
 
-        console.log('♻️ RESTORE ACCOUNT REQUEST - userId:', userId, 'email:', email);
+        console.log('♻️ RESTORE ACCOUNT REQUEST');
 
         if (!userId || !email) {
             console.error('❌ Missing required fields');

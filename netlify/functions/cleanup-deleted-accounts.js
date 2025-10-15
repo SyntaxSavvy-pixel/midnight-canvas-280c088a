@@ -63,20 +63,20 @@ exports.handler = async (event, context) => {
             if (deletionScheduledAt) {
                 const deletionTime = new Date(deletionScheduledAt);
 
-                console.log(`⏰ User ${user.email} scheduled for deletion at:`, deletionTime);
+                console.log(`⏰ User scheduled for deletion at:`, deletionTime);
                 console.log(`🕐 Current time:`, now);
 
                 // If deletion time has passed, delete the user
                 if (now >= deletionTime) {
-                    console.log(`🗑️ Deleting user ${user.email} (${user.id})...`);
+                    console.log(`🗑️ Deleting user...`);
 
                     try {
                         const { error: deleteError } = await supabase.auth.admin.deleteUser(user.id);
 
                         if (deleteError) {
-                            console.error(`❌ Failed to delete user ${user.email}:`, deleteError);
+                            console.error(`❌ Failed to delete user:`, deleteError);
                         } else {
-                            console.log(`✅ Successfully deleted user ${user.email}`);
+                            console.log(`✅ Successfully deleted user`);
                             deletedCount++;
                             deletedUsers.push({
                                 email: user.email,
@@ -90,17 +90,17 @@ exports.handler = async (event, context) => {
                                     .from('users')
                                     .delete()
                                     .eq('email', user.email);
-                                console.log(`✅ Deleted ${user.email} from users table`);
+                                console.log(`✅ Deleted user from users table`);
                             } catch (tableErr) {
                                 console.log(`⚠️ Could not delete from users table:`, tableErr);
                             }
                         }
                     } catch (err) {
-                        console.error(`❌ Error deleting user ${user.email}:`, err);
+                        console.error(`❌ Error deleting user:`, err);
                     }
                 } else {
                     const hoursRemaining = Math.ceil((deletionTime - now) / (1000 * 60 * 60));
-                    console.log(`⏳ User ${user.email} will be deleted in ${hoursRemaining} hours`);
+                    console.log(`⏳ User will be deleted in ${hoursRemaining} hours`);
                 }
             }
         }
