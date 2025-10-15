@@ -585,6 +585,24 @@ class TabManager {
                     }
                     break;
 
+                case 'GET_TABS_DATA':
+                    // Smart Dashboard: Get tabs data
+                    const tabsData = await this.getSmartTabsData();
+                    sendResponse({ success: true, data: tabsData });
+                    break;
+
+                case 'CLEAN_INACTIVE_TABS':
+                    // Smart Dashboard: Clean inactive tabs
+                    const cleanResult = await this.cleanInactiveTabs();
+                    sendResponse({ success: true, ...cleanResult });
+                    break;
+
+                case 'ENABLE_AUTO_CLEAN':
+                    // Smart Dashboard: Enable auto-clean
+                    await chrome.storage.local.set({ autoCleanEnabled: true });
+                    sendResponse({ success: true });
+                    break;
+
                 case 'USER_LOGGED_OUT':
                     // User logged out from web - clear storage
 
@@ -1955,6 +1973,94 @@ SmartTabAnalytics.prototype.executePerformanceBoost = async function(recommendat
             this.recordNotification('general_notifications');
         }
     };
+
+    // Smart Dashboard Methods
+    async getSmartTabsData() {
+        try {
+            const allTabs = await chrome.tabs.query({});
+            const now = Date.now();
+            const inactiveThreshold = 30 * 60 * 1000; // 30 minutes
+
+            let inactiveTabs = 0;
+            let estimatedMemory = 0;
+
+            for (const tab of allTabs) {
+                if (this.tabData.has(tab.id)) {
+                    const tabInfo = this.tabData.get(tab.id);
+                    const inactiveTime = now - (tabInfo.lastActiveTime || tabInfo.createdAt);
+
+                    if (inactiveTime > inactiveThreshold && !tab.active) {
+                        inactiveTabs++;
+                        // Estimate 15MB per inactive tab
+                        estimatedMemory += 15;
+                    }
+                }
+            }
+
+            const storage = await chrome.storage.local.get(['autoCleanEnabled', 'lastCleanupTime', 'totalTabsClosed']);
+
+            return {
+                inactive: inactiveTabs,
+                total: allTabs.length,
+                memorySaved: estimatedMemory,
+                autoCleanEnabled: storage.autoCleanEnabled || false,
+                lastCleanup: storage.lastCleanupTime ? new Date(storage.lastCleanupTime) : null,
+                totalManagedThisWeek: storage.totalTabsClosed || 0
+            };
+        } catch (error) {
+            console.error('Error getting tabs data:', error);
+            return {
+                inactive: 0,
+                total: 0,
+                memorySaved: 0,
+                autoCleanEnabled: false,
+                lastCleanup: null,
+                totalManagedThisWeek: 0
+            };
+        }
+    }
+
+    async cleanInactiveTabs() {
+        try {
+            const allTabs = await chrome.tabs.query({});
+            const now = Date.now();
+            const inactiveThreshold = 30 * 60 * 1000; // 30 minutes
+            const tabsToClose = [];
+
+            for (const tab of allTabs) {
+                if (this.tabData.has(tab.id) && !tab.active && !tab.pinned) {
+                    const tabInfo = this.tabData.get(tab.id);
+                    const inactiveTime = now - (tabInfo.lastActiveTime || tabInfo.createdAt);
+
+                    if (inactiveTime > inactiveThreshold) {
+                        tabsToClose.push(tab.id);
+                    }
+                }
+            }
+
+            // Close tabs
+            if (tabsToClose.length > 0) {
+                await chrome.tabs.remove(tabsToClose);
+            }
+
+            // Update stats
+            const storage = await chrome.storage.local.get(['totalTabsClosed']);
+            const newTotal = (storage.totalTabsClosed || 0) + tabsToClose.length;
+
+            await chrome.storage.local.set({
+                lastCleanupTime: Date.now(),
+                totalTabsClosed: newTotal
+            });
+
+            return {
+                count: tabsToClose.length,
+                memorySaved: tabsToClose.length * 15 // Estimate 15MB per tab
+            };
+        } catch (error) {
+            console.error('Error cleaning tabs:', error);
+            return { count: 0, memorySaved: 0 };
+        }
+    }
 }
 
 const tabManager = new TabManager();
