@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <!-- Version: 2.1.0 - Smart Dashboard with 500ms timeout fallback -->
+    <!-- Version: 2.2.0 - Fixed OAuth login with 500ms retry -->
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard - TabManagement</title>
@@ -1622,10 +1622,18 @@
             } catch (error) {
             }
 
-            // Check authentication
+            // Check authentication (with retry for OAuth redirects)
             authToken = localStorage.getItem('tabmangment_token');
-            const storedUserData = localStorage.getItem('tabmangment_user');
+            let storedUserData = localStorage.getItem('tabmangment_user');
             let userEmail = null;
+
+            // If no data yet, wait a bit (OAuth redirect timing issue)
+            if (!authToken || !storedUserData) {
+                console.log('⏳ Auth data not found, waiting for OAuth redirect...');
+                await new Promise(resolve => setTimeout(resolve, 500));
+                authToken = localStorage.getItem('tabmangment_token');
+                storedUserData = localStorage.getItem('tabmangment_user');
+            }
 
             if (storedUserData) {
                 try {
