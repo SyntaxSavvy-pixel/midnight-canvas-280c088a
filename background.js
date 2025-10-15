@@ -540,25 +540,31 @@ class TabManager {
                     sendResponse({ success: true });
                     break;
 
+                case 'USER_DATA_SYNC':
                 case 'USER_LOGGED_IN':
-                    // User logged in from web - save to storage
+                    // User data sync from dashboard or login
+                    const userData = message.data || message.userData;
 
                     // Validate email exists
-                    if (!message.userData?.email) {
+                    if (!userData?.userEmail && !userData?.email) {
                         sendResponse({ success: false, error: 'No email provided' });
                         break;
                     }
 
                     const loginData = {
-                        userEmail: message.userData.email,
-                        userName: message.userData.name || message.userData.email.split('@')[0],
-                        authToken: message.token,
-                        isPremium: message.userData.isPro || false,
-                        planType: message.userData.plan || 'free',
-                        subscriptionActive: message.userData.isPro || false,
-                        userId: message.userData.id || message.userData.email,
-                        provider: message.userData.provider || 'email',
-                        loginTimestamp: Date.now() // Add timestamp for debugging
+                        userEmail: userData.userEmail || userData.email,
+                        userName: userData.userName || userData.name || (userData.userEmail || userData.email).split('@')[0],
+                        authToken: userData.authToken || message.token,
+                        isPremium: userData.isPremium || userData.isPro || false,
+                        planType: userData.planType || userData.plan || 'free',
+                        subscriptionActive: userData.subscriptionActive || userData.isPro || false,
+                        userId: userData.userId || userData.id || userData.userEmail || userData.email,
+                        provider: userData.provider || 'email',
+                        avatar: userData.avatar || null,
+                        proActivatedAt: userData.proActivatedAt || null,
+                        deletionScheduledAt: userData.deletionScheduledAt || null,
+                        loginTimestamp: Date.now(),
+                        lastSyncTimestamp: userData.syncTimestamp || Date.now()
                     };
 
                     try {
@@ -568,10 +574,13 @@ class TabManager {
                         const verification = await chrome.storage.local.get(null);
 
                         if (verification.userEmail !== loginData.userEmail) {
+                            console.warn('⚠️ Verification mismatch');
                         }
 
+                        console.log('✅ User data synced to extension:', loginData.userEmail);
                         sendResponse({ success: true, saved: verification });
                     } catch (error) {
+                        console.error('❌ Sync error:', error);
                         sendResponse({ success: false, error: error.message });
                     }
                     break;

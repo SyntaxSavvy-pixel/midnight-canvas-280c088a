@@ -1,16 +1,21 @@
 // Temporarily removed import to fix service worker loading
 const CONFIG = {
     API: {
-        BASE: 'https://tabmangment.netlify.app/api',
-        CREATE_CHECKOUT: 'https://tabmangment.netlify.app/api/create-checkout',
-        CHECK_STATUS: 'https://tabmangment.netlify.app/api/status',
-        BILLING_PORTAL: 'https://tabmangment.netlify.app/api/billing-portal'
+        BASE: 'https://tabmangment.com/api',
+        CREATE_CHECKOUT: 'https://tabmangment.com/api/create-checkout',
+        CHECK_STATUS: 'https://tabmangment.com/api/status',
+        BILLING_PORTAL: 'https://tabmangment.com/api/billing-portal'
+    },
+    WEB: {
+        AUTH_URL: 'https://tabmangment.com/new-authentication',
+        DASHBOARD_URL: 'https://tabmangment.com/user-dashboard.html'
     },
     EXTENSION: {
         DEFAULT_TAB_LIMIT: 10,
         TIMER_CHECK_INTERVAL: 5000,
         STATUS_CHECK_INTERVAL: 300000,
-        CACHE_TIMEOUT: 2000
+        CACHE_TIMEOUT: 2000,
+        SYNC_INTERVAL: 30000 // Sync every 30 seconds
     }
 };
 
@@ -1724,7 +1729,7 @@ class TabmangmentPopup {
 
                 try {
                     // Validate user with your API (uses email query param)
-                    const response = await fetch(`https://tabmangment.netlify.app/api/me?email=${encodeURIComponent(stored.userEmail)}`, {
+                    const response = await fetch(`${CONFIG.API.BASE}/me?email=${encodeURIComponent(stored.userEmail)}`, {
                         method: 'GET',
                         headers: {
                             'Content-Type': 'application/json'
@@ -1757,7 +1762,7 @@ class TabmangmentPopup {
             }
 
             // SECOND: If no valid token, try to sync from open web page
-            const tabs = await chrome.tabs.query({ url: '*://tabmangment.netlify.app/*' });
+            const tabs = await chrome.tabs.query({ url: ['*://tabmangment.com/*', '*://tabmangment.netlify.app/*'] });
 
             if (tabs.length === 0) {
                 return false;
@@ -1926,7 +1931,7 @@ class TabmangmentPopup {
                 e.stopPropagation();
 
                 chrome.tabs.create({
-                    url: 'https://tabmangment.netlify.app/new-authentication',
+                    url: CONFIG.WEB.AUTH_URL,
                     active: true
                 });
             }, { once: false }); // Allow multiple clicks
