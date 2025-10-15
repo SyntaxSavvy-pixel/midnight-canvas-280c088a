@@ -1658,6 +1658,7 @@
 
         // Initialize dashboard
         async function initDashboard() {
+            console.log('[initDashboard] Function started');
 
             // Fetch configuration from API
             try {
@@ -1826,9 +1827,11 @@
             startSubscriptionStatusRefresh();
 
             // Initialize Smart Dashboard (call after userData is loaded)
+            console.log('[Dashboard] Initializing Smart Dashboard...');
             try {
                 await initSmartDashboard();
             } catch (error) {
+                console.error('[Dashboard] Smart Dashboard initialization failed:', error);
                 // Fallback: try to update name even if Smart Dashboard fails
                 const userNameEl = document.getElementById('user-name-display');
                 if (userNameEl && userData && userData.email) {
@@ -1849,6 +1852,7 @@
         };
 
         async function initSmartDashboard() {
+            console.log('[Smart Dashboard] Function called');
             // Update user name display - get from multiple sources
             let displayName = 'User';
 
@@ -4068,8 +4072,11 @@
         // Set up bridge listener IMMEDIATELY (before DOMContentLoaded)
         // This ensures we catch the BRIDGE_READY message from the extension
 
+        console.log('[Page Load] Dashboard script loaded');
+
         // Initialize dashboard on load
         document.addEventListener('DOMContentLoaded', () => {
+            console.log('[Page Load] DOMContentLoaded event fired, calling initDashboard()');
             initDashboard();
         });
 
