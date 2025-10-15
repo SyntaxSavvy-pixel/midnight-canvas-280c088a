@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <!-- Version: 2.3.2 - Fixed Smart Suggestions infinite loading with 300ms timeout -->
+    <!-- Version: 3.0.0 - Real-time Smart Suggestions with window.postMessage bridge -->
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard - TabManagement</title>
@@ -1885,85 +1885,78 @@
         }
 
         async function loadSmartTabsData() {
-            // Set a flag to track if data was loaded
-            let dataLoaded = false;
+            // Show loading state
+            showSmartSuggestionsLoading();
 
-            // Aggressive timeout - show mock data after 300ms if nothing loaded
-            const timeoutId = setTimeout(() => {
-                if (!dataLoaded) {
-                    useMockSmartData();
-                    dataLoaded = true;
-                }
-            }, 300);
+            // Request data from extension via content script bridge
+            window.postMessage({
+                type: 'DASHBOARD_REQUEST_TABS_DATA',
+                source: 'tabmangment-dashboard'
+            }, '*');
 
-            try {
-                // Get data from Chrome extension if available
-                if (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.sendMessage) {
-                    // Try to send message to extension
-                    try {
-                        chrome.runtime.sendMessage({
-                            type: 'GET_TABS_DATA'
-                        }, (response) => {
-                            // Check for errors
-                            if (chrome.runtime.lastError) {
-                                if (!dataLoaded) {
-                                    clearTimeout(timeoutId);
-                                    useMockSmartData();
-                                    dataLoaded = true;
-                                }
-                                return;
-                            }
+            // Listen for response from content script
+            const messageHandler = (event) => {
+                if (event.data.type === 'EXTENSION_TABS_DATA_RESPONSE' && event.data.source === 'tabmangment-extension') {
+                    window.removeEventListener('message', messageHandler);
 
-                            if (response && response.success && response.data) {
-                                clearTimeout(timeoutId);
-                                if (!dataLoaded) {
-                                    smartTabsData = { ...smartTabsData, ...response.data };
-                                    renderSmartSuggestions();
-                                    renderSmartActivity();
-                                    dataLoaded = true;
-                                }
-                            } else {
-                                if (!dataLoaded) {
-                                    clearTimeout(timeoutId);
-                                    useMockSmartData();
-                                    dataLoaded = true;
-                                }
-                            }
-                        });
-                    } catch (e) {
-                        clearTimeout(timeoutId);
-                        if (!dataLoaded) {
-                            useMockSmartData();
-                            dataLoaded = true;
-                        }
+                    if (event.data.success && event.data.data) {
+                        smartTabsData = { ...smartTabsData, ...event.data.data };
+                        renderSmartSuggestions();
+                        renderSmartActivity();
+                    } else {
+                        showSmartSuggestionsError();
                     }
-                } else {
-                    // Chrome extension API not available - show mock data immediately
-                    clearTimeout(timeoutId);
-                    useMockSmartData();
-                    dataLoaded = true;
                 }
-            } catch (error) {
-                clearTimeout(timeoutId);
-                if (!dataLoaded) {
-                    useMockSmartData();
-                    dataLoaded = true;
+            };
+
+            window.addEventListener('message', messageHandler);
+
+            // Timeout: Show analytics message after 2 seconds if still loading
+            setTimeout(() => {
+                const container = document.getElementById('suggestions-content');
+                if (container && container.innerHTML.includes('Analyzing your browsing')) {
+                    showSmartSuggestionsAnalyzing();
                 }
-            }
+            }, 2000);
         }
 
-        function useMockSmartData() {
-            // Mock data when extension is not available
-            smartTabsData = {
-                inactive: 8,
-                total: 15,
-                memorySaved: 120,
-                autoCleanEnabled: false,
-                lastCleanup: new Date(Date.now() - 3 * 60 * 60 * 1000),
-                totalManagedThisWeek: 42
-            };
-            renderSmartSuggestions();
-            renderSmartActivity();
+        function showSmartSuggestionsLoading() {
+            const container = document.getElementById('suggestions-content');
+            if (!container) return;
+
+            container.innerHTML = `
+                <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 3rem; text-align: center;">
+                    <div style="width: 40px; height: 40px; border: 3px solid rgba(99, 102, 241, 0.1); border-top-color: #6366f1; border-radius: 50%; animation: spin 0.8s linear infinite; margin-bottom: 1rem;"></div>
+                    <p style="color: #94a3b8; font-size: 0.95rem;">Analyzing your browsing patterns...</p>
+                </div>
+            `;
+        }
+
+        function showSmartSuggestionsAnalyzing() {
+            const container = document.getElementById('suggestions-content');
+            if (!container) return;
+
+            container.innerHTML = `
+                <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 3rem; text-align: center;">
+                    <div style="width: 40px; height: 40px; border: 3px solid rgba(99, 102, 241, 0.1); border-top-color: #6366f1; border-radius: 50%; animation: spin 0.8s linear infinite; margin-bottom: 1rem;"></div>
+                    <p style="color: #94a3b8; font-size: 0.95rem; margin-bottom: 0.5rem;">Collecting device analytics...</p>
+                    <p style="color: #64748b; font-size: 0.85rem;">Your smart suggestions will show up shortly to get better analytics</p>
+                </div>
+            `;
+        }
+
+        function showSmartSuggestionsError() {
+            const container = document.getElementById('suggestions-content');
+            if (!container) return;
+
+            container.innerHTML = `
+                <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 3rem; text-align: center;">
+                    <div style="font-size: 2rem; margin-bottom: 1rem;">⚠️</div>
+                    <p style="color: #94a3b8; font-size: 0.95rem; margin-bottom: 0.5rem;">Unable to load smart suggestions</p>
+                    <p style="color: #64748b; font-size: 0.85rem;">Please make sure the Tabmangment extension is installed and active</p>
+                    <button onclick="loadSmartTabsData()" style="margin-top: 1rem; padding: 0.5rem 1rem; background: #6366f1; color: white; border: none; border-radius: 0.5rem; cursor: pointer; font-size: 0.9rem;">Retry</button>
+                </div>
+            `;
         }
 
         function renderSmartSuggestions() {
@@ -2086,74 +2079,94 @@
 
         // Action: Clean tabs
         async function cleanTabsNow() {
-            if (typeof chrome === 'undefined' || !chrome.runtime) {
-                alert('This feature requires the Chrome extension to be installed.');
-                return;
-            }
-
             try {
                 const btn = event.target.closest('button');
                 btn.disabled = true;
                 btn.innerHTML = '<span>⏳</span> Cleaning...';
 
-                chrome.runtime.sendMessage({
-                    type: 'CLEAN_INACTIVE_TABS'
-                }, (response) => {
-                    if (chrome.runtime.lastError) {
-                        alert('❌ Extension not available. Please make sure it is installed and enabled.');
+                // Send request via content script bridge
+                window.postMessage({
+                    type: 'DASHBOARD_CLEAN_TABS',
+                    source: 'tabmangment-dashboard'
+                }, '*');
+
+                // Listen for response
+                const messageHandler = (event) => {
+                    if (event.data.type === 'EXTENSION_CLEAN_TABS_RESPONSE' && event.data.source === 'tabmangment-extension') {
+                        window.removeEventListener('message', messageHandler);
+
+                        if (event.data.success) {
+                            const { count, memorySaved } = event.data.data;
+                            alert(`✅ Cleaned ${count} tabs and saved ${memorySaved}MB!`);
+                            loadSmartTabsData();
+                        } else {
+                            alert('❌ Extension not available. Please make sure it is installed and enabled.');
+                        }
                         btn.disabled = false;
                         btn.innerHTML = '<span>🧹</span> Clean Tabs Now';
-                        return;
                     }
+                };
 
-                    if (response && response.success) {
-                        alert(`✅ Cleaned ${response.count} tabs and saved ${response.memorySaved}MB!`);
-                        loadSmartTabsData();
-                    } else {
-                        alert('❌ Failed to clean tabs. Please try again.');
+                window.addEventListener('message', messageHandler);
+
+                // Timeout after 5 seconds
+                setTimeout(() => {
+                    window.removeEventListener('message', messageHandler);
+                    if (btn.disabled) {
+                        btn.disabled = false;
+                        btn.innerHTML = '<span>🧹</span> Clean Tabs Now';
+                        alert('❌ Request timed out. Please try again.');
                     }
-                    btn.disabled = false;
-                    btn.innerHTML = '<span>🧹</span> Clean Tabs Now';
-                });
+                }, 5000);
+
             } catch (error) {
-                console.error('Error cleaning tabs:', error);
                 alert('❌ An error occurred. Please try again.');
             }
         }
 
         // Action: Enable auto-clean
         async function enableAutoCleanNow() {
-            if (typeof chrome === 'undefined' || !chrome.runtime) {
-                alert('This feature requires the Chrome extension to be installed.');
-                return;
-            }
-
             try {
                 const btn = event.target.closest('button');
                 btn.disabled = true;
                 btn.innerHTML = '<span>⏳</span> Enabling...';
 
-                chrome.runtime.sendMessage({
-                    type: 'ENABLE_AUTO_CLEAN'
-                }, (response) => {
-                    if (chrome.runtime.lastError) {
-                        alert('❌ Extension not available. Please make sure it is installed and enabled.');
+                // Send request via content script bridge
+                window.postMessage({
+                    type: 'DASHBOARD_ENABLE_AUTO_CLEAN',
+                    source: 'tabmangment-dashboard'
+                }, '*');
+
+                // Listen for response
+                const messageHandler = (event) => {
+                    if (event.data.type === 'EXTENSION_AUTO_CLEAN_RESPONSE' && event.data.source === 'tabmangment-extension') {
+                        window.removeEventListener('message', messageHandler);
+
+                        if (event.data.success) {
+                            alert('✅ Auto-clean enabled! Tabs will be managed automatically.');
+                            smartTabsData.autoCleanEnabled = true;
+                            renderSmartSuggestions();
+                        } else {
+                            alert('❌ Extension not available. Please make sure it is installed and enabled.');
+                        }
                         btn.disabled = false;
                         btn.innerHTML = '<span>⚙️</span> Enable Auto-Clean';
-                        return;
                     }
+                };
 
-                    if (response && response.success) {
-                        alert('✅ Auto-clean enabled! Tabs will be managed automatically.');
-                        smartTabsData.autoCleanEnabled = true;
-                        renderSmartSuggestions();
-                    } else {
-                        alert('❌ Failed to enable auto-clean. Please try again.');
+                window.addEventListener('message', messageHandler);
+
+                // Timeout after 5 seconds
+                setTimeout(() => {
+                    window.removeEventListener('message', messageHandler);
+                    if (btn.disabled) {
+                        btn.disabled = false;
+                        btn.innerHTML = '<span>⚙️</span> Enable Auto-Clean';
+                        alert('❌ Request timed out. Please try again.');
                     }
-                    btn.disabled = false;
-                });
+                }, 5000);
+
             } catch (error) {
-                console.error('Error enabling auto-clean:', error);
                 alert('❌ An error occurred. Please try again.');
             }
         }

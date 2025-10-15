@@ -1,6 +1,6 @@
-// Dashboard Sync Script v2.0.1
-// This script runs on the dashboard page and automatically syncs user data to the extension
-// No console logs - clean production code
+// Dashboard Sync Script v3.0.0
+// This script runs on the dashboard page and acts as a bridge between the web page and Chrome extension
+// Handles user data sync AND Smart Suggestions data communication
 
 (async function() {
     // Wait for page to fully load
@@ -13,10 +13,12 @@
     // Give the page a moment to load user data
     await new Promise(resolve => setTimeout(resolve, 1000));
 
-    // Function to sync user data from localStorage to extension
+    // ============================================
+    // USER DATA SYNC (existing functionality)
+    // ============================================
+
     function syncUserDataToExtension() {
         try {
-            // Get user data from localStorage
             const userStr = localStorage.getItem('tabmangment_user');
             const token = localStorage.getItem('tabmangment_token');
 
@@ -26,12 +28,10 @@
 
             const user = JSON.parse(userStr);
 
-            // Check if extension is available
             if (typeof chrome === 'undefined' || !chrome.runtime || !chrome.runtime.sendMessage) {
                 return;
             }
 
-            // Send message to extension
             chrome.runtime.sendMessage({
                 type: 'USER_DATA_SYNC',
                 data: {
@@ -49,14 +49,7 @@
                     syncTimestamp: Date.now()
                 }
             }, (response) => {
-                // Handle chrome.runtime errors
                 if (chrome.runtime.lastError) {
-                    // Silent fail - extension might be reloading or disabled
-                    return;
-                }
-
-                // No response means extension didn't handle the message
-                if (!response) {
                     return;
                 }
             });
@@ -69,13 +62,112 @@
     // Initial sync
     syncUserDataToExtension();
 
-    // Re-sync every 10 seconds while dashboard is open
+    // Re-sync every 10 seconds
     const syncInterval = setInterval(syncUserDataToExtension, 10000);
 
-    // Listen for storage changes and sync immediately
+    // Listen for storage changes
     window.addEventListener('storage', (e) => {
         if (e.key === 'tabmangment_user' || e.key === 'tabmangment_token') {
             syncUserDataToExtension();
+        }
+    });
+
+    // ============================================
+    // SMART SUGGESTIONS BRIDGE (new functionality)
+    // ============================================
+
+    // Listen for messages from the dashboard page
+    window.addEventListener('message', async (event) => {
+        // Only accept messages from same origin
+        if (event.source !== window) return;
+
+        const message = event.data;
+
+        // Check if extension APIs are available
+        if (typeof chrome === 'undefined' || !chrome.runtime || !chrome.runtime.sendMessage) {
+            // Extension not available - send error response
+            window.postMessage({
+                type: 'EXTENSION_TABS_DATA_RESPONSE',
+                source: 'tabmangment-extension',
+                success: false,
+                error: 'Extension not available'
+            }, '*');
+            return;
+        }
+
+        // Handle different message types from dashboard
+        switch (message.type) {
+            case 'DASHBOARD_REQUEST_TABS_DATA':
+                // Request tabs data from extension
+                chrome.runtime.sendMessage({
+                    type: 'GET_TABS_DATA'
+                }, (response) => {
+                    if (chrome.runtime.lastError) {
+                        window.postMessage({
+                            type: 'EXTENSION_TABS_DATA_RESPONSE',
+                            source: 'tabmangment-extension',
+                            success: false,
+                            error: chrome.runtime.lastError.message
+                        }, '*');
+                        return;
+                    }
+
+                    // Forward extension response to dashboard
+                    window.postMessage({
+                        type: 'EXTENSION_TABS_DATA_RESPONSE',
+                        source: 'tabmangment-extension',
+                        success: response.success,
+                        data: response.data
+                    }, '*');
+                });
+                break;
+
+            case 'DASHBOARD_CLEAN_TABS':
+                // Clean inactive tabs
+                chrome.runtime.sendMessage({
+                    type: 'CLEAN_INACTIVE_TABS'
+                }, (response) => {
+                    if (chrome.runtime.lastError) {
+                        window.postMessage({
+                            type: 'EXTENSION_CLEAN_TABS_RESPONSE',
+                            source: 'tabmangment-extension',
+                            success: false,
+                            error: chrome.runtime.lastError.message
+                        }, '*');
+                        return;
+                    }
+
+                    window.postMessage({
+                        type: 'EXTENSION_CLEAN_TABS_RESPONSE',
+                        source: 'tabmangment-extension',
+                        success: response.success,
+                        data: response
+                    }, '*');
+                });
+                break;
+
+            case 'DASHBOARD_ENABLE_AUTO_CLEAN':
+                // Enable auto-clean
+                chrome.runtime.sendMessage({
+                    type: 'ENABLE_AUTO_CLEAN'
+                }, (response) => {
+                    if (chrome.runtime.lastError) {
+                        window.postMessage({
+                            type: 'EXTENSION_AUTO_CLEAN_RESPONSE',
+                            source: 'tabmangment-extension',
+                            success: false,
+                            error: chrome.runtime.lastError.message
+                        }, '*');
+                        return;
+                    }
+
+                    window.postMessage({
+                        type: 'EXTENSION_AUTO_CLEAN_RESPONSE',
+                        source: 'tabmangment-extension',
+                        success: response.success
+                    }, '*');
+                });
+                break;
         }
     });
 
