@@ -7,12 +7,60 @@
 [functions]
   node_bundler = "esbuild"
 
+# Force HTTPS and remove www
+[[redirects]]
+  from = "https://www.tabmangment.com/*"
+  to = "https://tabmangment.com/:splat"
+  status = 301
+  force = true
+
+[[redirects]]
+  from = "http://tabmangment.com/*"
+  to = "https://tabmangment.com/:splat"
+  status = 301
+  force = true
+
+[[redirects]]
+  from = "http://www.tabmangment.com/*"
+  to = "https://tabmangment.com/:splat"
+  status = 301
+  force = true
+
+# Redirect old Netlify domain to new domain
+[[redirects]]
+  from = "https://tabmangment.netlify.app/*"
+  to = "https://tabmangment.com/:splat"
+  status = 301
+  force = true
+
+# API Functions
 [[redirects]]
   from = "/api/*"
   to = "/.netlify/functions/:splat"
   status = 200
 
+# Clean URLs - Hide .html extensions
+[[redirects]]
+  from = "/"
+  to = "/mainlandingpage.html"
+  status = 200
 
+[[redirects]]
+  from = "/privacy"
+  to = "/privacy.html"
+  status = 200
+
+[[redirects]]
+  from = "/new-authentication"
+  to = "/New-authentication.html"
+  status = 200
+
+[[redirects]]
+  from = "/success"
+  to = "/success-page.html"
+  status = 200
+
+# Legacy clean URL routes
 [[redirects]]
   from = "/signup"
   to = "/New-authentication.html"
@@ -62,3 +110,13 @@
   from = "/support"
   to = "/New-authentication.html"
   status = 200
+
+# Security Headers
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Frame-Options = "DENY"
+    X-XSS-Protection = "1; mode=block"
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+    Permissions-Policy = "geolocation=(), microphone=(), camera=()"
