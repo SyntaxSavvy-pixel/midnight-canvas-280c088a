@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <!-- Version: 3.0.0 - Real-time Smart Suggestions with window.postMessage bridge -->
+    <!-- Version: 3.0.1 - Fixed Smart Suggestions timeout and message filtering -->
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard - TabManagement</title>
@@ -1888,6 +1888,8 @@
             // Show loading state
             showSmartSuggestionsLoading();
 
+            let responseReceived = false;
+
             // Request data from extension via content script bridge
             window.postMessage({
                 type: 'DASHBOARD_REQUEST_TABS_DATA',
@@ -1898,6 +1900,7 @@
             const messageHandler = (event) => {
                 if (event.data.type === 'EXTENSION_TABS_DATA_RESPONSE' && event.data.source === 'tabmangment-extension') {
                     window.removeEventListener('message', messageHandler);
+                    responseReceived = true;
 
                     if (event.data.success && event.data.data) {
                         smartTabsData = { ...smartTabsData, ...event.data.data };
@@ -1913,11 +1916,21 @@
 
             // Timeout: Show analytics message after 2 seconds if still loading
             setTimeout(() => {
-                const container = document.getElementById('suggestions-content');
-                if (container && container.innerHTML.includes('Analyzing your browsing')) {
-                    showSmartSuggestionsAnalyzing();
+                if (!responseReceived) {
+                    const container = document.getElementById('suggestions-content');
+                    if (container && container.innerHTML.includes('Analyzing your browsing')) {
+                        showSmartSuggestionsAnalyzing();
+                    }
                 }
             }, 2000);
+
+            // Final timeout: Show error after 5 seconds if no response
+            setTimeout(() => {
+                if (!responseReceived) {
+                    window.removeEventListener('message', messageHandler);
+                    showSmartSuggestionsError();
+                }
+            }, 5000);
         }
 
         function showSmartSuggestionsLoading() {

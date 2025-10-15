@@ -83,6 +83,9 @@
 
         const message = event.data;
 
+        // Only process messages from our dashboard
+        if (message.source !== 'tabmangment-dashboard') return;
+
         // Check if extension APIs are available
         if (typeof chrome === 'undefined' || !chrome.runtime || !chrome.runtime.sendMessage) {
             // Extension not available - send error response
