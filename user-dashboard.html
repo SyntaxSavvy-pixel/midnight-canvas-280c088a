@@ -1822,26 +1822,43 @@
         async function loadSmartTabsData() {
             try {
                 // Get data from Chrome extension if available
-                if (typeof chrome !== 'undefined' && chrome.runtime) {
-                    chrome.runtime.sendMessage({
-                        type: 'GET_TABS_DATA'
-                    }, (response) => {
-                        if (chrome.runtime.lastError) {
-                            // Extension not available, use mock data
-                            useMockSmartData();
-                            return;
-                        }
+                if (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.sendMessage) {
+                    // Try to send message to extension
+                    try {
+                        chrome.runtime.sendMessage({
+                            type: 'GET_TABS_DATA'
+                        }, (response) => {
+                            // Check for errors
+                            if (chrome.runtime.lastError) {
+                                console.log('Extension not available:', chrome.runtime.lastError.message);
+                                useMockSmartData();
+                                return;
+                            }
 
-                        if (response && response.data) {
-                            smartTabsData = { ...smartTabsData, ...response.data };
-                            renderSmartSuggestions();
-                            renderSmartActivity();
-                        } else {
-                            useMockSmartData();
-                        }
-                    });
+                            if (response && response.success && response.data) {
+                                smartTabsData = { ...smartTabsData, ...response.data };
+                                renderSmartSuggestions();
+                                renderSmartActivity();
+                            } else {
+                                console.log('Invalid response from extension, using mock data');
+                                useMockSmartData();
+                            }
+                        });
+
+                        // Timeout fallback - if no response in 2 seconds, use mock data
+                        setTimeout(() => {
+                            if (document.getElementById('suggestions-content').innerHTML.includes('spinner')) {
+                                console.log('Extension timeout, using mock data');
+                                useMockSmartData();
+                            }
+                        }, 2000);
+                    } catch (e) {
+                        console.log('Error sending message to extension:', e);
+                        useMockSmartData();
+                    }
                 } else {
-                    // Mock data for testing without extension
+                    // Chrome extension API not available
+                    console.log('Chrome extension API not available, using mock data');
                     useMockSmartData();
                 }
             } catch (error) {
