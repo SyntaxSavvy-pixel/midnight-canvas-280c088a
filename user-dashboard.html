@@ -1661,16 +1661,20 @@
             console.log('[initDashboard] Function started');
 
             // Fetch configuration from API
+            console.log('[initDashboard] Fetching config from API...');
             try {
                 const configResponse = await fetch(`${API_BASE}/config`);
                 if (configResponse.ok) {
                     const config = await configResponse.json();
                     STRIPE_PRICE_ID = config.stripePriceId;
                 }
+                console.log('[initDashboard] Config fetched');
             } catch (error) {
+                console.log('[initDashboard] Config fetch failed:', error);
             }
 
             // Check authentication (with retry for OAuth redirects)
+            console.log('[initDashboard] Checking authentication...');
             authToken = localStorage.getItem('tabmangment_token');
             let storedUserData = localStorage.getItem('tabmangment_user');
             let userEmail = null;
@@ -1724,6 +1728,7 @@
             }
 
             // Auth check passed! Hide loading overlay immediately
+            console.log('[initDashboard] Auth passed, hiding overlay...');
             const overlay = document.getElementById('auth-loading-overlay');
             if (overlay) {
                 overlay.classList.add('hidden');
@@ -1734,18 +1739,24 @@
             }
 
             // Load real user data from API
+            console.log('[initDashboard] Loading user data from API...');
             await loadUserData(userEmail);
+            console.log('[initDashboard] User data loaded');
 
+            console.log('[initDashboard] Updating user display...');
             updateUserDisplay();
             updatePlanDisplay();
             updateAccountActionButtons(); // Check if account is marked for deletion
+            console.log('[initDashboard] Initializing UI components...');
             initChart();
             loadUserSettings();
             loadBillingHistory();
             loadPaymentMethod();
 
             // Wait for bridge to be ready FIRST before checking payment
+            console.log('[initDashboard] Waiting for extension bridge (5s max)...');
             const isBridgeReady = await waitForBridge(5000);
+            console.log('[initDashboard] Bridge ready:', isBridgeReady);
 
             if (!isBridgeReady) {
             } else {
