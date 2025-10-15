@@ -39,7 +39,50 @@
   to = "/.netlify/functions/:splat"
   status = 200
 
-# Clean URLs - Hide .html extensions
+# Redirect .html URLs to clean URLs (301 redirects)
+[[redirects]]
+  from = "/mainlandingpage.html"
+  to = "/"
+  status = 301
+  force = true
+
+[[redirects]]
+  from = "/privacy.html"
+  to = "/privacy"
+  status = 301
+  force = true
+
+[[redirects]]
+  from = "/New-authentication.html"
+  to = "/new-authentication"
+  status = 301
+  force = true
+
+[[redirects]]
+  from = "/success-page.html"
+  to = "/success"
+  status = 301
+  force = true
+
+[[redirects]]
+  from = "/user-dashboard.html"
+  to = "/dashboard"
+  status = 301
+  force = true
+
+[[redirects]]
+  from = "/payment-checkout.html"
+  to = "/checkout"
+  status = 301
+  force = true
+
+[[redirects]]
+  from = "/Returning-Users.html"
+  to = "/returning"
+  status = 301
+  force = true
+
+# Clean URLs - Rewrite to .html files (200 rewrites)
 [[redirects]]
   from = "/"
   to = "/mainlandingpage.html"
