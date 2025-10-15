@@ -1976,90 +1976,87 @@ SmartTabAnalytics.prototype.executePerformanceBoost = async function(recommendat
 };
 
 // Smart Dashboard Methods
-SmartTabAnalytics.prototype.getSmartTabsData = async function() {
+TabManager.prototype.getSmartTabsData = async function() {
     try {
-            const allTabs = await chrome.tabs.query({});
-            const now = Date.now();
-            const inactiveThreshold = 30 * 60 * 1000; // 30 minutes
+        const allTabs = await chrome.tabs.query({});
+        const now = Date.now();
+        const inactiveThreshold = 30 * 60 * 1000; // 30 minutes
 
-            let inactiveTabs = 0;
-            let estimatedMemory = 0;
+        let inactiveTabs = 0;
+        let estimatedMemory = 0;
 
-            for (const tab of allTabs) {
-                if (this.tabData.has(tab.id)) {
-                    const tabInfo = this.tabData.get(tab.id);
-                    const inactiveTime = now - (tabInfo.lastActiveTime || tabInfo.createdAt);
+        for (const tab of allTabs) {
+            if (this.tabData.has(tab.id)) {
+                const tabInfo = this.tabData.get(tab.id);
+                const inactiveTime = now - (tabInfo.lastActiveTime || tabInfo.createdAt);
 
-                    if (inactiveTime > inactiveThreshold && !tab.active) {
-                        inactiveTabs++;
-                        // Estimate 15MB per inactive tab
-                        estimatedMemory += 15;
-                    }
+                if (inactiveTime > inactiveThreshold && !tab.active) {
+                    inactiveTabs++;
+                    // Estimate 15MB per inactive tab
+                    estimatedMemory += 15;
                 }
             }
-
-            const storage = await chrome.storage.local.get(['autoCleanEnabled', 'lastCleanupTime', 'totalTabsClosed']);
-
-            return {
-                inactive: inactiveTabs,
-                total: allTabs.length,
-                memorySaved: estimatedMemory,
-                autoCleanEnabled: storage.autoCleanEnabled || false,
-                lastCleanup: storage.lastCleanupTime ? new Date(storage.lastCleanupTime) : null,
-                totalManagedThisWeek: storage.totalTabsClosed || 0
-            };
-        } catch (error) {
-            console.error('Error getting tabs data:', error);
-            return {
-                inactive: 0,
-                total: 0,
-                memorySaved: 0,
-                autoCleanEnabled: false,
-                lastCleanup: null,
-                totalManagedThisWeek: 0
-            };
         }
+
+        const storage = await chrome.storage.local.get(['autoCleanEnabled', 'lastCleanupTime', 'totalTabsClosed']);
+
+        return {
+            inactive: inactiveTabs,
+            total: allTabs.length,
+            memorySaved: estimatedMemory,
+            autoCleanEnabled: storage.autoCleanEnabled || false,
+            lastCleanup: storage.lastCleanupTime ? new Date(storage.lastCleanupTime) : null,
+            totalManagedThisWeek: storage.totalTabsClosed || 0
+        };
     } catch (error) {
-        return null;
+        console.error('Error getting tabs data:', error);
+        return {
+            inactive: 0,
+            total: 0,
+            memorySaved: 0,
+            autoCleanEnabled: false,
+            lastCleanup: null,
+            totalManagedThisWeek: 0
+        };
     }
 };
 
-SmartTabAnalytics.prototype.cleanInactiveTabs = async function() {
+TabManager.prototype.cleanInactiveTabs = async function() {
     try {
-            const allTabs = await chrome.tabs.query({});
-            const now = Date.now();
-            const inactiveThreshold = 30 * 60 * 1000; // 30 minutes
-            const tabsToClose = [];
+        const allTabs = await chrome.tabs.query({});
+        const now = Date.now();
+        const inactiveThreshold = 30 * 60 * 1000; // 30 minutes
+        const tabsToClose = [];
 
-            for (const tab of allTabs) {
-                if (this.tabData.has(tab.id) && !tab.active && !tab.pinned) {
-                    const tabInfo = this.tabData.get(tab.id);
-                    const inactiveTime = now - (tabInfo.lastActiveTime || tabInfo.createdAt);
+        for (const tab of allTabs) {
+            if (this.tabData.has(tab.id) && !tab.active && !tab.pinned) {
+                const tabInfo = this.tabData.get(tab.id);
+                const inactiveTime = now - (tabInfo.lastActiveTime || tabInfo.createdAt);
 
-                    if (inactiveTime > inactiveThreshold) {
-                        tabsToClose.push(tab.id);
-                    }
+                if (inactiveTime > inactiveThreshold) {
+                    tabsToClose.push(tab.id);
                 }
             }
+        }
 
-            // Close tabs
-            if (tabsToClose.length > 0) {
-                await chrome.tabs.remove(tabsToClose);
-            }
+        // Close tabs
+        if (tabsToClose.length > 0) {
+            await chrome.tabs.remove(tabsToClose);
+        }
 
-            // Update stats
-            const storage = await chrome.storage.local.get(['totalTabsClosed']);
-            const newTotal = (storage.totalTabsClosed || 0) + tabsToClose.length;
+        // Update stats
+        const storage = await chrome.storage.local.get(['totalTabsClosed']);
+        const newTotal = (storage.totalTabsClosed || 0) + tabsToClose.length;
 
-            await chrome.storage.local.set({
-                lastCleanupTime: Date.now(),
-                totalTabsClosed: newTotal
-            });
+        await chrome.storage.local.set({
+            lastCleanupTime: Date.now(),
+            totalTabsClosed: newTotal
+        });
 
-            return {
-                count: tabsToClose.length,
-                memorySaved: tabsToClose.length * 15 // Estimate 15MB per tab
-            };
+        return {
+            count: tabsToClose.length,
+            memorySaved: tabsToClose.length * 15 // Estimate 15MB per tab
+        };
     } catch (error) {
         console.error('Error cleaning tabs:', error);
         return { count: 0, memorySaved: 0 };
