@@ -1685,7 +1685,7 @@ class TabmangmentPopup {
     handlePremiumButtonClick() {
         // Always redirect to user dashboard for both free and pro users
         chrome.tabs.create({
-            url: 'CONFIG.WEB.DASHBOARD_URL',
+            url: CONFIG.WEB.DASHBOARD_URL,
             active: true
         });
     }
@@ -3239,7 +3239,7 @@ class TabmangmentPopup {
 
             // Redirect to user dashboard where they can manage subscription
             await chrome.tabs.create({
-                url: 'CONFIG.WEB.DASHBOARD_URL',
+                url: CONFIG.WEB.DASHBOARD_URL,
                 active: true
             });
 
@@ -5239,7 +5239,7 @@ Thank you!`);
 
             // Redirect to user dashboard where they can manage subscription
             await chrome.tabs.create({
-                url: 'CONFIG.WEB.DASHBOARD_URL',
+                url: CONFIG.WEB.DASHBOARD_URL,
                 active: true
             });
 
