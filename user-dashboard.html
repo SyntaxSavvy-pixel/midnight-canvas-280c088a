@@ -1771,13 +1771,36 @@
         };
 
         async function initSmartDashboard() {
-            // Update user name display
-            if (userData.name || userData.email) {
-                const displayName = userData.name || userData.email.split('@')[0];
-                const userNameEl = document.getElementById('user-name-display');
-                if (userNameEl) {
-                    userNameEl.textContent = displayName;
+            // Update user name display - get from multiple sources
+            let displayName = 'User';
+
+            // Try to get from userData object first
+            if (userData.name) {
+                displayName = userData.name;
+            } else if (userData.email) {
+                displayName = userData.email.split('@')[0];
+            } else {
+                // Fallback to localStorage
+                const storedUserData = localStorage.getItem('tabmangment_user');
+                if (storedUserData) {
+                    try {
+                        const parsedData = JSON.parse(storedUserData);
+                        displayName = parsedData.name || parsedData.email?.split('@')[0] || 'User';
+                    } catch (e) {
+                        console.error('Error parsing stored user data:', e);
+                    }
+                } else if (window.sessionManager) {
+                    // Try session manager as last resort
+                    const sessionUser = window.sessionManager.getUser();
+                    if (sessionUser) {
+                        displayName = sessionUser.name || sessionUser.email?.split('@')[0] || 'User';
+                    }
                 }
+            }
+
+            const userNameEl = document.getElementById('user-name-display');
+            if (userNameEl) {
+                userNameEl.textContent = displayName;
             }
 
             // Load tabs data from extension
