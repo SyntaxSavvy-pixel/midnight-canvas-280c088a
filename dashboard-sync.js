@@ -3,20 +3,15 @@
 // Handles user data sync AND Smart Suggestions data communication
 
 (async function() {
-    console.log('[Content Script] Dashboard sync bridge loaded');
-
     // Wait for page to fully load
     if (document.readyState === 'loading') {
-        console.log('[Content Script] Waiting for DOM...');
         await new Promise(resolve => {
             document.addEventListener('DOMContentLoaded', resolve);
         });
     }
 
-    console.log('[Content Script] DOM ready, waiting 100ms...');
     // Give the page a moment to load user data
     await new Promise(resolve => setTimeout(resolve, 100));
-    console.log('[Content Script] Bridge fully initialized and listening');
 
     // ============================================
     // USER DATA SYNC (existing functionality)
@@ -91,11 +86,8 @@
         // Only process messages from our dashboard
         if (message.source !== 'tabmangment-dashboard') return;
 
-        console.log('[Bridge] Received message from dashboard:', message.type);
-
         // Check if extension APIs are available
         if (typeof chrome === 'undefined' || !chrome.runtime || !chrome.runtime.sendMessage) {
-            console.log('[Bridge] Extension APIs not available');
             // Extension not available - send error response
             window.postMessage({
                 type: 'EXTENSION_TABS_DATA_RESPONSE',
@@ -109,14 +101,12 @@
         // Handle different message types from dashboard
         switch (message.type) {
             case 'DASHBOARD_REQUEST_TABS_DATA':
-                console.log('[Bridge] Requesting tabs data from background script...');
                 // Request tabs data from extension
                 try {
                     chrome.runtime.sendMessage({
                         type: 'GET_TABS_DATA'
                     }, (response) => {
                         if (chrome.runtime.lastError) {
-                            console.log('[Bridge] Extension error:', chrome.runtime.lastError.message);
                             window.postMessage({
                                 type: 'EXTENSION_TABS_DATA_RESPONSE',
                                 source: 'tabmangment-extension',
@@ -126,7 +116,6 @@
                             return;
                         }
 
-                        console.log('[Bridge] Got response from background script:', response);
                         // Forward extension response to dashboard
                         window.postMessage({
                             type: 'EXTENSION_TABS_DATA_RESPONSE',
@@ -136,7 +125,6 @@
                         }, '*');
                     });
                 } catch (error) {
-                    console.log('[Bridge] Extension context invalidated:', error.message);
                     window.postMessage({
                         type: 'EXTENSION_TABS_DATA_RESPONSE',
                         source: 'tabmangment-extension',

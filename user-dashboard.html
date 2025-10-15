@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <!-- Version: 3.2.0 - Fixed timing issue and removed navigateTo error -->
+    <!-- Version: 3.3.0 - Production build with all debug logs removed -->
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard - TabManagement</title>
@@ -1659,30 +1659,24 @@
 
         // Initialize dashboard
         async function initDashboard() {
-            console.log('[initDashboard] Function started');
-
             // Fetch configuration from API
-            console.log('[initDashboard] Fetching config from API...');
             try {
                 const configResponse = await fetch(`${API_BASE}/config`);
                 if (configResponse.ok) {
                     const config = await configResponse.json();
                     STRIPE_PRICE_ID = config.stripePriceId;
                 }
-                console.log('[initDashboard] Config fetched');
             } catch (error) {
-                console.log('[initDashboard] Config fetch failed:', error);
+                // Silent fail - config is optional
             }
 
             // Check authentication (with retry for OAuth redirects)
-            console.log('[initDashboard] Checking authentication...');
             authToken = localStorage.getItem('tabmangment_token');
             let storedUserData = localStorage.getItem('tabmangment_user');
             let userEmail = null;
 
             // If no data yet, wait a bit (OAuth redirect timing issue)
             if (!authToken || !storedUserData) {
-                console.log('⏳ Auth data not found, waiting for OAuth redirect...');
                 await new Promise(resolve => setTimeout(resolve, 500));
                 authToken = localStorage.getItem('tabmangment_token');
                 storedUserData = localStorage.getItem('tabmangment_user');
@@ -1729,7 +1723,6 @@
             }
 
             // Auth check passed! Hide loading overlay immediately
-            console.log('[initDashboard] Auth passed, hiding overlay...');
             const overlay = document.getElementById('auth-loading-overlay');
             if (overlay) {
                 overlay.classList.add('hidden');
@@ -1740,15 +1733,11 @@
             }
 
             // Load real user data from API
-            console.log('[initDashboard] Loading user data from API...');
             await loadUserData(userEmail);
-            console.log('[initDashboard] User data loaded');
 
-            console.log('[initDashboard] Updating user display...');
             updateUserDisplay();
             updatePlanDisplay();
             updateAccountActionButtons(); // Check if account is marked for deletion
-            console.log('[initDashboard] Initializing UI components...');
             initChart();
             loadUserSettings();
             loadBillingHistory();
@@ -1756,11 +1745,9 @@
 
             // Initialize Smart Dashboard BEFORE waiting for bridge
             // Smart Dashboard can work independently via content script bridge
-            console.log('[Dashboard] Initializing Smart Dashboard...');
             try {
                 await initSmartDashboard();
             } catch (error) {
-                console.error('[Dashboard] Smart Dashboard initialization failed:', error);
                 // Fallback: try to update name even if Smart Dashboard fails
                 const userNameEl = document.getElementById('user-name-display');
                 if (userNameEl && userData && userData.email) {
@@ -1770,9 +1757,7 @@
             }
 
             // Wait for bridge to be ready FIRST before checking payment
-            console.log('[initDashboard] Waiting for extension bridge (5s max)...');
             const isBridgeReady = await waitForBridge(5000);
-            console.log('[initDashboard] Bridge ready:', isBridgeReady);
 
             if (!isBridgeReady) {
             } else {
@@ -1865,7 +1850,6 @@
         };
 
         async function initSmartDashboard() {
-            console.log('[Smart Dashboard] Function called');
             // Update user name display - get from multiple sources
             let displayName = 'User';
 
@@ -1910,8 +1894,6 @@
             // Wait a tiny bit to ensure content script is loaded and listening
             await new Promise(resolve => setTimeout(resolve, 200));
 
-            console.log('[Smart Suggestions] Requesting tabs data from extension...');
-
             // Request data from extension via content script bridge
             window.postMessage({
                 type: 'DASHBOARD_REQUEST_TABS_DATA',
@@ -1921,17 +1903,14 @@
             // Listen for response from content script
             const messageHandler = (event) => {
                 if (event.data.type === 'EXTENSION_TABS_DATA_RESPONSE' && event.data.source === 'tabmangment-extension') {
-                    console.log('[Smart Suggestions] Received response:', event.data);
                     window.removeEventListener('message', messageHandler);
                     responseReceived = true;
 
                     if (event.data.success && event.data.data) {
-                        console.log('[Smart Suggestions] Data loaded successfully:', event.data.data);
                         smartTabsData = { ...smartTabsData, ...event.data.data };
                         renderSmartSuggestions();
                         renderSmartActivity();
                     } else {
-                        console.log('[Smart Suggestions] Extension error:', event.data.error);
                         showSmartSuggestionsError();
                     }
                 }
@@ -4088,11 +4067,8 @@
         // Set up bridge listener IMMEDIATELY (before DOMContentLoaded)
         // This ensures we catch the BRIDGE_READY message from the extension
 
-        console.log('[Page Load] Dashboard script loaded');
-
         // Initialize dashboard on load
         document.addEventListener('DOMContentLoaded', () => {
-            console.log('[Page Load] DOMContentLoaded event fired, calling initDashboard()');
             initDashboard();
         });
 
