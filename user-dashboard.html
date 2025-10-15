@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <!-- Version: 3.0.2 - Added debug console logs to diagnose data loading -->
+    <!-- Version: 3.1.0 - Fixed Smart Dashboard not loading due to early return -->
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard - TabManagement</title>
@@ -1753,6 +1753,21 @@
             loadBillingHistory();
             loadPaymentMethod();
 
+            // Initialize Smart Dashboard BEFORE waiting for bridge
+            // Smart Dashboard can work independently via content script bridge
+            console.log('[Dashboard] Initializing Smart Dashboard...');
+            try {
+                await initSmartDashboard();
+            } catch (error) {
+                console.error('[Dashboard] Smart Dashboard initialization failed:', error);
+                // Fallback: try to update name even if Smart Dashboard fails
+                const userNameEl = document.getElementById('user-name-display');
+                if (userNameEl && userData && userData.email) {
+                    const displayName = userData.name || userData.email.split('@')[0];
+                    userNameEl.textContent = displayName;
+                }
+            }
+
             // Wait for bridge to be ready FIRST before checking payment
             console.log('[initDashboard] Waiting for extension bridge (5s max)...');
             const isBridgeReady = await waitForBridge(5000);
@@ -1836,20 +1851,6 @@
 
             // Start subscription status monitoring
             startSubscriptionStatusRefresh();
-
-            // Initialize Smart Dashboard (call after userData is loaded)
-            console.log('[Dashboard] Initializing Smart Dashboard...');
-            try {
-                await initSmartDashboard();
-            } catch (error) {
-                console.error('[Dashboard] Smart Dashboard initialization failed:', error);
-                // Fallback: try to update name even if Smart Dashboard fails
-                const userNameEl = document.getElementById('user-name-display');
-                if (userNameEl && userData && userData.email) {
-                    const displayName = userData.name || userData.email.split('@')[0];
-                    userNameEl.textContent = displayName;
-                }
-            }
         }
 
         // Smart Dashboard Functions
