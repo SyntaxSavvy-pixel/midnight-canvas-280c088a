@@ -13,9 +13,9 @@
         });
     }
 
-    console.log('[Content Script] DOM ready, waiting 1 second...');
+    console.log('[Content Script] DOM ready, waiting 100ms...');
     // Give the page a moment to load user data
-    await new Promise(resolve => setTimeout(resolve, 1000));
+    await new Promise(resolve => setTimeout(resolve, 100));
     console.log('[Content Script] Bridge fully initialized and listening');
 
     // ============================================

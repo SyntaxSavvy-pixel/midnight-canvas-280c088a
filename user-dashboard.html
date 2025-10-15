@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <!-- Version: 3.1.0 - Fixed Smart Dashboard not loading due to early return -->
+    <!-- Version: 3.2.0 - Fixed timing issue and removed navigateTo error -->
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard - TabManagement</title>
@@ -1132,9 +1132,10 @@
                             <span style="color: #fff; font-weight: 600;">--</span>
                         </div>
                     </div>
-                    <a href="#" onclick="navigateTo('analytics-page'); return false;" style="display: inline-flex; align-items: center; gap: 0.5rem; color: #6366f1; font-size: 0.875rem; font-weight: 600; text-decoration: none; margin-top: 1rem; transition: all 0.2s;">
+                    <!-- Analytics link placeholder - can be enabled later -->
+                    <!-- <a href="#analytics" style="display: inline-flex; align-items: center; gap: 0.5rem; color: #6366f1; font-size: 0.875rem; font-weight: 600; text-decoration: none; margin-top: 1rem; transition: all 0.2s;">
                         View full analytics →
-                    </a>
+                    </a> -->
                 </div>
 
             </div>
@@ -1905,6 +1906,9 @@
             showSmartSuggestionsLoading();
 
             let responseReceived = false;
+
+            // Wait a tiny bit to ensure content script is loaded and listening
+            await new Promise(resolve => setTimeout(resolve, 200));
 
             console.log('[Smart Suggestions] Requesting tabs data from extension...');
 
