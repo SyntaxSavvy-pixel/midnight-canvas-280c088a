@@ -297,7 +297,7 @@ const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
         if (!error && session && session.user) {
             // User is already logged in, redirect to dashboard
             console.log('User already logged in, redirecting to dashboard...');
-            window.location.href = '/dashboard';
+            window.location.href = '/user-dashboard.html';
         }
     } catch (error) {
         console.error('Error checking session:', error);
@@ -445,7 +445,7 @@ async function handleLogin(event) {
         localStorage.setItem('tabmangment_token', session.access_token);
         window.postMessage({ type: 'USER_LOGGED_IN', userData: { email: userData.email, name: userData.name, id: userData.id } }, '*');
         showNotification('Login successful!', 'success');
-        setTimeout(() => { window.location.href = '/dashboard'; }, 1000);
+        setTimeout(() => { window.location.href = '/user-dashboard.html'; }, 1000);
     } catch (error) {
         showNotification(error.message, 'error');
     } finally {
@@ -531,7 +531,7 @@ async function handleSignup(event) {
             localStorage.setItem('tabmangment_token', data.session.access_token);
             window.postMessage({ type: 'USER_LOGGED_IN', userData: { email: userData.email, name: userData.name, id: userData.id } }, '*');
             showNotification('Account created successfully!', 'success');
-            setTimeout(() => { window.location.href = '/dashboard'; }, 1000);
+            setTimeout(() => { window.location.href = '/user-dashboard.html'; }, 1000);
         }
     } catch (error) {
         showNotification(error.message, 'error');
@@ -546,7 +546,7 @@ async function handleGoogleLogin() {
         const { data, error } = await supabaseClient.auth.signInWithOAuth({
             provider: 'google',
             options: {
-                redirectTo: window.location.origin + '/dashboard',
+                redirectTo: window.location.origin + '/user-dashboard.html',
                 queryParams: {
                     access_type: 'offline',
                     prompt: 'consent'
@@ -661,7 +661,7 @@ async function handleGithubLogin() {
         }, '*');
 
         // Redirect to dashboard
-        window.location.href = '/dashboard';
+        window.location.href = '/user-dashboard.html';
     }
 })();
     </script>
