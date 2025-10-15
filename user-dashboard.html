@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <!-- Version: 2.0.1 - Smart Dashboard with fixed user name display -->
+    <!-- Version: 2.1.0 - Smart Dashboard with 500ms timeout fallback -->
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard - TabManagement</title>
@@ -1820,6 +1820,18 @@
         }
 
         async function loadSmartTabsData() {
+            // Set a flag to track if data was loaded
+            let dataLoaded = false;
+
+            // Immediate timeout - show mock data after 500ms if nothing loaded
+            const timeoutId = setTimeout(() => {
+                if (!dataLoaded) {
+                    console.log('⏱️ Extension timeout (500ms), showing mock data');
+                    useMockSmartData();
+                    dataLoaded = true;
+                }
+            }, 500);
+
             try {
                 // Get data from Chrome extension if available
                 if (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.sendMessage) {
@@ -1830,40 +1842,55 @@
                         }, (response) => {
                             // Check for errors
                             if (chrome.runtime.lastError) {
-                                console.log('Extension not available:', chrome.runtime.lastError.message);
-                                useMockSmartData();
+                                console.log('❌ Extension error:', chrome.runtime.lastError.message);
+                                if (!dataLoaded) {
+                                    clearTimeout(timeoutId);
+                                    useMockSmartData();
+                                    dataLoaded = true;
+                                }
                                 return;
                             }
 
                             if (response && response.success && response.data) {
-                                smartTabsData = { ...smartTabsData, ...response.data };
-                                renderSmartSuggestions();
-                                renderSmartActivity();
+                                console.log('✅ Got real data from extension');
+                                clearTimeout(timeoutId);
+                                if (!dataLoaded) {
+                                    smartTabsData = { ...smartTabsData, ...response.data };
+                                    renderSmartSuggestions();
+                                    renderSmartActivity();
+                                    dataLoaded = true;
+                                }
                             } else {
-                                console.log('Invalid response from extension, using mock data');
-                                useMockSmartData();
+                                console.log('⚠️ Invalid response from extension');
+                                if (!dataLoaded) {
+                                    clearTimeout(timeoutId);
+                                    useMockSmartData();
+                                    dataLoaded = true;
+                                }
                             }
                         });
-
-                        // Timeout fallback - if no response in 2 seconds, use mock data
-                        setTimeout(() => {
-                            if (document.getElementById('suggestions-content').innerHTML.includes('spinner')) {
-                                console.log('Extension timeout, using mock data');
-                                useMockSmartData();
-                            }
-                        }, 2000);
                     } catch (e) {
-                        console.log('Error sending message to extension:', e);
-                        useMockSmartData();
+                        console.log('❌ Error sending message:', e);
+                        clearTimeout(timeoutId);
+                        if (!dataLoaded) {
+                            useMockSmartData();
+                            dataLoaded = true;
+                        }
                     }
                 } else {
-                    // Chrome extension API not available
-                    console.log('Chrome extension API not available, using mock data');
+                    // Chrome extension API not available - show mock data immediately
+                    console.log('🌐 Chrome extension API not available, showing mock data');
+                    clearTimeout(timeoutId);
                     useMockSmartData();
+                    dataLoaded = true;
                 }
             } catch (error) {
-                console.error('Error loading smart tabs data:', error);
-                useMockSmartData();
+                console.error('❌ Error loading smart tabs data:', error);
+                clearTimeout(timeoutId);
+                if (!dataLoaded) {
+                    useMockSmartData();
+                    dataLoaded = true;
+                }
             }
         }
 
