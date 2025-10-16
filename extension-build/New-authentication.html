@@ -518,24 +518,59 @@
             }
         }
 
-        /* Infinite Scrolling Tabs Animation */
+        /* Infinite Scrolling Tabs Animation - Marquee Style */
         .infinite-tabs-container {
             position: relative;
             width: 100%;
             max-width: 600px;
-            height: 400px;
+            height: 500px;
             overflow: hidden;
             z-index: 1;
+            display: flex;
+            gap: 16px;
         }
 
-        .tabs-scroll {
+        /* Gradient fade overlays */
+        .infinite-tabs-container::before,
+        .infinite-tabs-container::after {
+            content: '';
+            position: absolute;
+            left: 0;
+            right: 0;
+            height: 25%;
+            pointer-events: none;
+            z-index: 10;
+        }
+
+        .infinite-tabs-container::before {
+            top: 0;
+            background: linear-gradient(to bottom,
+                rgba(139, 92, 246, 1) 0%,
+                rgba(139, 92, 246, 0.8) 20%,
+                rgba(139, 92, 246, 0) 100%);
+        }
+
+        .infinite-tabs-container::after {
+            bottom: 0;
+            background: linear-gradient(to top,
+                rgba(168, 85, 247, 1) 0%,
+                rgba(168, 85, 247, 0.8) 20%,
+                rgba(168, 85, 247, 0) 100%);
+        }
+
+        .tabs-column {
             display: flex;
             flex-direction: column;
             gap: 12px;
-            animation: scrollUp 20s linear infinite;
+            animation: marqueeUp 25s linear infinite;
+            flex: 1;
         }
 
-        @keyframes scrollUp {
+        .tabs-column:nth-child(2) {
+            animation: marqueeDown 25s linear infinite;
+        }
+
+        @keyframes marqueeUp {
             0% {
                 transform: translateY(0);
             }
@@ -544,87 +579,68 @@
             }
         }
 
+        @keyframes marqueeDown {
+            0% {
+                transform: translateY(-50%);
+            }
+            100% {
+                transform: translateY(0);
+            }
+        }
+
         .tab-card {
             background: rgba(255, 255, 255, 0.95);
             backdrop-filter: blur(10px);
             border-radius: 12px;
-            padding: 16px 20px;
+            padding: 14px 16px;
             display: flex;
             align-items: center;
-            gap: 16px;
-            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
-            animation: fadeInTab 0.6s ease-out;
-            min-height: 72px;
-        }
-
-        @keyframes fadeInTab {
-            from {
-                opacity: 0;
-                transform: scale(0.95);
-            }
-            to {
-                opacity: 1;
-                transform: scale(1);
-            }
-        }
-
-        .tab-icon {
-            width: 40px;
-            height: 40px;
-            border-radius: 8px;
-            background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
-            display: flex;
-            align-items: center;
-            justify-content: center;
+            gap: 12px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            min-height: 64px;
             flex-shrink: 0;
+            transition: all 0.3s ease;
+            border: 1px solid rgba(255, 255, 255, 0.2);
         }
 
-        .tab-icon svg {
-            width: 20px;
-            height: 20px;
-            color: white;
+        .tab-card:hover {
+            transform: scale(1.02);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+        }
+
+        .tab-favicon {
+            width: 32px;
+            height: 32px;
+            border-radius: 6px;
+            flex-shrink: 0;
+            object-fit: cover;
+            background: white;
+            padding: 4px;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
         }
 
         .tab-info {
             flex: 1;
+            min-width: 0;
             text-align: left;
         }
 
         .tab-title {
-            font-size: 0.9375rem;
+            font-size: 0.875rem;
             font-weight: 600;
             color: #0f172a;
             margin-bottom: 2px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
 
         .tab-url {
-            font-size: 0.8125rem;
+            font-size: 0.75rem;
             color: #64748b;
-        }
-
-        .tab-close {
-            width: 28px;
-            height: 28px;
-            border-radius: 6px;
-            background: #fee2e2;
-            color: #dc2626;
-            border: none;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: all 0.3s ease;
-            flex-shrink: 0;
-        }
-
-        .tab-close:hover {
-            background: #dc2626;
-            color: white;
-        }
-
-        .tab-close svg {
-            width: 14px;
-            height: 14px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
 
         /* Notification */
@@ -852,9 +868,7 @@
             </div>
 
             <div class="infinite-tabs-container">
-                <div class="tabs-scroll" id="tabs-scroll">
-                    <!-- Tabs will be dynamically generated -->
-                </div>
+                <!-- Tabs columns will be dynamically generated -->
             </div>
         </div>
     </div>
@@ -907,53 +921,72 @@ function checkPasswordStrength(password) {
     }
 }
 
-// Generate Infinite Scrolling Tabs
+// Generate Infinite Scrolling Tabs with Real Favicons
 function generateInfiniteTabs() {
-    const tabsContainer = document.getElementById('tabs-scroll');
+    const container = document.querySelector('.infinite-tabs-container');
+
+    // Real website tabs with their actual favicons
     const tabExamples = [
-        { title: 'Dashboard', url: 'app.tabmangment.com', icon: 'home' },
-        { title: 'Analytics', url: 'analytics.google.com', icon: 'bar-chart-2' },
-        { title: 'GitHub Repo', url: 'github.com/project', icon: 'github' },
-        { title: 'Documentation', url: 'docs.example.com', icon: 'file-text' },
-        { title: 'Email Inbox', url: 'mail.google.com', icon: 'mail' },
-        { title: 'Calendar', url: 'calendar.google.com', icon: 'calendar' },
-        { title: 'Slack Channel', url: 'slack.com/workspace', icon: 'message-square' },
-        { title: 'YouTube Video', url: 'youtube.com/watch', icon: 'play-circle' },
-        { title: 'Settings', url: 'settings.tabmangment.com', icon: 'settings' },
-        { title: 'Profile', url: 'profile.example.com', icon: 'user' },
+        { title: 'Google', url: 'google.com', favicon: 'https://www.google.com/favicon.ico' },
+        { title: 'YouTube', url: 'youtube.com', favicon: 'https://www.youtube.com/favicon.ico' },
+        { title: 'GitHub', url: 'github.com', favicon: 'https://github.com/favicon.ico' },
+        { title: 'Stack Overflow', url: 'stackoverflow.com', favicon: 'https://stackoverflow.com/favicon.ico' },
+        { title: 'Reddit', url: 'reddit.com', favicon: 'https://www.reddit.com/favicon.ico' },
+        { title: 'Twitter', url: 'twitter.com', favicon: 'https://twitter.com/favicon.ico' },
+        { title: 'LinkedIn', url: 'linkedin.com', favicon: 'https://www.linkedin.com/favicon.ico' },
+        { title: 'Medium', url: 'medium.com', favicon: 'https://medium.com/favicon.ico' },
+        { title: 'Netflix', url: 'netflix.com', favicon: 'https://www.netflix.com/favicon.ico' },
+        { title: 'Amazon', url: 'amazon.com', favicon: 'https://www.amazon.com/favicon.ico' },
+        { title: 'Figma', url: 'figma.com', favicon: 'https://www.figma.com/favicon.ico' },
+        { title: 'Notion', url: 'notion.so', favicon: 'https://www.notion.so/images/favicon.ico' },
+        { title: 'Slack', url: 'slack.com', favicon: 'https://slack.com/favicon.ico' },
+        { title: 'Discord', url: 'discord.com', favicon: 'https://discord.com/assets/favicon.ico' },
+        { title: 'Spotify', url: 'spotify.com', favicon: 'https://www.spotify.com/favicon.ico' },
     ];
 
-    // Duplicate tabs for seamless infinite scroll
-    const allTabs = [...tabExamples, ...tabExamples];
+    // Create two columns
+    const column1 = document.createElement('div');
+    const column2 = document.createElement('div');
+    column1.className = 'tabs-column';
+    column2.className = 'tabs-column';
 
-    allTabs.forEach((tab, index) => {
+    // Split tabs into two groups and duplicate for seamless loop
+    const firstHalf = tabExamples.slice(0, 8);
+    const secondHalf = tabExamples.slice(8);
+
+    const column1Tabs = [...firstHalf, ...firstHalf];
+    const column2Tabs = [...secondHalf, ...secondHalf];
+
+    // Generate column 1 tabs
+    column1Tabs.forEach((tab) => {
         const tabCard = document.createElement('div');
         tabCard.className = 'tab-card';
-        tabCard.style.animationDelay = `${index * 0.1}s`;
         tabCard.innerHTML = `
-            <div class="tab-icon">
-                <i data-feather="${tab.icon}"></i>
-            </div>
+            <img src="${tab.favicon}" alt="${tab.title}" class="tab-favicon" onerror="this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22%236366f1%22><rect width=%2224%22 height=%2224%22 rx=%224%22/></svg>'">
             <div class="tab-info">
                 <div class="tab-title">${tab.title}</div>
                 <div class="tab-url">${tab.url}</div>
             </div>
-            <button class="tab-close" onclick="closeTab(this)">
-                <i data-feather="x"></i>
-            </button>
         `;
-        tabsContainer.appendChild(tabCard);
+        column1.appendChild(tabCard);
     });
 
-    feather.replace();
-}
+    // Generate column 2 tabs
+    column2Tabs.forEach((tab) => {
+        const tabCard = document.createElement('div');
+        tabCard.className = 'tab-card';
+        tabCard.innerHTML = `
+            <img src="${tab.favicon}" alt="${tab.title}" class="tab-favicon" onerror="this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22%238b5cf6%22><rect width=%2224%22 height=%2224%22 rx=%224%22/></svg>'">
+            <div class="tab-info">
+                <div class="tab-title">${tab.title}</div>
+                <div class="tab-url">${tab.url}</div>
+            </div>
+        `;
+        column2.appendChild(tabCard);
+    });
 
-function closeTab(button) {
-    const tabCard = button.closest('.tab-card');
-    tabCard.style.animation = 'fadeInTab 0.3s ease-out reverse';
-    setTimeout(() => {
-        tabCard.remove();
-    }, 300);
+    container.appendChild(column1);
+    container.appendChild(column2);
 }
 
 // Check if user is already logged in
