@@ -376,26 +376,8 @@
         }
 
         .form-footer {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
+            text-align: right;
             margin-bottom: 20px;
-        }
-
-        .remember-me {
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            font-size: 0.8125rem;
-            color: #64748b;
-            cursor: pointer;
-        }
-
-        .remember-me input[type="checkbox"] {
-            width: 16px;
-            height: 16px;
-            cursor: pointer;
-            accent-color: #6366f1;
         }
 
         .forgot-link {
@@ -404,11 +386,119 @@
             font-size: 0.8125rem;
             font-weight: 500;
             transition: all 0.3s ease;
+            display: inline-block;
         }
 
         .forgot-link:hover {
             color: #4f46e5;
             text-decoration: underline;
+        }
+
+        /* Password Reset Modal */
+        .reset-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 10000;
+            align-items: center;
+            justify-content: center;
+            backdrop-filter: blur(4px);
+            animation: fadeIn 0.3s ease;
+        }
+
+        .reset-modal.show {
+            display: flex;
+        }
+
+        .reset-modal-content {
+            background: white;
+            border-radius: 16px;
+            padding: 40px;
+            max-width: 480px;
+            width: 90%;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            animation: slideUp 0.3s ease;
+            position: relative;
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .reset-modal-close {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            color: #94a3b8;
+            cursor: pointer;
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+        }
+
+        .reset-modal-close:hover {
+            background: #f1f5f9;
+            color: #0f172a;
+        }
+
+        .reset-modal h2 {
+            font-size: 1.75rem;
+            font-weight: 700;
+            color: #0f172a;
+            margin-bottom: 12px;
+        }
+
+        .reset-modal p {
+            color: #64748b;
+            margin-bottom: 24px;
+            line-height: 1.6;
+        }
+
+        .reset-success {
+            background: linear-gradient(135deg, rgba(16, 185, 129, 0.1) 0%, rgba(16, 185, 129, 0.05) 100%);
+            border: 1px solid rgba(16, 185, 129, 0.2);
+            border-radius: 12px;
+            padding: 16px;
+            margin-top: 20px;
+            display: none;
+        }
+
+        .reset-success.show {
+            display: block;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .reset-success-text {
+            color: #059669;
+            font-size: 0.875rem;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .reset-success-text svg {
+            width: 20px;
+            height: 20px;
+            flex-shrink: 0;
         }
 
         .submit-btn {
@@ -796,11 +886,7 @@
                             </div>
                         </div>
                         <div class="form-footer">
-                            <label class="remember-me">
-                                <input type="checkbox" id="remember-me">
-                                <span>Remember Me</span>
-                            </label>
-                            <a href="#" class="forgot-link" onclick="alert('Password reset feature coming soon!'); return false;">Forgot Your Password?</a>
+                            <a href="#" class="forgot-link" onclick="showForgotPasswordModal(); return false;">Forgot Your Password?</a>
                         </div>
                         <button type="submit" class="submit-btn" id="login-btn">
                             <span class="btn-text">Log In</span>
@@ -873,6 +959,36 @@
 
             <div class="infinite-tabs-container">
                 <!-- Tabs columns will be dynamically generated -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Password Reset Modal -->
+    <div class="reset-modal" id="reset-modal">
+        <div class="reset-modal-content">
+            <button class="reset-modal-close" onclick="closeForgotPasswordModal()">&times;</button>
+            <h2>Reset Your Password</h2>
+            <p>Enter your email address and we'll send you a link to reset your password.</p>
+
+            <form onsubmit="handlePasswordReset(event)">
+                <div class="form-group">
+                    <label for="reset-email">Email Address</label>
+                    <input type="email" id="reset-email" placeholder="you@company.com" required autocomplete="email">
+                </div>
+                <button type="submit" class="submit-btn" id="reset-btn">
+                    <span class="btn-text">Send Reset Link</span>
+                    <span class="loading-spinner"></span>
+                </button>
+            </form>
+
+            <div class="reset-success" id="reset-success">
+                <div class="reset-success-text">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                        <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                    </svg>
+                    Password reset email sent! Check your inbox.
+                </div>
             </div>
         </div>
     </div>
@@ -1176,6 +1292,65 @@ function togglePassword(inputId, button) {
         button.setAttribute('title', 'Show password');
     }
     feather.replace();
+}
+
+// Password Reset Modal Functions
+function showForgotPasswordModal() {
+    const modal = document.getElementById('reset-modal');
+    const resetSuccess = document.getElementById('reset-success');
+    const resetEmail = document.getElementById('reset-email');
+
+    // Reset form state
+    resetSuccess.classList.remove('show');
+    resetEmail.value = '';
+
+    // Show modal
+    modal.classList.add('show');
+}
+
+function closeForgotPasswordModal() {
+    const modal = document.getElementById('reset-modal');
+    modal.classList.remove('show');
+}
+
+// Close modal when clicking outside
+document.addEventListener('click', (e) => {
+    const modal = document.getElementById('reset-modal');
+    if (e.target === modal) {
+        closeForgotPasswordModal();
+    }
+});
+
+// Handle Password Reset
+async function handlePasswordReset(e) {
+    e.preventDefault();
+
+    try {
+        showLoading('reset-btn', true);
+        const email = document.getElementById('reset-email').value;
+
+        // Send password reset email via Supabase
+        const { data, error } = await supabaseClient.auth.resetPasswordForEmail(email, {
+            redirectTo: `${window.location.origin}/new-authentication?type=recovery`
+        });
+
+        if (error) throw error;
+
+        // Show success message
+        const resetSuccess = document.getElementById('reset-success');
+        resetSuccess.classList.add('show');
+
+        // Close modal after 3 seconds
+        setTimeout(() => {
+            closeForgotPasswordModal();
+        }, 3000);
+
+    } catch (error) {
+        console.error('Password reset error:', error);
+        showNotification(error.message || 'Failed to send reset email. Please try again.', 'error');
+    } finally {
+        showLoading('reset-btn', false);
+    }
 }
 
 function showNotification(message, type = 'success') {
