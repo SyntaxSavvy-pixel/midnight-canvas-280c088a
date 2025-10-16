@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <!-- Version: 5.3.1 - Fixed CSP connect-src for CDN source maps -->
+    <!-- Version: 5.3.3 - Removed non-existent API endpoint call -->
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="Content-Security-Policy" content="
@@ -3389,23 +3389,6 @@
 
                 if (updateError) {
                     throw new Error(updateError.message);
-                }
-
-                // Update API backend (if endpoint exists)
-                try {
-                    await fetch(`${API_BASE}/update-profile`, {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'Authorization': `Bearer ${authToken}`
-                        },
-                        body: JSON.stringify({
-                            email: userData.email,
-                            name: newName
-                        })
-                    });
-                } catch (apiError) {
-                    // API update failed but Supabase succeeded, continue
                 }
 
                 // Update local user data
