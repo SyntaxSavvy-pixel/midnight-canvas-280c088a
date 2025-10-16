@@ -76,3 +76,7 @@ Thumbs.db
 *.crx
 *.pem
 .vercel
+
+# Netlify config files (breaks Chrome extension loading)
+_headers
+_redirects
