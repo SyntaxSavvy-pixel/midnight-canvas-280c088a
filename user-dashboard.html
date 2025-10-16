@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <!-- Version: 3.4.0 - Recent Activity shows real browsing history with favicons -->
+    <!-- Version: 4.1.0 - Profile update with 24h cooldown, loading states, and live name sync -->
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard - TabManagement</title>
@@ -364,6 +364,37 @@
             to {
                 transform: translateY(0);
                 opacity: 1;
+            }
+        }
+
+        @keyframes spin {
+            from {
+                transform: rotate(0deg);
+            }
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        @keyframes slideInRight {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        @keyframes slideOutRight {
+            from {
+                transform: translateX(0);
+                opacity: 1;
+            }
+            to {
+                transform: translateX(100%);
+                opacity: 0;
             }
         }
 
@@ -1350,8 +1381,12 @@
                     <h2 class="card-title">Account Information</h2>
                     <div class="tab-controls">
                         <div class="control-group">
-                            <label class="control-label" for="profile-name">Full Name</label>
+                            <label class="control-label" for="profile-name" style="display: flex; justify-content: space-between; align-items: center;">
+                                <span>Full Name</span>
+                                <span id="name-cooldown-timer" style="display: none; font-size: 0.75rem; color: #f59e0b; font-weight: 600;"></span>
+                            </label>
                             <input type="text" id="profile-name" class="control-input" value="">
+                            <small id="name-update-info" style="color: #94a3b8; font-size: 0.875rem; margin-top: 0.25rem; display: none;"></small>
                         </div>
                         <div class="control-group">
                             <label class="control-label" for="profile-email">Email Address</label>
@@ -1359,9 +1394,18 @@
                             <small style="color: #94a3b8; font-size: 0.875rem; margin-top: 0.25rem; display: block;">Email cannot be changed</small>
                         </div>
                     </div>
-                    <button class="card-action" style="margin-top: 1rem;" onclick="updateProfile()">
-                        <i data-feather="save"></i>
-                        Update Profile
+                    <button class="card-action" id="update-profile-btn" style="margin-top: 1.5rem; position: relative; overflow: hidden;" onclick="updateProfile()">
+                        <span id="update-btn-content" style="display: flex; align-items: center; gap: 0.5rem;">
+                            <i data-feather="save"></i>
+                            <span>Update Profile</span>
+                        </span>
+                        <span id="update-btn-loading" style="display: none; align-items: center; gap: 0.5rem;">
+                            <svg style="width: 20px; height: 20px; animation: spin 1s linear infinite;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="12" cy="12" r="10" stroke-opacity="0.25"></circle>
+                                <path d="M12 2a10 10 0 0 1 10 10" stroke-opacity="0.75"></path>
+                            </svg>
+                            <span>Updating...</span>
+                        </span>
                     </button>
                 </div>
 
@@ -2524,6 +2568,20 @@
 
             // Update provider badge and show/hide appropriate sections
             updateProviderDisplay();
+
+            // Check and display cooldown timer if active
+            checkAndDisplayCooldown();
+        }
+
+        // Check and display cooldown on page load
+        async function checkAndDisplayCooldown() {
+            const cooldownData = await checkNameUpdateCooldown();
+            if (cooldownData.locked) {
+                const cooldownTimestamp = localStorage.getItem('nameUpdateCooldown');
+                if (cooldownTimestamp) {
+                    startCooldownTimer(parseInt(cooldownTimestamp));
+                }
+            }
         }
 
         // Update provider display and show/hide sections
@@ -2749,12 +2807,221 @@
             button.closest('.whitelist-item').remove();
         }
 
-        // Profile management
-        function updateProfile() {
-            userData.name = document.getElementById('profile-name').value;
-            userData.email = document.getElementById('profile-email').value;
-            userData.avatar = userData.name.split(' ').map(n => n[0]).join('').toUpperCase();
-            updateUserDisplay();
+        // Profile management with 24-hour cooldown
+        async function updateProfile() {
+            const newName = document.getElementById('profile-name').value.trim();
+            const updateBtn = document.getElementById('update-profile-btn');
+            const btnContent = document.getElementById('update-btn-content');
+            const btnLoading = document.getElementById('update-btn-loading');
+
+            // Validation
+            if (!newName) {
+                showNotification('Please enter your name', 'error');
+                return;
+            }
+
+            if (newName === userData.name) {
+                showNotification('No changes detected', 'info');
+                return;
+            }
+
+            // Check cooldown
+            const cooldownData = await checkNameUpdateCooldown();
+            if (cooldownData.locked) {
+                const timeLeft = formatCooldownTime(cooldownData.timeRemaining);
+                showNotification(`You can update your name again in ${timeLeft}`, 'warning');
+                return;
+            }
+
+            // Show loading state
+            updateBtn.disabled = true;
+            btnContent.style.display = 'none';
+            btnLoading.style.display = 'flex';
+
+            try {
+                // Simulate API call delay for realistic UX
+                await new Promise(resolve => setTimeout(resolve, 1000));
+
+                // Update user data
+                const oldName = userData.name;
+                userData.name = newName;
+                userData.userName = newName;
+                userData.avatar = newName.split(' ').map(n => n[0]).join('').toUpperCase();
+
+                // Save to localStorage
+                localStorage.setItem('userData', JSON.stringify(userData));
+
+                // Set cooldown timestamp (24 hours from now)
+                const cooldownTimestamp = Date.now() + (24 * 60 * 60 * 1000);
+                localStorage.setItem('nameUpdateCooldown', cooldownTimestamp.toString());
+
+                // Sync to extension storage
+                await syncNameToExtension(newName);
+
+                // Update all UI displays
+                updateUserDisplay();
+                updateWelcomeMessage(newName);
+
+                // Show success message
+                showNotification(`Profile updated successfully! You can change your name again in 24 hours.`, 'success');
+
+                // Start cooldown timer display
+                startCooldownTimer(cooldownTimestamp);
+
+            } catch (error) {
+                showNotification('Failed to update profile. Please try again.', 'error');
+            } finally {
+                // Hide loading state
+                updateBtn.disabled = false;
+                btnContent.style.display = 'flex';
+                btnLoading.style.display = 'none';
+
+                // Re-render icons
+                if (typeof feather !== 'undefined') {
+                    feather.replace();
+                }
+            }
+        }
+
+        // Check if name update is on cooldown
+        async function checkNameUpdateCooldown() {
+            const cooldownTimestamp = localStorage.getItem('nameUpdateCooldown');
+
+            if (!cooldownTimestamp) {
+                return { locked: false, timeRemaining: 0 };
+            }
+
+            const now = Date.now();
+            const cooldownEnd = parseInt(cooldownTimestamp);
+
+            if (now >= cooldownEnd) {
+                // Cooldown expired, remove it
+                localStorage.removeItem('nameUpdateCooldown');
+                return { locked: false, timeRemaining: 0 };
+            }
+
+            return {
+                locked: true,
+                timeRemaining: cooldownEnd - now
+            };
+        }
+
+        // Format cooldown time for display
+        function formatCooldownTime(ms) {
+            const hours = Math.floor(ms / (1000 * 60 * 60));
+            const minutes = Math.floor((ms % (1000 * 60 * 60)) / (1000 * 60));
+
+            if (hours > 0) {
+                return `${hours}h ${minutes}m`;
+            } else if (minutes > 0) {
+                return `${minutes}m`;
+            } else {
+                return 'less than a minute';
+            }
+        }
+
+        // Start cooldown timer display
+        function startCooldownTimer(cooldownEnd) {
+            const timerEl = document.getElementById('name-cooldown-timer');
+            const infoEl = document.getElementById('name-update-info');
+            const nameInput = document.getElementById('profile-name');
+
+            function updateTimer() {
+                const now = Date.now();
+                const remaining = cooldownEnd - now;
+
+                if (remaining <= 0) {
+                    // Cooldown expired
+                    timerEl.style.display = 'none';
+                    infoEl.style.display = 'none';
+                    nameInput.disabled = false;
+                    nameInput.style.opacity = '1';
+                    nameInput.style.cursor = 'text';
+                    localStorage.removeItem('nameUpdateCooldown');
+                    return;
+                }
+
+                // Show cooldown info
+                timerEl.style.display = 'block';
+                timerEl.textContent = `Next update in ${formatCooldownTime(remaining)}`;
+                infoEl.style.display = 'block';
+                infoEl.style.color = '#f59e0b';
+                infoEl.textContent = 'You can update your name once every 24 hours to prevent spam.';
+
+                // Continue updating every minute
+                setTimeout(updateTimer, 60000);
+            }
+
+            updateTimer();
+        }
+
+        // Update welcome message
+        function updateWelcomeMessage(name) {
+            const welcomeNameEl = document.getElementById('user-name-display');
+            if (welcomeNameEl) {
+                welcomeNameEl.textContent = name;
+            }
+        }
+
+        // Sync name to extension storage
+        async function syncNameToExtension(name) {
+            try {
+                window.postMessage({
+                    type: 'DASHBOARD_SYNC_USER_NAME',
+                    source: 'tabmangment-dashboard',
+                    name: name
+                }, '*');
+            } catch (error) {
+                // Extension bridge might not be available
+            }
+        }
+
+        // Show notification helper
+        function showNotification(message, type = 'info') {
+            // Create notification element
+            const notification = document.createElement('div');
+            notification.style.cssText = `
+                position: fixed;
+                top: 2rem;
+                right: 2rem;
+                padding: 1rem 1.5rem;
+                border-radius: 0.75rem;
+                font-size: 0.9375rem;
+                font-weight: 600;
+                z-index: 9999;
+                animation: slideInRight 0.3s ease-out;
+                box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+                display: flex;
+                align-items: center;
+                gap: 0.75rem;
+                max-width: 400px;
+            `;
+
+            // Set color based on type
+            const colors = {
+                success: { bg: 'rgba(16, 185, 129, 0.15)', border: '#10b981', text: '#10b981', icon: '✓' },
+                error: { bg: 'rgba(239, 68, 68, 0.15)', border: '#ef4444', text: '#ef4444', icon: '✕' },
+                warning: { bg: 'rgba(245, 158, 11, 0.15)', border: '#f59e0b', text: '#f59e0b', icon: '⚠' },
+                info: { bg: 'rgba(99, 102, 241, 0.15)', border: '#6366f1', text: '#6366f1', icon: 'ℹ' }
+            };
+
+            const style = colors[type] || colors.info;
+            notification.style.background = style.bg;
+            notification.style.border = `1px solid ${style.border}`;
+            notification.style.color = style.text;
+
+            notification.innerHTML = `
+                <span style="font-size: 1.25rem;">${style.icon}</span>
+                <span>${message}</span>
+            `;
+
+            document.body.appendChild(notification);
+
+            // Auto remove after 4 seconds
+            setTimeout(() => {
+                notification.style.animation = 'slideOutRight 0.3s ease-out';
+                setTimeout(() => notification.remove(), 300);
+            }, 4000);
         }
 
         // Password toggle and validation functionality

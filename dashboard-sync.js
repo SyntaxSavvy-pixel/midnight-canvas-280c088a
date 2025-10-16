@@ -1,4 +1,4 @@
-// Dashboard Sync Script v3.0.0
+// Dashboard Sync Script v3.1.0
 // This script runs on the dashboard page and acts as a bridge between the web page and Chrome extension
 // Handles user data sync AND Smart Suggestions data communication
 
@@ -229,6 +229,22 @@
                         success: false,
                         error: 'Extension context invalidated. Please refresh the page.'
                     }, '*');
+                }
+                break;
+
+            case 'DASHBOARD_SYNC_USER_NAME':
+                // Sync updated user name to extension storage
+                try {
+                    chrome.runtime.sendMessage({
+                        type: 'UPDATE_USER_NAME',
+                        name: message.name
+                    }, (response) => {
+                        if (chrome.runtime.lastError) {
+                            return;
+                        }
+                    });
+                } catch (error) {
+                    // Silent fail - extension might not be available
                 }
                 break;
         }

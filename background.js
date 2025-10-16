@@ -611,6 +611,16 @@ class TabManager {
                     sendResponse({ success: true });
                     break;
 
+                case 'UPDATE_USER_NAME':
+                    // Update user name in extension storage
+                    const currentData = await chrome.storage.local.get(['userName', 'userEmail']);
+                    await chrome.storage.local.set({
+                        userName: message.name,
+                        lastNameUpdate: Date.now()
+                    });
+                    sendResponse({ success: true });
+                    break;
+
                 case 'USER_LOGGED_OUT':
                     // User logged out from web - clear storage
 
