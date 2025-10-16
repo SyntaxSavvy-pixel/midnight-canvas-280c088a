@@ -4911,6 +4911,23 @@
         // Initialize dashboard on load
         document.addEventListener('DOMContentLoaded', () => {
             initDashboard();
+
+            // Check for hash navigation (e.g., #subscription from extension upgrade buttons)
+            if (window.location.hash) {
+                const page = window.location.hash.substring(1); // Remove the '#'
+                // Wait a bit for dashboard to initialize, then navigate
+                setTimeout(() => {
+                    showPage(page);
+                }, 500);
+            }
+
+            // Listen for hash changes (e.g., if user clicks upgrade while already on dashboard)
+            window.addEventListener('hashchange', () => {
+                const page = window.location.hash.substring(1);
+                if (page) {
+                    showPage(page);
+                }
+            });
         });
 
         // Add CSS animation for notifications

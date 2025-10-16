@@ -1683,9 +1683,9 @@ class TabmangmentPopup {
         });
     }
     handlePremiumButtonClick() {
-        // Always redirect to user dashboard for both free and pro users
+        // Always redirect to user dashboard subscription page for both free and pro users
         chrome.tabs.create({
-            url: CONFIG.WEB.DASHBOARD_URL,
+            url: `${CONFIG.WEB.DASHBOARD_URL}#subscription`,
             active: true
         });
     }
@@ -3237,13 +3237,13 @@ class TabmangmentPopup {
             const modal = document.querySelector('div[style*="position: fixed"][style*="z-index: 10000"]');
             if (modal) modal.remove();
 
-            // Redirect to user dashboard where they can manage subscription
+            // Redirect to user dashboard subscription page
             await chrome.tabs.create({
-                url: CONFIG.WEB.DASHBOARD_URL,
+                url: `${CONFIG.WEB.DASHBOARD_URL}#subscription`,
                 active: true
             });
 
-            this.showMessage('📊 Opening your dashboard...', 'success');
+            this.showMessage('📊 Opening subscription page...', 'success');
         } catch (error) {
             this.showMessage('❌ Failed to open dashboard.', 'error');
         }
@@ -5237,13 +5237,13 @@ Thank you!`);
                 upgradeBtn.disabled = true;
             }
 
-            // Redirect to user dashboard where they can manage subscription
+            // Redirect to user dashboard subscription page
             await chrome.tabs.create({
-                url: CONFIG.WEB.DASHBOARD_URL,
+                url: `${CONFIG.WEB.DASHBOARD_URL}#subscription`,
                 active: true
             });
 
-            this.showMessage('📊 Opening your dashboard...', 'success');
+            this.showMessage('📊 Opening subscription page...', 'success');
 
             if (upgradeBtn) {
                 upgradeBtn.innerHTML = originalText;
