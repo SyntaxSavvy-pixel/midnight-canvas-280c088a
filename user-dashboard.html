@@ -2203,16 +2203,9 @@
 
         // Initialize dashboard
         async function initDashboard() {
-            // Fetch configuration from API
-            try {
-                const configResponse = await fetch(`${API_BASE}/config`);
-                if (configResponse.ok) {
-                    const config = await configResponse.json();
-                    STRIPE_PRICE_ID = config.stripePriceId;
-                }
-            } catch (error) {
-                // Silent fail - config is optional
-            }
+            // Stripe config - using default price ID
+            // API endpoint not implemented yet, using hardcoded value
+            STRIPE_PRICE_ID = 'price_1234567890'; // TODO: Replace with actual Stripe price ID
 
             // Check authentication (with retry for OAuth redirects)
             authToken = localStorage.getItem('tabmangment_token');
@@ -2856,90 +2849,21 @@
             alert('⭐ Upgrade to Pro to unlock:\n\n✅ Auto-Close Timer\n✅ Custom inactive thresholds\n✅ Priority support\n\nClick your plan badge to upgrade!');
         }
 
-        // Load payment method from Stripe
+        // Payment method display
+        // Note: Payment methods are managed via Stripe Customer Portal
+        // No backend API endpoint needed - users update via billing portal link
         async function loadPaymentMethod() {
             try {
                 const container = document.getElementById('payment-method-container');
                 if (!container) return;
 
-                // Show loading state
+                // Show message that payment methods are managed via Stripe
                 container.innerHTML = `
-                    <div class="loading-dots" style="margin: 1rem 0;">
-                        <span></span>
-                        <span></span>
-                        <span></span>
-                    </div>
-                `;
-
-                // Get user email
-                const storedUserData = localStorage.getItem('tabmangment_user');
-                if (!storedUserData) {
-                    container.innerHTML = `
-                        <div style="color: #94a3b8; font-style: italic;">
-                            No payment method on file
-                        </div>
-                    `;
-                    return;
-                }
-
-                const userData = JSON.parse(storedUserData);
-                const userEmail = userData.email;
-
-                // Fetch payment method from API
-                const response = await fetch(`${API_BASE}/payment-method?email=${encodeURIComponent(userEmail)}`, {
-                    method: 'GET',
-                    headers: {
-                        'Authorization': `Bearer ${authToken}`,
-                        'Content-Type': 'application/json'
-                    }
-                });
-
-                if (!response.ok) {
-                    throw new Error('Failed to fetch payment method');
-                }
-
-                const data = await response.json();
-
-                if (!data.paymentMethod) {
-                    // No payment method on file
-                    container.innerHTML = `
-                        <div style="color: #94a3b8; font-style: italic;">
-                            <svg style="width: 20px; height: 20px; display: inline-block; vertical-align: middle; margin-right: 0.5rem;" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                            </svg>
-                            No payment method on file
-                        </div>
-                    `;
-                    return;
-                }
-
-                const pm = data.paymentMethod;
-                const card = pm.card;
-
-                // Get card brand color
-                const brandColors = {
-                    'visa': '#1e40af',
-                    'mastercard': '#eb001b',
-                    'amex': '#006fcf',
-                    'discover': '#ff6000',
-                    'diners': '#0079be',
-                    'jcb': '#0e4c96',
-                    'unionpay': '#e21836'
-                };
-
-                const brandColor = brandColors[card.brand.toLowerCase()] || '#475569';
-                const brandName = card.brand.toUpperCase();
-
-                // Display payment method
-                container.innerHTML = `
-                    <div style="width: 48px; height: 32px; background: ${brandColor}; border-radius: 0.375rem; display: flex; align-items: center; justify-content: center; color: white; font-weight: 600; font-size: 10px;">
-                        ${brandName}
-                    </div>
-                    <div>
-                        <div style="color: #f8fafc;">•••• •••• •••• ${card.last4}</div>
-                        <div style="color: #94a3b8; font-size: 0.875rem;">
-                            Expires ${String(card.exp_month).padStart(2, '0')}/${String(card.exp_year).slice(-2)}
-                        </div>
+                    <div style="color: #94a3b8; font-style: italic;">
+                        <svg style="width: 20px; height: 20px; display: inline-block; vertical-align: middle; margin-right: 0.5rem;" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+                        </svg>
+                        Managed via Stripe Customer Portal
                     </div>
                 `;
 
@@ -2948,7 +2872,7 @@
                 if (container) {
                     container.innerHTML = `
                         <div style="color: #94a3b8; font-style: italic;">
-                            Unable to load payment method
+                            Payment method information unavailable
                         </div>
                     `;
                 }
@@ -2958,64 +2882,55 @@
         // Load user data from API
         async function loadUserData(email) {
             try {
-                // Get user from Supabase to check for updated metadata (like name)
-                let supabaseName = null;
-                try {
-                    const { data: { user: supabaseUser }, error: supabaseError } = await supabaseClient.auth.getUser();
-                    if (!supabaseError && supabaseUser) {
-                        // Check user_metadata for name updates
-                        supabaseName = supabaseUser.user_metadata?.name || supabaseUser.user_metadata?.display_name;
-                    }
-                } catch (supabaseErr) {
-                    // Ignore Supabase errors, continue with API
+                // Get user from Supabase (primary source of truth)
+                const { data: { user: supabaseUser }, error: supabaseError } = await supabaseClient.auth.getUser();
+
+                if (supabaseError || !supabaseUser) {
+                    throw new Error('Failed to load user from Supabase');
                 }
 
-                const response = await fetch(`${API_BASE}/me?email=${encodeURIComponent(email)}`, {
-                    method: 'GET',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${authToken}`
-                    }
-                });
+                // Update userData from Supabase
+                userData.email = supabaseUser.email || email;
+                userData.name = supabaseUser.user_metadata?.name || supabaseUser.user_metadata?.display_name || email.split('@')[0];
 
-                if (response.ok) {
-                    const data = await response.json();
-
-                    // Update userData with real data
-                    userData.email = data.email;
-                    // Prioritize Supabase metadata name over API name
-                    userData.name = supabaseName || data.name || email.split('@')[0];
-                    userData.plan = data.plan || 'free';
-                    userData.isPro = data.isPro || false;
-                    userData.subscriptionStatus = data.subscriptionStatus || 'free';
-                    userData.currentPeriodEnd = data.currentPeriodEnd;
-                    userData.stripeCustomerId = data.stripeCustomerId;
-                    userData.stripeSubscriptionId = data.stripeSubscriptionId;
-
-                    // Keep provider and avatar URL if they exist (from OAuth), otherwise use defaults
-                    // Note: API doesn't return provider/avatar, so we preserve what we loaded earlier
-                    if (userData.avatarUrl) {
-                        // Preserve the avatar URL in the avatar field for consistency
-                        userData.avatar = userData.avatarUrl;
-                    } else {
-                        // Generate initials for non-OAuth users
-                        userData.avatar = userData.name.split(' ').map(n => n[0]).join('').toUpperCase();
-                    }
-
-                    // Provider is already set from localStorage earlier, don't overwrite it
-                    // It was loaded in lines 1230-1232
-
-                    // Save to localStorage (includes provider and avatar from earlier load)
-                    localStorage.setItem('tabmangment_user', JSON.stringify(userData));
+                // Load subscription data from localStorage (set during payment/upgrade)
+                const storedUserData = localStorage.getItem('tabmangment_user');
+                if (storedUserData) {
+                    const stored = JSON.parse(storedUserData);
+                    userData.plan = stored.plan || 'free';
+                    userData.isPro = stored.isPro || stored.isPremium || false;
+                    userData.subscriptionStatus = stored.subscriptionStatus || 'free';
+                    userData.currentPeriodEnd = stored.currentPeriodEnd;
+                    userData.stripeCustomerId = stored.stripeCustomerId;
+                    userData.stripeSubscriptionId = stored.stripeSubscriptionId;
                 } else {
-                    throw new Error('Failed to load user data');
+                    // Default to free plan
+                    userData.plan = 'free';
+                    userData.isPro = false;
+                    userData.subscriptionStatus = 'free';
                 }
-            } catch (error) {
 
-                // Try to load from localStorage as fallback
+                // Handle avatar
+                if (userData.avatarUrl) {
+                    userData.avatar = userData.avatarUrl;
+                } else {
+                    userData.avatar = userData.name.split(' ').map(n => n[0]).join('').toUpperCase();
+                }
+
+                // Save updated data to localStorage
+                localStorage.setItem('tabmangment_user', JSON.stringify(userData));
+
+            } catch (error) {
+                // Fallback to localStorage if Supabase fails
                 const storedUserData = localStorage.getItem('tabmangment_user');
                 if (storedUserData) {
                     userData = { ...userData, ...JSON.parse(storedUserData) };
+                } else {
+                    // Ultimate fallback - use email
+                    userData.email = email;
+                    userData.name = email.split('@')[0];
+                    userData.plan = 'free';
+                    userData.isPro = false;
                 }
             }
         }
