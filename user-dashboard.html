@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <!-- Version: 5.1.0 - Device management UI with remove device functionality -->
+    <!-- Version: 5.1.1 - Fixed Supabase 406 errors with maybeSingle() -->
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard - TabManagement</title>
@@ -1727,7 +1727,7 @@
                     .from('user_devices')
                     .select('devices')
                     .eq('user_id', userId)
-                    .single();
+                    .maybeSingle();
 
                 let devices = [];
 
@@ -1778,9 +1778,10 @@
                     throw upsertError;
                 }
 
-                return { success: true, deviceCount: devices.length, maxDevices };
+                return { success: true, deviceCount: devices.length, maxDevices: isPro ? DEVICE_CONFIG.MAX_DEVICES_PRO : DEVICE_CONFIG.MAX_DEVICES_FREE };
 
             } catch (error) {
+                console.error('Device registration error:', error);
                 return { success: false, error: error.message };
             }
         }
@@ -1792,7 +1793,7 @@
                     .from('user_devices')
                     .select('devices')
                     .eq('user_id', userId)
-                    .single();
+                    .maybeSingle();
 
                 if (error || !userData || !userData.devices) {
                     // No devices registered yet, allow first device
@@ -1909,7 +1910,7 @@
                     .from('user_devices')
                     .select('devices')
                     .eq('user_id', userId)
-                    .single();
+                    .maybeSingle();
 
                 const container = document.getElementById('devices-list-container');
                 if (!container) return;
@@ -2028,7 +2029,7 @@
                     .from('user_devices')
                     .select('devices')
                     .eq('user_id', userId)
-                    .single();
+                    .maybeSingle();
 
                 if (fetchError) throw fetchError;
 
