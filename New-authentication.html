@@ -562,12 +562,16 @@
             display: flex;
             flex-direction: column;
             gap: 12px;
-            animation: marqueeUp 25s linear infinite;
             flex: 1;
+            will-change: transform;
+        }
+
+        .tabs-column:nth-child(1) {
+            animation: marqueeUp 40s linear infinite;
         }
 
         .tabs-column:nth-child(2) {
-            animation: marqueeDown 25s linear infinite;
+            animation: marqueeDown 45s linear infinite;
         }
 
         @keyframes marqueeUp {
@@ -921,6 +925,16 @@ function checkPasswordStrength(password) {
     }
 }
 
+// Shuffle array function
+function shuffleArray(array) {
+    const shuffled = [...array];
+    for (let i = shuffled.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+    }
+    return shuffled;
+}
+
 // Generate Infinite Scrolling Tabs with Logo.dev API
 function generateInfiniteTabs() {
     const container = document.querySelector('.infinite-tabs-container');
@@ -1032,19 +1046,23 @@ function generateInfiniteTabs() {
         { title: 'Crunchyroll', domain: 'crunchyroll.com' },
     ];
 
+    // Shuffle tabs for random order
+    const shuffled = shuffleArray(tabExamples);
+
     // Create two columns
     const column1 = document.createElement('div');
     const column2 = document.createElement('div');
     column1.className = 'tabs-column';
     column2.className = 'tabs-column';
 
-    // Split tabs into two groups and duplicate for seamless loop
-    const midpoint = Math.ceil(tabExamples.length / 2);
-    const firstHalf = tabExamples.slice(0, midpoint);
-    const secondHalf = tabExamples.slice(midpoint);
+    // Split shuffled tabs into two groups
+    const midpoint = Math.ceil(shuffled.length / 2);
+    const firstHalf = shuffled.slice(0, midpoint);
+    const secondHalf = shuffled.slice(midpoint);
 
-    const column1Tabs = [...firstHalf, ...firstHalf]; // Duplicate for infinite loop
-    const column2Tabs = [...secondHalf, ...secondHalf]; // Duplicate for infinite loop
+    // Create interleaved pattern to avoid exact duplicates appearing together
+    const column1Tabs = [...firstHalf, ...shuffleArray(firstHalf)];
+    const column2Tabs = [...secondHalf, ...shuffleArray(secondHalf)];
 
     // Generate column 1 tabs
     column1Tabs.forEach((tab) => {
