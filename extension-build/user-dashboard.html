@@ -2604,12 +2604,23 @@
                         </div>
                     </div>
                 `;
-            } else {
+            } else if (isPro) {
+                // Pro users: show checkmark
                 html += `
                     <div style="display: flex; align-items: flex-start; gap: 0.75rem; padding: 1rem; background: rgba(15, 23, 42, 0.5); border-radius: 0.75rem; border: 1px solid rgba(255, 255, 255, 0.05);">
                         <span style="width: 24px; height: 24px; flex-shrink: 0; margin-top: 0.125rem;">✅</span>
                         <div style="flex: 1; font-size: 0.9375rem; line-height: 1.6;">
                             Auto-clean is <strong style="color: #fff; font-weight: 600;">enabled</strong>. Your tabs are being managed automatically!
+                        </div>
+                    </div>
+                `;
+            } else {
+                // Free users: show subscription prompt
+                html += `
+                    <div style="display: flex; align-items: flex-start; gap: 0.75rem; padding: 1rem; background: rgba(245, 158, 11, 0.1); border-radius: 0.75rem; border: 1px solid rgba(245, 158, 11, 0.3);">
+                        <span style="width: 24px; height: 24px; flex-shrink: 0; margin-top: 0.125rem;">⭐</span>
+                        <div style="flex: 1; font-size: 0.9375rem; line-height: 1.6;">
+                            Subscribe to the <strong style="color: #f59e0b; font-weight: 600;">$4.99/month</strong> plan to unlock Auto-Close and premium features!
                         </div>
                     </div>
                 `;
@@ -2986,6 +2997,9 @@
             if (pageId === 'profile') {
                 // Load devices when profile page shown
                 loadUserDevices();
+            } else if (pageId === 'settings') {
+                // Reload settings when settings page shown
+                loadUserSettings();
             }
         }
 
@@ -3209,15 +3223,17 @@
 
         // Settings management
         function saveSettings() {
+            const autoCloseToggle = document.getElementById('auto-close-toggle');
             const settings = {
                 defaultTimer: document.getElementById('default-timer').value,
                 maxTabs: document.getElementById('max-tabs').value,
                 weekendMode: document.getElementById('weekend-mode').checked,
-                autoCloseEnabled: document.getElementById('auto-close-toggle').checked
+                autoCloseEnabled: autoCloseToggle ? autoCloseToggle.checked : false
             };
 
             localStorage.setItem('tabManagementSettings', JSON.stringify(settings));
             syncWithExtension();
+            alert('✅ Settings saved successfully!');
         }
 
         function loadUserSettings() {
@@ -3823,8 +3839,16 @@
                 titleEl.style.color = '';
                 descEl.textContent = 'Irreversible actions that will permanently affect your account';
 
-                // Show delete button
+                // Show export and delete buttons
                 buttonsContainer.innerHTML = `
+                    <button class="card-action secondary" onclick="exportData()" style="flex: 1;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                            <polyline points="7 10 12 15 17 10"></polyline>
+                            <line x1="12" y1="15" x2="12" y2="3"></line>
+                        </svg>
+                        Export Data
+                    </button>
                     <button class="delete-account-btn" onclick="showDeleteModal()">
                         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <polyline points="3 6 5 6 21 6"></polyline>
