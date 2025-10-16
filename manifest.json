@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Tabmangment",
-  "version": "5.2.0",
+  "version": "5.3.0",
   "description": "Professional tab management with auto-closing, timers, and premium features",
   
   "permissions": [
