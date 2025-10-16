@@ -38,6 +38,10 @@
             box-sizing: border-box;
         }
 
+        html {
+            scroll-behavior: smooth;
+        }
+
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'SF Pro Display', Roboto, Helvetica, Arial, sans-serif;
             line-height: 1.6;
@@ -47,39 +51,67 @@
         }
 
         .auth-container {
-            display: flex;
+            display: grid;
+            grid-template-columns: 1fr 1.2fr;
             height: 100vh;
-            width: 100%;
+            width: 100vw;
         }
 
         /* Left Side - Auth Form */
         .auth-left {
-            flex: 1;
             background: #ffffff;
             display: flex;
             flex-direction: column;
-            justify-content: center;
-            padding: 60px 80px;
-            max-width: 600px;
+            height: 100vh;
             overflow-y: auto;
+            overflow-x: hidden;
         }
 
-        .logo-section {
-            display: flex;
+        .auth-left::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .auth-left::-webkit-scrollbar-track {
+            background: #f1f5f9;
+        }
+
+        .auth-left::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 3px;
+        }
+
+        .auth-left::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+
+        /* Header with Logo */
+        .auth-header-logo {
+            padding: 24px 60px;
+            border-bottom: 1px solid #f1f5f9;
+        }
+
+        .logo-link {
+            display: inline-flex;
             align-items: center;
             gap: 12px;
-            margin-bottom: 48px;
+            text-decoration: none;
+            transition: all 0.3s ease;
+        }
+
+        .logo-link:hover {
+            transform: translateX(-4px);
         }
 
         .logo-icon {
-            width: 32px;
-            height: 32px;
-            border-radius: 8px;
-            padding: 6px;
+            width: 36px;
+            height: 36px;
+            border-radius: 10px;
+            padding: 8px;
             background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
             display: flex;
             align-items: center;
             justify-content: center;
+            box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
         }
 
         .logo-icon img {
@@ -89,26 +121,38 @@
         }
 
         .logo-text {
-            font-size: 1.25rem;
+            font-size: 1.375rem;
             font-weight: 700;
             color: #0f172a;
         }
 
-        .auth-header {
-            margin-bottom: 32px;
+        /* Form Content */
+        .form-wrapper {
+            flex: 1;
+            padding: 48px 60px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            max-width: 480px;
+            margin: 0 auto;
+            width: 100%;
         }
 
-        .auth-header h1 {
+        .auth-title {
+            margin-bottom: 12px;
+        }
+
+        .auth-title h1 {
             font-size: 2rem;
             font-weight: 700;
             color: #0f172a;
-            margin-bottom: 8px;
             letter-spacing: -0.02em;
         }
 
-        .auth-header p {
+        .auth-subtitle {
             font-size: 0.9375rem;
             color: #64748b;
+            margin-bottom: 32px;
         }
 
         /* Tabs */
@@ -129,7 +173,7 @@
             cursor: pointer;
             border-bottom: 2px solid transparent;
             margin-bottom: -2px;
-            transition: all 0.3s ease;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
         .tab-btn.active {
@@ -141,6 +185,64 @@
             color: #6366f1;
         }
 
+        /* Social Buttons - Top of Form */
+        .social-buttons {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-bottom: 24px;
+        }
+
+        .social-btn {
+            padding: 14px;
+            border: 1.5px solid #e2e8f0;
+            background: white;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: #0f172a;
+        }
+
+        .social-btn svg {
+            width: 20px;
+            height: 20px;
+        }
+
+        .social-btn:hover {
+            border-color: #6366f1;
+            background: #f8fafc;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(99, 102, 241, 0.2);
+        }
+
+        .social-btn:active {
+            transform: translateY(0);
+        }
+
+        .divider {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            margin: 24px 0;
+            color: #94a3b8;
+            font-size: 0.875rem;
+            font-weight: 500;
+        }
+
+        .divider::before,
+        .divider::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: #e2e8f0;
+        }
+
         /* Form */
         .form-content {
             display: none;
@@ -148,12 +250,12 @@
 
         .form-content.active {
             display: block;
-            animation: fadeIn 0.3s ease;
+            animation: fadeIn 0.4s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
         @keyframes fadeIn {
-            from { opacity: 0; }
-            to { opacity: 1; }
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
         }
 
         .form-group {
@@ -170,18 +272,18 @@
 
         .form-group input {
             width: 100%;
-            padding: 12px 16px;
+            padding: 14px 16px;
             border: 1.5px solid #e2e8f0;
-            border-radius: 8px;
+            border-radius: 10px;
             font-size: 0.9375rem;
-            transition: all 0.3s ease;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             outline: none;
             background: #ffffff;
         }
 
         .form-group input:focus {
             border-color: #6366f1;
-            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+            box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.1);
         }
 
         .form-group input::placeholder {
@@ -201,19 +303,75 @@
             border: none;
             cursor: pointer;
             color: #94a3b8;
-            padding: 4px;
+            padding: 6px;
             display: flex;
             align-items: center;
-            transition: color 0.3s ease;
+            transition: all 0.3s ease;
+            border-radius: 6px;
         }
 
         .password-toggle:hover {
+            background: #f1f5f9;
             color: #6366f1;
         }
 
         .password-toggle svg {
             width: 18px;
             height: 18px;
+        }
+
+        /* Password Strength Bar */
+        .password-strength {
+            margin-top: 8px;
+            height: 4px;
+            background: #f1f5f9;
+            border-radius: 2px;
+            overflow: hidden;
+            display: none;
+        }
+
+        .password-strength.show {
+            display: block;
+        }
+
+        .password-strength-bar {
+            height: 100%;
+            width: 0%;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            border-radius: 2px;
+        }
+
+        .password-strength-bar.weak {
+            width: 33%;
+            background: #ef4444;
+        }
+
+        .password-strength-bar.medium {
+            width: 66%;
+            background: #f59e0b;
+        }
+
+        .password-strength-bar.strong {
+            width: 100%;
+            background: #10b981;
+        }
+
+        .password-strength-text {
+            font-size: 0.75rem;
+            margin-top: 4px;
+            font-weight: 500;
+        }
+
+        .password-strength-text.weak {
+            color: #ef4444;
+        }
+
+        .password-strength-text.medium {
+            color: #f59e0b;
+        }
+
+        .password-strength-text.strong {
+            color: #10b981;
         }
 
         .form-footer {
@@ -229,11 +387,12 @@
             gap: 8px;
             font-size: 0.875rem;
             color: #64748b;
+            cursor: pointer;
         }
 
         .remember-me input[type="checkbox"] {
-            width: 16px;
-            height: 16px;
+            width: 18px;
+            height: 18px;
             cursor: pointer;
             accent-color: #6366f1;
         }
@@ -243,31 +402,32 @@
             text-decoration: none;
             font-size: 0.875rem;
             font-weight: 500;
-            transition: color 0.3s ease;
+            transition: all 0.3s ease;
         }
 
         .forgot-link:hover {
             color: #4f46e5;
+            text-decoration: underline;
         }
 
         .submit-btn {
             width: 100%;
-            padding: 14px;
+            padding: 16px;
             border: none;
-            border-radius: 8px;
-            background: #6366f1;
+            border-radius: 10px;
+            background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
             color: white;
             font-size: 0.9375rem;
             font-weight: 600;
             cursor: pointer;
-            transition: all 0.3s ease;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             position: relative;
+            box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
         }
 
         .submit-btn:hover {
-            background: #4f46e5;
-            transform: translateY(-1px);
-            box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(99, 102, 241, 0.4);
         }
 
         .submit-btn:active {
@@ -306,56 +466,6 @@
             transform: translate(-50%, -50%);
         }
 
-        .divider {
-            display: flex;
-            align-items: center;
-            gap: 16px;
-            margin: 24px 0;
-            color: #94a3b8;
-            font-size: 0.875rem;
-        }
-
-        .divider::before,
-        .divider::after {
-            content: '';
-            flex: 1;
-            height: 1px;
-            background: #e2e8f0;
-        }
-
-        .social-buttons {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 12px;
-            margin-bottom: 24px;
-        }
-
-        .social-btn {
-            padding: 12px;
-            border: 1.5px solid #e2e8f0;
-            background: white;
-            border-radius: 8px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-            font-size: 0.875rem;
-            font-weight: 600;
-            color: #0f172a;
-        }
-
-        .social-btn svg {
-            width: 20px;
-            height: 20px;
-        }
-
-        .social-btn:hover {
-            border-color: #6366f1;
-            background: #f8fafc;
-        }
-
         .register-link {
             text-align: center;
             margin-top: 24px;
@@ -367,47 +477,32 @@
             color: #6366f1;
             text-decoration: none;
             font-weight: 600;
+            transition: all 0.3s ease;
         }
 
         .register-link a:hover {
+            color: #4f46e5;
             text-decoration: underline;
         }
 
-        /* Right Side - Showcase */
+        /* Right Side - Animated Showcase */
         .auth-right {
-            flex: 1.2;
             background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #a855f7 100%);
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            padding: 60px;
             position: relative;
             overflow: hidden;
-        }
-
-        .auth-right::before {
-            content: '';
-            position: absolute;
-            top: -50%;
-            right: -50%;
-            width: 100%;
-            height: 100%;
-            background: radial-gradient(circle, rgba(255, 255, 255, 0.1) 0%, transparent 70%);
-            animation: float 20s ease-in-out infinite;
-        }
-
-        @keyframes float {
-            0%, 100% { transform: translate(0, 0) rotate(0deg); }
-            33% { transform: translate(30px, -30px) rotate(5deg); }
-            66% { transform: translate(-20px, 20px) rotate(-5deg); }
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 60px;
         }
 
         .showcase-content {
             position: relative;
-            z-index: 1;
+            z-index: 2;
             text-align: center;
             color: white;
+            margin-bottom: 60px;
         }
 
         .showcase-content h2 {
@@ -416,101 +511,134 @@
             margin-bottom: 16px;
             line-height: 1.2;
             letter-spacing: -0.02em;
+            animation: fadeInUp 0.8s ease-out;
         }
 
         .showcase-content p {
             font-size: 1.125rem;
-            opacity: 0.9;
-            margin-bottom: 48px;
+            opacity: 0.95;
             max-width: 500px;
+            animation: fadeInUp 0.8s ease-out 0.2s backwards;
         }
 
-        .dashboard-preview {
-            background: white;
-            border-radius: 16px;
-            padding: 24px;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Infinite Scrolling Tabs Animation */
+        .infinite-tabs-container {
+            position: relative;
+            width: 100%;
             max-width: 600px;
-            margin: 0 auto;
+            height: 400px;
+            overflow: hidden;
+            z-index: 1;
         }
 
-        .preview-header {
+        .tabs-scroll {
             display: flex;
-            justify-content: space-between;
+            flex-direction: column;
+            gap: 12px;
+            animation: scrollUp 20s linear infinite;
+        }
+
+        @keyframes scrollUp {
+            0% {
+                transform: translateY(0);
+            }
+            100% {
+                transform: translateY(-50%);
+            }
+        }
+
+        .tab-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 12px;
+            padding: 16px 20px;
+            display: flex;
             align-items: center;
-            margin-bottom: 20px;
-        }
-
-        .preview-stats {
-            display: flex;
             gap: 16px;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+            animation: fadeInTab 0.6s ease-out;
+            min-height: 72px;
         }
 
-        .stat-box {
+        @keyframes fadeInTab {
+            from {
+                opacity: 0;
+                transform: scale(0.95);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+        .tab-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 8px;
             background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
-            color: white;
-            padding: 16px 24px;
-            border-radius: 12px;
-            min-width: 120px;
-        }
-
-        .stat-label {
-            font-size: 0.75rem;
-            opacity: 0.9;
-            margin-bottom: 4px;
-        }
-
-        .stat-value {
-            font-size: 1.5rem;
-            font-weight: 700;
-        }
-
-        .preview-chart {
-            background: #f8fafc;
-            border-radius: 12px;
-            padding: 20px;
-            margin-top: 20px;
-            height: 200px;
             display: flex;
-            align-items: flex-end;
-            gap: 8px;
-            justify-content: space-around;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
         }
 
-        .chart-bar {
+        .tab-icon svg {
+            width: 20px;
+            height: 20px;
+            color: white;
+        }
+
+        .tab-info {
             flex: 1;
-            background: linear-gradient(180deg, #6366f1 0%, #8b5cf6 100%);
-            border-radius: 6px 6px 0 0;
-            animation: growBar 1s ease-out;
+            text-align: left;
         }
 
-        @keyframes growBar {
-            from { height: 0; }
+        .tab-title {
+            font-size: 0.9375rem;
+            font-weight: 600;
+            color: #0f172a;
+            margin-bottom: 2px;
         }
 
-        .chart-bar:nth-child(1) { height: 60%; }
-        .chart-bar:nth-child(2) { height: 80%; }
-        .chart-bar:nth-child(3) { height: 50%; }
-        .chart-bar:nth-child(4) { height: 90%; }
-        .chart-bar:nth-child(5) { height: 70%; }
-        .chart-bar:nth-child(6) { height: 95%; }
-
-        .footer {
-            position: absolute;
-            bottom: 24px;
-            left: 60px;
+        .tab-url {
             font-size: 0.8125rem;
             color: #64748b;
         }
 
-        .footer a {
-            color: #6366f1;
-            text-decoration: none;
-            margin-left: 16px;
+        .tab-close {
+            width: 28px;
+            height: 28px;
+            border-radius: 6px;
+            background: #fee2e2;
+            color: #dc2626;
+            border: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+            flex-shrink: 0;
         }
 
-        .footer a:hover {
-            text-decoration: underline;
+        .tab-close:hover {
+            background: #dc2626;
+            color: white;
+        }
+
+        .tab-close svg {
+            width: 14px;
+            height: 14px;
         }
 
         /* Notification */
@@ -526,7 +654,7 @@
             align-items: center;
             gap: 12px;
             z-index: 10000;
-            animation: slideInRight 0.3s ease;
+            animation: slideInRight 0.4s cubic-bezier(0.4, 0, 0.2, 1);
             max-width: 400px;
         }
 
@@ -570,21 +698,29 @@
 
         /* Responsive */
         @media (max-width: 1024px) {
+            .auth-container {
+                grid-template-columns: 1fr;
+            }
+
             .auth-right {
                 display: none;
             }
 
-            .auth-left {
-                max-width: 100%;
+            .form-wrapper {
+                max-width: 540px;
             }
         }
 
         @media (max-width: 768px) {
-            .auth-left {
-                padding: 40px 24px;
+            .auth-header-logo {
+                padding: 20px 24px;
             }
 
-            .auth-header h1 {
+            .form-wrapper {
+                padding: 32px 24px;
+            }
+
+            .auth-title h1 {
                 font-size: 1.75rem;
             }
 
@@ -598,148 +734,140 @@
     <div class="auth-container">
         <!-- Left Side - Form -->
         <div class="auth-left">
-            <div class="logo-section">
-                <div class="logo-icon">
-                    <img src="/icons/icon-48.png" alt="TabManagement">
-                </div>
-                <div class="logo-text">TabManagement</div>
-            </div>
-
-            <div class="auth-header">
-                <h1>Welcome Back</h1>
-                <p>Enter your email and password to access your account.</p>
-            </div>
-
-            <!-- Tabs -->
-            <div class="form-tabs">
-                <button class="tab-btn active" onclick="switchTab('login')">Sign In</button>
-                <button class="tab-btn" onclick="switchTab('signup')">Sign Up</button>
-            </div>
-
-            <!-- Login Form -->
-            <div id="login-form" class="form-content active">
-                <form onsubmit="handleEmailLogin(event)">
-                    <div class="form-group">
-                        <label for="login-email">Email</label>
-                        <input type="email" id="login-email" placeholder="sellstore@company.com" required>
+            <!-- Header with Logo -->
+            <div class="auth-header-logo">
+                <a href="/" class="logo-link">
+                    <div class="logo-icon">
+                        <img src="/icons/icon-48.png" alt="TabManagement">
                     </div>
-                    <div class="form-group">
-                        <label for="login-password">Password</label>
-                        <div class="password-wrapper">
-                            <input type="password" id="login-password" placeholder="Sellstore." required>
-                            <button type="button" class="password-toggle" onclick="togglePassword('login-password', this)">
-                                <i data-feather="eye"></i>
-                            </button>
+                    <div class="logo-text">TabManagement</div>
+                </a>
+            </div>
+
+            <!-- Form Content -->
+            <div class="form-wrapper">
+                <div class="auth-title">
+                    <h1>Welcome Back</h1>
+                </div>
+                <div class="auth-subtitle">
+                    Enter your email and password to access your account.
+                </div>
+
+                <!-- Tabs -->
+                <div class="form-tabs">
+                    <button class="tab-btn active" onclick="switchTab('login')">Sign In</button>
+                    <button class="tab-btn" onclick="switchTab('signup')">Sign Up</button>
+                </div>
+
+                <!-- Login Form -->
+                <div id="login-form" class="form-content active">
+                    <!-- Social Buttons at Top -->
+                    <div class="social-buttons">
+                        <button class="social-btn" onclick="handleGoogleLogin()">
+                            <svg viewBox="0 0 24 24"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>
+                            <span>Google</span>
+                        </button>
+                        <button class="social-btn" onclick="handleGithubLogin()">
+                            <svg viewBox="0 0 24 24"><path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/></svg>
+                            <span>GitHub</span>
+                        </button>
+                    </div>
+
+                    <div class="divider">Or continue with email</div>
+
+                    <form onsubmit="handleEmailLogin(event)">
+                        <div class="form-group">
+                            <label for="login-email">Email</label>
+                            <input type="email" id="login-email" placeholder="you@company.com" required autocomplete="email">
                         </div>
-                    </div>
-                    <div class="form-footer">
-                        <label class="remember-me">
-                            <input type="checkbox" id="remember-me">
-                            <span>Remember Me</span>
-                        </label>
-                        <a href="#" class="forgot-link" onclick="alert('Password reset feature coming soon!'); return false;">Forgot Your Password?</a>
-                    </div>
-                    <button type="submit" class="submit-btn" id="login-btn">
-                        <span class="btn-text">Log In</span>
-                        <span class="loading-spinner"></span>
-                    </button>
-                </form>
-
-                <div class="divider">Or Login With</div>
-
-                <div class="social-buttons">
-                    <button class="social-btn" onclick="handleGoogleLogin()">
-                        <svg viewBox="0 0 24 24"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>
-                        <span>Google</span>
-                    </button>
-                    <button class="social-btn" onclick="handleGithubLogin()">
-                        <svg viewBox="0 0 24 24"><path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/></svg>
-                        <span>GitHub</span>
-                    </button>
-                </div>
-
-                <div class="register-link">
-                    Don't Have An Account? <a href="#" onclick="switchTab('signup'); return false;">Register Now.</a>
-                </div>
-            </div>
-
-            <!-- Signup Form -->
-            <div id="signup-form" class="form-content">
-                <form onsubmit="handleEmailSignup(event)">
-                    <div class="form-group">
-                        <label for="signup-name">Full Name</label>
-                        <input type="text" id="signup-name" placeholder="John Doe" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="signup-email">Email</label>
-                        <input type="email" id="signup-email" placeholder="you@company.com" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="signup-password">Password</label>
-                        <div class="password-wrapper">
-                            <input type="password" id="signup-password" placeholder="Create a strong password" required minlength="6">
-                            <button type="button" class="password-toggle" onclick="togglePassword('signup-password', this)">
-                                <i data-feather="eye"></i>
-                            </button>
+                        <div class="form-group">
+                            <label for="login-password">Password</label>
+                            <div class="password-wrapper">
+                                <input type="password" id="login-password" placeholder="Enter your password" required autocomplete="current-password">
+                                <button type="button" class="password-toggle" onclick="togglePassword('login-password', this)" title="Show password">
+                                    <i data-feather="eye"></i>
+                                </button>
+                            </div>
                         </div>
+                        <div class="form-footer">
+                            <label class="remember-me">
+                                <input type="checkbox" id="remember-me">
+                                <span>Remember Me</span>
+                            </label>
+                            <a href="#" class="forgot-link" onclick="alert('Password reset feature coming soon!'); return false;">Forgot Your Password?</a>
+                        </div>
+                        <button type="submit" class="submit-btn" id="login-btn">
+                            <span class="btn-text">Log In</span>
+                            <span class="loading-spinner"></span>
+                        </button>
+                    </form>
+
+                    <div class="register-link">
+                        Don't Have An Account? <a href="#" onclick="switchTab('signup'); return false;">Register Now</a>
                     </div>
-                    <button type="submit" class="submit-btn" id="signup-btn">
-                        <span class="btn-text">Create Account</span>
-                        <span class="loading-spinner"></span>
-                    </button>
-                </form>
-
-                <div class="divider">Or Sign Up With</div>
-
-                <div class="social-buttons">
-                    <button class="social-btn" onclick="handleGoogleLogin()">
-                        <svg viewBox="0 0 24 24"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>
-                        <span>Google</span>
-                    </button>
-                    <button class="social-btn" onclick="handleGithubLogin()">
-                        <svg viewBox="0 0 24 24"><path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/></svg>
-                        <span>GitHub</span>
-                    </button>
                 </div>
 
-                <div class="register-link">
-                    Already Have An Account? <a href="#" onclick="switchTab('login'); return false;">Sign In.</a>
-                </div>
-            </div>
+                <!-- Signup Form -->
+                <div id="signup-form" class="form-content">
+                    <!-- Social Buttons at Top -->
+                    <div class="social-buttons">
+                        <button class="social-btn" onclick="handleGoogleLogin()">
+                            <svg viewBox="0 0 24 24"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>
+                            <span>Google</span>
+                        </button>
+                        <button class="social-btn" onclick="handleGithubLogin()">
+                            <svg viewBox="0 0 24 24"><path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/></svg>
+                            <span>GitHub</span>
+                        </button>
+                    </div>
 
-            <div class="footer">
-                Copyright © 2025 TabManagement LTD
-                <a href="/privacy.html">Privacy Policy</a>
+                    <div class="divider">Or sign up with email</div>
+
+                    <form onsubmit="handleEmailSignup(event)">
+                        <div class="form-group">
+                            <label for="signup-name">Full Name</label>
+                            <input type="text" id="signup-name" placeholder="John Doe" required autocomplete="name">
+                        </div>
+                        <div class="form-group">
+                            <label for="signup-email">Email</label>
+                            <input type="email" id="signup-email" placeholder="you@company.com" required autocomplete="email">
+                        </div>
+                        <div class="form-group">
+                            <label for="signup-password">Password</label>
+                            <div class="password-wrapper">
+                                <input type="password" id="signup-password" placeholder="Create a strong password" required minlength="6" autocomplete="new-password" oninput="checkPasswordStrength(this.value)">
+                                <button type="button" class="password-toggle" onclick="togglePassword('signup-password', this)" title="Show password">
+                                    <i data-feather="eye"></i>
+                                </button>
+                            </div>
+                            <div class="password-strength" id="password-strength">
+                                <div class="password-strength-bar" id="strength-bar"></div>
+                            </div>
+                            <div class="password-strength-text" id="strength-text"></div>
+                        </div>
+                        <button type="submit" class="submit-btn" id="signup-btn">
+                            <span class="btn-text">Create Account</span>
+                            <span class="loading-spinner"></span>
+                        </button>
+                    </form>
+
+                    <div class="register-link">
+                        Already Have An Account? <a href="#" onclick="switchTab('login'); return false;">Sign In</a>
+                    </div>
+                </div>
             </div>
         </div>
 
-        <!-- Right Side - Showcase -->
+        <!-- Right Side - Infinite Scrolling Tabs -->
         <div class="auth-right">
             <div class="showcase-content">
                 <h2>Effortlessly manage your tabs<br>and productivity.</h2>
                 <p>Log in to access your tab dashboard and manage your browsing efficiently.</p>
+            </div>
 
-                <div class="dashboard-preview">
-                    <div class="preview-header">
-                        <div class="preview-stats">
-                            <div class="stat-box">
-                                <div class="stat-label">Active</div>
-                                <div class="stat-value">$103,374</div>
-                            </div>
-                            <div class="stat-box">
-                                <div class="stat-label">Closed</div>
-                                <div class="stat-value">00:01:30</div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="preview-chart">
-                        <div class="chart-bar"></div>
-                        <div class="chart-bar"></div>
-                        <div class="chart-bar"></div>
-                        <div class="chart-bar"></div>
-                        <div class="chart-bar"></div>
-                        <div class="chart-bar"></div>
-                    </div>
+            <div class="infinite-tabs-container">
+                <div class="tabs-scroll" id="tabs-scroll">
+                    <!-- Tabs will be dynamically generated -->
                 </div>
             </div>
         </div>
@@ -753,9 +881,96 @@ const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 // Initialize feather icons
 document.addEventListener('DOMContentLoaded', () => {
     feather.replace();
+    generateInfiniteTabs();
 });
 
-// Check if user is already logged in and redirect to dashboard
+// Password Strength Checker
+function checkPasswordStrength(password) {
+    const strengthBar = document.getElementById('strength-bar');
+    const strengthText = document.getElementById('strength-text');
+    const strengthContainer = document.getElementById('password-strength');
+
+    if (password.length === 0) {
+        strengthContainer.classList.remove('show');
+        return;
+    }
+
+    strengthContainer.classList.add('show');
+
+    let strength = 0;
+    if (password.length >= 8) strength++;
+    if (password.match(/[a-z]/) && password.match(/[A-Z]/)) strength++;
+    if (password.match(/\d/)) strength++;
+    if (password.match(/[^a-zA-Z\d]/)) strength++;
+
+    strengthBar.className = 'password-strength-bar';
+    strengthText.className = 'password-strength-text';
+
+    if (strength <= 2) {
+        strengthBar.classList.add('weak');
+        strengthText.classList.add('weak');
+        strengthText.textContent = 'Weak password';
+    } else if (strength === 3) {
+        strengthBar.classList.add('medium');
+        strengthText.classList.add('medium');
+        strengthText.textContent = 'Medium password';
+    } else {
+        strengthBar.classList.add('strong');
+        strengthText.classList.add('strong');
+        strengthText.textContent = 'Strong password';
+    }
+}
+
+// Generate Infinite Scrolling Tabs
+function generateInfiniteTabs() {
+    const tabsContainer = document.getElementById('tabs-scroll');
+    const tabExamples = [
+        { title: 'Dashboard', url: 'app.tabmangment.com', icon: 'home' },
+        { title: 'Analytics', url: 'analytics.google.com', icon: 'bar-chart-2' },
+        { title: 'GitHub Repo', url: 'github.com/project', icon: 'github' },
+        { title: 'Documentation', url: 'docs.example.com', icon: 'file-text' },
+        { title: 'Email Inbox', url: 'mail.google.com', icon: 'mail' },
+        { title: 'Calendar', url: 'calendar.google.com', icon: 'calendar' },
+        { title: 'Slack Channel', url: 'slack.com/workspace', icon: 'message-square' },
+        { title: 'YouTube Video', url: 'youtube.com/watch', icon: 'play-circle' },
+        { title: 'Settings', url: 'settings.tabmangment.com', icon: 'settings' },
+        { title: 'Profile', url: 'profile.example.com', icon: 'user' },
+    ];
+
+    // Duplicate tabs for seamless infinite scroll
+    const allTabs = [...tabExamples, ...tabExamples];
+
+    allTabs.forEach((tab, index) => {
+        const tabCard = document.createElement('div');
+        tabCard.className = 'tab-card';
+        tabCard.style.animationDelay = `${index * 0.1}s`;
+        tabCard.innerHTML = `
+            <div class="tab-icon">
+                <i data-feather="${tab.icon}"></i>
+            </div>
+            <div class="tab-info">
+                <div class="tab-title">${tab.title}</div>
+                <div class="tab-url">${tab.url}</div>
+            </div>
+            <button class="tab-close" onclick="closeTab(this)">
+                <i data-feather="x"></i>
+            </button>
+        `;
+        tabsContainer.appendChild(tabCard);
+    });
+
+    feather.replace();
+}
+
+function closeTab(button) {
+    const tabCard = button.closest('.tab-card');
+    tabCard.style.animation = 'fadeInTab 0.3s ease-out reverse';
+    setTimeout(() => {
+        tabCard.remove();
+    }, 300);
+}
+
+// Check if user is already logged in
 (async function checkExistingSession() {
     try {
         const urlParams = new URLSearchParams(window.location.search);
@@ -810,13 +1025,13 @@ function switchTab(tab) {
     if (tab === 'login') {
         tabs[0].classList.add('active');
         document.getElementById('login-form').classList.add('active');
-        document.querySelector('.auth-header h1').textContent = 'Welcome Back';
-        document.querySelector('.auth-header p').textContent = 'Enter your email and password to access your account.';
+        document.querySelector('.auth-title h1').textContent = 'Welcome Back';
+        document.querySelector('.auth-subtitle').textContent = 'Enter your email and password to access your account.';
     } else {
         tabs[1].classList.add('active');
         document.getElementById('signup-form').classList.add('active');
-        document.querySelector('.auth-header h1').textContent = 'Create Account';
-        document.querySelector('.auth-header p').textContent = 'Sign up to start managing your tabs efficiently.';
+        document.querySelector('.auth-title h1').textContent = 'Create Account';
+        document.querySelector('.auth-subtitle').textContent = 'Sign up to start managing your tabs efficiently.';
     }
 }
 
@@ -826,9 +1041,11 @@ function togglePassword(inputId, button) {
     if (input.type === 'password') {
         input.type = 'text';
         icon.setAttribute('data-feather', 'eye-off');
+        button.setAttribute('title', 'Hide password');
     } else {
         input.type = 'password';
         icon.setAttribute('data-feather', 'eye');
+        button.setAttribute('title', 'Show password');
     }
     feather.replace();
 }
@@ -844,8 +1061,8 @@ function showNotification(message, type = 'success') {
     feather.replace();
 
     setTimeout(() => {
-        notification.style.animation = 'slideInRight 0.3s ease reverse';
-        setTimeout(() => notification.remove(), 300);
+        notification.style.animation = 'slideInRight 0.4s cubic-bezier(0.4, 0, 0.2, 1) reverse';
+        setTimeout(() => notification.remove(), 400);
     }, 3000);
 }
 
