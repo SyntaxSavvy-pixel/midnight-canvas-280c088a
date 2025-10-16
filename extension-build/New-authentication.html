@@ -64,150 +64,52 @@
             pointer-events: none;
         }
 
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 0 24px;
-            position: relative;
-            z-index: 1;
-        }
-
-        /* Header - matching mainlandingpage */
-        header {
-            padding: 1.5rem 0;
-            position: sticky;
-            top: 0;
-            z-index: 1000;
-            background: rgba(255, 255, 255, 0.8);
-            backdrop-filter: blur(20px) saturate(180%);
-            border-bottom: 1px solid rgba(226, 232, 240, 0.8);
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
-        }
-
-        nav {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .logo {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            font-size: 1.5rem;
-            font-weight: 700;
-            color: #1e293b;
-            text-decoration: none;
-            transition: transform 0.3s ease;
-        }
-
-        .logo:hover {
-            transform: translateY(-2px);
-        }
-
-        .logo-icon {
-            width: 40px;
-            height: 40px;
-            border-radius: 12px;
-            padding: 8px;
-            background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #a855f7 100%);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
-        }
-
-        .logo-icon img {
-            width: 24px;
-            height: 24px;
-            filter: brightness(0) invert(1);
-        }
-
-        .nav-links {
-            display: flex;
-            gap: 2rem;
-            list-style: none;
-            align-items: center;
-        }
-
-        .nav-links a {
-            color: #64748b;
-            text-decoration: none;
-            font-weight: 500;
-            font-size: 0.95rem;
-            transition: all 0.3s ease;
-            position: relative;
-        }
-
-        .nav-links a::after {
-            content: '';
-            position: absolute;
-            bottom: -4px;
-            left: 0;
-            width: 0;
-            height: 2px;
-            background: linear-gradient(90deg, #6366f1, #8b5cf6);
-            transition: width 0.3s ease;
-        }
-
-        .nav-links a:hover {
-            color: #6366f1;
-        }
-
-        .nav-links a:hover::after {
-            width: 100%;
-        }
-
-        /* Auth Section */
+        /* Auth Section - Full Screen */
         .auth-section {
-            padding: 80px 0 120px;
             display: flex;
             justify-content: center;
             align-items: center;
-            min-height: calc(100vh - 100px);
+            min-height: 100vh;
+            width: 100%;
+            padding: 0;
         }
 
         .auth-card {
             background: rgba(255, 255, 255, 0.95);
             backdrop-filter: blur(20px) saturate(180%);
-            border-radius: 24px;
-            padding: 48px;
+            border-radius: 0;
+            padding: 60px 80px;
             width: 100%;
-            max-width: 480px;
-            box-shadow:
-                0 4px 6px rgba(0, 0, 0, 0.02),
-                0 12px 24px rgba(0, 0, 0, 0.04),
-                0 24px 48px rgba(99, 102, 241, 0.08);
-            border: 1px solid rgba(255, 255, 255, 0.8);
-            animation: fadeInUp 0.6s ease-out;
+            max-width: 600px;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            box-shadow: none;
+            border: none;
+            animation: fadeIn 0.6s ease-out;
         }
 
-        @keyframes fadeInUp {
-            from {
-                opacity: 0;
-                transform: translateY(30px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
         }
 
         .auth-header {
             text-align: center;
-            margin-bottom: 32px;
+            margin-bottom: 40px;
         }
 
         .auth-header h2 {
-            font-size: 2rem;
+            font-size: 2.5rem;
             font-weight: 700;
             color: #0f172a;
-            margin-bottom: 8px;
+            margin-bottom: 12px;
             letter-spacing: -0.02em;
         }
 
         .auth-header p {
-            font-size: 1rem;
+            font-size: 1.125rem;
             color: #64748b;
             font-weight: 400;
         }
@@ -521,20 +423,20 @@
         /* Responsive */
         @media (max-width: 768px) {
             .auth-card {
-                padding: 32px 24px;
-                margin: 20px;
+                padding: 40px 24px;
+                max-width: 100%;
             }
 
             .auth-header h2 {
-                font-size: 1.75rem;
+                font-size: 2rem;
+            }
+
+            .auth-header p {
+                font-size: 1rem;
             }
 
             .social-buttons {
                 grid-template-columns: 1fr;
-            }
-
-            .nav-links {
-                display: none;
             }
         }
 
@@ -545,25 +447,6 @@
     </style>
 </head>
 <body>
-    <!-- Header -->
-    <header>
-        <div class="container">
-            <nav>
-                <a href="/" class="logo">
-                    <div class="logo-icon">
-                        <img src="/icons/icon-48.png" alt="TabManagement">
-                    </div>
-                    <span>TabManagement</span>
-                </a>
-                <ul class="nav-links">
-                    <li><a href="/">Home</a></li>
-                    <li><a href="/#features">Features</a></li>
-                    <li><a href="/user-dashboard.html">Dashboard</a></li>
-                </ul>
-            </nav>
-        </div>
-    </header>
-
     <!-- Auth Section -->
     <section class="auth-section">
         <div class="auth-card">
