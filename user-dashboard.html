@@ -2020,7 +2020,7 @@
                             ${devices.length} of ${maxDevices} devices used
                         </span>
                         ${!isPro && devices.length >= 1 ? `
-                            <a href="#" onclick="showPage('account'); return false;" style="color: #14b8a6; font-size: 0.875rem; font-weight: 600; text-decoration: none;">
+                            <a href="#" onclick="showPage('subscription'); return false;" style="color: #14b8a6; font-size: 0.875rem; font-weight: 600; text-decoration: none;">
                                 Upgrade for more devices →
                             </a>
                         ` : ''}
@@ -2968,11 +2968,19 @@
                 link.classList.remove('active');
             });
 
-            // Show selected page
-            document.getElementById(pageId + '-page').classList.add('active');
+            // Show selected page (with error handling)
+            const pageElement = document.getElementById(pageId + '-page');
+            if (!pageElement) {
+                console.error(`Page not found: ${pageId}-page`);
+                return;
+            }
+            pageElement.classList.add('active');
 
-            // Activate nav link
-            document.querySelector(`[data-page="${pageId}"]`).classList.add('active');
+            // Activate nav link (with error handling)
+            const navLink = document.querySelector(`[data-page="${pageId}"]`);
+            if (navLink) {
+                navLink.classList.add('active');
+            }
 
             // Load page-specific data
             if (pageId === 'profile') {
