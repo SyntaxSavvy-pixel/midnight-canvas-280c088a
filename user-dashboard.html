@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <!-- Version: 4.1.0 - Profile update with 24h cooldown, loading states, and live name sync -->
+    <!-- Version: 4.2.0 - Profile update with Supabase persistence and database sync -->
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard - TabManagement</title>
@@ -2437,6 +2437,18 @@
         // Load user data from API
         async function loadUserData(email) {
             try {
+                // Get user from Supabase to check for updated metadata (like name)
+                let supabaseName = null;
+                try {
+                    const { data: { user: supabaseUser }, error: supabaseError } = await supabaseClient.auth.getUser();
+                    if (!supabaseError && supabaseUser) {
+                        // Check user_metadata for name updates
+                        supabaseName = supabaseUser.user_metadata?.name || supabaseUser.user_metadata?.display_name;
+                    }
+                } catch (supabaseErr) {
+                    // Ignore Supabase errors, continue with API
+                }
+
                 const response = await fetch(`${API_BASE}/me?email=${encodeURIComponent(email)}`, {
                     method: 'GET',
                     headers: {
@@ -2450,7 +2462,8 @@
 
                     // Update userData with real data
                     userData.email = data.email;
-                    userData.name = data.name || email.split('@')[0];
+                    // Prioritize Supabase metadata name over API name
+                    userData.name = supabaseName || data.name || email.split('@')[0];
                     userData.plan = data.plan || 'free';
                     userData.isPro = data.isPro || false;
                     userData.subscriptionStatus = data.subscriptionStatus || 'free';
@@ -2839,17 +2852,42 @@
             btnLoading.style.display = 'flex';
 
             try {
-                // Simulate API call delay for realistic UX
-                await new Promise(resolve => setTimeout(resolve, 1000));
+                // Update Supabase user metadata
+                const { data: updateData, error: updateError } = await supabaseClient.auth.updateUser({
+                    data: {
+                        name: newName,
+                        display_name: newName
+                    }
+                });
 
-                // Update user data
-                const oldName = userData.name;
+                if (updateError) {
+                    throw new Error(updateError.message);
+                }
+
+                // Update API backend (if endpoint exists)
+                try {
+                    await fetch(`${API_BASE}/update-profile`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${authToken}`
+                        },
+                        body: JSON.stringify({
+                            email: userData.email,
+                            name: newName
+                        })
+                    });
+                } catch (apiError) {
+                    // API update failed but Supabase succeeded, continue
+                }
+
+                // Update local user data
                 userData.name = newName;
                 userData.userName = newName;
                 userData.avatar = newName.split(' ').map(n => n[0]).join('').toUpperCase();
 
                 // Save to localStorage
-                localStorage.setItem('userData', JSON.stringify(userData));
+                localStorage.setItem('tabmangment_user', JSON.stringify(userData));
 
                 // Set cooldown timestamp (24 hours from now)
                 const cooldownTimestamp = Date.now() + (24 * 60 * 60 * 1000);
@@ -2869,7 +2907,7 @@
                 startCooldownTimer(cooldownTimestamp);
 
             } catch (error) {
-                showNotification('Failed to update profile. Please try again.', 'error');
+                showNotification(`Failed to update profile: ${error.message}`, 'error');
             } finally {
                 // Hide loading state
                 updateBtn.disabled = false;
