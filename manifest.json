@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Tabmangment",
-  "version": "5.1.1",
+  "version": "5.1.2",
   "description": "Professional tab management with auto-closing, timers, and premium features",
   
   "permissions": [
@@ -81,7 +81,7 @@
   },
   
   "content_security_policy": {
-    "extension_pages": "script-src 'self'; object-src 'self'; connect-src 'self' https://buy.stripe.com https://*.netlify.app https://tabmangment.com https://api.emailjs.com https://billing.stripe.com https://js.stripe.com https://www.googleapis.com/*;"
+    "extension_pages": "script-src 'self' 'wasm-unsafe-eval'; object-src 'self'; connect-src 'self' https://buy.stripe.com https://*.netlify.app https://tabmangment.com https://api.emailjs.com https://billing.stripe.com https://js.stripe.com https://www.googleapis.com https://*.supabase.co wss://*.supabase.co;"
   },
 
   "web_accessible_resources": [
