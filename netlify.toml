@@ -1,128 +1,55 @@
+# Netlify Configuration File
+# Ensures our CSP headers take priority and aren't overridden
+
 [build]
   publish = "."
-  functions = "netlify/functions"
-  command = "npm run build"
-  environment = { SECRETS_SCAN_OMIT_PATHS = ".env,.env.*,node_modules/**" }
+  command = "echo 'No build required'"
 
-[functions]
-  node_bundler = "esbuild"
-
-# Force HTTPS and remove www
-[[redirects]]
-  from = "https://www.tabmangment.com/*"
-  to = "https://tabmangment.com/:splat"
-  status = 301
-  force = true
-
-[[redirects]]
-  from = "http://tabmangment.com/*"
-  to = "https://tabmangment.com/:splat"
-  status = 301
-  force = true
-
-[[redirects]]
-  from = "http://www.tabmangment.com/*"
-  to = "https://tabmangment.com/:splat"
-  status = 301
-  force = true
-
-# Redirect old Netlify domain to new domain
-[[redirects]]
-  from = "https://tabmangment.netlify.app/*"
-  to = "https://tabmangment.com/:splat"
-  status = 301
-  force = true
-
-# API Functions
-[[redirects]]
-  from = "/api/*"
-  to = "/.netlify/functions/:splat"
-  status = 200
-
-# Clean URLs - Serve .html files without showing extension (internal rewrites)
-[[redirects]]
-  from = "/"
-  to = "/mainlandingpage.html"
-  status = 200
-
-[[redirects]]
-  from = "/privacy"
-  to = "/privacy.html"
-  status = 200
-
-[[redirects]]
-  from = "/new-authentication"
-  to = "/New-authentication.html"
-  status = 200
-
-[[redirects]]
-  from = "/success"
-  to = "/success-page.html"
-  status = 200
-
-# Legacy clean URL routes
-[[redirects]]
-  from = "/signup"
-  to = "/New-authentication.html"
-  status = 200
-
-[[redirects]]
-  from = "/login"
-  to = "/New-authentication.html"
-  status = 200
-
-[[redirects]]
-  from = "/dashboard"
-  to = "/user-dashboard.html"
-  status = 200
-
-[[redirects]]
-  from = "/auth"
-  to = "/New-authentication.html"
-  status = 200
-
-[[redirects]]
-  from = "/checkout"
-  to = "/payment-checkout.html"
-  status = 200
-
-[[redirects]]
-  from = "/returning"
-  to = "/Returning-Users.html"
-  status = 200
-
-[[redirects]]
-  from = "/register"
-  to = "/New-authentication.html?mode=signup"
-  status = 200
-
-[[redirects]]
-  from = "/forgot-password"
-  to = "/New-authentication.html"
-  status = 200
-
-[[redirects]]
-  from = "/terms"
-  to = "/privacy.html"
-  status = 200
-
-[[redirects]]
-  from = "/support"
-  to = "/New-authentication.html"
-  status = 200
-
-# Security Headers
+# Custom headers (backup for _headers file)
 [[headers]]
   for = "/*"
   [headers.values]
+    Content-Security-Policy = "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net https://unpkg.com https://*.supabase.co; style-src 'self' 'unsafe-inline'; img-src 'self' data: https: blob:; font-src 'self' data:; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://cdn.jsdelivr.net https://unpkg.com https://api.emailjs.com https://buy.stripe.com https://billing.stripe.com https://js.stripe.com https://*.netlify.app https://tabmangment.com; frame-src 'self' https://buy.stripe.com https://billing.stripe.com https://js.stripe.com https://accounts.google.com https://github.com; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self' https://accounts.google.com https://github.com"
     X-Frame-Options = "DENY"
-    X-XSS-Protection = "1; mode=block"
     X-Content-Type-Options = "nosniff"
+    X-XSS-Protection = "1; mode=block"
     Referrer-Policy = "strict-origin-when-cross-origin"
     Permissions-Policy = "geolocation=(), microphone=(), camera=()"
 
-# Cache control for JavaScript files - force revalidation
+# Specific headers for dashboard
 [[headers]]
-  for = "/*.js"
+  for = "/user-dashboard*"
   [headers.values]
-    Cache-Control = "public, max-age=0, must-revalidate"
+    Access-Control-Allow-Origin = "*"
+    Access-Control-Allow-Methods = "GET, POST, OPTIONS"
+    Access-Control-Allow-Headers = "Content-Type, Authorization"
+
+# Specific headers for API
+[[headers]]
+  for = "/api/*"
+  [headers.values]
+    Access-Control-Allow-Origin = "*"
+    Access-Control-Allow-Methods = "GET, POST, PUT, DELETE, OPTIONS"
+    Access-Control-Allow-Headers = "Content-Type, Authorization"
+
+# Disable Netlify's default CSP additions
+[build.environment]
+  NETLIFY_USE_YARN = "false"
+
+# Build settings
+[build.processing]
+  skip_processing = false
+
+[build.processing.css]
+  bundle = false
+  minify = false
+
+[build.processing.js]
+  bundle = false
+  minify = false
+
+[build.processing.html]
+  pretty_urls = true
+
+[build.processing.images]
+  compress = false
