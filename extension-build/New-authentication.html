@@ -609,14 +609,14 @@
         }
 
         .tab-favicon {
-            width: 32px;
-            height: 32px;
+            width: 28px;
+            height: 28px;
             border-radius: 6px;
             flex-shrink: 0;
-            object-fit: cover;
+            object-fit: contain;
             background: white;
-            padding: 4px;
-            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+            padding: 6px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
         }
 
         .tab-info {
@@ -921,27 +921,115 @@ function checkPasswordStrength(password) {
     }
 }
 
-// Generate Infinite Scrolling Tabs with Real Favicons
+// Generate Infinite Scrolling Tabs with Logo.dev API
 function generateInfiniteTabs() {
     const container = document.querySelector('.infinite-tabs-container');
+    const LOGO_API_KEY = 'pk_YIMtrjZvSpG8_u5_F5uxoA';
 
-    // Real website tabs with their actual favicons
+    // 100+ popular websites for infinite scroll
     const tabExamples = [
-        { title: 'Google', url: 'google.com', favicon: 'https://www.google.com/favicon.ico' },
-        { title: 'YouTube', url: 'youtube.com', favicon: 'https://www.youtube.com/favicon.ico' },
-        { title: 'GitHub', url: 'github.com', favicon: 'https://github.com/favicon.ico' },
-        { title: 'Stack Overflow', url: 'stackoverflow.com', favicon: 'https://stackoverflow.com/favicon.ico' },
-        { title: 'Reddit', url: 'reddit.com', favicon: 'https://www.reddit.com/favicon.ico' },
-        { title: 'Twitter', url: 'twitter.com', favicon: 'https://twitter.com/favicon.ico' },
-        { title: 'LinkedIn', url: 'linkedin.com', favicon: 'https://www.linkedin.com/favicon.ico' },
-        { title: 'Medium', url: 'medium.com', favicon: 'https://medium.com/favicon.ico' },
-        { title: 'Netflix', url: 'netflix.com', favicon: 'https://www.netflix.com/favicon.ico' },
-        { title: 'Amazon', url: 'amazon.com', favicon: 'https://www.amazon.com/favicon.ico' },
-        { title: 'Figma', url: 'figma.com', favicon: 'https://www.figma.com/favicon.ico' },
-        { title: 'Notion', url: 'notion.so', favicon: 'https://www.notion.so/images/favicon.ico' },
-        { title: 'Slack', url: 'slack.com', favicon: 'https://slack.com/favicon.ico' },
-        { title: 'Discord', url: 'discord.com', favicon: 'https://discord.com/assets/favicon.ico' },
-        { title: 'Spotify', url: 'spotify.com', favicon: 'https://www.spotify.com/favicon.ico' },
+        { title: 'Google', domain: 'google.com' },
+        { title: 'YouTube', domain: 'youtube.com' },
+        { title: 'Facebook', domain: 'facebook.com' },
+        { title: 'Twitter', domain: 'twitter.com' },
+        { title: 'Instagram', domain: 'instagram.com' },
+        { title: 'LinkedIn', domain: 'linkedin.com' },
+        { title: 'GitHub', domain: 'github.com' },
+        { title: 'Stack Overflow', domain: 'stackoverflow.com' },
+        { title: 'Reddit', domain: 'reddit.com' },
+        { title: 'Medium', domain: 'medium.com' },
+        { title: 'Netflix', domain: 'netflix.com' },
+        { title: 'Amazon', domain: 'amazon.com' },
+        { title: 'eBay', domain: 'ebay.com' },
+        { title: 'Apple', domain: 'apple.com' },
+        { title: 'Microsoft', domain: 'microsoft.com' },
+        { title: 'Figma', domain: 'figma.com' },
+        { title: 'Notion', domain: 'notion.so' },
+        { title: 'Slack', domain: 'slack.com' },
+        { title: 'Discord', domain: 'discord.com' },
+        { title: 'Spotify', domain: 'spotify.com' },
+        { title: 'Twitch', domain: 'twitch.tv' },
+        { title: 'TikTok', domain: 'tiktok.com' },
+        { title: 'Pinterest', domain: 'pinterest.com' },
+        { title: 'Dropbox', domain: 'dropbox.com' },
+        { title: 'Gmail', domain: 'gmail.com' },
+        { title: 'Zoom', domain: 'zoom.us' },
+        { title: 'Shopify', domain: 'shopify.com' },
+        { title: 'WordPress', domain: 'wordpress.com' },
+        { title: 'Stripe', domain: 'stripe.com' },
+        { title: 'PayPal', domain: 'paypal.com' },
+        { title: 'Adobe', domain: 'adobe.com' },
+        { title: 'Canva', domain: 'canva.com' },
+        { title: 'Trello', domain: 'trello.com' },
+        { title: 'Asana', domain: 'asana.com' },
+        { title: 'Jira', domain: 'atlassian.com' },
+        { title: 'Salesforce', domain: 'salesforce.com' },
+        { title: 'HubSpot', domain: 'hubspot.com' },
+        { title: 'Mailchimp', domain: 'mailchimp.com' },
+        { title: 'Intercom', domain: 'intercom.com' },
+        { title: 'GitLab', domain: 'gitlab.com' },
+        { title: 'Bitbucket', domain: 'bitbucket.org' },
+        { title: 'DigitalOcean', domain: 'digitalocean.com' },
+        { title: 'Heroku', domain: 'heroku.com' },
+        { title: 'Vercel', domain: 'vercel.com' },
+        { title: 'Netlify', domain: 'netlify.com' },
+        { title: 'AWS', domain: 'aws.amazon.com' },
+        { title: 'Google Cloud', domain: 'cloud.google.com' },
+        { title: 'Azure', domain: 'azure.microsoft.com' },
+        { title: 'MongoDB', domain: 'mongodb.com' },
+        { title: 'PostgreSQL', domain: 'postgresql.org' },
+        { title: 'Docker', domain: 'docker.com' },
+        { title: 'Kubernetes', domain: 'kubernetes.io' },
+        { title: 'React', domain: 'react.dev' },
+        { title: 'Vue.js', domain: 'vuejs.org' },
+        { title: 'Angular', domain: 'angular.io' },
+        { title: 'Next.js', domain: 'nextjs.org' },
+        { title: 'Tailwind CSS', domain: 'tailwindcss.com' },
+        { title: 'Bootstrap', domain: 'getbootstrap.com' },
+        { title: 'NPM', domain: 'npmjs.com' },
+        { title: 'Yarn', domain: 'yarnpkg.com' },
+        { title: 'VS Code', domain: 'code.visualstudio.com' },
+        { title: 'Sublime Text', domain: 'sublimetext.com' },
+        { title: 'Chrome', domain: 'google.com/chrome' },
+        { title: 'Firefox', domain: 'mozilla.org' },
+        { title: 'Safari', domain: 'apple.com/safari' },
+        { title: 'Edge', domain: 'microsoft.com/edge' },
+        { title: 'Opera', domain: 'opera.com' },
+        { title: 'Brave', domain: 'brave.com' },
+        { title: 'Telegram', domain: 'telegram.org' },
+        { title: 'WhatsApp', domain: 'whatsapp.com' },
+        { title: 'Signal', domain: 'signal.org' },
+        { title: 'Messenger', domain: 'messenger.com' },
+        { title: 'Skype', domain: 'skype.com' },
+        { title: 'Wikipedia', domain: 'wikipedia.org' },
+        { title: 'Wikimedia', domain: 'wikimedia.org' },
+        { title: 'Coursera', domain: 'coursera.org' },
+        { title: 'Udemy', domain: 'udemy.com' },
+        { title: 'Khan Academy', domain: 'khanacademy.org' },
+        { title: 'Duolingo', domain: 'duolingo.com' },
+        { title: 'Grammarly', domain: 'grammarly.com' },
+        { title: 'Quora', domain: 'quora.com' },
+        { title: 'Tumblr', domain: 'tumblr.com' },
+        { title: 'Flickr', domain: 'flickr.com' },
+        { title: 'DeviantArt', domain: 'deviantart.com' },
+        { title: 'Behance', domain: 'behance.net' },
+        { title: 'Dribbble', domain: 'dribbble.com' },
+        { title: 'Unsplash', domain: 'unsplash.com' },
+        { title: 'Pexels', domain: 'pexels.com' },
+        { title: 'Freepik', domain: 'freepik.com' },
+        { title: 'SoundCloud', domain: 'soundcloud.com' },
+        { title: 'Bandcamp', domain: 'bandcamp.com' },
+        { title: 'Apple Music', domain: 'music.apple.com' },
+        { title: 'Deezer', domain: 'deezer.com' },
+        { title: 'Pandora', domain: 'pandora.com' },
+        { title: 'Vimeo', domain: 'vimeo.com' },
+        { title: 'Dailymotion', domain: 'dailymotion.com' },
+        { title: 'Hulu', domain: 'hulu.com' },
+        { title: 'Disney+', domain: 'disneyplus.com' },
+        { title: 'HBO Max', domain: 'hbomax.com' },
+        { title: 'Paramount+', domain: 'paramountplus.com' },
+        { title: 'Peacock', domain: 'peacocktv.com' },
+        { title: 'Crunchyroll', domain: 'crunchyroll.com' },
     ];
 
     // Create two columns
@@ -951,21 +1039,23 @@ function generateInfiniteTabs() {
     column2.className = 'tabs-column';
 
     // Split tabs into two groups and duplicate for seamless loop
-    const firstHalf = tabExamples.slice(0, 8);
-    const secondHalf = tabExamples.slice(8);
+    const midpoint = Math.ceil(tabExamples.length / 2);
+    const firstHalf = tabExamples.slice(0, midpoint);
+    const secondHalf = tabExamples.slice(midpoint);
 
-    const column1Tabs = [...firstHalf, ...firstHalf];
-    const column2Tabs = [...secondHalf, ...secondHalf];
+    const column1Tabs = [...firstHalf, ...firstHalf]; // Duplicate for infinite loop
+    const column2Tabs = [...secondHalf, ...secondHalf]; // Duplicate for infinite loop
 
     // Generate column 1 tabs
     column1Tabs.forEach((tab) => {
         const tabCard = document.createElement('div');
         tabCard.className = 'tab-card';
+        const logoUrl = `https://img.logo.dev/${tab.domain}?token=${LOGO_API_KEY}`;
         tabCard.innerHTML = `
-            <img src="${tab.favicon}" alt="${tab.title}" class="tab-favicon" onerror="this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22%236366f1%22><rect width=%2224%22 height=%2224%22 rx=%224%22/></svg>'">
+            <img src="${logoUrl}" alt="${tab.title}" class="tab-favicon" loading="lazy">
             <div class="tab-info">
                 <div class="tab-title">${tab.title}</div>
-                <div class="tab-url">${tab.url}</div>
+                <div class="tab-url">${tab.domain}</div>
             </div>
         `;
         column1.appendChild(tabCard);
@@ -975,11 +1065,12 @@ function generateInfiniteTabs() {
     column2Tabs.forEach((tab) => {
         const tabCard = document.createElement('div');
         tabCard.className = 'tab-card';
+        const logoUrl = `https://img.logo.dev/${tab.domain}?token=${LOGO_API_KEY}`;
         tabCard.innerHTML = `
-            <img src="${tab.favicon}" alt="${tab.title}" class="tab-favicon" onerror="this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22%238b5cf6%22><rect width=%2224%22 height=%2224%22 rx=%224%22/></svg>'">
+            <img src="${logoUrl}" alt="${tab.title}" class="tab-favicon" loading="lazy">
             <div class="tab-info">
                 <div class="tab-title">${tab.title}</div>
-                <div class="tab-url">${tab.url}</div>
+                <div class="tab-url">${tab.domain}</div>
             </div>
         `;
         column2.appendChild(tabCard);
