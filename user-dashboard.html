@@ -3156,47 +3156,46 @@
         // Subscription management
         function toggleSubscription() {
             if (userData.plan === 'free') {
-                showUpgradeModal();
+                // Directly process upgrade (no modal needed)
+                processUpgrade();
             } else {
                 downgradeToFree();
             }
         }
 
         function showUpgradeModal() {
-            document.getElementById('upgrade-modal').classList.add('show');
+            // Deprecated - now directly calls processUpgrade()
+            processUpgrade();
         }
 
         function closeModal() {
-            document.getElementById('upgrade-modal').classList.remove('show');
+            const modal = document.getElementById('upgrade-modal');
+            if (modal) {
+                modal.classList.remove('show');
+            }
         }
 
         async function processUpgrade() {
             try {
-                if (!STRIPE_PRICE_ID) {
-                    throw new Error('Stripe configuration not loaded. Please refresh the page.');
+                // Direct Stripe Checkout link (no backend API needed)
+                const STRIPE_CHECKOUT_URL = 'https://buy.stripe.com/dRm5kEgDE1R29cPgM84Rq00';
+
+                // Get user email for prefill
+                const { data: { user } } = await supabaseClient.auth.getUser();
+                const userEmail = user?.email || userData.email;
+
+                // Build checkout URL with prefilled email
+                let checkoutUrl = STRIPE_CHECKOUT_URL;
+                if (userEmail) {
+                    checkoutUrl += `?prefilled_email=${encodeURIComponent(userEmail)}`;
                 }
 
-                const response = await fetch(`${API_BASE}/create-checkout-session`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${authToken}`
-                    },
-                    body: JSON.stringify({
-                        priceId: STRIPE_PRICE_ID
-                    })
-                });
+                // Redirect to Stripe Checkout
+                window.location.href = checkoutUrl;
 
-                if (response.ok) {
-                    const data = await response.json();
-
-                    // Redirect to Stripe Checkout
-                    window.location.href = data.url;
-                } else {
-                    const errorData = await response.json();
-                    throw new Error(errorData.error || 'Failed to create checkout session');
-                }
             } catch (error) {
+                console.error('Upgrade error:', error);
+                alert('Failed to start checkout. Please try again or contact support.');
             }
         }
 
