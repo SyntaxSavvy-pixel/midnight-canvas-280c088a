@@ -315,10 +315,12 @@ const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 // Check if user is already logged in and redirect to dashboard
 (async function checkExistingSession() {
     try {
-        // Check URL parameters
+        // Check URL parameters and hash (OAuth can return in either)
         const urlParams = new URLSearchParams(window.location.search);
+        const hashParams = new URLSearchParams(window.location.hash.substring(1));
         const isLoggingOut = urlParams.get('logout') === 'true';
-        const hasOAuthParams = urlParams.has('code') || urlParams.has('access_token') || urlParams.has('error');
+        const hasOAuthParams = urlParams.has('code') || urlParams.has('access_token') || urlParams.has('error') ||
+                               hashParams.has('access_token') || hashParams.has('error');
 
         // If user is logging out, don't redirect them
         if (isLoggingOut) {
@@ -330,20 +332,36 @@ const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
         // If OAuth callback in progress, wait for it to complete
         if (hasOAuthParams) {
-            console.log('OAuth callback detected, waiting for processing...');
-            // Don't check session yet - let the OAuth handler at the bottom run first
+            console.log('OAuth callback detected, skipping session check to avoid flickering...');
+            // Don't check session - let the OAuth handler at the bottom run first
             return;
         }
 
         // Small delay to let any pending auth complete
-        await new Promise(resolve => setTimeout(resolve, 500));
+        await new Promise(resolve => setTimeout(resolve, 300));
 
         const { data: { session }, error } = await supabaseClient.auth.getSession();
 
         if (!error && session && session.user) {
             // User is already logged in, redirect to dashboard
             console.log('User already logged in, redirecting to dashboard...');
-            window.location.href = '/user-dashboard.html';
+
+            // Save session data before redirecting to prevent flickering
+            const userData = {
+                email: session.user.email,
+                name: session.user.user_metadata.full_name || session.user.user_metadata.name || session.user.user_metadata.preferred_username || session.user.email.split('@')[0],
+                id: session.user.id,
+                provider: session.user.app_metadata.provider || 'email',
+                avatar: session.user.user_metadata.avatar_url || session.user.user_metadata.picture,
+                deletionScheduledAt: session.user.user_metadata.deletion_scheduled_at || null
+            };
+
+            localStorage.setItem('tabmangment_user', JSON.stringify(userData));
+            localStorage.setItem('tabmangment_token', session.access_token);
+            localStorage.setItem('tabmangment_remember', 'true');
+
+            // Use replace to avoid back button issues
+            window.location.replace('/user-dashboard.html');
         }
     } catch (error) {
         console.error('Error checking session:', error);
@@ -641,10 +659,12 @@ async function handleGithubLogin() {
 
 // Check for OAuth callback and handle session
 (async function() {
-    // Check URL parameters
+    // Check URL parameters and hash (OAuth can return in either)
     const urlParams = new URLSearchParams(window.location.search);
+    const hashParams = new URLSearchParams(window.location.hash.substring(1));
     const isLogout = urlParams.has('logout');
-    const hasOAuthParams = urlParams.has('code') || urlParams.has('access_token') || urlParams.has('error');
+    const hasOAuthParams = urlParams.has('code') || urlParams.has('access_token') || urlParams.has('error') ||
+                           hashParams.has('access_token') || hashParams.has('error');
 
     // Check if user just logged out
     const justLoggedOut = sessionStorage.getItem('user_logged_out');
@@ -740,7 +760,10 @@ async function handleGithubLogin() {
             userData: { email: userData.email, name: userData.name, id: userData.id }
         }, '*');
 
-        // Immediate redirect to dashboard (no delay for OAuth)
+        // Small delay to ensure localStorage is fully persisted before redirect
+        // This prevents flickering between auth and dashboard pages
+        await new Promise(resolve => setTimeout(resolve, 100));
+
         console.log('OAuth login successful, redirecting to dashboard...');
         window.location.replace('/user-dashboard.html');
     }

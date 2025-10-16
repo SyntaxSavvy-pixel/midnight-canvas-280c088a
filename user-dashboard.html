@@ -2212,11 +2212,19 @@
             let storedUserData = localStorage.getItem('tabmangment_user');
             let userEmail = null;
 
-            // If no data yet, wait a bit (OAuth redirect timing issue)
+            // If no data yet, wait a bit longer (OAuth redirect timing issue)
+            // Retry up to 3 times with increasing delays to handle OAuth persistence
             if (!authToken || !storedUserData) {
-                await new Promise(resolve => setTimeout(resolve, 500));
-                authToken = localStorage.getItem('tabmangment_token');
-                storedUserData = localStorage.getItem('tabmangment_user');
+                console.log('No auth data found, waiting for OAuth to complete...');
+                for (let i = 0; i < 3; i++) {
+                    await new Promise(resolve => setTimeout(resolve, 200 * (i + 1))); // 200ms, 400ms, 600ms
+                    authToken = localStorage.getItem('tabmangment_token');
+                    storedUserData = localStorage.getItem('tabmangment_user');
+                    if (authToken && storedUserData) {
+                        console.log('Auth data found on retry', i + 1);
+                        break;
+                    }
+                }
             }
 
             if (storedUserData) {
