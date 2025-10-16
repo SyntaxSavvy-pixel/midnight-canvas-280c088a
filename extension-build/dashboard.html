@@ -1,0 +1,501 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - Tabmangment</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .dashboard-container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .header {
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            margin-bottom: 30px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .user-avatar {
+            width: 60px;
+            height: 60px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            color: white;
+        }
+
+        .user-details h2 {
+            color: #333;
+            margin-bottom: 5px;
+        }
+
+        .user-plan {
+            color: #666;
+            font-size: 14px;
+        }
+
+        .user-plan.pro {
+            color: #10b981;
+            font-weight: 600;
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 15px;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border-radius: 10px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: none;
+            font-size: 14px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+        }
+
+        .btn-secondary {
+            background: #f3f4f6;
+            color: #374151;
+        }
+
+        .btn-secondary:hover {
+            background: #e5e7eb;
+        }
+
+        .card {
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            margin-bottom: 30px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+        }
+
+        .card h3 {
+            color: #333;
+            margin-bottom: 20px;
+            font-size: 20px;
+        }
+
+        .plan-section {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+        }
+
+        .plan-card {
+            padding: 30px;
+            border-radius: 15px;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .plan-card.free {
+            background: #f9fafb;
+            border: 2px solid #e5e7eb;
+        }
+
+        .plan-card.pro {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            color: white;
+        }
+
+        .plan-title {
+            font-size: 24px;
+            font-weight: 700;
+            margin-bottom: 10px;
+        }
+
+        .plan-price {
+            font-size: 20px;
+            margin-bottom: 20px;
+        }
+
+        .plan-features {
+            list-style: none;
+            margin-bottom: 25px;
+        }
+
+        .plan-features li {
+            padding: 8px 0;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .upgrade-btn {
+            width: 100%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 15px;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        .upgrade-btn:hover {
+            transform: translateY(-2px);
+        }
+
+        .current-plan {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            cursor: default;
+        }
+
+        .current-plan:hover {
+            transform: none;
+        }
+
+        .sync-status {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 15px;
+            background: #f0f9ff;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+
+        .sync-status.synced {
+            background: #ecfdf5;
+            color: #065f46;
+        }
+
+        .sync-status.error {
+            background: #fef2f2;
+            color: #991b1b;
+        }
+
+        @media (max-width: 768px) {
+            .plan-section {
+                grid-template-columns: 1fr;
+            }
+
+            .header {
+                flex-direction: column;
+                gap: 20px;
+                text-align: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="dashboard-container">
+        <div class="header">
+            <div class="user-info">
+                <div class="user-avatar" id="userAvatar">👤</div>
+                <div class="user-details">
+                    <h2 id="userName">Loading...</h2>
+                    <div class="user-plan" id="userPlan">Free Plan</div>
+                </div>
+            </div>
+            <div class="header-actions">
+                <button class="btn btn-secondary" onclick="syncData()">🔄 Sync</button>
+                <button class="btn btn-secondary" onclick="logout()">Logout</button>
+            </div>
+        </div>
+
+        <div id="syncStatus" class="sync-status">
+            <span>🔄</span>
+            <span>Checking sync status...</span>
+        </div>
+
+        <div class="card">
+            <h3>Account & Subscription</h3>
+
+            <div class="plan-section">
+                <div class="plan-card free">
+                    <div class="plan-title">Free Plan</div>
+                    <div class="plan-price">$0/month</div>
+                    <ul class="plan-features">
+                        <li>✅ Basic tab management</li>
+                        <li>✅ Up to 10 tabs</li>
+                        <li>✅ Simple timers</li>
+                        <li>❌ Advanced features</li>
+                        <li>❌ Unlimited tabs</li>
+                        <li>❌ Auto-bookmarking</li>
+                    </ul>
+                    <button class="btn upgrade-btn" id="freeBtn" style="background: #6b7280; cursor: default;">Current Plan</button>
+                </div>
+
+                <div class="plan-card pro">
+                    <div class="plan-title">Pro Plan</div>
+                    <div class="plan-price">$4.99/month</div>
+                    <ul class="plan-features">
+                        <li>✅ Everything in Free</li>
+                        <li>✅ Unlimited tabs</li>
+                        <li>✅ Advanced timers</li>
+                        <li>✅ Auto-bookmarking</li>
+                        <li>✅ Batch operations</li>
+                        <li>✅ Priority support</li>
+                    </ul>
+                    <button class="upgrade-btn" id="proBtn" onclick="upgradeToProAuth()">Upgrade to Pro</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <h3>Extension Status</h3>
+            <div id="extensionStatus">
+                <p>🔄 Checking extension connection...</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentUser = null;
+        let isExtensionConnected = false;
+
+        // Initialize dashboard
+        async function init() {
+            console.log('🚀 Initializing dashboard...');
+
+            // Check login status
+            const user = localStorage.getItem('tabmangment_user');
+            const token = localStorage.getItem('tabmangment_token');
+
+            if (!user || !token) {
+                console.log('❌ Not logged in, redirecting...');
+                window.location.href = '/new-authentication';
+                return;
+            }
+
+            try {
+                currentUser = JSON.parse(user);
+                await updateUI();
+                await checkExtensionConnection();
+                await syncWithExtension();
+            } catch (error) {
+                console.error('❌ Dashboard init error:', error);
+                showSyncStatus('Error loading dashboard', 'error');
+            }
+        }
+
+        async function updateUI() {
+            // Update user info
+            document.getElementById('userName').textContent = currentUser.name;
+            document.getElementById('userAvatar').textContent = currentUser.name.charAt(0).toUpperCase();
+
+            // Update plan info
+            const planElement = document.getElementById('userPlan');
+            const freeBtn = document.getElementById('freeBtn');
+            const proBtn = document.getElementById('proBtn');
+
+            if (currentUser.isPro) {
+                planElement.textContent = 'Pro Plan';
+                planElement.classList.add('pro');
+
+                freeBtn.textContent = 'Upgrade to Pro';
+                freeBtn.style.background = 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)';
+                freeBtn.style.cursor = 'pointer';
+                freeBtn.onclick = () => upgradeToProAuth();
+
+                proBtn.textContent = '✅ Current Plan';
+                proBtn.classList.add('current-plan');
+                proBtn.onclick = null;
+            } else {
+                planElement.textContent = 'Free Plan';
+                planElement.classList.remove('pro');
+
+                freeBtn.textContent = '✅ Current Plan';
+                freeBtn.style.background = '#6b7280';
+                freeBtn.style.cursor = 'default';
+                freeBtn.onclick = null;
+
+                proBtn.textContent = 'Upgrade to Pro';
+                proBtn.classList.remove('current-plan');
+            }
+
+            showSyncStatus('Account data loaded', 'synced');
+        }
+
+        async function checkExtensionConnection() {
+            try {
+                // Try to communicate with extension
+                if (typeof chrome !== 'undefined' && chrome.runtime) {
+                    chrome.runtime.sendMessage({ type: 'GET_USER_STATUS' }, (response) => {
+                        if (response && response.success) {
+                            isExtensionConnected = true;
+                            updateExtensionStatus('✅ Extension connected and synced');
+                        } else {
+                            updateExtensionStatus('⚠️ Extension found but not synced');
+                        }
+                    });
+                } else {
+                    updateExtensionStatus('❌ Extension not detected. Please install Tabmangment extension.');
+                }
+            } catch (error) {
+                updateExtensionStatus('⚠️ Could not connect to extension');
+            }
+        }
+
+        async function syncWithExtension() {
+            if (!isExtensionConnected) return;
+
+            try {
+                // Send current user data to extension
+                chrome.runtime.sendMessage({
+                    type: 'USER_LOGGED_IN',
+                    user: currentUser,
+                    token: localStorage.getItem('tabmangment_token')
+                }, (response) => {
+                    if (response && response.success) {
+                        showSyncStatus('✅ Synced with extension successfully', 'synced');
+                    }
+                });
+            } catch (error) {
+                console.error('❌ Extension sync error:', error);
+                showSyncStatus('⚠️ Extension sync failed', 'error');
+            }
+        }
+
+        function showSyncStatus(message, type = 'synced') {
+            const statusElement = document.getElementById('syncStatus');
+            statusElement.innerHTML = `
+                <span>${type === 'synced' ? '✅' : type === 'error' ? '❌' : '🔄'}</span>
+                <span>${message}</span>
+            `;
+            statusElement.className = `sync-status ${type}`;
+        }
+
+        function updateExtensionStatus(message) {
+            document.getElementById('extensionStatus').innerHTML = `<p>${message}</p>`;
+        }
+
+        async function upgradeToProAuth() {
+            if (!currentUser) return;
+
+            showSyncStatus('🔄 Starting Pro upgrade...', '');
+
+            try {
+                // Create checkout with authenticated user
+                const response = await fetch('/api/create-checkout-session', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${localStorage.getItem('tabmangment_token')}`
+                    },
+                    body: JSON.stringify({
+                        priceId: window.STRIPE_PRICE_ID || 'price_placeholder', // Stripe price ID from environment
+                        userId: currentUser.email,
+                        userEmail: currentUser.email,
+                        successUrl: `${window.location.origin}/payment-success.html?user=${encodeURIComponent(currentUser.email)}`,
+                        cancelUrl: `${window.location.origin}/dashboard.html`
+                    })
+                });
+
+                const result = await response.json();
+
+                if (result.url) {
+                    showSyncStatus('🔄 Redirecting to payment...', '');
+                    window.location.href = result.url;
+                } else {
+                    throw new Error('Failed to create checkout session');
+                }
+
+            } catch (error) {
+                console.error('❌ Upgrade error:', error);
+                showSyncStatus('❌ Upgrade failed. Please try again.', 'error');
+            }
+        }
+
+        async function syncData() {
+            showSyncStatus('🔄 Syncing data...', '');
+
+            try {
+                // Verify token and get latest user data
+                const response = await fetch('/api/auth/verify', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${localStorage.getItem('tabmangment_token')}`
+                    }
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    currentUser = result.user;
+                    localStorage.setItem('tabmangment_user', JSON.stringify(currentUser));
+                    await updateUI();
+                    await syncWithExtension();
+                } else {
+                    throw new Error('Token verification failed');
+                }
+
+            } catch (error) {
+                console.error('❌ Sync error:', error);
+                showSyncStatus('❌ Sync failed', 'error');
+            }
+        }
+
+        async function logout() {
+            try {
+                // Clear storage
+                localStorage.removeItem('tabmangment_user');
+                localStorage.removeItem('tabmangment_token');
+
+                // Notify extension
+                if (isExtensionConnected) {
+                    chrome.runtime.sendMessage({ type: 'LOGOUT_USER' });
+                }
+
+                // Redirect
+                window.location.href = '/new-authentication';
+
+            } catch (error) {
+                console.error('❌ Logout error:', error);
+                window.location.href = '/new-authentication';
+            }
+        }
+
+        // Initialize when page loads
+        document.addEventListener('DOMContentLoaded', init);
+
+        // Sync every 30 seconds
+        setInterval(syncData, 30000);
+    </script>
+</body>
+</html>
