@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <!-- Version: 4.2.0 - Profile update with Supabase persistence and database sync -->
+    <!-- Version: 5.0.0 - Device fingerprinting & anti-sharing system for Pro plan protection -->
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard - TabManagement</title>
@@ -1595,6 +1595,276 @@
         const { createClient } = supabase;
         const supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
+        // ============================================
+        // DEVICE FINGERPRINTING & ANTI-SHARING SYSTEM
+        // ============================================
+
+        const DEVICE_CONFIG = {
+            MAX_DEVICES_FREE: 2,      // Free users: 2 devices
+            MAX_DEVICES_PRO: 3,       // Pro users: 3 devices
+            FINGERPRINT_VERSION: '1.0'
+        };
+
+        // Generate unique device fingerprint
+        async function generateDeviceFingerprint() {
+            const components = [];
+
+            // Browser & OS info
+            components.push(navigator.userAgent);
+            components.push(navigator.language);
+            components.push(navigator.platform);
+            components.push(screen.colorDepth);
+            components.push(screen.width + 'x' + screen.height);
+            components.push(new Date().getTimezoneOffset());
+
+            // Hardware concurrency (CPU cores)
+            if (navigator.hardwareConcurrency) {
+                components.push(navigator.hardwareConcurrency);
+            }
+
+            // Canvas fingerprint (unique to GPU/browser combo)
+            try {
+                const canvas = document.createElement('canvas');
+                const ctx = canvas.getContext('2d');
+                ctx.textBaseline = 'top';
+                ctx.font = '14px Arial';
+                ctx.fillStyle = '#f60';
+                ctx.fillRect(125, 1, 62, 20);
+                ctx.fillStyle = '#069';
+                ctx.fillText('TabMangment', 2, 15);
+                components.push(canvas.toDataURL());
+            } catch (e) {
+                components.push('canvas-error');
+            }
+
+            // WebGL fingerprint
+            try {
+                const canvas = document.createElement('canvas');
+                const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
+                if (gl) {
+                    const debugInfo = gl.getExtension('WEBGL_debug_renderer_info');
+                    if (debugInfo) {
+                        components.push(gl.getParameter(debugInfo.UNMASKED_VENDOR_WEBGL));
+                        components.push(gl.getParameter(debugInfo.UNMASKED_RENDERER_WEBGL));
+                    }
+                }
+            } catch (e) {
+                components.push('webgl-error');
+            }
+
+            // Create hash from all components
+            const fingerprint = await hashString(components.join('|||'));
+            return fingerprint;
+        }
+
+        // Hash string using SubtleCrypto
+        async function hashString(str) {
+            const encoder = new TextEncoder();
+            const data = encoder.encode(str);
+            const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+            const hashArray = Array.from(new Uint8Array(hashBuffer));
+            const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+            return hashHex;
+        }
+
+        // Get or create device ID
+        async function getDeviceId() {
+            let deviceId = localStorage.getItem('tabmangment_device_id');
+
+            if (!deviceId) {
+                // Generate new device ID combining fingerprint + timestamp
+                const fingerprint = await generateDeviceFingerprint();
+                const timestamp = Date.now();
+                deviceId = `${fingerprint.substring(0, 16)}-${timestamp}`;
+                localStorage.setItem('tabmangment_device_id', deviceId);
+            }
+
+            return deviceId;
+        }
+
+        // Get device metadata
+        function getDeviceMetadata() {
+            return {
+                browser: navigator.userAgent.match(/(Firefox|Chrome|Safari|Edge|Opera)\/[\d\.]+/)?.[0] || 'Unknown',
+                os: navigator.platform,
+                screenResolution: `${screen.width}x${screen.height}`,
+                language: navigator.language,
+                lastSeen: new Date().toISOString()
+            };
+        }
+
+        // Register device with backend
+        async function registerDevice(userId, deviceId, isPro) {
+            try {
+                const metadata = getDeviceMetadata();
+
+                // Get current device list from Supabase
+                const { data: userData, error: fetchError } = await supabaseClient
+                    .from('user_devices')
+                    .select('devices')
+                    .eq('user_id', userId)
+                    .single();
+
+                let devices = [];
+
+                if (!fetchError && userData && userData.devices) {
+                    devices = userData.devices;
+                }
+
+                // Check if device already exists
+                const existingDeviceIndex = devices.findIndex(d => d.device_id === deviceId);
+
+                if (existingDeviceIndex >= 0) {
+                    // Update existing device
+                    devices[existingDeviceIndex] = {
+                        ...devices[existingDeviceIndex],
+                        ...metadata,
+                        lastSeen: new Date().toISOString()
+                    };
+                } else {
+                    // Check device limit
+                    const maxDevices = isPro ? DEVICE_CONFIG.MAX_DEVICES_PRO : DEVICE_CONFIG.MAX_DEVICES_FREE;
+
+                    if (devices.length >= maxDevices) {
+                        // Remove oldest device
+                        devices.sort((a, b) => new Date(a.lastSeen) - new Date(b.lastSeen));
+                        devices.shift();
+                    }
+
+                    // Add new device
+                    devices.push({
+                        device_id: deviceId,
+                        ...metadata,
+                        registeredAt: new Date().toISOString()
+                    });
+                }
+
+                // Save to Supabase
+                const { error: upsertError } = await supabaseClient
+                    .from('user_devices')
+                    .upsert({
+                        user_id: userId,
+                        devices: devices,
+                        updated_at: new Date().toISOString()
+                    }, {
+                        onConflict: 'user_id'
+                    });
+
+                if (upsertError) {
+                    throw upsertError;
+                }
+
+                return { success: true, deviceCount: devices.length, maxDevices };
+
+            } catch (error) {
+                return { success: false, error: error.message };
+            }
+        }
+
+        // Verify device is authorized
+        async function verifyDevice(userId, deviceId, isPro) {
+            try {
+                const { data: userData, error } = await supabaseClient
+                    .from('user_devices')
+                    .select('devices')
+                    .eq('user_id', userId)
+                    .single();
+
+                if (error || !userData || !userData.devices) {
+                    // No devices registered yet, allow first device
+                    return { authorized: true, isNew: true };
+                }
+
+                const devices = userData.devices;
+                const deviceExists = devices.some(d => d.device_id === deviceId);
+
+                if (!deviceExists) {
+                    const maxDevices = isPro ? DEVICE_CONFIG.MAX_DEVICES_PRO : DEVICE_CONFIG.MAX_DEVICES_FREE;
+
+                    if (devices.length >= maxDevices) {
+                        return {
+                            authorized: false,
+                            reason: `Device limit reached. ${isPro ? 'Pro' : 'Free'} plan allows ${maxDevices} devices.`,
+                            deviceCount: devices.length,
+                            maxDevices: maxDevices
+                        };
+                    }
+                }
+
+                return { authorized: true, deviceExists };
+
+            } catch (error) {
+                // On error, allow access (fail open for better UX)
+                return { authorized: true, error: error.message };
+            }
+        }
+
+        // Show device limit warning
+        function showDeviceLimitWarning(deviceCount, maxDevices, isPro) {
+            const modal = document.createElement('div');
+            modal.style.cssText = `
+                position: fixed;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                background: rgba(15, 23, 42, 0.95);
+                z-index: 10000;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                animation: fadeIn 0.3s ease-out;
+            `;
+
+            modal.innerHTML = `
+                <div style="background: #1e293b; border-radius: 1rem; padding: 2rem; max-width: 500px; margin: 1rem; box-shadow: 0 20px 60px rgba(0,0,0,0.5); border: 1px solid #334155;">
+                    <div style="text-align: center; margin-bottom: 1.5rem;">
+                        <div style="width: 80px; height: 80px; background: rgba(239, 68, 68, 0.15); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 1rem; border: 2px solid #ef4444;">
+                            <span style="font-size: 2.5rem;">🚫</span>
+                        </div>
+                        <h2 style="color: #f8fafc; font-size: 1.5rem; font-weight: 700; margin-bottom: 0.5rem;">Device Limit Reached</h2>
+                        <p style="color: #94a3b8; font-size: 0.9375rem;">Too many devices are using this account</p>
+                    </div>
+
+                    <div style="background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3); border-radius: 0.75rem; padding: 1rem; margin-bottom: 1.5rem;">
+                        <p style="color: #fca5a5; font-size: 0.9375rem; line-height: 1.6; margin: 0;">
+                            <strong>${isPro ? 'Pro' : 'Free'} Plan Limit:</strong> ${maxDevices} devices<br>
+                            <strong>Current Devices:</strong> ${deviceCount} registered<br><br>
+                            To use this device, please log out from one of your other devices or upgrade your plan.
+                        </p>
+                    </div>
+
+                    <div style="display: flex; gap: 0.75rem; flex-direction: column;">
+                        ${!isPro ? `
+                            <button onclick="window.location.href='/pricing'" style="padding: 0.875rem 1.5rem; background: linear-gradient(135deg, #14b8a6, #0d9488); color: white; border: none; border-radius: 0.75rem; font-weight: 600; cursor: pointer; font-size: 0.9375rem;">
+                                Upgrade to Pro (${DEVICE_CONFIG.MAX_DEVICES_PRO} devices)
+                            </button>
+                        ` : ''}
+                        <button onclick="handleDeviceLogout()" style="padding: 0.875rem 1.5rem; background: #334155; color: #e2e8f0; border: none; border-radius: 0.75rem; font-weight: 600; cursor: pointer; font-size: 0.9375rem;">
+                            Log Out & Return to Login
+                        </button>
+                    </div>
+
+                    <p style="color: #64748b; font-size: 0.8125rem; text-align: center; margin-top: 1rem; margin-bottom: 0;">
+                        This prevents account sharing and protects your subscription.
+                    </p>
+                </div>
+            `;
+
+            document.body.appendChild(modal);
+        }
+
+        // Handle device logout
+        async function handleDeviceLogout() {
+            try {
+                await supabaseClient.auth.signOut();
+                localStorage.clear();
+                sessionStorage.clear();
+                window.location.href = '/new-authentication';
+            } catch (error) {
+                window.location.href = '/new-authentication';
+            }
+        }
 
         // Initialize
         feather.replace();
@@ -1778,6 +2048,27 @@
 
             // Load real user data from API
             await loadUserData(userEmail);
+
+            // ============================================
+            // DEVICE VERIFICATION & ANTI-SHARING
+            // ============================================
+
+            // Get or create device ID
+            const deviceId = await getDeviceId();
+
+            // Verify device is authorized
+            const verification = await verifyDevice(userData.id || userEmail, deviceId, userData.isPro);
+
+            if (!verification.authorized) {
+                // Device limit reached - show warning and block access
+                showDeviceLimitWarning(verification.deviceCount, verification.maxDevices, userData.isPro);
+                return; // Stop dashboard initialization
+            }
+
+            // Register/update this device
+            await registerDevice(userData.id || userEmail, deviceId, userData.isPro);
+
+            // ============================================
 
             updateUserDisplay();
             updatePlanDisplay();
