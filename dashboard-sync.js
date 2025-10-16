@@ -198,6 +198,39 @@
                     }, '*');
                 }
                 break;
+
+            case 'DASHBOARD_SET_AUTO_CLOSE_TIME':
+                // Set auto-close time (Pro feature)
+                try {
+                    chrome.runtime.sendMessage({
+                        type: 'SET_AUTO_CLOSE_TIME',
+                        time: message.time
+                    }, (response) => {
+                        if (chrome.runtime.lastError) {
+                            window.postMessage({
+                                type: 'EXTENSION_AUTO_CLOSE_TIME_RESPONSE',
+                                source: 'tabmangment-extension',
+                                success: false,
+                                error: chrome.runtime.lastError.message
+                            }, '*');
+                            return;
+                        }
+
+                        window.postMessage({
+                            type: 'EXTENSION_AUTO_CLOSE_TIME_RESPONSE',
+                            source: 'tabmangment-extension',
+                            success: response.success
+                        }, '*');
+                    });
+                } catch (error) {
+                    window.postMessage({
+                        type: 'EXTENSION_AUTO_CLOSE_TIME_RESPONSE',
+                        source: 'tabmangment-extension',
+                        success: false,
+                        error: 'Extension context invalidated. Please refresh the page.'
+                    }, '*');
+                }
+                break;
         }
     });
 

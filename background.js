@@ -66,6 +66,7 @@ class TabManager {
             await this.loadExistingTabs();
             this.startEmptyTabMonitoring();
             this.startTimerNotificationMonitoring();
+            this.startAutoCloseMonitoring();
 
             setTimeout(async () => {
                 try {
@@ -556,6 +557,7 @@ class TabManager {
                         userName: userData.userName || userData.name || (userData.userEmail || userData.email).split('@')[0],
                         authToken: userData.authToken || message.token,
                         isPremium: userData.isPremium || userData.isPro || false,
+                        isPro: userData.isPro || userData.isPremium || false,
                         planType: userData.planType || userData.plan || 'free',
                         subscriptionActive: userData.subscriptionActive || userData.isPro || false,
                         userId: userData.userId || userData.id || userData.userEmail || userData.email,
@@ -600,6 +602,12 @@ class TabManager {
                 case 'ENABLE_AUTO_CLEAN':
                     // Smart Dashboard: Enable auto-clean
                     await chrome.storage.local.set({ autoCleanEnabled: true });
+                    sendResponse({ success: true });
+                    break;
+
+                case 'SET_AUTO_CLOSE_TIME':
+                    // Smart Dashboard: Set auto-close time (Pro feature)
+                    await chrome.storage.local.set({ autoCloseTime: message.time });
                     sendResponse({ success: true });
                     break;
 
@@ -1037,6 +1045,72 @@ class TabManager {
             }
         } catch (error) {
             throw error;
+        }
+    }
+
+    startAutoCloseMonitoring() {
+        // Check every 5 minutes for tabs that need to be auto-closed (Pro feature only)
+        setInterval(async () => {
+            await this.checkAndCloseInactiveTabs();
+        }, 5 * 60 * 1000); // 5 minutes
+    }
+
+    async checkAndCloseInactiveTabs() {
+        try {
+            // Get Pro status and auto-close time setting
+            const storage = await chrome.storage.local.get(['isPro', 'isPremium', 'autoCloseTime']);
+            const isPro = storage.isPro || storage.isPremium || false;
+            const autoCloseTime = storage.autoCloseTime || 60; // Default 60 minutes
+
+            // Only run for Pro users
+            if (!isPro) {
+                return;
+            }
+
+            const allTabs = await chrome.tabs.query({});
+            const now = Date.now();
+            const autoCloseThreshold = autoCloseTime * 60 * 1000; // Convert minutes to milliseconds
+            const tabsToClose = [];
+
+            for (const tab of allTabs) {
+                // Skip active tabs, pinned tabs, and invalid tabs
+                if (tab.active || tab.pinned || !this.isValidTab(tab)) {
+                    continue;
+                }
+
+                // Check if we have tracking data for this tab
+                if (this.tabData.has(tab.id)) {
+                    const tabInfo = this.tabData.get(tab.id);
+                    const lastActive = tabInfo.lastActivated || tabInfo.createdAt;
+                    const inactiveTime = now - lastActive;
+
+                    // If tab has been inactive longer than threshold, mark for closure
+                    if (inactiveTime > autoCloseThreshold) {
+                        tabsToClose.push(tab.id);
+                    }
+                }
+            }
+
+            // Close tabs and track them
+            if (tabsToClose.length > 0) {
+                for (const tabId of tabsToClose) {
+                    await this.closeTab(tabId, true); // true = auto-close
+                }
+
+                // Update total tabs closed counter
+                const newStorage = await chrome.storage.local.get(['totalTabsClosed']);
+                const newTotal = (newStorage.totalTabsClosed || 0) + tabsToClose.length;
+
+                await chrome.storage.local.set({
+                    lastCleanupTime: Date.now(),
+                    totalTabsClosed: newTotal
+                });
+
+                // Broadcast stats update
+                this.broadcastStatsUpdate();
+            }
+
+        } catch (error) {
         }
     }
 
@@ -1984,9 +2058,12 @@ TabManager.prototype.getSmartTabsData = async function() {
 
         let inactiveTabs = 0;
         let estimatedMemory = 0;
+        let heavyTabs = 0;
 
         // Collect tab data with last accessed time
         const tabsWithAccess = [];
+        const inactiveTabsList = [];
+
         for (const tab of allTabs) {
             if (this.tabData.has(tab.id)) {
                 const tabInfo = this.tabData.get(tab.id);
@@ -1994,11 +2071,15 @@ TabManager.prototype.getSmartTabsData = async function() {
 
                 if (inactiveTime > inactiveThreshold && !tab.active) {
                     inactiveTabs++;
-                    // Estimate 15MB per inactive tab
                     estimatedMemory += 15;
+
+                    inactiveTabsList.push({
+                        id: tab.id,
+                        title: tab.title,
+                        inactiveTime: inactiveTime
+                    });
                 }
 
-                // Add to recent tabs list with access time
                 tabsWithAccess.push({
                     title: tab.title,
                     url: tab.url,
@@ -2008,11 +2089,20 @@ TabManager.prototype.getSmartTabsData = async function() {
             }
         }
 
-        // Sort by most recently accessed and take top 10
+        // Detect performance issues
+        const isDeviceLagging = allTabs.length > 20 || inactiveTabs > 10;
+        heavyTabs = inactiveTabs > 10 ? inactiveTabs : 0;
+
         tabsWithAccess.sort((a, b) => b.lastAccessed - a.lastAccessed);
         const recentTabs = tabsWithAccess.slice(0, 10);
 
-        const storage = await chrome.storage.local.get(['autoCleanEnabled', 'lastCleanupTime', 'totalTabsClosed']);
+        const storage = await chrome.storage.local.get([
+            'autoCleanEnabled',
+            'lastCleanupTime',
+            'totalTabsClosed',
+            'autoCloseTime',
+            'isPro'
+        ]);
 
         return {
             inactive: inactiveTabs,
@@ -2021,7 +2111,12 @@ TabManager.prototype.getSmartTabsData = async function() {
             autoCleanEnabled: storage.autoCleanEnabled || false,
             lastCleanup: storage.lastCleanupTime ? new Date(storage.lastCleanupTime) : null,
             totalManagedThisWeek: storage.totalTabsClosed || 0,
-            recentTabs: recentTabs
+            recentTabs: recentTabs,
+            isDeviceLagging: isDeviceLagging,
+            heavyTabs: heavyTabs,
+            inactiveTabsList: inactiveTabsList,
+            autoCloseTime: storage.autoCloseTime || 60,
+            isPro: storage.isPro || false
         };
     } catch (error) {
         console.error('Error getting tabs data:', error);
@@ -2032,7 +2127,12 @@ TabManager.prototype.getSmartTabsData = async function() {
             autoCleanEnabled: false,
             lastCleanup: null,
             totalManagedThisWeek: 0,
-            recentTabs: []
+            recentTabs: [],
+            isDeviceLagging: false,
+            heavyTabs: 0,
+            inactiveTabsList: [],
+            autoCloseTime: 60,
+            isPro: false
         };
     }
 };

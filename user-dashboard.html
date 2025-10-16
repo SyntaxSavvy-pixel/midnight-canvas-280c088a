@@ -1847,7 +1847,12 @@
             autoCleanEnabled: false,
             lastCleanup: null,
             totalManagedThisWeek: 0,
-            recentTabs: []
+            recentTabs: [],
+            isDeviceLagging: false,
+            heavyTabs: 0,
+            inactiveTabsList: [],
+            autoCloseTime: 60,
+            isPro: false
         };
 
         async function initSmartDashboard() {
@@ -1981,9 +1986,22 @@
             const container = document.getElementById('suggestions-content');
             if (!container) return;
 
-            const { inactive, memorySaved, autoCleanEnabled } = smartTabsData;
+            const { inactive, memorySaved, autoCleanEnabled, isDeviceLagging, heavyTabs, isPro } = smartTabsData;
 
             let html = '<div style="display: flex; flex-direction: column; gap: 1rem; margin-bottom: 1.5rem;">';
+
+            // CRITICAL: Device Performance Warning
+            if (isDeviceLagging) {
+                html += `
+                    <div style="display: flex; align-items: flex-start; gap: 0.75rem; padding: 1rem; background: rgba(239, 68, 68, 0.1); border-radius: 0.75rem; border: 1px solid rgba(239, 68, 68, 0.3);">
+                        <span style="width: 24px; height: 24px; flex-shrink: 0; margin-top: 0.125rem;">⚠️</span>
+                        <div style="flex: 1; font-size: 0.9375rem; line-height: 1.6;">
+                            <strong style="color: #ff6b6b; font-weight: 600;">Device Performance Warning!</strong><br>
+                            Your device is running slow due to ${heavyTabs > 0 ? heavyTabs + ' heavy inactive tabs' : 'too many tabs'}. Close unused tabs to improve performance.
+                        </div>
+                    </div>
+                `;
+            }
 
             // Suggestion 1: Inactive tabs
             if (inactive > 0) {
@@ -2043,7 +2061,19 @@
 
             // Action buttons
             html += '<div style="display: flex; gap: 1rem; flex-wrap: wrap;">';
-            if (inactive > 0) {
+
+            // Performance Fix Button (shows when device is lagging)
+            if (isDeviceLagging && inactive > 0) {
+                html += `
+                    <button onclick="fixPerformanceNow()" style="padding: 0.875rem 1.5rem; border-radius: 0.875rem; font-size: 0.9375rem; font-weight: 600; cursor: pointer; transition: all 0.2s; border: none; display: flex; align-items: center; gap: 0.5rem; background: linear-gradient(135deg, #ef4444, #dc2626); color: #fff; box-shadow: 0 4px 14px rgba(239, 68, 68, 0.4);">
+                        <span>⚡</span>
+                        Fix Performance Now
+                    </button>
+                `;
+            }
+
+            // Clean Tabs Button
+            if (inactive > 0 && !isDeviceLagging) {
                 html += `
                     <button onclick="cleanTabsNow()" style="padding: 0.875rem 1.5rem; border-radius: 0.875rem; font-size: 0.9375rem; font-weight: 600; cursor: pointer; transition: all 0.2s; border: none; display: flex; align-items: center; gap: 0.5rem; background: linear-gradient(135deg, #6366f1, #8b5cf6); color: #fff; box-shadow: 0 4px 14px rgba(99, 102, 241, 0.4);">
                         <span>🧹</span>
@@ -2051,6 +2081,8 @@
                     </button>
                 `;
             }
+
+            // Enable Auto-Clean Button (Free & Pro)
             if (!autoCleanEnabled) {
                 html += `
                     <button onclick="enableAutoCleanNow()" style="padding: 0.875rem 1.5rem; border-radius: 0.875rem; font-size: 0.9375rem; font-weight: 600; cursor: pointer; transition: all 0.2s; border: none; display: flex; align-items: center; gap: 0.5rem; background: rgba(100, 116, 139, 0.2); color: #e2e8f0; border: 1px solid rgba(255, 255, 255, 0.1);">
@@ -2059,6 +2091,25 @@
                     </button>
                 `;
             }
+
+            // Pro Feature: Auto-Close Timer (Pro users only)
+            if (isPro && autoCleanEnabled) {
+                html += `
+                    <button onclick="configureAutoClose()" style="padding: 0.875rem 1.5rem; border-radius: 0.875rem; font-size: 0.9375rem; font-weight: 600; cursor: pointer; transition: all 0.2s; border: none; display: flex; align-items: center; gap: 0.5rem; background: linear-gradient(135deg, #14b8a6, #0d9488); color: #fff; box-shadow: 0 4px 14px rgba(20, 184, 166, 0.4);">
+                        <span>⏱️</span>
+                        Configure Auto-Close
+                    </button>
+                `;
+            } else if (!isPro) {
+                // Upgrade to Pro prompt
+                html += `
+                    <button onclick="upgradeToPro()" style="padding: 0.875rem 1.5rem; border-radius: 0.875rem; font-size: 0.9375rem; font-weight: 600; cursor: pointer; transition: all 0.2s; border: none; display: flex; align-items: center; gap: 0.5rem; background: linear-gradient(135deg, #f59e0b, #d97706); color: #fff; box-shadow: 0 4px 14px rgba(245, 158, 11, 0.4);">
+                        <span>⭐</span>
+                        Upgrade for Auto-Close
+                    </button>
+                `;
+            }
+
             html += '</div>';
 
             container.innerHTML = html;
@@ -2207,6 +2258,37 @@
             } catch (error) {
                 alert('❌ An error occurred. Please try again.');
             }
+        }
+
+        // Action: Fix Performance (aggressive clean for lagging devices)
+        async function fixPerformanceNow() {
+            if (confirm('⚡ Performance Fix will close all inactive tabs to speed up your device. Continue?')) {
+                await cleanTabsNow();
+            }
+        }
+
+        // Action: Configure Auto-Close (Pro feature)
+        async function configureAutoClose() {
+            const currentTime = smartTabsData.autoCloseTime || 60;
+            const newTime = prompt(`⏱️ Set auto-close time (in minutes):\n\nTabs inactive for this long will automatically close.\n\nCurrent: ${currentTime} minutes`, currentTime);
+
+            if (newTime && !isNaN(newTime) && newTime > 0) {
+                // Save to extension storage
+                window.postMessage({
+                    type: 'DASHBOARD_SET_AUTO_CLOSE_TIME',
+                    source: 'tabmangment-dashboard',
+                    time: parseInt(newTime)
+                }, '*');
+
+                alert(`✅ Auto-close timer set to ${newTime} minutes!`);
+                smartTabsData.autoCloseTime = parseInt(newTime);
+            }
+        }
+
+        // Action: Upgrade to Pro
+        function upgradeToPro() {
+            // Scroll to subscription section or redirect to payment
+            alert('⭐ Upgrade to Pro to unlock:\n\n✅ Auto-Close Timer\n✅ Custom inactive thresholds\n✅ Priority support\n\nClick your plan badge to upgrade!');
         }
 
         // Load payment method from Stripe
