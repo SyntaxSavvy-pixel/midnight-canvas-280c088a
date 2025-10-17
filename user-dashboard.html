@@ -4544,13 +4544,30 @@
                 const ctx = document.getElementById('usage-chart');
                 if (!ctx) return;
 
+                // Create labels with favicons using Logo.dev API
+                const LOGO_API_KEY = 'pk_YIMtrjZvSpG8_u5_F5uxoA';
+                const chartLabels = analyticsData.domains.map((domain, index) => {
+                    // Get clean domain name (remove www., http://, etc.)
+                    const cleanDomain = domain.replace(/^(https?:\/\/)?(www\.)?/, '').split('/')[0];
+                    const title = analyticsData.titles?.[index] || domain;
+
+                    // Return just the title/domain for now - we'll add icons via plugin
+                    return title.length > 30 ? title.substring(0, 30) + '...' : title;
+                });
+
+                // Store favicons for later use
+                window.chartFavicons = analyticsData.domains.map(domain => {
+                    const cleanDomain = domain.replace(/^(https?:\/\/)?(www\.)?/, '').split('/')[0];
+                    return `https://img.logo.dev/${cleanDomain}?token=${LOGO_API_KEY}&size=32`;
+                });
+
                 // Create horizontal bar chart
                 usageChart = new Chart(ctx.getContext('2d'), {
                     type: 'bar',
                     data: {
-                        labels: analyticsData.domains,
+                        labels: chartLabels,
                         datasets: [{
-                            label: 'Hours Spent',
+                            label: 'Time Spent',
                             data: analyticsData.hours,
                             backgroundColor: [
                                 'rgba(20, 184, 166, 0.8)',
@@ -4566,24 +4583,53 @@
                                 '#ec4899',
                                 '#8b5cf6'
                             ],
-                            borderWidth: 2
+                            borderWidth: 2,
+                            borderRadius: 8,
+                            barThickness: 40
                         }]
                     },
                     options: {
                         indexAxis: 'y', // Horizontal bars
                         responsive: true,
                         maintainAspectRatio: false,
+                        layout: {
+                            padding: {
+                                left: 50 // Make room for favicon images
+                            }
+                        },
                         plugins: {
                             legend: {
                                 display: false
                             },
                             tooltip: {
+                                backgroundColor: 'rgba(15, 23, 42, 0.95)',
+                                titleColor: '#f1f5f9',
+                                bodyColor: '#f1f5f9',
+                                borderColor: '#334155',
+                                borderWidth: 1,
+                                padding: 12,
+                                displayColors: true,
                                 callbacks: {
+                                    title: function(context) {
+                                        const index = context[0].dataIndex;
+                                        return analyticsData.domains[index];
+                                    },
                                     label: function(context) {
                                         const hours = context.parsed.x;
                                         const minutes = Math.round((hours % 1) * 60);
                                         const wholeHours = Math.floor(hours);
+                                        if (wholeHours === 0) {
+                                            return `${minutes}m`;
+                                        }
                                         return `${wholeHours}h ${minutes}m`;
+                                    },
+                                    afterLabel: function(context) {
+                                        const index = context.dataIndex;
+                                        const title = analyticsData.titles?.[index];
+                                        if (title && title !== analyticsData.domains[index]) {
+                                            return `App: ${title}`;
+                                        }
+                                        return '';
                                     }
                                 }
                             }
@@ -4593,32 +4639,101 @@
                                 beginAtZero: true,
                                 ticks: {
                                     color: '#94a3b8',
+                                    font: {
+                                        size: 11,
+                                        weight: '500'
+                                    },
                                     callback: function(value) {
-                                        return value + 'h';
+                                        if (value === 0) return '0';
+                                        if (value < 1) return Math.round(value * 60) + 'm';
+                                        return Math.round(value) + 'h';
                                     }
                                 },
                                 grid: {
-                                    color: '#334155'
+                                    color: 'rgba(51, 65, 85, 0.3)',
+                                    drawBorder: false
+                                },
+                                border: {
+                                    display: false
                                 },
                                 title: {
                                     display: true,
-                                    text: 'Time Spent (hours)',
-                                    color: '#94a3b8'
+                                    text: 'Time Spent',
+                                    color: '#94a3b8',
+                                    font: {
+                                        size: 13,
+                                        weight: '600'
+                                    },
+                                    padding: { top: 10 }
                                 }
                             },
                             y: {
                                 ticks: {
-                                    color: '#94a3b8',
+                                    color: '#cbd5e1',
                                     font: {
-                                        size: 12
-                                    }
+                                        size: 13,
+                                        weight: '500'
+                                    },
+                                    padding: 10
                                 },
                                 grid: {
+                                    display: false
+                                },
+                                border: {
                                     display: false
                                 }
                             }
                         }
-                    }
+                    },
+                    plugins: [{
+                        id: 'faviconPlugin',
+                        afterDraw: (chart) => {
+                            const ctx = chart.ctx;
+                            const yAxis = chart.scales.y;
+                            const xAxis = chart.scales.x;
+
+                            if (!window.chartFavicons) return;
+
+                            chart.data.labels.forEach((label, index) => {
+                                const y = yAxis.getPixelForValue(index);
+                                const x = xAxis.left - 35; // Position favicon to the left
+
+                                // Create and cache images
+                                if (!window.faviconImages) window.faviconImages = {};
+
+                                const faviconUrl = window.chartFavicons[index];
+                                if (!window.faviconImages[faviconUrl]) {
+                                    const img = new Image();
+                                    img.src = faviconUrl;
+                                    img.onload = () => {
+                                        window.faviconImages[faviconUrl] = img;
+                                        chart.update('none');
+                                    };
+                                    img.onerror = () => {
+                                        // Fallback to generic icon
+                                        window.faviconImages[faviconUrl] = 'failed';
+                                    };
+                                } else if (window.faviconImages[faviconUrl] !== 'failed' && window.faviconImages[faviconUrl] instanceof Image) {
+                                    // Draw the favicon
+                                    ctx.save();
+                                    ctx.beginPath();
+                                    ctx.arc(x, y, 14, 0, Math.PI * 2);
+                                    ctx.fillStyle = '#1e293b';
+                                    ctx.fill();
+                                    ctx.clip();
+                                    ctx.drawImage(window.faviconImages[faviconUrl], x - 12, y - 12, 24, 24);
+                                    ctx.restore();
+
+                                    // Add border
+                                    ctx.strokeStyle = '#334155';
+                                    ctx.lineWidth = 2;
+                                    ctx.beginPath();
+                                    ctx.arc(x, y, 14, 0, Math.PI * 2);
+                                    ctx.stroke();
+                                }
+                            });
+                        }
+                    }]
                 });
 
             } catch (error) {
@@ -4666,7 +4781,9 @@
                     .map(([domain, data]) => ({
                         domain: domain,
                         totalTime: data.totalTime || 0,
-                        totalTabs: data.totalTabs || 0
+                        totalTabs: data.totalTabs || 0,
+                        favicon: data.favicon || null,
+                        title: data.title || domain
                     }))
                     .sort((a, b) => b.totalTime - a.totalTime)
                     .slice(0, 5);
@@ -4674,18 +4791,24 @@
                 if (sorted.length === 0) {
                     return {
                         domains: ['No data yet'],
-                        hours: [0]
+                        hours: [0],
+                        favicons: [],
+                        titles: ['No data yet']
                     };
                 }
 
                 return {
                     domains: sorted.map(item => item.domain),
-                    hours: sorted.map(item => item.totalTime / (1000 * 60 * 60)) // Convert ms to hours
+                    hours: sorted.map(item => item.totalTime / (1000 * 60 * 60)), // Convert ms to hours
+                    favicons: sorted.map(item => item.favicon),
+                    titles: sorted.map(item => item.title || item.domain)
                 };
             } catch (error) {
                 return {
                     domains: ['Error loading data'],
-                    hours: [0]
+                    hours: [0],
+                    favicons: [],
+                    titles: ['Error loading data']
                 };
             }
         }
@@ -4697,7 +4820,24 @@
             try {
                 const analyticsData = await getMonthlyAnalytics();
 
-                usageChart.data.labels = analyticsData.domains;
+                // Update labels with titles
+                const LOGO_API_KEY = 'pk_YIMtrjZvSpG8_u5_F5uxoA';
+                const chartLabels = analyticsData.domains.map((domain, index) => {
+                    const cleanDomain = domain.replace(/^(https?:\/\/)?(www\.)?/, '').split('/')[0];
+                    const title = analyticsData.titles?.[index] || domain;
+                    return title.length > 30 ? title.substring(0, 30) + '...' : title;
+                });
+
+                // Update favicons
+                window.chartFavicons = analyticsData.domains.map(domain => {
+                    const cleanDomain = domain.replace(/^(https?:\/\/)?(www\.)?/, '').split('/')[0];
+                    return `https://img.logo.dev/${cleanDomain}?token=${LOGO_API_KEY}&size=32`;
+                });
+
+                // Clear cached favicon images when updating
+                window.faviconImages = {};
+
+                usageChart.data.labels = chartLabels;
                 usageChart.data.datasets[0].data = analyticsData.hours;
                 usageChart.update('none'); // Update without animation for smoothness
 
