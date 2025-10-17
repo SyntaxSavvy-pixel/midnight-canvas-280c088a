@@ -996,6 +996,43 @@
         </div>
     </div>
 
+    <!-- Update Password Modal (shown when user clicks reset link from email) -->
+    <div class="reset-modal" id="update-password-modal">
+        <div class="reset-modal-content">
+            <h2>Set New Password</h2>
+            <p>Enter your new password below. Make sure it's strong and secure.</p>
+
+            <form onsubmit="handleUpdatePassword(event)">
+                <div class="form-group">
+                    <label for="new-password">New Password</label>
+                    <div class="password-wrapper">
+                        <input type="password" id="new-password" placeholder="Enter new password" required minlength="6" autocomplete="new-password" oninput="checkPasswordStrength(this.value)">
+                        <button type="button" class="password-toggle" onclick="togglePassword('new-password', this)" title="Show password">
+                            <i data-feather="eye"></i>
+                        </button>
+                    </div>
+                    <div class="password-strength" id="password-strength-reset">
+                        <div class="password-strength-bar" id="strength-bar-reset"></div>
+                    </div>
+                    <div class="password-strength-text" id="strength-text-reset"></div>
+                </div>
+                <div class="form-group">
+                    <label for="confirm-password">Confirm New Password</label>
+                    <div class="password-wrapper">
+                        <input type="password" id="confirm-password" placeholder="Confirm new password" required minlength="6" autocomplete="new-password">
+                        <button type="button" class="password-toggle" onclick="togglePassword('confirm-password', this)" title="Show password">
+                            <i data-feather="eye"></i>
+                        </button>
+                    </div>
+                </div>
+                <button type="submit" class="submit-btn" id="update-password-btn">
+                    <span class="btn-text">Update Password</span>
+                    <span class="loading-spinner"></span>
+                </button>
+            </form>
+        </div>
+    </div>
+
     <script>
 const SUPABASE_URL = 'https://voislxlhfepnllamagxm.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZvaXNseGxoZmVwbmxsYW1hZ3htIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTkwMTI4MDcsImV4cCI6MjA3NDU4ODgwN30.mDdMdGg4JAInS7kXNL6-edvRaQ_mVuMGRjU7rX-hMCM';
@@ -1009,9 +1046,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // Password Strength Checker
 function checkPasswordStrength(password) {
-    const strengthBar = document.getElementById('strength-bar');
-    const strengthText = document.getElementById('strength-text');
-    const strengthContainer = document.getElementById('password-strength');
+    const strengthBar = document.getElementById('strength-bar') || document.getElementById('strength-bar-reset');
+    const strengthText = document.getElementById('strength-text') || document.getElementById('strength-text-reset');
+    const strengthContainer = document.getElementById('password-strength') || document.getElementById('password-strength-reset');
+
+    if (!strengthBar || !strengthText || !strengthContainer) return;
 
     if (password.length === 0) {
         strengthContainer.classList.remove('show');
@@ -1384,6 +1423,95 @@ async function handlePasswordReset(e) {
         showLoading('reset-btn', false);
     }
 }
+
+// Handle Update Password (when user clicks link from email)
+async function handleUpdatePassword(e) {
+    e.preventDefault();
+
+    try {
+        showLoading('update-password-btn', true);
+        const newPassword = document.getElementById('new-password').value;
+        const confirmPassword = document.getElementById('confirm-password').value;
+
+        // Validate passwords match
+        if (newPassword !== confirmPassword) {
+            showNotification('Passwords do not match. Please try again.', 'error');
+            return;
+        }
+
+        // Validate password strength
+        if (newPassword.length < 6) {
+            showNotification('Password must be at least 6 characters long.', 'error');
+            return;
+        }
+
+        console.log('🔄 Updating password...');
+
+        // Update password via Supabase
+        const { data, error } = await supabaseClient.auth.updateUser({
+            password: newPassword
+        });
+
+        if (error) {
+            console.error('❌ Password update error:', error);
+            throw error;
+        }
+
+        console.log('✅ Password updated successfully:', data);
+
+        // Close the modal
+        document.getElementById('update-password-modal').classList.remove('show');
+
+        // Show success notification
+        showNotification('Password updated successfully! You can now log in with your new password.', 'success');
+
+        // Clear the form
+        document.getElementById('new-password').value = '';
+        document.getElementById('confirm-password').value = '';
+
+        // Redirect to login after 2 seconds
+        setTimeout(() => {
+            window.location.href = '/new-authentication';
+        }, 2000);
+
+    } catch (error) {
+        console.error('❌ Password update error:', error);
+
+        let errorMessage = 'Failed to update password. ';
+
+        if (error.message.includes('Auth session missing')) {
+            errorMessage = 'Your reset link has expired. Please request a new one.';
+        } else if (error.message) {
+            errorMessage += error.message;
+        } else {
+            errorMessage += 'Please try again or request a new reset link.';
+        }
+
+        showNotification(errorMessage, 'error');
+    } finally {
+        showLoading('update-password-btn', false);
+    }
+}
+
+// Check if user arrived from password reset email
+(async function checkPasswordRecovery() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const hashParams = new URLSearchParams(window.location.hash.substring(1));
+
+    // Check for recovery type in URL
+    const isRecovery = urlParams.get('type') === 'recovery' || hashParams.get('type') === 'recovery';
+    const hasAccessToken = hashParams.get('access_token');
+
+    if (isRecovery && hasAccessToken) {
+        console.log('🔐 Password recovery detected, showing update password form...');
+
+        // Show the update password modal
+        setTimeout(() => {
+            document.getElementById('update-password-modal').classList.add('show');
+            feather.replace();
+        }, 500);
+    }
+})();
 
 function showNotification(message, type = 'success') {
     const notification = document.createElement('div');
