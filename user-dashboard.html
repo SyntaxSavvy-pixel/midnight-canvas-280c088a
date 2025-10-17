@@ -2067,8 +2067,8 @@
             stripeSubscriptionId: null
         };
 
-        // API Configuration - Update this with your Netlify domain
-        const API_BASE = window.location.origin + '/api';
+        // API Configuration - Netlify Functions path
+        const API_BASE = window.location.origin + '/.netlify/functions';
         let authToken = null;
         let STRIPE_PRICE_ID = null; // Will be fetched from API
 
