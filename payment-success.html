@@ -250,20 +250,46 @@
 
         async function callCompletionAPI() {
             try {
-                const response = await fetch('/api/complete-payment', {
+                if (!sessionId) {
+                    throw new Error('No session ID found');
+                }
+
+                // Call verify-session to update Supabase immediately
+                const response = await fetch('/.netlify/functions/verify-session', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
                     },
                     body: JSON.stringify({
-                        session_id: sessionId,
-                        email: userEmail,
-                        source: 'payment_success_page'
+                        session_id: sessionId
                     })
                 });
 
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
                 const result = await response.json();
-                return result.success;
+
+                if (result.success && result.isPro) {
+                    // Update UI with Pro status
+                    if (result.email) {
+                        userEmail = result.email;
+                        document.getElementById('userEmail').textContent = result.email;
+                    }
+                    document.getElementById('planName').textContent = 'Pro Plan';
+
+                    // Store Pro status in localStorage for immediate dashboard update
+                    const userData = JSON.parse(localStorage.getItem('tabmangment_user') || '{}');
+                    userData.isPro = true;
+                    userData.subscription_status = result.subscriptionStatus;
+                    userData.stripe_customer_id = result.customerId;
+                    localStorage.setItem('tabmangment_user', JSON.stringify(userData));
+
+                    return true;
+                }
+
+                return false;
             } catch (error) {
                 return false;
             }
