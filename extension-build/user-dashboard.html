@@ -1764,7 +1764,6 @@
                 return { success: true, deviceCount: devices.length, maxDevices: isPro ? DEVICE_CONFIG.MAX_DEVICES_PRO : DEVICE_CONFIG.MAX_DEVICES_FREE };
 
             } catch (error) {
-                console.error('Device registration error:', error);
                 return { success: false, error: error.message };
             }
         }
@@ -2169,13 +2168,11 @@
             // If no data yet, wait a bit longer (OAuth redirect timing issue)
             // Retry up to 3 times with increasing delays to handle OAuth persistence
             if (!authToken || !storedUserData) {
-                console.log('No auth data found, waiting for OAuth to complete...');
                 for (let i = 0; i < 3; i++) {
                     await new Promise(resolve => setTimeout(resolve, 200 * (i + 1))); // 200ms, 400ms, 600ms
                     authToken = localStorage.getItem('tabmangment_token');
                     storedUserData = localStorage.getItem('tabmangment_user');
                     if (authToken && storedUserData) {
-                        console.log('Auth data found on retry', i + 1);
                         break;
                     }
                 }
@@ -2936,7 +2933,6 @@
             // Show selected page (with error handling)
             const pageElement = document.getElementById(pageId + '-page');
             if (!pageElement) {
-                console.error(`Page not found: ${pageId}-page`);
                 return;
             }
             pageElement.classList.add('active');
@@ -3162,7 +3158,6 @@
                 window.location.href = checkoutUrl;
 
             } catch (error) {
-                console.error('Upgrade error:', error);
                 alert('Failed to start checkout. Please try again or contact support.');
             }
         }

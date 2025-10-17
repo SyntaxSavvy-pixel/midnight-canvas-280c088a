@@ -24,7 +24,6 @@ exports.handler = async (event, context) => {
       };
     }
 
-    console.log('Fetching payment method for:', email);
 
     // Find customer by email
     const customers = await stripe.customers.list({

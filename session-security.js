@@ -66,7 +66,6 @@ class SessionSecurity {
 
             return true;
         } catch (error) {
-            console.error('Failed to save session:', error);
             return false;
         }
     }
@@ -97,7 +96,6 @@ class SessionSecurity {
 
             return { userData, token };
         } catch (error) {
-            console.error('Failed to get session:', error);
             this.clearSession();
             return null;
         }
@@ -117,7 +115,6 @@ class SessionSecurity {
 
         // Override dangerous console methods in production
         if (window.location.hostname !== 'localhost') {
-            // Keep console.error for debugging but disable manipulation
             ['clear', 'table'].forEach(method => {
                 if (console[method]) {
                     console[method] = noop;
@@ -125,10 +122,6 @@ class SessionSecurity {
             });
 
             // Display warning message
-            console.log('%c⚠️ SECURITY WARNING', 'color: red; font-size: 24px; font-weight: bold;');
-            console.log('%cThis browser console is for developers only.', 'color: orange; font-size: 16px;');
-            console.log('%cIf someone told you to copy/paste something here, it\'s a scam!', 'color: orange; font-size: 16px;');
-            console.log('%cPasting code here can give attackers access to your account.', 'color: red; font-size: 16px; font-weight: bold;');
         }
     }
 
@@ -144,7 +137,6 @@ class SessionSecurity {
                 // Log suspicious activity
                 const stack = new Error().stack;
                 if (!stack || !stack.includes('session-security.js')) {
-                    console.warn('Suspicious localStorage access detected:', key);
                 }
             }
 

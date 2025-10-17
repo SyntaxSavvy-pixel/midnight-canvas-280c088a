@@ -67,13 +67,11 @@ class StripeProIntegration {
     // Initiate Stripe checkout
     async initiateCheckout() {
         try {
-            console.log('🚀 Starting Stripe checkout...');
 
             // Show loading state
             this.showCheckoutLoading(true);
 
             // Create checkout session with updated API
-            console.log('🔗 Creating session with:', {
                 priceId: this.PRO_PRICE_ID,
                 userId: this.userId,
                 userEmail: this.userEmail || '',
@@ -96,7 +94,6 @@ class StripeProIntegration {
 
             if (!sessionResponse.ok) {
                 const errorText = await sessionResponse.text();
-                console.error('❌ API Error:', sessionResponse.status, errorText);
                 throw new Error(`Failed to create checkout session: ${sessionResponse.status} - ${errorText}`);
             }
 
@@ -104,14 +101,12 @@ class StripeProIntegration {
 
             // Redirect directly to Stripe Checkout URL
             if (session.url) {
-                console.log('✅ Redirecting to Stripe checkout:', session.url);
                 window.location.href = session.url;
             } else {
                 throw new Error('No checkout URL received');
             }
 
         } catch (error) {
-            console.error('❌ Checkout failed:', error);
 
             // Show more helpful error message
             let errorMessage = error.message;
@@ -147,7 +142,6 @@ class StripeProIntegration {
 
             if (response.ok) {
                 const userData = await response.json();
-                console.log('📊 User plan data from API:', userData);
 
                 if (userData.plan === 'pro' && userData.active && userData.isPro) {
                     await this.activateProFeatures(userData);
@@ -157,12 +151,10 @@ class StripeProIntegration {
 
                 return userData;
             } else {
-                console.warn('⚠️ API check failed, using local storage fallback');
                 return await this.checkLocalProStatus();
             }
 
         } catch (error) {
-            console.error('❌ Failed to check user plan:', error);
             // Fallback to local storage
             return await this.checkLocalProStatus();
         }
@@ -183,7 +175,6 @@ class StripeProIntegration {
                 }
             }
         } catch (error) {
-            console.error('Local Pro status check failed:', error);
         }
 
         return { plan: 'free', active: false };
@@ -192,7 +183,6 @@ class StripeProIntegration {
     // Activate Pro features
     async activateProFeatures(userData = {}) {
         try {
-            console.log('🎉 Activating Pro features...');
 
             const proData = {
                 isPremium: true,
@@ -224,10 +214,8 @@ class StripeProIntegration {
             // Show success notification
             this.showProActivatedNotification();
 
-            console.log('✅ Pro features activated successfully');
 
         } catch (error) {
-            console.error('❌ Failed to activate Pro features:', error);
         }
     }
 
@@ -248,7 +236,6 @@ class StripeProIntegration {
             this.updateUIForFree();
 
         } catch (error) {
-            console.error('❌ Failed to deactivate Pro features:', error);
         }
     }
 
@@ -359,7 +346,6 @@ class StripeProIntegration {
 
             return false;
         } catch (error) {
-            console.error('Failed to check Pro status:', error);
             return false;
         }
     }

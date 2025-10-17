@@ -13,7 +13,6 @@ exports.handler = async (event, context) => {
     };
 
     try {
-        console.log('🧹 Starting cleanup of accounts marked for deletion...');
 
         if (!supabaseServiceKey) {
             console.error('❌ SUPABASE_SERVICE_ROLE_KEY not configured');
@@ -50,7 +49,6 @@ exports.handler = async (event, context) => {
             };
         }
 
-        console.log(`📋 Found ${users.length} total users`);
 
         const now = new Date();
         let deletedCount = 0;
@@ -63,12 +61,9 @@ exports.handler = async (event, context) => {
             if (deletionScheduledAt) {
                 const deletionTime = new Date(deletionScheduledAt);
 
-                console.log(`⏰ User scheduled for deletion at:`, deletionTime);
-                console.log(`🕐 Current time:`, now);
 
                 // If deletion time has passed, delete the user
                 if (now >= deletionTime) {
-                    console.log(`🗑️ Deleting user...`);
 
                     try {
                         const { error: deleteError } = await supabase.auth.admin.deleteUser(user.id);
@@ -76,7 +71,6 @@ exports.handler = async (event, context) => {
                         if (deleteError) {
                             console.error(`❌ Failed to delete user:`, deleteError);
                         } else {
-                            console.log(`✅ Successfully deleted user`);
                             deletedCount++;
                             deletedUsers.push({
                                 email: user.email,
@@ -90,9 +84,7 @@ exports.handler = async (event, context) => {
                                     .from('users')
                                     .delete()
                                     .eq('email', user.email);
-                                console.log(`✅ Deleted user from users table`);
                             } catch (tableErr) {
-                                console.log(`⚠️ Could not delete from users table:`, tableErr);
                             }
                         }
                     } catch (err) {
@@ -100,12 +92,10 @@ exports.handler = async (event, context) => {
                     }
                 } else {
                     const hoursRemaining = Math.ceil((deletionTime - now) / (1000 * 60 * 60));
-                    console.log(`⏳ User will be deleted in ${hoursRemaining} hours`);
                 }
             }
         }
 
-        console.log(`✅ Cleanup complete. Deleted ${deletedCount} accounts`);
 
         return {
             statusCode: 200,

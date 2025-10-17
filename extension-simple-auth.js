@@ -75,7 +75,6 @@ class SimpleAuth {
                     await this.handleUserLogin(message.user, message.token);
                     sendResponse({ success: true });
                 } else {
-                    console.error('USER_LOGGED_IN message missing user data');
                     sendResponse({ success: false, error: 'Missing user data' });
                 }
                 break;
@@ -106,7 +105,6 @@ class SimpleAuth {
                     }, null);
                     sendResponse({ success: true });
                 } else {
-                    console.error('USER_LOGIN message missing email');
                     sendResponse({ success: false, error: 'Missing email' });
                 }
                 break;
@@ -127,7 +125,6 @@ class SimpleAuth {
     async handleUserLogin(user, token) {
         // Validate user object exists
         if (!user || typeof user !== 'object') {
-            console.error('Invalid user object in handleUserLogin');
             return;
         }
 

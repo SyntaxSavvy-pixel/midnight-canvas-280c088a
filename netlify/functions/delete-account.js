@@ -30,7 +30,6 @@ exports.handler = async (event, context) => {
     try {
         const { userId, email } = JSON.parse(event.body);
 
-        console.log('🗑️ MARK ACCOUNT FOR DELETION');
 
         if (!userId || !email) {
             console.error('❌ Missing required fields');
@@ -57,7 +56,6 @@ exports.handler = async (event, context) => {
             };
         }
 
-        console.log('✅ Service key is configured');
         const supabase = createClient(supabaseUrl, supabaseServiceKey, {
             auth: {
                 autoRefreshToken: false,
@@ -69,7 +67,6 @@ exports.handler = async (event, context) => {
         const deletionTime = new Date();
         deletionTime.setHours(deletionTime.getHours() + 24);
 
-        console.log('⏰ Scheduling deletion for:', deletionTime.toISOString());
 
         const { data: updateData, error: updateError } = await supabase.auth.admin.updateUserById(
             userId,
@@ -94,7 +91,6 @@ exports.handler = async (event, context) => {
             };
         }
 
-        console.log('✅ User marked for deletion in 24 hours');
 
         return {
             statusCode: 200,

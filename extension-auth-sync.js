@@ -14,7 +14,6 @@ class ExtensionAuthSync {
   }
 
   async init() {
-    console.log('🔐 Initializing authentication sync...');
 
     // Check if user is already logged in
     await this.checkExistingLogin();
@@ -32,7 +31,6 @@ class ExtensionAuthSync {
       const storage = await chrome.storage.local.get(['tabmangment_user', 'tabmangment_token']);
 
       if (storage.tabmangment_user && storage.tabmangment_token) {
-        console.log('📱 Found existing login in storage');
 
         this.currentUser = storage.tabmangment_user;
         this.token = storage.tabmangment_token;
@@ -42,17 +40,13 @@ class ExtensionAuthSync {
 
         if (isValid) {
           this.isLoggedIn = true;
-          console.log('✅ User authenticated');
           await this.syncUserData();
         } else {
-          console.log('⚠️ Token expired, clearing storage');
           await this.logout();
         }
       } else {
-        console.log('ℹ️ No existing login found');
       }
     } catch (error) {
-      console.error('❌ Error checking existing login:', error);
     }
   }
 
@@ -78,7 +72,6 @@ class ExtensionAuthSync {
   }
 
   async handleMessage(message, sender, sendResponse) {
-    console.log('📨 Received message:', message.type);
 
     try {
       switch (message.type) {
@@ -110,13 +103,11 @@ class ExtensionAuthSync {
           sendResponse({ success: false, message: 'Unknown message type' });
       }
     } catch (error) {
-      console.error('❌ Error handling message:', error);
       sendResponse({ success: false, error: error.message });
     }
   }
 
   async handleUserLogin(user, token) {
-    console.log('🎉 User logged in');
 
     this.currentUser = user;
     this.token = token;
@@ -132,7 +123,6 @@ class ExtensionAuthSync {
       planType: user.isPro ? 'pro' : 'free'
     });
 
-    console.log('✅ Login data stored in extension');
 
     // Sync latest user data
     await this.syncUserData();
@@ -140,7 +130,6 @@ class ExtensionAuthSync {
   }
 
   async handleStorageChange(changes) {
-    console.log('🔄 Storage changed, updating auth state...');
 
     if (changes.tabmangment_user) {
       this.currentUser = changes.tabmangment_user.newValue;
@@ -166,7 +155,6 @@ class ExtensionAuthSync {
       const result = await response.json();
       return result.success;
     } catch (error) {
-      console.error('❌ Token verification failed:', error);
       return false;
     }
   }
@@ -177,7 +165,6 @@ class ExtensionAuthSync {
     }
 
     try {
-      console.log('🔄 Syncing user data...');
 
       const response = await fetch(`${this.apiBaseUrl}/auth/verify`, {
         method: 'POST',
@@ -204,18 +191,14 @@ class ExtensionAuthSync {
           lastSyncAt: new Date().toISOString()
         });
 
-        console.log('✅ User data synced');
       } else {
-        console.log('⚠️ Token invalid, logging out');
         await this.logout();
       }
     } catch (error) {
-      console.error('❌ Error syncing user data:', error);
     }
   }
 
   async logout() {
-    console.log('👋 Logging out user...');
 
     this.isLoggedIn = false;
     this.currentUser = null;
@@ -232,7 +215,6 @@ class ExtensionAuthSync {
       'proActivatedAt'
     ]);
 
-    console.log('✅ Logout complete');
   }
 
   startPeriodicSync() {
@@ -243,14 +225,12 @@ class ExtensionAuthSync {
       }
     }, 5 * 60 * 1000);
 
-    console.log('⏰ Periodic sync started (5 min intervals)');
   }
 
   stop() {
     if (this.syncInterval) {
       clearInterval(this.syncInterval);
       this.syncInterval = null;
-      console.log('⏹️ Auth sync stopped');
     }
   }
 

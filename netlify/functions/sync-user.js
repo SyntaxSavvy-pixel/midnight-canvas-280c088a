@@ -88,7 +88,6 @@ exports.handler = async (event, context) => {
             };
         }
 
-        console.log('✅ User synced to database');
 
         return {
             statusCode: 200,

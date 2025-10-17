@@ -68,11 +68,9 @@ export async function saveUser(userData) {
 
     if (error) throw error;
 
-    console.log('💾 User saved:', userData.userId || userData.email);
     return data;
 
   } catch (error) {
-    console.error('❌ Error saving user:', error);
     throw error;
   }
 }
@@ -91,11 +89,9 @@ export async function getUser(identifier) {
     }
 
     if (!data) {
-      console.log('👤 User not found:', identifier);
       return null;
     }
 
-    console.log('👤 User found:', identifier);
 
     // Convert to camelCase for consistency
     return {
@@ -113,7 +109,6 @@ export async function getUser(identifier) {
     };
 
   } catch (error) {
-    console.error('❌ Error getting user:', error);
     throw error;
   }
 }
@@ -140,11 +135,9 @@ export async function updateUser(identifier, updates) {
 
     if (error) throw error;
 
-    console.log('🔄 User updated:', identifier);
     return data;
 
   } catch (error) {
-    console.error('❌ Error updating user:', error);
     throw error;
   }
 }
@@ -162,7 +155,6 @@ export async function getProUsers() {
     return data;
 
   } catch (error) {
-    console.error('❌ Error getting pro users:', error);
     return [];
   }
 }
@@ -187,7 +179,6 @@ export async function getSubscriptionStats() {
     return stats;
 
   } catch (error) {
-    console.error('❌ Error getting subscription stats:', error);
     return null;
   }
 }
@@ -202,10 +193,8 @@ export async function deleteUser(identifier) {
 
     if (error) throw error;
 
-    console.log('🗑️ User deleted:', identifier);
 
   } catch (error) {
-    console.error('❌ Error deleting user:', error);
     throw error;
   }
 }

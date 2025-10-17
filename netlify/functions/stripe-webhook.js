@@ -48,7 +48,6 @@ exports.handler = async (event, context) => {
         };
     }
 
-    console.log('📬 Received webhook event:', stripeEvent.type);
 
     try {
         // Handle the event
@@ -74,7 +73,6 @@ exports.handler = async (event, context) => {
                 break;
 
             default:
-                console.log(`⚠️ Unhandled event type: ${stripeEvent.type}`);
         }
 
         return {
@@ -94,7 +92,6 @@ exports.handler = async (event, context) => {
 };
 
 async function handleCheckoutCompleted(session) {
-    console.log('✅ Checkout completed for session:', session.id);
 
     const customerEmail = session.customer_email || session.metadata?.userEmail;
 
@@ -119,7 +116,6 @@ async function handleCheckoutCompleted(session) {
 
         if (error) throw error;
 
-        console.log('✅ User updated to Pro:', customerEmail);
 
         // Create notification for real-time updates
         await createSubscriptionNotification(customerEmail, 'activated', 'pro');
@@ -129,7 +125,6 @@ async function handleCheckoutCompleted(session) {
 }
 
 async function handlePaymentSucceeded(invoice) {
-    console.log('💳 Payment succeeded for invoice:', invoice.id);
 
     try {
         const subscription = await stripe.subscriptions.retrieve(invoice.subscription);
@@ -147,14 +142,12 @@ async function handlePaymentSucceeded(invoice) {
 
         if (error) throw error;
 
-        console.log('✅ User subscription renewed:', customer.email);
     } catch (error) {
         console.error('❌ Error processing payment success:', error);
     }
 }
 
 async function handlePaymentFailed(invoice) {
-    console.log('❌ Payment failed for invoice:', invoice.id);
 
     try {
         const subscription = await stripe.subscriptions.retrieve(invoice.subscription);
@@ -170,14 +163,12 @@ async function handlePaymentFailed(invoice) {
 
         if (error) throw error;
 
-        console.log('⚠️ User marked as past due:', customer.email);
     } catch (error) {
         console.error('❌ Error processing payment failure:', error);
     }
 }
 
 async function handleSubscriptionUpdated(subscription) {
-    console.log('🔄 Subscription updated:', subscription.id);
 
     try {
         const customer = await stripe.customers.retrieve(subscription.customer);
@@ -195,7 +186,6 @@ async function handleSubscriptionUpdated(subscription) {
 
         if (error) throw error;
 
-        console.log('✅ User subscription status updated:', customer.email, subscription.status);
 
         // Create notification for real-time updates
         await createSubscriptionNotification(customer.email, 'updated', isPro ? 'pro' : 'free');
@@ -205,7 +195,6 @@ async function handleSubscriptionUpdated(subscription) {
 }
 
 async function handleSubscriptionDeleted(subscription) {
-    console.log('🗑️ Subscription deleted:', subscription.id);
 
     try {
         const customer = await stripe.customers.retrieve(subscription.customer);
@@ -221,7 +210,6 @@ async function handleSubscriptionDeleted(subscription) {
 
         if (error) throw error;
 
-        console.log('✅ User subscription cancelled:', customer.email);
 
         // Create notification for real-time updates
         await createSubscriptionNotification(customer.email, 'cancelled', 'free');
@@ -244,11 +232,8 @@ async function createSubscriptionNotification(email, action, plan) {
 
         if (error) {
             // Table might not exist, which is ok - we'll use polling fallback
-            console.log('⚠️ Subscription notification not created (table may not exist):', error.message);
         } else {
-            console.log('📢 Subscription notification created for:', email);
         }
     } catch (error) {
-        console.log('⚠️ Subscription notification error:', error.message);
     }
 }

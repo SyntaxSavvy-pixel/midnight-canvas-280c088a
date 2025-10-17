@@ -576,13 +576,10 @@ class TabManager {
                         const verification = await chrome.storage.local.get(null);
 
                         if (verification.userEmail !== loginData.userEmail) {
-                            console.warn('⚠️ Verification mismatch');
                         }
 
-                        console.log('✅ User data synced to extension:', loginData.userEmail);
                         sendResponse({ success: true, saved: verification });
                     } catch (error) {
-                        console.error('❌ Sync error:', error);
                         sendResponse({ success: false, error: error.message });
                     }
                     break;
@@ -2129,7 +2126,6 @@ TabManager.prototype.getSmartTabsData = async function() {
             isPro: storage.isPro || false
         };
     } catch (error) {
-        console.error('Error getting tabs data:', error);
         return {
             inactive: 0,
             total: 0,
@@ -2184,7 +2180,6 @@ TabManager.prototype.cleanInactiveTabs = async function() {
             memorySaved: tabsToClose.length * 15 // Estimate 15MB per tab
         };
     } catch (error) {
-        console.error('Error cleaning tabs:', error);
         return { count: 0, memorySaved: 0 };
     }
 };

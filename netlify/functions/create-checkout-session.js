@@ -46,7 +46,6 @@ exports.handler = async (event, context) => {
                 const { data: { user }, error: authError } = await supabase.auth.getUser(token);
 
                 if (!authError && user) {
-                    console.log('✅ Authenticated user from Supabase Auth');
                     userEmail = user.email;
                     authenticatedUser = {
                         email: user.email,
@@ -54,7 +53,6 @@ exports.handler = async (event, context) => {
                     };
                 }
             } catch (authError) {
-                console.log('⚠️ Supabase Auth failed, trying legacy token...');
 
                 // Fallback to legacy token format
                 try {
@@ -64,7 +62,6 @@ exports.handler = async (event, context) => {
                         authenticatedUser = { email: userEmail };
                     }
                 } catch (legacyError) {
-                    console.log('⚠️ Legacy token also invalid');
                 }
             }
         }
@@ -80,7 +77,6 @@ exports.handler = async (event, context) => {
             };
         }
 
-        console.log('✅ User authenticated');
 
         const { priceId } = JSON.parse(event.body || '{}');
 
@@ -94,7 +90,6 @@ exports.handler = async (event, context) => {
             };
         }
 
-        console.log('Creating checkout session');
 
         // Get the current domain for success/cancel URLs
         const currentDomain = event.headers.origin || 'https://tabmangment.netlify.app';
@@ -135,7 +130,6 @@ exports.handler = async (event, context) => {
             }
         });
 
-        console.log('✅ Checkout session created:', session.id);
 
         // Return session data
         return {

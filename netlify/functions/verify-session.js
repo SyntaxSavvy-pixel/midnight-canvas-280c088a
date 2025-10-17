@@ -44,14 +44,12 @@ exports.handler = async (event, context) => {
             };
         }
 
-        console.log('🔍 Verifying session:', session_id);
 
         // Retrieve the checkout session from Stripe
         const session = await stripe.checkout.sessions.retrieve(session_id, {
             expand: ['subscription', 'customer']
         });
 
-        console.log('📋 Session status:', session.payment_status, 'Subscription:', session.subscription?.id);
 
         if (session.payment_status !== 'paid') {
             return {
@@ -94,7 +92,6 @@ exports.handler = async (event, context) => {
             subscriptionId = subscription.id;
         }
 
-        console.log('✅ Payment verified for:', customerEmail, 'Status:', subscriptionStatus);
 
         // IMMEDIATELY update Supabase - don't wait for webhook
         try {
@@ -116,7 +113,6 @@ exports.handler = async (event, context) => {
                 console.error('⚠️ Supabase update error:', updateError);
                 // Don't fail the request - user still gets Pro based on session
             } else {
-                console.log('✅ User updated to Pro in database:', customerEmail);
             }
         } catch (dbError) {
             console.error('⚠️ Database error:', dbError);

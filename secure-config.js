@@ -45,7 +45,6 @@ class SecureConfig {
                 logoApiKey: 'pk_YIMtrjZvSpG8_u5_F5uxoA'
             };
         } catch (error) {
-            console.error('Failed to load secure config:', error);
 
             // Fallback to safe defaults (Supabase anon key is safe to expose)
             return {

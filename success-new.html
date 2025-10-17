@@ -68,10 +68,8 @@
                 const sessionId = urlParams.get('session_id');
                 const email = urlParams.get('email');
 
-                console.log('🎉 Payment successful! Session:', sessionId, 'Email:', email);
 
                 if (!email) {
-                    console.error('❌ No email provided in success URL');
                     return;
                 }
 
@@ -85,10 +83,8 @@
                             email: email,
                             timestamp: new Date().toISOString()
                         });
-                        console.log('✅ Sent message to extension');
                     }
                 } catch (extError) {
-                    console.log('ℹ️ Extension communication not available:', extError.message);
                 }
 
                 // Method 2: Store in localStorage for extension to pick up
@@ -99,9 +95,7 @@
                         timestamp: new Date().toISOString(),
                         processed: false
                     }));
-                    console.log('✅ Stored payment success in localStorage');
                 } catch (storageError) {
-                    console.log('⚠️ localStorage not available:', storageError.message);
                 }
 
                 // Method 3: Post message to opener window (if extension opened this tab)
@@ -113,10 +107,8 @@
                             email: email,
                             timestamp: new Date().toISOString()
                         }, '*');
-                        console.log('✅ Posted message to opener window');
                     }
                 } catch (postError) {
-                    console.log('ℹ️ No opener window available');
                 }
 
                 // Method 4: Broadcast to all tabs (for extension content scripts)
@@ -128,16 +120,12 @@
                         email: email,
                         timestamp: new Date().toISOString()
                     });
-                    console.log('✅ Broadcast payment success');
                 } catch (bcError) {
-                    console.log('ℹ️ BroadcastChannel not available');
                 }
 
                 // Show success message to user
-                console.log('🎉 Payment processing complete! Your Pro features will activate automatically.');
 
             } catch (error) {
-                console.error('❌ Error in payment success handler:', error);
             }
         })();
 

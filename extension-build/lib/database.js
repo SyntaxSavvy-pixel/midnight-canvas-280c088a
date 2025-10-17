@@ -33,7 +33,6 @@ export async function saveUser(userData) {
       if (userData.email && userData.email !== userId) {
         await kv.set(`user:${userData.email}`, user);
       }
-      console.log('💾 User saved to KV:', userId);
       return user;
     }
 
@@ -50,11 +49,9 @@ export async function saveUser(userData) {
       memoryDB.set(`user:${userData.email}`, user);
     }
 
-    console.log('💾 User saved to memory:', userId);
     return user;
 
   } catch (error) {
-    console.error('❌ Error saving user:', error);
     throw error;
   }
 }
@@ -67,25 +64,20 @@ export async function getUser(identifier) {
       const { kv } = await import('@vercel/kv');
       const user = await kv.get(`user:${identifier}`);
       if (user) {
-        console.log('👤 User found in KV:', identifier);
         return user;
       }
-      console.log('👤 User not found in KV:', identifier);
       return null;
     }
 
     // Fallback to memory storage (development)
     const user = memoryDB.get(`user:${identifier}`);
     if (user) {
-      console.log('👤 User found in memory:', identifier);
       return user;
     }
 
-    console.log('👤 User not found in memory:', identifier);
     return null;
 
   } catch (error) {
-    console.error('❌ Error getting user:', error);
     throw error;
   }
 }
@@ -112,7 +104,6 @@ export async function updateUser(identifier, updates) {
       if (existingUser.email && existingUser.email !== identifier) {
         await kv.set(`user:${existingUser.email}`, updatedUser);
       }
-      console.log('🔄 User updated in KV:', identifier);
       return updatedUser;
     }
 
@@ -122,11 +113,9 @@ export async function updateUser(identifier, updates) {
       memoryDB.set(`user:${existingUser.email}`, updatedUser);
     }
 
-    console.log('🔄 User updated in memory:', identifier);
     return updatedUser;
 
   } catch (error) {
-    console.error('❌ Error updating user:', error);
     throw error;
   }
 }
@@ -144,7 +133,6 @@ export async function deleteUser(identifier) {
         if (user.email && user.email !== identifier) {
           await kv.del(`user:${user.email}`);
         }
-        console.log('🗑️ User deleted from KV:', identifier);
         return;
       }
 
@@ -154,11 +142,9 @@ export async function deleteUser(identifier) {
         memoryDB.delete(`user:${user.email}`);
       }
 
-      console.log('🗑️ User deleted from memory:', identifier);
     }
 
   } catch (error) {
-    console.error('❌ Error deleting user:', error);
     throw error;
   }
 }
@@ -183,7 +169,6 @@ export async function getAllUsers() {
         }
       }
 
-      console.log(`👥 Retrieved ${users.length} users from KV`);
       return users;
     }
 
@@ -199,11 +184,9 @@ export async function getAllUsers() {
       }
     }
 
-    console.log(`👥 Retrieved ${users.length} users from memory`);
     return users;
 
   } catch (error) {
-    console.error('❌ Error getting all users:', error);
     return [];
   }
 }
@@ -224,7 +207,6 @@ export async function trackActivity(email, activityType, data = {}) {
       };
 
       await kv.set(activityKey, activity);
-      console.log('📊 Activity tracked:', activityType, 'for', email);
 
       // Also update user's last activity
       const user = await getUser(email);
@@ -237,7 +219,6 @@ export async function trackActivity(email, activityType, data = {}) {
     }
 
   } catch (error) {
-    console.error('Error tracking activity:', error);
   }
 }
 
@@ -285,7 +266,6 @@ export async function checkUserStatus(userIdentifier) {
     };
 
   } catch (error) {
-    console.error('Error checking user status:', error);
     return {
       isPro: false,
       status: 'error',
@@ -320,7 +300,6 @@ export async function getRecentActivities(limit = 50) {
     return [];
 
   } catch (error) {
-    console.error('Error getting activities from KV:', error);
     return [];
   }
 }

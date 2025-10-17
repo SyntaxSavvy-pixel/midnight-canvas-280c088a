@@ -11,17 +11,14 @@ class SessionManager {
     }
 
     async init() {
-        console.log('🔐 Session Manager initialized');
 
         // Check if we have a valid session
         const hasSession = this.checkSession();
 
         if (hasSession) {
-            console.log('✅ Valid session found');
             // Keep session alive
             this.keepAlive();
         } else {
-            console.log('ℹ️ No active session');
         }
 
         // Set up periodic session check
@@ -47,7 +44,6 @@ class SessionManager {
 
             return false;
         } catch (error) {
-            console.error('❌ Session check error:', error);
             return false;
         }
     }
@@ -63,9 +59,7 @@ class SessionManager {
                 remember: remember
             }));
 
-            console.log('✅ Session saved:', user.email, '- Remember:', remember);
         } catch (error) {
-            console.error('❌ Save session error:', error);
         }
     }
 
@@ -75,9 +69,7 @@ class SessionManager {
             localStorage.removeItem(this.tokenKey);
             localStorage.removeItem(this.rememberKey);
             localStorage.removeItem(this.storageKey);
-            console.log('✅ Session cleared');
         } catch (error) {
-            console.error('❌ Clear session error:', error);
         }
     }
 
@@ -90,7 +82,6 @@ class SessionManager {
                 localStorage.setItem(this.storageKey, JSON.stringify(session));
             }
         } catch (error) {
-            console.error('❌ Keep alive error:', error);
         }
     }
 
@@ -105,7 +96,6 @@ class SessionManager {
             const userStr = localStorage.getItem(this.userKey);
             return userStr ? JSON.parse(userStr) : null;
         } catch (error) {
-            console.error('❌ Get user error:', error);
             return null;
         }
     }

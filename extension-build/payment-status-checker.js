@@ -17,19 +17,16 @@ class PaymentStatusChecker {
   }
 
   async startPolling() {
-    console.log('🔄 Starting payment status polling...');
 
     // Get user email/ID for checking
     const userIdentifier = await this.getUserIdentifier();
     if (!userIdentifier) {
-      console.log('⚠️ No user identifier found, skipping payment polling');
       return;
     }
 
     // Check if already Pro
     const currentStatus = await this.getCurrentProStatus();
     if (currentStatus.isPro) {
-      console.log('✅ User already has Pro features, stopping polling');
       return;
     }
 
@@ -40,7 +37,6 @@ class PaymentStatusChecker {
   async pollPaymentStatus(userIdentifier) {
     if (this.isChecking) return;
     if (this.checkCount >= this.maxChecks) {
-      console.log('⏹️ Max payment status checks reached, stopping');
       return;
     }
 
@@ -48,7 +44,6 @@ class PaymentStatusChecker {
     this.checkCount++;
 
     try {
-      console.log(`🔍 Payment status check #${this.checkCount} for: ${userIdentifier}`);
 
       // Try endpoints in order of preference
       const endpoints = [
@@ -62,7 +57,6 @@ class PaymentStatusChecker {
 
       for (const endpoint of endpoints) {
         try {
-          console.log(`🔄 Trying endpoint: ${endpoint.name}`);
 
           const response = await fetch(endpoint.url, {
             method: 'GET',
@@ -73,13 +67,11 @@ class PaymentStatusChecker {
 
           if (response.ok) {
             result = await response.json();
-            console.log(`✅ Endpoint ${endpoint.name} successful`);
             break;
           } else {
             throw new Error(`HTTP ${response.status}`);
           }
         } catch (endpointError) {
-          console.log(`⚠️ Endpoint ${endpoint.name} failed:`, endpointError.message);
           lastError = endpointError;
           continue;
         }
@@ -89,31 +81,25 @@ class PaymentStatusChecker {
         throw new Error(`All endpoints failed. Last error: ${lastError?.message || 'Unknown error'}`);
       }
 
-      console.log('📊 Payment status response:', result);
 
       if (result.success && result.isPro) {
         // User has Pro features! Activate them
         await this.activateProFeatures(result);
-        console.log('🎉 Pro features activated from payment status check!');
         return; // Stop polling
       }
 
       // If user not Pro but we're polling with a temp ID, check recent activations
       if (userIdentifier.startsWith('temp_') || userIdentifier.startsWith('fallback_')) {
-        console.log('🔍 Checking recent activations for temp user...');
         const recentActivation = await this.checkRecentActivations();
         if (recentActivation) {
-          console.log('🎉 Found recent activation! Activating Pro features...');
           await this.activateProFeatures(recentActivation);
           return; // Stop polling
         }
       }
 
       // User doesn't have Pro yet, continue polling
-      console.log(`⏳ User not Pro yet, will check again in ${this.checkInterval/1000}s`);
 
     } catch (error) {
-      console.error('❌ Error checking payment status:', error);
     }
 
     this.isChecking = false;
@@ -141,7 +127,6 @@ class PaymentStatusChecker {
         planType: result.planType || 'free'
       };
     } catch (error) {
-      console.error('Error getting current Pro status:', error);
       return { isPro: false, planType: 'free' };
     }
   }
@@ -161,18 +146,15 @@ class PaymentStatusChecker {
 
       // 2. Check if there's a recent payment success event
       if (!userIdentifier) {
-        console.log('🔍 Checking for payment success events...');
 
         try {
           // Check main payment success data
           const paymentSuccess = localStorage.getItem('tabmangment_payment_success');
           if (paymentSuccess) {
             const data = JSON.parse(paymentSuccess);
-            console.log('💳 Found payment success data');
             if (data.email && data.email.includes('@')) {
               userIdentifier = data.email;
               await chrome.storage.local.set({ userEmail: data.email });
-              console.log('✅ Got email from payment success');
             }
           }
 
@@ -182,7 +164,6 @@ class PaymentStatusChecker {
             if (storedEmail && storedEmail.includes('@')) {
               userIdentifier = storedEmail;
               await chrome.storage.local.set({ userEmail: storedEmail });
-              console.log('✅ Got email from stored email');
             }
           }
 
@@ -191,16 +172,13 @@ class PaymentStatusChecker {
             const sessionPayment = sessionStorage.getItem('tabmangment_payment_success');
             if (sessionPayment) {
               const data = JSON.parse(sessionPayment);
-              console.log('💳 Found session payment data');
               if (data.email && data.email.includes('@')) {
                 userIdentifier = data.email;
                 await chrome.storage.local.set({ userEmail: data.email });
-                console.log('✅ Got email from session payment');
               }
             }
           }
         } catch (e) {
-          console.log('⚠️ Error checking payment data:', e.message);
         }
       }
 
@@ -214,14 +192,10 @@ class PaymentStatusChecker {
             if (emailFromUrl && emailFromUrl.includes('@')) {
               userIdentifier = emailFromUrl;
               await chrome.storage.local.set({ userEmail: emailFromUrl });
-              console.log('✅ Found email in current tab URL');
             } else {
-              console.log('🔍 Current URL:', tabs[0].url);
-              console.log('🔍 No email found in URL parameters');
             }
           }
         } catch (e) {
-          console.log('⚠️ Cannot access tab URL:', e.message);
         }
       }
 
@@ -232,10 +206,8 @@ class PaymentStatusChecker {
           if (response && response.email && response.email.includes('@')) {
             userIdentifier = response.email;
             await chrome.storage.local.set({ userEmail: response.email });
-            console.log('✅ Got email from extension popup');
           }
         } catch (e) {
-          console.log('⚠️ Cannot get email from popup');
         }
       }
 
@@ -247,12 +219,10 @@ class PaymentStatusChecker {
           needsRealEmail: true
         });
         userIdentifier = tempId;
-        console.log('⚠️ Generated temporary ID - payment may not activate without real email');
       }
 
       return userIdentifier;
     } catch (error) {
-      console.error('Error getting user identifier:', error);
       return null;
     }
   }
@@ -286,11 +256,9 @@ class PaymentStatusChecker {
       }
 
 
-      console.log('✅ Pro features activated successfully!');
       return true;
 
     } catch (error) {
-      console.error('❌ Error activating Pro features:', error);
       return false;
     }
   }
@@ -298,7 +266,6 @@ class PaymentStatusChecker {
   // Check recent activations (for when we have temp user IDs)
   async checkRecentActivations() {
     try {
-      console.log('🔍 Checking recent Pro activations...');
 
       const response = await fetch(`${this.apiBaseUrl}/recent-activations`, {
         method: 'GET',
@@ -309,7 +276,6 @@ class PaymentStatusChecker {
 
       if (response.ok) {
         const result = await response.json();
-        console.log('📊 Recent activations:', result);
 
         if (result.success && result.activations.length > 0) {
           // Get the most recent activation (first in array)
@@ -329,7 +295,6 @@ class PaymentStatusChecker {
         }
       }
     } catch (error) {
-      console.log('⚠️ Error checking recent activations:', error.message);
     }
 
     return null;
@@ -351,7 +316,6 @@ class PaymentStatusChecker {
   // Stop polling (for cleanup)
   stop() {
     this.checkCount = this.maxChecks;
-    console.log('⏹️ Payment status polling stopped');
   }
 }
 

@@ -42,11 +42,9 @@ export async function saveUser(userData) {
       await kv.set(`user:${userData.email}`, user);
     }
 
-    console.log('💾 User saved:', userId);
     return user;
 
   } catch (error) {
-    console.error('❌ Error saving user:', error);
     throw error;
   }
 }
@@ -58,15 +56,12 @@ export async function getUser(identifier) {
     const user = await kv.get(key);
 
     if (!user) {
-      console.log('👤 User not found:', identifier);
       return null;
     }
 
-    console.log('👤 User found:', identifier);
     return user;
 
   } catch (error) {
-    console.error('❌ Error getting user:', error);
     throw error;
   }
 }
@@ -93,11 +88,9 @@ export async function updateUser(identifier, updates) {
       await kv.set(`user:${existingUser.email}`, updatedUser);
     }
 
-    console.log('🔄 User updated:', identifier);
     return updatedUser;
 
   } catch (error) {
-    console.error('❌ Error updating user:', error);
     throw error;
   }
 }
@@ -114,7 +107,6 @@ export async function getProUsers() {
     return users.filter(user => user && user.isPro);
 
   } catch (error) {
-    console.error('❌ Error getting pro users:', error);
     return [];
   }
 }
@@ -132,11 +124,9 @@ export async function deleteUser(identifier) {
         await kv.del(`user:${user.email}`);
       }
 
-      console.log('🗑️ User deleted:', identifier);
     }
 
   } catch (error) {
-    console.error('❌ Error deleting user:', error);
     throw error;
   }
 }

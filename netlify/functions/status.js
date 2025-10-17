@@ -17,7 +17,6 @@ exports.handler = async (event, context) => {
   }
 
   try {
-    console.log('📡 Status API called');
 
     // Get email from query params
     const email = event.queryStringParameters?.email || event.queryStringParameters?.user;
@@ -33,7 +32,6 @@ exports.handler = async (event, context) => {
       };
     }
 
-    console.log('👤 Checking status for:', email);
 
     // Skip fallback emails - they're always free
     if (email.startsWith('fallback_')) {
@@ -91,7 +89,6 @@ exports.handler = async (event, context) => {
         : null
     };
 
-    console.log('📊 Status response:', { email, active: response.active, plan: response.plan });
 
     return {
       statusCode: 200,

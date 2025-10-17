@@ -116,7 +116,6 @@ class AuthSystem {
                 });
             }
         } catch (error) {
-            console.error('Logout error:', error);
         } finally {
             this.authToken = null;
             this.currentUser = null;
@@ -149,7 +148,6 @@ class AuthSystem {
                 return false;
             }
         } catch (error) {
-            console.error('Session validation error:', error);
             this.logout();
             return false;
         }

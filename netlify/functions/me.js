@@ -252,7 +252,6 @@ exports.handler = async (event, context) => {
             };
         }
 
-        console.log('🔍 Checking plan for:', email);
 
         // Get user from Supabase database
         let user = null;

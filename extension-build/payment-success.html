@@ -209,14 +209,12 @@
         let sessionId = null;
 
         async function init() {
-            console.log('🎉 Payment success page loaded');
 
             // Get URL parameters
             const urlParams = new URLSearchParams(window.location.search);
             sessionId = urlParams.get('session_id');
             userEmail = urlParams.get('email');
 
-            console.log('💳 Payment info:', { sessionId, userEmail });
 
             // Update UI
             if (userEmail) {
@@ -228,7 +226,6 @@
         }
 
         async function activateProFeatures() {
-            console.log('🚀 Starting Pro activation...');
 
             try {
                 // Method 1: Call completion API
@@ -247,7 +244,6 @@
                 showSuccess();
 
             } catch (error) {
-                console.error('❌ Activation error:', error);
                 showError();
             }
         }
@@ -267,10 +263,8 @@
                 });
 
                 const result = await response.json();
-                console.log('✅ Completion API result:', result);
                 return result.success;
             } catch (error) {
-                console.log('⚠️ Completion API failed:', error.message);
                 return false;
             }
         }
@@ -288,9 +282,7 @@
                 localStorage.setItem('tabmangment_payment_success', JSON.stringify(activationData));
                 sessionStorage.setItem('tabmangment_payment_success', JSON.stringify(activationData));
 
-                console.log('✅ Activation data stored');
             } catch (error) {
-                console.log('⚠️ Storage failed:', error.message);
             }
         }
 
@@ -304,7 +296,6 @@
                         sessionId: sessionId,
                         timestamp: new Date().toISOString()
                     });
-                    console.log('✅ Extension notified');
                 }
 
                 // BroadcastChannel for cross-tab communication
@@ -317,7 +308,6 @@
                 bc.close();
 
             } catch (error) {
-                console.log('⚠️ Extension notification failed:', error.message);
             }
         }
 
@@ -328,7 +318,6 @@
                 const token = localStorage.getItem('tabmangment_token');
 
                 if (userData && token) {
-                    console.log('👤 User is logged in, syncing data...');
 
                     // Trigger sync by verifying token (which updates user data)
                     const response = await fetch('/api/auth/verify', {
@@ -341,7 +330,6 @@
 
                     const result = await response.json();
                     if (result.success && result.user.isPro) {
-                        console.log('✅ User data synced - Pro status confirmed');
 
                         // Update stored user data
                         localStorage.setItem('tabmangment_user', JSON.stringify(result.user));
@@ -357,7 +345,6 @@
                     }
                 }
             } catch (error) {
-                console.log('⚠️ User sync failed:', error.message);
             }
         }
 

@@ -52,7 +52,6 @@ exports.handler = async (event, context) => {
                     }
                 }
             } catch (authError) {
-                console.log('⚠️ Auth token invalid:', authError.message);
             }
         }
 

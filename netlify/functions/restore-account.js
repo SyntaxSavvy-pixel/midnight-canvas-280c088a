@@ -30,7 +30,6 @@ exports.handler = async (event, context) => {
     try {
         const { userId, email } = JSON.parse(event.body);
 
-        console.log('♻️ RESTORE ACCOUNT REQUEST');
 
         if (!userId || !email) {
             console.error('❌ Missing required fields');
@@ -57,7 +56,6 @@ exports.handler = async (event, context) => {
             };
         }
 
-        console.log('✅ Service key is configured');
         const supabase = createClient(supabaseUrl, supabaseServiceKey, {
             auth: {
                 autoRefreshToken: false,
@@ -66,7 +64,6 @@ exports.handler = async (event, context) => {
         });
 
         // Remove deletion metadata to restore account
-        console.log('♻️ Removing deletion schedule from user metadata...');
 
         const { data: userData, error: fetchError } = await supabase.auth.admin.getUserById(userId);
 
@@ -108,7 +105,6 @@ exports.handler = async (event, context) => {
             };
         }
 
-        console.log('✅ Account restored successfully');
 
         return {
             statusCode: 200,

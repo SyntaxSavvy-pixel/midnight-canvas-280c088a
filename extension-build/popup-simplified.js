@@ -33,7 +33,6 @@ class TabmangmentPopup {
                 throw new Error('Service worker not responding');
             }
         } catch (error) {
-            console.error('Service worker health check failed:', error);
         }
     }
 
@@ -41,9 +40,7 @@ class TabmangmentPopup {
         try {
             const data = await chrome.storage.local.get(['isPremium', 'subscriptionActive']);
             this.isPremium = data.isPremium || data.subscriptionActive || false;
-            console.log('Premium status:', this.isPremium);
         } catch (error) {
-            console.error('Error checking premium status:', error);
             this.isPremium = false;
         }
     }
@@ -138,7 +135,6 @@ class TabmangmentPopup {
 
     async createSimplifiedPaymentSession(userEmail) {
         try {
-            console.log('🔄 Creating payment session for:', userEmail);
 
             const stripePaymentUrl = `https:
 
@@ -159,7 +155,6 @@ class TabmangmentPopup {
             };
 
         } catch (error) {
-            console.error('❌ Payment session error:', error);
             this.showMessage('❌ Unable to open payment page. Please try again.', 'error');
             throw error;
         }
@@ -278,7 +273,6 @@ class TabmangmentPopup {
                 this.stats = statsResponse.data || { active: 0, scheduled: 0 };
             }
         } catch (error) {
-            console.error('Error loading data:', error);
             this.tabs = [];
             this.stats = { active: 0, scheduled: 0 };
         }
@@ -373,7 +367,6 @@ class TabmangmentPopup {
                     break;
             }
         } catch (error) {
-            console.error('Tab action error:', error);
             this.showMessage('Action failed. Please try again.', 'error');
         }
     }
@@ -383,7 +376,6 @@ class TabmangmentPopup {
             await chrome.runtime.sendMessage({ action: 'switchToTab', tabId });
             window.close();
         } catch (error) {
-            console.error('Switch tab error:', error);
         }
     }
 

@@ -18,7 +18,6 @@
     return;
   }
 
-  console.log('🎉 Payment success page detected, initiating Pro activation...');
 
   class SuccessPageActivator {
     constructor() {
@@ -33,7 +32,6 @@
           this.activateProFeatures();
         }, 2000);
       } catch (error) {
-        console.error('Error initializing success page activator:', error);
       }
     }
 
@@ -45,7 +43,6 @@
         const email = urlParams.get('email') || urlParams.get('customer_email');
         const userSession = urlParams.get('user_session');
 
-        console.log('💳 Payment details from URL');
 
         // Store activation data for extension to pick up
         this.storeActivationData(email, sessionId, userSession);
@@ -53,10 +50,8 @@
         // Notify extension directly if possible
         this.notifyExtension(email, sessionId, userSession);
 
-        console.log('✅ Pro activation data stored - Stripe webhook will handle backend activation');
 
       } catch (error) {
-        console.error('❌ Error activating Pro features:', error);
       }
     }
 
@@ -74,7 +69,6 @@
         };
 
         localStorage.setItem('tabmangment_payment_success', JSON.stringify(activationData));
-        console.log('💾 Activation data stored in localStorage');
 
         // Also try sessionStorage
         sessionStorage.setItem('tabmangment_payment_success', JSON.stringify(activationData));
@@ -85,7 +79,6 @@
         localStorage.setItem('tabmangment_user_session', userSession || '');
 
       } catch (error) {
-        console.error('❌ Error storing activation data:', error);
       }
     }
 
@@ -100,7 +93,6 @@
             email: email,
             sessionId: sessionId,
             timestamp: new Date().toISOString()
-          }).catch(e => console.log('Extension messaging not available'));
         }
 
         // Method 2: PostMessage to opener window
@@ -124,13 +116,10 @@
           });
           bc.close();
         } catch (e) {
-          console.log('BroadcastChannel not available');
         }
 
-        console.log('📡 Extension notification attempts sent');
 
       } catch (error) {
-        console.error('❌ Error notifying extension:', error);
       }
     }
 
@@ -143,7 +132,6 @@
 
         if (emailMatch) {
           const detectedEmail = emailMatch[0];
-          console.log('📧 Email detected from page');
 
           this.storeActivationData(detectedEmail, null, null);
           this.notifyExtension(detectedEmail, null, null);
@@ -151,12 +139,10 @@
         }
 
         // If no email found, still try to notify extension
-        console.log('🔄 No email found, notifying extension anyway...');
         this.notifyExtension('unknown@payment.success', 'unknown_session', null);
         this.storeActivationData('unknown@payment.success', 'unknown_session', null);
 
       } catch (error) {
-        console.error('❌ Error in alternative activation:', error);
       }
     }
   }

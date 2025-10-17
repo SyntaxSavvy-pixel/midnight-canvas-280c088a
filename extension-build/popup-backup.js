@@ -2786,7 +2786,6 @@ class TabmangmentPopup {
                     upgradeBtn.disabled = false;
                 }
             } catch (error) {
-                console.error('❌ Premium upgrade button error:', error);
 
                 if (upgradeBtn) {
                     upgradeBtn.textContent = originalText;
@@ -2821,13 +2820,11 @@ class TabmangmentPopup {
             this.showMessage('💳 Payment page opened - complete your upgrade!', 'success');
 
         } catch (error) {
-            console.error('❌ handleUpgrade error:', error);
             this.showMessage('❌ Upgrade temporarily unavailable.', 'error');
         }
     }
 
     async checkProStatus(installationId) {
-        console.log('ℹ️ checkProStatus is deprecated, using email-based status check instead');
         return false;
     }
 
@@ -2847,7 +2844,6 @@ class TabmangmentPopup {
 
     async createPaymentSession(userEmail) {
         try {
-            console.log('💳 Creating payment session for:', userEmail);
 
             const controller = new AbortController();
             const timeout = setTimeout(() => controller.abort(), 10000);
@@ -2867,17 +2863,14 @@ class TabmangmentPopup {
 
             if (!response.ok) {
                 const errorText = await response.text();
-                console.error('❌ API Error Response:', errorText);
                 throw new Error(`API Error: ${response.status} - ${errorText}`);
             }
 
             const data = await response.json();
-            console.log('✅ Payment session created successfully');
 
             return data.url;
 
         } catch (error) {
-            console.error('❌ Payment session error:', error);
 
             if (error.name === 'AbortError') {
                 this.showMessage('❌ Request timed out. Backend may be starting up. Try again in 30 seconds.', 'error');
@@ -2893,11 +2886,9 @@ class TabmangmentPopup {
     }
 
     createFallbackPaymentLink(userEmail) {
-        console.log('🔄 Creating fallback payment link for:', userEmail);
 
         const fallbackPaymentLink = `https:
 
-        console.log('✅ Fallback payment link created');
         this.showMessage('💳 Using direct payment link. Complete payment and restart extension to activate Pro.', 'info');
 
         return fallbackPaymentLink;
@@ -2905,7 +2896,6 @@ class TabmangmentPopup {
 
     async checkSubscriptionStatus(userEmail) {
         try {
-            console.log('🔍 Checking subscription status for:', userEmail);
 
             const response = await fetch(`${this.getBackendUrl()}/check-status?email=${encodeURIComponent(userEmail)}`);
 
@@ -2914,7 +2904,6 @@ class TabmangmentPopup {
             }
 
             const data = await response.json();
-            console.log('✅ Status check completed:', data);
 
             return {
                 isActive: data.active,
@@ -2923,7 +2912,6 @@ class TabmangmentPopup {
             };
 
         } catch (error) {
-            console.error('❌ Status check error:', error);
             return {
                 isActive: false,
                 plan: 'free',
@@ -2948,7 +2936,6 @@ class TabmangmentPopup {
 
             return null;
         } catch (error) {
-            console.error('❌ Error getting user email:', error);
             return null;
         }
     }
@@ -2960,11 +2947,9 @@ class TabmangmentPopup {
 
     async checkAndApplySubscriptionStatus() {
         try {
-            console.log('🔍 Checking subscription status on startup...');
 
             const stored = await chrome.storage.local.get(['userEmail']);
             if (!stored.userEmail) {
-                console.log('ℹ️ No user email found - user on free plan');
                 this.isPremium = false;
                 return;
             }
@@ -2972,7 +2957,6 @@ class TabmangmentPopup {
             const status = await this.checkSubscriptionStatus(stored.userEmail);
 
             if (status.isActive && status.plan === 'pro') {
-                console.log('✅ User has active Pro subscription');
 
                 await chrome.storage.local.set({
                     hasProPlan: true,
@@ -2987,7 +2971,6 @@ class TabmangmentPopup {
                 this.updateUIForProUser();
 
             } else {
-                console.log('ℹ️ User on free plan or subscription inactive');
 
                 await chrome.storage.local.set({
                     hasProPlan: false,
@@ -3002,7 +2985,6 @@ class TabmangmentPopup {
             }
 
         } catch (error) {
-            console.error('❌ Error checking subscription status:', error);
 
             this.isPremium = false;
         }
@@ -3010,7 +2992,6 @@ class TabmangmentPopup {
 
     async upgradeToProPlan() {
         try {
-            console.log('🚀 Upgrading user to Pro Plan...');
 
             await chrome.storage.local.set({
                 hasProPlan: true,
@@ -3036,7 +3017,6 @@ class TabmangmentPopup {
             }, 2000);
 
         } catch (error) {
-            console.error('❌ Pro upgrade failed:', error);
             this.showMessage('⚠️ Payment detected but upgrade failed. Please refresh the extension.', 'warning');
         }
     }
@@ -3101,7 +3081,6 @@ class TabmangmentPopup {
 
     async checkAndApplyProStatus() {
         try {
-            console.log('🔍 Checking Pro status on startup...');
 
             const paymentData = await chrome.storage.local.get(['payment_success']);
             if (paymentData.payment_success && !paymentData.payment_success.processed) {
@@ -3110,7 +3089,6 @@ class TabmangmentPopup {
                 const timeDiff = now - paymentTime;
 
                 if (timeDiff < 30 * 60 * 1000) {
-                    console.log('🎉 Recent unprocessed payment detected! Auto-upgrading to Pro...');
                     await this.upgradeToProPlan();
 
                     await chrome.storage.local.set({
@@ -3126,17 +3104,13 @@ class TabmangmentPopup {
             const data = await chrome.storage.local.get(['hasProPlan', 'proUpgradedAt']);
 
             if (data.hasProPlan) {
-                console.log('✅ User is Pro! Applying Pro features...');
                 this.updateUIForProUser();
 
                 const upgradedDate = new Date(data.proUpgradedAt).toLocaleDateString();
-                console.log(`🎉 Pro since: ${upgradedDate}`);
             } else {
-                console.log('ℹ️ User is on Free plan');
             }
 
         } catch (error) {
-            console.error('❌ Error checking Pro status:', error);
         }
     }
 
@@ -3865,7 +3839,6 @@ class TabmangmentPopup {
         let originalText = 'Upgrade to Pro - $4.99/month';
 
         try {
-            console.log('🔄 handleDirectUpgrade started');
 
             if (upgradeBtn) {
                 originalText = upgradeBtn.innerHTML;
@@ -3873,9 +3846,7 @@ class TabmangmentPopup {
                 upgradeBtn.disabled = true;
             }
 
-            console.log('💳 Creating installation ID...');
             const installationId = await this.getOrCreateInstallationId();
-            console.log('✅ Installation ID:', installationId);
 
             const userEmail = await this.getUserEmail();
             if (!userEmail) {
@@ -3883,7 +3854,6 @@ class TabmangmentPopup {
                 return;
             }
 
-            console.log('💳 Creating payment session...');
             const checkoutUrl = await this.createPaymentSession(userEmail);
             if (!checkoutUrl) {
                 return;
@@ -3902,7 +3872,6 @@ class TabmangmentPopup {
             }
 
         } catch (error) {
-            console.error('❌ handleDirectUpgrade error:', error);
             this.showMessage('❌ Upgrade temporarily unavailable. Please try again.', 'error');
         } finally {
 
