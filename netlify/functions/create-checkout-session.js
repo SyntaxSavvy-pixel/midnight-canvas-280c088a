@@ -111,7 +111,7 @@ exports.handler = async (event, context) => {
                 userName: authenticatedUser.name,
                 plan: 'pro'
             },
-            success_url: `${currentDomain}/payment-success.html?session_id={CHECKOUT_SESSION_ID}&email=${encodeURIComponent(authenticatedUser.email)}`,
+            success_url: `${currentDomain}/user-dashboard.html?payment=success&session_id={CHECKOUT_SESSION_ID}`,
             cancel_url: `${currentDomain}/user-dashboard.html?payment=cancelled`,
             billing_address_collection: 'auto',
             tax_id_collection: {

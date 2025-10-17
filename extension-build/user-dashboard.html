@@ -4803,8 +4803,16 @@
                         // The SUBSCRIPTION_UPDATE above already set Pro status in storage
                     }
 
+                    // Show success notification
+                    showNotification('🎉 Payment successful! You are now a Pro member!', 'success');
+
                     // Remove session_id from URL
-                    window.history.replaceState({}, document.title, window.location.pathname);
+                    window.history.replaceState({}, document.title, '/user-dashboard.html');
+
+                    // Force UI update
+                    updatePlanDisplay();
+                    updateUserDisplay();
+
                     return;
                 }
 
