@@ -2158,7 +2158,7 @@
         async function initDashboard() {
             // Stripe config - using default price ID
             // API endpoint not implemented yet, using hardcoded value
-            STRIPE_PRICE_ID = 'price_1234567890'; // TODO: Replace with actual Stripe price ID
+            STRIPE_PRICE_ID = 'price_1Rzw2LLJKLfllJJD6HPKEDHK'; // LIVE Stripe Price ID
 
             // Check authentication (with retry for OAuth redirects)
             authToken = localStorage.getItem('tabmangment_token');
@@ -3141,24 +3141,62 @@
 
         async function processUpgrade() {
             try {
-                // Direct Stripe Checkout link (no backend API needed)
-                const STRIPE_CHECKOUT_URL = 'https://buy.stripe.com/dRm5kEgDE1R29cPgM84Rq00';
-
-                // Get user email for prefill
+                // Get user email
                 const { data: { user } } = await supabaseClient.auth.getUser();
                 const userEmail = user?.email || userData.email;
 
-                // Build checkout URL with prefilled email
-                let checkoutUrl = STRIPE_CHECKOUT_URL;
-                if (userEmail) {
-                    checkoutUrl += `?prefilled_email=${encodeURIComponent(userEmail)}`;
+                if (!userEmail) {
+                    alert('Please log in to upgrade your plan.');
+                    return;
                 }
 
-                // Redirect to Stripe Checkout
-                window.location.href = checkoutUrl;
+                // Show loading state
+                const upgradeBtn = document.getElementById('plan-action-btn');
+                const originalText = upgradeBtn?.textContent;
+                if (upgradeBtn) {
+                    upgradeBtn.disabled = true;
+                    upgradeBtn.textContent = 'Loading...';
+                }
+
+                // Get auth token for the request
+                const { data: { session } } = await supabaseClient.auth.getSession();
+                const authToken = session?.access_token || localStorage.getItem('tabmangment_token');
+
+                // Call create-checkout-session function
+                const response = await fetch('/.netlify/functions/create-checkout-session', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${authToken}`
+                    },
+                    body: JSON.stringify({
+                        email: userEmail,
+                        priceId: STRIPE_PRICE_ID
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error('Failed to create checkout session');
+                }
+
+                const result = await response.json();
+
+                if (result.url) {
+                    // Redirect to Stripe Checkout
+                    window.location.href = result.url;
+                } else {
+                    throw new Error('No checkout URL returned');
+                }
 
             } catch (error) {
                 alert('Failed to start checkout. Please try again or contact support.');
+
+                // Reset button state
+                const upgradeBtn = document.getElementById('plan-action-btn');
+                if (upgradeBtn) {
+                    upgradeBtn.disabled = false;
+                    upgradeBtn.textContent = 'Upgrade to Pro';
+                }
             }
         }
 

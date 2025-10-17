@@ -92,7 +92,7 @@ exports.handler = async (event, context) => {
 
 
         // Get the current domain for success/cancel URLs
-        const currentDomain = event.headers.origin || 'https://tabmangment.netlify.app';
+        const currentDomain = event.headers.origin || 'https://tabmangment.com';
 
         // Create Stripe Checkout Session
         const session = await stripe.checkout.sessions.create({
