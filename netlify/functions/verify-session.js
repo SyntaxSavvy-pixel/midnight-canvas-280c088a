@@ -93,29 +93,55 @@ exports.handler = async (event, context) => {
         }
 
 
+        // Get subscription period details
+        let currentPeriodStart = null;
+        let currentPeriodEnd = null;
+
+        if (session.subscription) {
+            const subscription = typeof session.subscription === 'object'
+                ? session.subscription
+                : await stripe.subscriptions.retrieve(session.subscription);
+
+            currentPeriodStart = new Date(subscription.current_period_start * 1000).toISOString();
+            currentPeriodEnd = new Date(subscription.current_period_end * 1000).toISOString();
+        }
+
         // IMMEDIATELY update Supabase - don't wait for webhook
         try {
             const updateData = {
                 is_pro: true,
+                plan_type: 'pro',
                 subscription_status: subscriptionStatus,
                 stripe_customer_id: customerId,
                 stripe_subscription_id: subscriptionId,
-                last_payment_at: new Date().toISOString(),
-                plan_updated_at: new Date().toISOString()
+                stripe_session_id: session_id,
+                pro_activated_at: new Date().toISOString(),
+                current_period_start: currentPeriodStart,
+                current_period_end: currentPeriodEnd,
+                last_payment_date: new Date().toISOString(),
+                last_payment_amount: session.amount_total / 100 // Convert from cents to dollars
             };
 
-            const { error: updateError } = await supabase
+            console.log('📝 Updating Supabase for:', customerEmail);
+            console.log('📝 Update data:', JSON.stringify(updateData, null, 2));
+
+            const { data: updateResult, error: updateError } = await supabase
                 .from('users')
                 .update(updateData)
-                .eq('email', customerEmail);
+                .eq('email', customerEmail)
+                .select();
 
             if (updateError) {
-                console.error('⚠️ Supabase update error:', updateError);
+                console.error('❌ Supabase update error:', updateError);
+                console.error('❌ Error details:', JSON.stringify(updateError, null, 2));
                 // Don't fail the request - user still gets Pro based on session
             } else {
+                console.log('✅ Supabase updated successfully!');
+                console.log('✅ Updated rows:', updateResult);
             }
         } catch (dbError) {
-            console.error('⚠️ Database error:', dbError);
+            console.error('❌ Database error:', dbError);
+            console.error('❌ Stack trace:', dbError.stack);
             // Continue anyway - user gets Pro based on valid session
         }
 
@@ -132,6 +158,8 @@ exports.handler = async (event, context) => {
                 customerId: customerId,
                 subscriptionId: subscriptionId,
                 subscriptionStatus: subscriptionStatus,
+                currentPeriodStart: currentPeriodStart,
+                currentPeriodEnd: currentPeriodEnd,
                 message: 'Payment verified - Pro activated'
             })
         };
