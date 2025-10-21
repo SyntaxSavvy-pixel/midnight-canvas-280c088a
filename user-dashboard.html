@@ -4958,7 +4958,7 @@
                 if (result.success && result.paid && result.isPro) {
                     // Payment verified and Pro activated!
 
-                    // Update local data
+                    // Update local data IMMEDIATELY
                     userData.plan = 'pro';
                     userData.isPro = true;
                     userData.subscriptionStatus = result.subscriptionStatus || 'active';
@@ -4970,28 +4970,9 @@
                     // Save to localStorage
                     localStorage.setItem('tabmangment_user', JSON.stringify(userData));
 
-                    // Update display
+                    // Update UI INSTANTLY (before any async operations)
                     updatePlanDisplay();
-
-                    // Reload user data from API
-                    await loadUserData(userEmail);
-
-                    // Notify extension IMMEDIATELY
-                    if (bridgeReady && extensionId) {
-                        await sendMessageToExtension('SUBSCRIPTION_UPDATE', {
-                            plan: 'pro',
-                            isPro: true,
-                            status: 'active',
-                            user: {
-                                email: userEmail,
-                                plan: 'pro',
-                                isPro: true
-                            }
-                        });
-
-                        // DON'T call CHECK_USER_PLAN - storage is source of truth
-                        // The SUBSCRIPTION_UPDATE above already set Pro status in storage
-                    }
+                    updateUserDisplay();
 
                     // Show success notification
                     showNotification('🎉 Payment successful! You are now a Pro member!', 'success');
@@ -4999,9 +4980,21 @@
                     // Remove session_id from URL
                     window.history.replaceState({}, document.title, '/user-dashboard.html');
 
-                    // Force UI update
-                    updatePlanDisplay();
-                    updateUserDisplay();
+                    // Notify extension in background (don't await - let it run async)
+                    if (bridgeReady && extensionId) {
+                        sendMessageToExtension('SUBSCRIPTION_UPDATE', {
+                            plan: 'pro',
+                            isPro: true,
+                            status: 'active',
+                            currentPeriodEnd: result.currentPeriodEnd,
+                            user: {
+                                email: userEmail,
+                                plan: 'pro',
+                                isPro: true,
+                                currentPeriodEnd: result.currentPeriodEnd
+                            }
+                        }).catch(err => console.error('Extension sync failed:', err));
+                    }
 
                     return;
                 }

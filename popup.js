@@ -4347,16 +4347,31 @@ class TabmangmentPopup {
         const planIndicator = document.getElementById('plan-indicator');
         if (planIndicator) {
 
-            const subData = await chrome.storage.local.get(['currentPeriodEnd', 'subscriptionId']);
+            const subData = await chrome.storage.local.get(['currentPeriodEnd', 'subscriptionId', 'subscriptionStatus']);
             let billingInfo = '';
+
             if (subData.currentPeriodEnd) {
-                const nextBilling = new Date(subData.currentPeriodEnd).toLocaleDateString();
-                billingInfo = `Next billing: ${nextBilling}`;
+                const nextBilling = new Date(subData.currentPeriodEnd);
+                const formattedDate = nextBilling.toLocaleDateString('en-US', {
+                    month: 'short',
+                    day: 'numeric',
+                    year: 'numeric'
+                });
+
+                // Check if subscription is being cancelled
+                if (subData.subscriptionStatus === 'cancelling') {
+                    billingInfo = `Ends ${formattedDate}`;
+                } else {
+                    billingInfo = `Renews ${formattedDate}`;
+                }
+            } else {
+                billingInfo = 'Pro features active';
             }
+
             planIndicator.className = 'plan-indicator pro-plan';
             planIndicator.innerHTML = `
                 <div class="plan-badge">PRO PLAN</div>
-                <div class="plan-description">${billingInfo || 'All features unlocked'}</div>
+                <div class="plan-description">${billingInfo}</div>
             `;
         }
     }
