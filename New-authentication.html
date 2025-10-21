@@ -1225,24 +1225,40 @@ function generateInfiniteTabs() {
         const urlParams = new URLSearchParams(window.location.search);
         const hashParams = new URLSearchParams(window.location.hash.substring(1));
         const isLoggingOut = urlParams.get('logout') === 'true';
+        const justLoggedOut = sessionStorage.getItem('user_logged_out');
         const hasOAuthParams = urlParams.has('code') || urlParams.has('access_token') || urlParams.has('error') ||
                                hashParams.has('access_token') || hashParams.has('error');
 
-        if (isLoggingOut) {
+        // Clear logout flag and don't redirect if user just logged out
+        if (isLoggingOut || justLoggedOut) {
+            sessionStorage.setItem('user_logged_out', 'true');
             window.history.replaceState({}, document.title, window.location.pathname);
             return;
         }
 
+        // Wait for OAuth to complete
         if (hasOAuthParams) {
             return;
         }
 
-        await new Promise(resolve => setTimeout(resolve, 300));
+        // Give localStorage time to be set by login functions
+        await new Promise(resolve => setTimeout(resolve, 100));
 
+        // Check localStorage first (faster than Supabase call)
+        const storedToken = localStorage.getItem('tabmangment_token');
+        const storedUser = localStorage.getItem('tabmangment_user');
+
+        if (storedToken && storedUser) {
+            // User is logged in, redirect immediately
+            sessionStorage.removeItem('user_logged_out');
+            window.location.replace('/user-dashboard.html');
+            return;
+        }
+
+        // If not in localStorage, check Supabase session
         const { data: { session }, error } = await supabaseClient.auth.getSession();
 
         if (!error && session && session.user) {
-
             const userData = {
                 email: session.user.email,
                 name: session.user.user_metadata.full_name || session.user.user_metadata.name || session.user.user_metadata.preferred_username || session.user.email.split('@')[0],
@@ -1255,10 +1271,12 @@ function generateInfiniteTabs() {
             localStorage.setItem('tabmangment_user', JSON.stringify(userData));
             localStorage.setItem('tabmangment_token', session.access_token);
             localStorage.setItem('tabmangment_remember', 'true');
+            sessionStorage.removeItem('user_logged_out');
 
             window.location.replace('/user-dashboard.html');
         }
     } catch (error) {
+        // Silently fail - user can still login manually
     }
 })();
 
@@ -1430,10 +1448,12 @@ async function handleEmailLogin(e) {
         localStorage.setItem('tabmangment_user', JSON.stringify(userData));
         localStorage.setItem('tabmangment_token', data.session.access_token);
         localStorage.setItem('tabmangment_remember', 'true');
+        sessionStorage.removeItem('user_logged_out'); // Clear logout flag
 
         window.postMessage({ type: 'USER_LOGGED_IN', userData: { email: userData.email, name: userData.name, id: userData.id } }, '*');
-        showNotification('Login successful! You will stay logged in.', 'success');
-        setTimeout(() => { window.location.href = '/user-dashboard.html'; }, 1000);
+
+        // Redirect immediately - no delay needed!
+        window.location.replace('/user-dashboard.html');
     } catch (error) {
         showNotification(error.message, 'error');
     } finally {
@@ -1478,10 +1498,12 @@ async function handleEmailSignup(e) {
             localStorage.setItem('tabmangment_user', JSON.stringify(userData));
             localStorage.setItem('tabmangment_token', data.session.access_token);
             localStorage.setItem('tabmangment_remember', 'true');
+            sessionStorage.removeItem('user_logged_out'); // Clear logout flag
 
             window.postMessage({ type: 'USER_LOGGED_IN', userData: { email: userData.email, name: userData.name, id: userData.id } }, '*');
-            showNotification('Account created! You will stay logged in.', 'success');
-            setTimeout(() => { window.location.href = '/user-dashboard.html'; }, 1000);
+
+            // Redirect immediately - no delay needed!
+            window.location.replace('/user-dashboard.html');
         }
     } catch (error) {
         showNotification(error.message, 'error');
