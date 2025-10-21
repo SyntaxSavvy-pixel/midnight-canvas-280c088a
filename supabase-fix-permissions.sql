@@ -46,48 +46,32 @@ FOR SELECT
 TO service_role
 USING (true);
 
--- 6. Test the update manually (replace with your email)
--- This simulates what the Netlify function does
-UPDATE users
-SET
-    is_pro = true,
-    plan_type = 'pro',
-    subscription_status = 'active',
-    stripe_customer_id = 'test_cus_123',
-    stripe_subscription_id = 'test_sub_123',
-    stripe_session_id = 'test_session_123',
-    pro_activated_at = NOW(),
-    current_period_start = NOW(),
-    current_period_end = NOW() + INTERVAL '30 days',
-    last_payment_date = NOW(),
-    last_payment_amount = 4.99
-WHERE email = 'heyitskhq@gmail.com';
+-- 6. Test query to verify all columns exist
+-- Run this to see the structure of your users table
+SELECT column_name, data_type, is_nullable
+FROM information_schema.columns
+WHERE table_name = 'users'
+ORDER BY ordinal_position;
 
--- 7. Verify the update worked
+-- 7. Verify RLS policies are set up correctly
 SELECT
-    email,
-    is_pro,
+    schemaname,
+    tablename,
+    policyname,
+    roles,
+    cmd,
+    qual,
+    with_check
+FROM pg_policies
+WHERE tablename = 'users';
+
+-- 8. Count users by plan (should show distribution)
+SELECT
     plan_type,
     subscription_status,
-    current_period_end,
-    stripe_customer_id
+    COUNT(*) as user_count
 FROM users
-WHERE email = 'heyitskhq@gmail.com';
-
--- 8. If you see the updated data above, the permissions are fixed!
--- Now reset the test data back to free
-UPDATE users
-SET
-    is_pro = false,
-    plan_type = 'free',
-    subscription_status = 'inactive',
-    stripe_customer_id = NULL,
-    stripe_subscription_id = NULL,
-    stripe_session_id = NULL,
-    pro_activated_at = NULL,
-    current_period_start = NULL,
-    current_period_end = NULL
-WHERE email = 'heyitskhq@gmail.com';
+GROUP BY plan_type, subscription_status;
 
 -- =====================================================
 -- VERIFICATION CHECKLIST:

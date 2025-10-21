@@ -3101,14 +3101,30 @@
             }
 
             if (userData.plan === 'pro') {
-                planBadge.textContent = 'Pro';
-                planBadge.className = 'plan-badge pro';
-                if (planActionBtn) planActionBtn.textContent = 'Downgrade to Free';
+                // Check if subscription is cancelled but still active
+                if (userData.subscriptionStatus === 'cancelling' && userData.currentPeriodEnd) {
+                    const endDate = new Date(userData.currentPeriodEnd);
+                    const formattedDate = endDate.toLocaleDateString('en-US', {
+                        month: 'short',
+                        day: 'numeric',
+                        year: 'numeric'
+                    });
+                    planBadge.textContent = `Pro (Cancels ${formattedDate})`;
+                    planBadge.className = 'plan-badge pro';
+                    planBadge.style.fontSize = '0.85rem'; // Slightly smaller to fit text
+                } else {
+                    planBadge.textContent = 'Pro';
+                    planBadge.className = 'plan-badge pro';
+                    planBadge.style.fontSize = ''; // Reset to default
+                }
+
+                if (planActionBtn) planActionBtn.textContent = 'Manage Subscription';
                 if (freeStatus) freeStatus.style.display = 'none';
                 if (proStatus) proStatus.style.display = 'block';
             } else {
                 planBadge.textContent = 'Free';
                 planBadge.className = 'plan-badge free';
+                planBadge.style.fontSize = ''; // Reset to default
                 if (planActionBtn) planActionBtn.textContent = 'Upgrade to Pro';
                 if (freeStatus) freeStatus.style.display = 'block';
                 if (proStatus) proStatus.style.display = 'none';
@@ -3118,12 +3134,13 @@
         }
 
         // Subscription management
-        function toggleSubscription() {
+        async function toggleSubscription() {
             if (userData.plan === 'free') {
                 // Directly process upgrade (no modal needed)
                 processUpgrade();
             } else {
-                downgradeToFree();
+                // Open Stripe billing portal for Pro users to manage subscription
+                await openBillingPortal();
             }
         }
 
@@ -3200,11 +3217,48 @@
             }
         }
 
-        function downgradeToFree() {
-            if (confirm('Are you sure you want to downgrade to the Free plan? You will lose access to Pro features.')) {
-                userData.plan = 'free';
-                updatePlanDisplay();
-                syncWithExtension();
+        async function openBillingPortal() {
+            try {
+                // Get user email
+                const { data: { user } } = await supabaseClient.auth.getUser();
+                const userEmail = user?.email || userData.email;
+
+                if (!userEmail) {
+                    alert('Please log in to manage your subscription.');
+                    return;
+                }
+
+                // Get auth token
+                const { data: { session } } = await supabaseClient.auth.getSession();
+                const authToken = session?.access_token || localStorage.getItem('tabmangment_token');
+
+                // Call billing-portal function to get portal URL
+                const response = await fetch('/.netlify/functions/billing-portal', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${authToken}`
+                    },
+                    body: JSON.stringify({
+                        email: userEmail
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error('Failed to open billing portal');
+                }
+
+                const result = await response.json();
+
+                if (result.url) {
+                    // Redirect to Stripe billing portal
+                    window.location.href = result.url;
+                } else {
+                    throw new Error('No portal URL returned');
+                }
+
+            } catch (error) {
+                alert('Failed to open billing portal. Please try again or contact support.');
             }
         }
 
@@ -4908,6 +4962,8 @@
                     userData.subscriptionStatus = result.subscriptionStatus || 'active';
                     userData.stripeCustomerId = result.customerId;
                     userData.stripeSubscriptionId = result.subscriptionId;
+                    userData.currentPeriodStart = result.currentPeriodStart;
+                    userData.currentPeriodEnd = result.currentPeriodEnd;
 
                     // Save to localStorage
                     localStorage.setItem('tabmangment_user', JSON.stringify(userData));

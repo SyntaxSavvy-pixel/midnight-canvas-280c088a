@@ -103,7 +103,7 @@ async function handleCheckoutCompleted(session) {
     try {
         // Update user as Pro in Supabase
         const { error } = await supabase
-            .from('users')
+            .from('users_auth')
             .update({
                 is_pro: true,
                 subscription_status: 'active',
@@ -131,7 +131,7 @@ async function handlePaymentSucceeded(invoice) {
         const customer = await stripe.customers.retrieve(subscription.customer);
 
         const { error } = await supabase
-            .from('users')
+            .from('users_auth')
             .update({
                 is_pro: true,
                 subscription_status: 'active',
@@ -154,7 +154,7 @@ async function handlePaymentFailed(invoice) {
         const customer = await stripe.customers.retrieve(subscription.customer);
 
         const { error } = await supabase
-            .from('users')
+            .from('users_auth')
             .update({
                 subscription_status: 'past_due',
                 last_failed_payment_at: new Date().toISOString()
@@ -174,18 +174,40 @@ async function handleSubscriptionUpdated(subscription) {
         const customer = await stripe.customers.retrieve(subscription.customer);
         const isPro = subscription.status === 'active';
 
+        // Prepare update data
+        const updateData = {
+            is_pro: isPro,
+            subscription_status: subscription.status,
+            current_period_start: new Date(subscription.current_period_start * 1000).toISOString(),
+            current_period_end: new Date(subscription.current_period_end * 1000).toISOString(),
+            plan_updated_at: new Date().toISOString()
+        };
+
+        // If user cancelled but still in billing period, track cancellation date
+        // They keep Pro until period ends
+        if (subscription.cancel_at_period_end) {
+            updateData.cancelled_at = subscription.canceled_at
+                ? new Date(subscription.canceled_at * 1000).toISOString()
+                : new Date().toISOString();
+            updateData.subscription_status = 'cancelling'; // Will end at period_end
+        } else {
+            // Re-activated subscription, clear cancellation
+            updateData.cancelled_at = null;
+        }
+
         const { error } = await supabase
-            .from('users')
-            .update({
-                is_pro: isPro,
-                subscription_status: subscription.status,
-                current_period_end: new Date(subscription.current_period_end * 1000).toISOString(),
-                plan_updated_at: new Date().toISOString()
-            })
+            .from('users_auth')
+            .update(updateData)
             .eq('email', customer.email);
 
         if (error) throw error;
 
+        console.log(`✅ Subscription updated for ${customer.email}:`, {
+            isPro,
+            status: subscription.status,
+            cancel_at_period_end: subscription.cancel_at_period_end,
+            current_period_end: updateData.current_period_end
+        });
 
         // Create notification for real-time updates
         await createSubscriptionNotification(customer.email, 'updated', isPro ? 'pro' : 'free');
@@ -200,16 +222,19 @@ async function handleSubscriptionDeleted(subscription) {
         const customer = await stripe.customers.retrieve(subscription.customer);
 
         const { error } = await supabase
-            .from('users')
+            .from('users_auth')
             .update({
                 is_pro: false,
+                plan_type: 'free',
                 subscription_status: 'cancelled',
+                stripe_subscription_id: null,
                 plan_updated_at: new Date().toISOString()
             })
             .eq('email', customer.email);
 
         if (error) throw error;
 
+        console.log(`✅ Subscription ended for ${customer.email} - downgraded to Free`);
 
         // Create notification for real-time updates
         await createSubscriptionNotification(customer.email, 'cancelled', 'free');

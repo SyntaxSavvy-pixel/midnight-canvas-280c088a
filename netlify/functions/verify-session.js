@@ -126,7 +126,7 @@ exports.handler = async (event, context) => {
             console.log('📝 Update data:', JSON.stringify(updateData, null, 2));
 
             const { data: updateResult, error: updateError } = await supabase
-                .from('users')
+                .from('users_auth')
                 .update(updateData)
                 .eq('email', customerEmail)
                 .select();

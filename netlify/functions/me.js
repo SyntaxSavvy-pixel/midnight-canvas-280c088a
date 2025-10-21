@@ -73,7 +73,7 @@ exports.handler = async (event, context) => {
                     };
 
                     const { data, error } = await supabase
-                        .from('users')
+                        .from('users_auth')
                         .upsert(userData)
                         .select()
                         .single();
@@ -127,7 +127,7 @@ exports.handler = async (event, context) => {
                 // Get or create user in Supabase
                 try {
                     let { data: user, error } = await supabase
-                        .from('users')
+                        .from('users_auth')
                         .select('*')
                         .eq('email', email)
                         .single();
@@ -147,7 +147,7 @@ exports.handler = async (event, context) => {
                         };
 
                         const { data: newUser, error: createError } = await supabase
-                            .from('users')
+                            .from('users_auth')
                             .insert(newUserData)
                             .select()
                             .single();
@@ -257,7 +257,7 @@ exports.handler = async (event, context) => {
         let user = null;
         try {
             const { data, error } = await supabase
-                .from('users')
+                .from('users_auth')
                 .select('*')
                 .eq('email', email)
                 .single();
@@ -296,7 +296,7 @@ exports.handler = async (event, context) => {
                 currentlyPro = false;
                 try {
                     await supabase
-                        .from('users')
+                        .from('users_auth')
                         .update({
                             is_pro: false,
                             subscription_status: 'expired'

@@ -35,25 +35,58 @@ exports.handler = async (event, context) => {
         // Get authenticated user from token
         const authHeader = event.headers.authorization;
         let authenticatedUser = null;
+        let userEmail = null;
 
         if (authHeader) {
             const token = authHeader.replace('Bearer ', '');
-            try {
-                const tokenData = JSON.parse(Buffer.from(token, 'base64').toString());
-                if (tokenData.email && tokenData.exp > Math.floor(Date.now() / 1000)) {
-                    const { data, error } = await supabase
-                        .from('users')
-                        .select('*')
-                        .eq('email', tokenData.email)
-                        .single();
 
-                    if (!error) {
-                        authenticatedUser = data;
-                    }
+            // Try Supabase Auth token first
+            try {
+                const { data: { user }, error: authError } = await supabase.auth.getUser(token);
+
+                if (!authError && user) {
+                    userEmail = user.email;
                 }
             } catch (authError) {
+                // Fallback to legacy token format
+                try {
+                    const tokenData = JSON.parse(Buffer.from(token, 'base64').toString());
+                    if (tokenData.email && tokenData.exp > Math.floor(Date.now() / 1000)) {
+                        userEmail = tokenData.email;
+                    }
+                } catch (legacyError) {
+                }
             }
         }
+
+        if (!userEmail) {
+            return {
+                statusCode: 401,
+                headers,
+                body: JSON.stringify({
+                    error: 'Authentication required'
+                })
+            };
+        }
+
+        // Get user data from database
+        const { data, error } = await supabase
+            .from('users_auth')
+            .select('*')
+            .eq('email', userEmail)
+            .single();
+
+        if (error || !data) {
+            return {
+                statusCode: 404,
+                headers,
+                body: JSON.stringify({
+                    error: 'User not found'
+                })
+            };
+        }
+
+        authenticatedUser = data;
 
         if (!authenticatedUser || !authenticatedUser.stripe_customer_id) {
             return {
@@ -66,11 +99,11 @@ exports.handler = async (event, context) => {
         }
 
         const { returnUrl } = JSON.parse(event.body || '{}');
-        const currentDomain = event.headers.origin || 'https://tabmangment.netlify.app';
+        const currentDomain = event.headers.origin || 'https://tabmangment.com';
 
         const session = await stripe.billingPortal.sessions.create({
             customer: authenticatedUser.stripe_customer_id,
-            return_url: returnUrl || `${currentDomain}/dashboard.html`,
+            return_url: returnUrl || `${currentDomain}/user-dashboard.html`,
         });
 
         return {

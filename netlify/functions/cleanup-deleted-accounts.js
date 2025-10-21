@@ -81,7 +81,7 @@ exports.handler = async (event, context) => {
                             // Also delete from users table if exists
                             try {
                                 await supabase
-                                    .from('users')
+                                    .from('users_auth')
                                     .delete()
                                     .eq('email', user.email);
                             } catch (tableErr) {
