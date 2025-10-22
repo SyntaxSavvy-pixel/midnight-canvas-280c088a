@@ -74,12 +74,12 @@ class TabmangmentPopup {
 
                 if (webLogin) {
                     // Get the newly synced data
-                    const syncedData = await chrome.storage.local.get(['userEmail', 'userName', 'isPremium']);
+                    const syncedData = await chrome.storage.local.get(['userEmail', 'userName', 'isPremium', 'isPro']);
 
                     if (syncedData.userEmail) {
                         this.userEmail = syncedData.userEmail;
                         this.userName = syncedData.userName;
-                        this.isPremium = syncedData.isPremium || false;
+                        this.isPremium = syncedData.isPremium || syncedData.isPro || false;
                         // Continue with initialization
                     } else {
                         this.hideLoader();
@@ -667,12 +667,12 @@ class TabmangmentPopup {
                 if (newEmail && !newEmail.startsWith('fallback_') && !newEmail.startsWith('user_')) {
 
                     // Get all the user data from storage
-                    const userData = await chrome.storage.local.get(['userEmail', 'userName', 'authToken', 'isPremium', 'planType']);
+                    const userData = await chrome.storage.local.get(['userEmail', 'userName', 'authToken', 'isPremium', 'isPro', 'planType']);
 
                     // Update popup state
                     this.userEmail = userData.userEmail;
                     this.userName = userData.userName || userData.userEmail.split('@')[0];
-                    this.isPremium = userData.isPremium || false;
+                    this.isPremium = userData.isPremium || userData.isPro || false;
 
                     // IMPORTANT: Hide login screen first (if it exists)
                     const loginScreen = document.getElementById('login-screen');
@@ -1822,7 +1822,7 @@ class TabmangmentPopup {
                 return false; // Show login screen
             }
 
-            const stored = await chrome.storage.local.get(['userEmail', 'authToken', 'userName', 'isPremium', 'planType']);
+            const stored = await chrome.storage.local.get(['userEmail', 'authToken', 'userName', 'isPremium', 'isPro', 'planType', 'currentPeriodEnd', 'subscriptionStatus']);
 
             // Check if user has email (not fallback or anonymous)
             if (stored.userEmail &&
@@ -1831,10 +1831,8 @@ class TabmangmentPopup {
                 this.userEmail = stored.userEmail;
                 this.userName = stored.userName || stored.userEmail.split('@')[0];
 
-                // Also set premium status if available
-                if (stored.isPremium !== undefined) {
-                    this.isPremium = stored.isPremium;
-                }
+                // Set premium status - check both isPremium and isPro
+                this.isPremium = stored.isPremium || stored.isPro || false;
 
                 return true;
             }

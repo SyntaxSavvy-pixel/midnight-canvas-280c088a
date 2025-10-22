@@ -2281,26 +2281,43 @@
                 await verifyStripeSession(sessionId, userEmail);
             }
 
-            // CRITICAL: Sync login to extension when dashboard loads
-            // This ensures extension storage is updated with user data
+            // CRITICAL: Sync Pro status to extension when dashboard loads
+            // This ensures extension storage is updated with current subscription status
 
             if (bridgeReady && extensionId && userEmail) {
 
-                // Get full user data from localStorage
-                const storedUser = JSON.parse(localStorage.getItem('tabmangment_user') || '{}');
                 const storedToken = localStorage.getItem('tabmangment_token');
 
-                // Send USER_LOGGED_IN message (same format as auth page)
+                // Send SUBSCRIPTION_UPDATE with current Pro status from database
+                await sendMessageToExtension('SUBSCRIPTION_UPDATE', {
+                    isPro: userData.isPro,
+                    plan: userData.plan,
+                    status: userData.subscriptionStatus || 'active',
+                    currentPeriodEnd: userData.currentPeriodEnd,
+                    user: {
+                        email: userEmail,
+                        name: userData.name,
+                        id: userData.id || userEmail,
+                        plan: userData.plan,
+                        isPro: userData.isPro,
+                        currentPeriodEnd: userData.currentPeriodEnd
+                    }
+                }).catch(err => {
+                    console.error('Failed to sync Pro status to extension:', err);
+                });
+
+                // Also send USER_LOGGED_IN for general sync
                 window.postMessage({
                     type: 'USER_LOGGED_IN',
                     userData: {
                         email: userEmail,
-                        name: userData.name || storedUser.name,
-                        id: storedUser.id || userEmail,
-                        provider: userData.provider || storedUser.provider || 'email',
-                        avatar: userData.avatarUrl || storedUser.avatar,
+                        name: userData.name,
+                        id: userData.id || userEmail,
+                        provider: userData.provider || 'email',
+                        avatar: userData.avatar,
                         isPro: userData.isPro,
-                        plan: userData.plan
+                        plan: userData.plan,
+                        currentPeriodEnd: userData.currentPeriodEnd
                     },
                     token: storedToken
                 }, '*');
