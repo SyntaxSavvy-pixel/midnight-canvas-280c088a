@@ -4867,53 +4867,14 @@ class TabmangmentPopup {
     }
     async openStripeBillingPortal() {
         try {
-            const customerData = await chrome.storage.local.get(['stripeCustomerId', 'userEmail']);
-            const userEmail = customerData.userEmail || await this.getUserEmail();
-            if (!userEmail) {
-                this.showError('No email found. Please contact support.');
-                return;
-            }
-
-            let portalUrl = null;
-            try {
-                const backendUrl = await this.getBackendUrl();
-                if (backendUrl) {
-                    const controller = new AbortController();
-                    const timeoutId = setTimeout(() => controller.abort(), 5000);
-                    const response = await fetch(`${backendUrl}/api/billing-portal`, {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                        },
-                        body: JSON.stringify({
-                            email: userEmail
-                        }),
-                        signal: controller.signal
-                    });
-                    clearTimeout(timeoutId);
-                    if (response.ok) {
-                        const data = await response.json();
-                        portalUrl = data.url;
-                    } else {
-                    }
-                }
-            } catch (apiError) {
-            }
-
-            if (portalUrl) {
-                await chrome.tabs.create({
-                    url: portalUrl,
-                    active: true
-                });
-                setTimeout(() => {
-                    window.close();
-                }, 1500);
-                return;
-            }
-
-            this.showFallbackSubscriptionPortal(userEmail);
+            // Redirect to dashboard where user can click "Manage Subscription"
+            // This is more reliable than calling API from extension
+            await chrome.tabs.create({
+                url: `${CONFIG.WEB.DASHBOARD_URL}`,
+                active: true
+            });
         } catch (error) {
-            this.showFallbackSubscriptionPortal(userEmail || 'your account');
+            this.showError('Failed to open dashboard. Please try again.');
         }
     }
     async showFallbackSubscriptionPortal(userEmail) {

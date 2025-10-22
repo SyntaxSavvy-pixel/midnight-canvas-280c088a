@@ -2846,32 +2846,62 @@
         // Load user data from API
         async function loadUserData(email) {
             try {
-                // Get user from Supabase (primary source of truth)
+                // Get user from Supabase Auth (primary source of truth)
                 const { data: { user: supabaseUser }, error: supabaseError } = await supabaseClient.auth.getUser();
 
                 if (supabaseError || !supabaseUser) {
                     throw new Error('Failed to load user from Supabase');
                 }
 
-                // Update userData from Supabase
+                // Update userData from Supabase Auth
                 userData.email = supabaseUser.email || email;
                 userData.name = supabaseUser.user_metadata?.name || supabaseUser.user_metadata?.display_name || email.split('@')[0];
 
-                // Load subscription data from localStorage (set during payment/upgrade)
-                const storedUserData = localStorage.getItem('tabmangment_user');
-                if (storedUserData) {
-                    const stored = JSON.parse(storedUserData);
-                    userData.plan = stored.plan || 'free';
-                    userData.isPro = stored.isPro || stored.isPremium || false;
-                    userData.subscriptionStatus = stored.subscriptionStatus || 'free';
-                    userData.currentPeriodEnd = stored.currentPeriodEnd;
-                    userData.stripeCustomerId = stored.stripeCustomerId;
-                    userData.stripeSubscriptionId = stored.stripeSubscriptionId;
-                } else {
-                    // Default to free plan
-                    userData.plan = 'free';
-                    userData.isPro = false;
-                    userData.subscriptionStatus = 'free';
+                // CRITICAL: Load subscription data from Supabase DATABASE (source of truth!)
+                try {
+                    const { data: dbUser, error: dbError } = await supabaseClient
+                        .from('users_auth')
+                        .select('is_pro, plan_type, subscription_status, current_period_end, stripe_customer_id, stripe_subscription_id')
+                        .eq('email', userData.email)
+                        .single();
+
+                    if (!dbError && dbUser) {
+                        // Use database as source of truth
+                        userData.isPro = dbUser.is_pro || false;
+                        userData.plan = dbUser.is_pro ? 'pro' : 'free';
+                        userData.subscriptionStatus = dbUser.subscription_status || 'inactive';
+                        userData.currentPeriodEnd = dbUser.current_period_end;
+                        userData.stripeCustomerId = dbUser.stripe_customer_id;
+                        userData.stripeSubscriptionId = dbUser.stripe_subscription_id;
+                    } else {
+                        // Fallback to localStorage if database query fails
+                        const storedUserData = localStorage.getItem('tabmangment_user');
+                        if (storedUserData) {
+                            const stored = JSON.parse(storedUserData);
+                            userData.plan = stored.plan || 'free';
+                            userData.isPro = stored.isPro || false;
+                            userData.subscriptionStatus = stored.subscriptionStatus || 'inactive';
+                            userData.currentPeriodEnd = stored.currentPeriodEnd;
+                            userData.stripeCustomerId = stored.stripeCustomerId;
+                            userData.stripeSubscriptionId = stored.stripeSubscriptionId;
+                        } else {
+                            // Default to free plan
+                            userData.plan = 'free';
+                            userData.isPro = false;
+                            userData.subscriptionStatus = 'inactive';
+                        }
+                    }
+                } catch (dbError) {
+                    // If database query fails, fallback to localStorage
+                    const storedUserData = localStorage.getItem('tabmangment_user');
+                    if (storedUserData) {
+                        const stored = JSON.parse(storedUserData);
+                        userData.plan = stored.plan || 'free';
+                        userData.isPro = stored.isPro || false;
+                    } else {
+                        userData.plan = 'free';
+                        userData.isPro = false;
+                    }
                 }
 
                 // Handle avatar
@@ -2881,7 +2911,7 @@
                     userData.avatar = userData.name.split(' ').map(n => n[0]).join('').toUpperCase();
                 }
 
-                // Save updated data to localStorage
+                // Save updated data to localStorage for offline access
                 localStorage.setItem('tabmangment_user', JSON.stringify(userData));
 
             } catch (error) {
