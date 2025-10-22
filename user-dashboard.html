@@ -2400,6 +2400,12 @@
         };
 
         async function initSmartDashboard() {
+            // CRITICAL: Initialize Pro status from userData immediately
+            // This ensures Smart Suggestions shows correct upgrade/configure buttons
+            if (userData && userData.isPro !== undefined) {
+                smartTabsData.isPro = userData.isPro;
+            }
+
             // Update user name display - get from multiple sources
             let displayName = 'User';
 
