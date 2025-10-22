@@ -4,6 +4,13 @@
     <!-- Version: 5.3.3 - Removed non-existent API endpoint call -->
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <!-- Preconnect to external domains for faster loading -->
+    <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+    <link rel="preconnect" href="https://unpkg.com" crossorigin>
+    <link rel="dns-prefetch" href="https://www.google.com">
+    <link rel="dns-prefetch" href="https://www.gstatic.com">
+
     <meta http-equiv="Content-Security-Policy" content="
         default-src 'self';
         script-src 'self' 'unsafe-inline' 'unsafe-eval'
@@ -3079,9 +3086,15 @@
                 const title = tab.title || 'Untitled';
                 const timeAgo = formatTimeAgo(new Date(tab.lastAccessed));
 
+                // Get first letter for fallback
+                const firstLetter = title.charAt(0).toUpperCase() || '?';
+
                 html += `
                     <div style="display: flex; align-items: center; gap: 0.75rem; padding: 0.75rem; background: rgba(15, 23, 42, 0.3); border-radius: 0.5rem; border: 1px solid rgba(255, 255, 255, 0.05); transition: all 0.2s;">
-                        <img src="${favicon}" alt="${title}" style="width: 20px; height: 20px; border-radius: 0.25rem; flex-shrink: 0;" onerror="this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22%236366f1%22><circle cx=%2212%22 cy=%2212%22 r=%2210%22/></svg>'">
+                        <img src="${favicon}" alt="" loading="lazy" style="width: 20px; height: 20px; border-radius: 0.25rem; flex-shrink: 0; display: block;" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                        <div style="display: none; width: 20px; height: 20px; border-radius: 0.25rem; flex-shrink: 0; background: linear-gradient(135deg, rgba(99, 102, 241, 0.3), rgba(139, 92, 246, 0.3)); align-items: center; justify-content: center; font-size: 11px; color: #a5b4fc; font-weight: 700; border: 1px solid rgba(99, 102, 241, 0.2);">
+                            ${firstLetter}
+                        </div>
                         <div style="flex: 1; min-width: 0;">
                             <div style="color: #e2e8f0; font-size: 0.875rem; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
                                 ${title}
@@ -3624,10 +3637,10 @@
 
             if (isUrl) {
                 // Replace text with image in header
-                avatarEl.innerHTML = `<img src="${avatarUrl}" alt="${userData.name}" onerror="this.style.display='none'; this.parentElement.textContent='${initials}'">`;
+                avatarEl.innerHTML = `<img src="${avatarUrl}" alt="${userData.name}" loading="lazy" style="width: 100%; height: 100%; object-fit: cover;" onerror="this.style.display='none'; this.parentElement.textContent='${initials}'">`;
                 // Also update large avatar in profile page
                 if (largeAvatarEl) {
-                    largeAvatarEl.innerHTML = `<img src="${avatarUrl}" alt="${userData.name}" style="width: 100%; height: 100%; object-fit: cover;" onerror="this.style.display='none'; this.parentElement.textContent='${initials}'">`;
+                    largeAvatarEl.innerHTML = `<img src="${avatarUrl}" alt="${userData.name}" loading="lazy" style="width: 100%; height: 100%; object-fit: cover;" onerror="this.style.display='none'; this.parentElement.textContent='${initials}'">`;
                 }
             } else {
                 // Fallback to initials or avatar text

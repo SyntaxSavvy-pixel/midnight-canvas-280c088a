@@ -1013,6 +1013,8 @@ function checkPasswordStrength(password) {
     const strengthText = document.getElementById('strength-text');
     const strengthContainer = document.getElementById('password-strength');
 
+    if (!strengthBar || !strengthText || !strengthContainer) return;
+
     if (password.length === 0) {
         strengthContainer.classList.remove('show');
         return;
@@ -1188,8 +1190,12 @@ function generateInfiniteTabs() {
         const tabCard = document.createElement('div');
         tabCard.className = 'tab-card';
         const logoUrl = `https://img.logo.dev/${tab.domain}?token=${LOGO_API_KEY}`;
+        const firstLetter = (tab.domain || tab.title || '?').charAt(0).toUpperCase();
         tabCard.innerHTML = `
-            <img src="${logoUrl}" alt="${tab.title}" class="tab-favicon" loading="lazy">
+            <img src="${logoUrl}" alt="" class="tab-favicon" loading="lazy" style="display: block;" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+            <div style="display: none; width: 24px; height: 24px; border-radius: 6px; background: linear-gradient(135deg, rgba(99, 102, 241, 0.2), rgba(139, 92, 246, 0.2)); align-items: center; justify-content: center; font-size: 12px; color: #a5b4fc; font-weight: 700; border: 1px solid rgba(99, 102, 241, 0.3); flex-shrink: 0;">
+                ${firstLetter}
+            </div>
             <div class="tab-info">
                 <div class="tab-title">${tab.title}</div>
                 <div class="tab-url">${tab.domain}</div>
@@ -1203,8 +1209,12 @@ function generateInfiniteTabs() {
         const tabCard = document.createElement('div');
         tabCard.className = 'tab-card';
         const logoUrl = `https://img.logo.dev/${tab.domain}?token=${LOGO_API_KEY}`;
+        const firstLetter = (tab.domain || tab.title || '?').charAt(0).toUpperCase();
         tabCard.innerHTML = `
-            <img src="${logoUrl}" alt="${tab.title}" class="tab-favicon" loading="lazy">
+            <img src="${logoUrl}" alt="" class="tab-favicon" loading="lazy" style="display: block;" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+            <div style="display: none; width: 24px; height: 24px; border-radius: 6px; background: linear-gradient(135deg, rgba(99, 102, 241, 0.2), rgba(139, 92, 246, 0.2)); align-items: center; justify-content: center; font-size: 12px; color: #a5b4fc; font-weight: 700; border: 1px solid rgba(99, 102, 241, 0.3); flex-shrink: 0;">
+                ${firstLetter}
+            </div>
             <div class="tab-info">
                 <div class="tab-title">${tab.title}</div>
                 <div class="tab-url">${tab.domain}</div>
@@ -1220,27 +1230,78 @@ function generateInfiniteTabs() {
 // Check if user is already logged in
 (async function checkExistingSession() {
     try {
+        // ============================================
+        // REDIRECT LOOP PREVENTION
+        // ============================================
+        const REDIRECT_COOLDOWN_MS = 2000; // 2 seconds between redirects
+        const MAX_REDIRECT_ATTEMPTS = 3;   // Max 3 attempts before giving up
+
+        // Check if we're in a redirect loop
+        const lastRedirectTime = sessionStorage.getItem('auth_last_redirect_time');
+        const redirectCount = parseInt(sessionStorage.getItem('auth_redirect_count') || '0');
+        const now = Date.now();
+
+        // If too many redirects in short time, stop and show error
+        if (redirectCount >= MAX_REDIRECT_ATTEMPTS) {
+            console.warn('Redirect loop detected - stopping automatic redirects');
+            sessionStorage.removeItem('auth_redirect_count');
+            sessionStorage.removeItem('auth_last_redirect_time');
+            // Let user manually login instead of looping
+            return;
+        }
+
+        // If redirected recently, wait before checking again
+        if (lastRedirectTime && (now - parseInt(lastRedirectTime)) < REDIRECT_COOLDOWN_MS) {
+            console.log('Waiting for redirect cooldown...');
+            return;
+        }
+        // ============================================
+
         const urlParams = new URLSearchParams(window.location.search);
         const hashParams = new URLSearchParams(window.location.hash.substring(1));
         const isLoggingOut = urlParams.get('logout') === 'true';
+        const justLoggedOut = sessionStorage.getItem('user_logged_out');
         const hasOAuthParams = urlParams.has('code') || urlParams.has('access_token') || urlParams.has('error') ||
                                hashParams.has('access_token') || hashParams.has('error');
 
-        if (isLoggingOut) {
+        // Clear logout flag and don't redirect if user just logged out
+        if (isLoggingOut || justLoggedOut) {
+            sessionStorage.setItem('user_logged_out', 'true');
+            // Clear redirect tracking when logging out
+            sessionStorage.removeItem('auth_redirect_count');
+            sessionStorage.removeItem('auth_last_redirect_time');
             window.history.replaceState({}, document.title, window.location.pathname);
             return;
         }
 
+        // Wait for OAuth to complete
         if (hasOAuthParams) {
             return;
         }
 
-        await new Promise(resolve => setTimeout(resolve, 300));
+        // Give localStorage time to be set by login functions
+        await new Promise(resolve => setTimeout(resolve, 300)); // Increased from 100ms to 300ms
 
+        // Check localStorage first (faster than Supabase call)
+        const storedToken = localStorage.getItem('tabmangment_token');
+        const storedUser = localStorage.getItem('tabmangment_user');
+
+        if (storedToken && storedUser) {
+            // User is logged in, redirect to dashboard
+            sessionStorage.removeItem('user_logged_out');
+
+            // Track redirect to prevent loops
+            sessionStorage.setItem('auth_redirect_count', String(redirectCount + 1));
+            sessionStorage.setItem('auth_last_redirect_time', String(now));
+
+            window.location.replace('/user-dashboard.html');
+            return;
+        }
+
+        // If not in localStorage, check Supabase session
         const { data: { session }, error } = await supabaseClient.auth.getSession();
 
         if (!error && session && session.user) {
-
             const userData = {
                 email: session.user.email,
                 name: session.user.user_metadata.full_name || session.user.user_metadata.name || session.user.user_metadata.preferred_username || session.user.email.split('@')[0],
@@ -1253,10 +1314,16 @@ function generateInfiniteTabs() {
             localStorage.setItem('tabmangment_user', JSON.stringify(userData));
             localStorage.setItem('tabmangment_token', session.access_token);
             localStorage.setItem('tabmangment_remember', 'true');
+            sessionStorage.removeItem('user_logged_out');
+
+            // Track redirect to prevent loops
+            sessionStorage.setItem('auth_redirect_count', String(redirectCount + 1));
+            sessionStorage.setItem('auth_last_redirect_time', String(now));
 
             window.location.replace('/user-dashboard.html');
         }
     } catch (error) {
+        // Silently fail - user can still login manually
     }
 })();
 
@@ -1331,7 +1398,7 @@ async function handlePasswordReset(e) {
 
         // Send password reset email via Supabase
         const { data, error } = await supabaseClient.auth.resetPasswordForEmail(email, {
-            redirectTo: `${window.location.origin}/new-authentication?type=recovery`,
+            redirectTo: `${window.location.origin}/password-reset?type=recovery`,
             options: {
                 // This is important - ensures email is sent even if user doesn't exist
                 shouldCreateUser: false
@@ -1428,10 +1495,15 @@ async function handleEmailLogin(e) {
         localStorage.setItem('tabmangment_user', JSON.stringify(userData));
         localStorage.setItem('tabmangment_token', data.session.access_token);
         localStorage.setItem('tabmangment_remember', 'true');
+        sessionStorage.removeItem('user_logged_out'); // Clear logout flag
+        // Clear redirect loop prevention counters on successful login
+        sessionStorage.removeItem('auth_redirect_count');
+        sessionStorage.removeItem('auth_last_redirect_time');
 
         window.postMessage({ type: 'USER_LOGGED_IN', userData: { email: userData.email, name: userData.name, id: userData.id } }, '*');
-        showNotification('Login successful! You will stay logged in.', 'success');
-        setTimeout(() => { window.location.href = '/user-dashboard.html'; }, 1000);
+
+        // Redirect immediately - no delay needed!
+        window.location.replace('/user-dashboard.html');
     } catch (error) {
         showNotification(error.message, 'error');
     } finally {
@@ -1476,10 +1548,15 @@ async function handleEmailSignup(e) {
             localStorage.setItem('tabmangment_user', JSON.stringify(userData));
             localStorage.setItem('tabmangment_token', data.session.access_token);
             localStorage.setItem('tabmangment_remember', 'true');
+            sessionStorage.removeItem('user_logged_out'); // Clear logout flag
+            // Clear redirect loop prevention counters on successful signup
+            sessionStorage.removeItem('auth_redirect_count');
+            sessionStorage.removeItem('auth_last_redirect_time');
 
             window.postMessage({ type: 'USER_LOGGED_IN', userData: { email: userData.email, name: userData.name, id: userData.id } }, '*');
-            showNotification('Account created! You will stay logged in.', 'success');
-            setTimeout(() => { window.location.href = '/user-dashboard.html'; }, 1000);
+
+            // Redirect immediately - no delay needed!
+            window.location.replace('/user-dashboard.html');
         }
     } catch (error) {
         showNotification(error.message, 'error');
@@ -1603,6 +1680,10 @@ async function handleGithubLogin() {
             localStorage.setItem('tabmangment_token', session.access_token);
             localStorage.setItem('tabmangment_remember', 'true');
         }
+
+        // Clear redirect loop prevention counters on successful OAuth login
+        sessionStorage.removeItem('auth_redirect_count');
+        sessionStorage.removeItem('auth_last_redirect_time');
 
         window.postMessage({
             type: 'USER_LOGGED_IN',
