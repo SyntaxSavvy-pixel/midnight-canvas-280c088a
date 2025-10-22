@@ -37,11 +37,15 @@ class SimpleAuth {
     async loadStoredAuth() {
         try {
             if (chrome && chrome.storage) {
-                const result = await chrome.storage.local.get(['userEmail', 'authToken']);
+                const result = await chrome.storage.local.get(['userEmail', 'authToken', 'isPremium', 'isPro', 'subscriptionActive']);
 
                 if (result.userEmail) {
                     this.userEmail = result.userEmail;
                     this.isLoggedIn = true;
+
+                    // CRITICAL FIX: Load cached Pro status on initialization
+                    // This ensures popup shows correct Pro status immediately without waiting for API calls
+                    this.isPro = result.isPremium || result.isPro || result.subscriptionActive || false;
                 }
             }
         } catch (error) {
@@ -158,13 +162,23 @@ class SimpleAuth {
                 return;
             }
 
+            // CRITICAL FIX: Get cached Pro status BEFORE making API call
+            // This prevents losing Pro status when dashboard is closed and API calls fail
+            let cachedStatus = null;
+            if (chrome && chrome.storage) {
+                cachedStatus = await chrome.storage.local.get(['isPremium', 'isPro', 'subscriptionActive', 'planType']);
+            }
 
             const response = await fetch(`${this.apiUrl}/api/me?email=${encodeURIComponent(this.userEmail)}`);
 
             if (!response.ok) {
-                // If API fails, default to free
-                this.isPro = false;
-                await this.deactivateProFeatures();
+                // If API fails, KEEP cached Pro status instead of clearing it
+                // This ensures Pro users don't lose access when dashboard closes or API is unreachable
+                if (cachedStatus && (cachedStatus.isPremium || cachedStatus.isPro || cachedStatus.subscriptionActive)) {
+                    this.isPro = true;
+                } else {
+                    this.isPro = false;
+                }
                 return;
             }
 
@@ -182,9 +196,18 @@ class SimpleAuth {
             }
 
         } catch (error) {
-            // On error, default to free to be safe
-            this.isPro = false;
-            await this.deactivateProFeatures();
+            // On error, KEEP cached Pro status instead of clearing it
+            // This prevents Pro users from losing access when network is down
+            if (chrome && chrome.storage) {
+                const cachedStatus = await chrome.storage.local.get(['isPremium', 'isPro', 'subscriptionActive', 'planType']);
+                if (cachedStatus && (cachedStatus.isPremium || cachedStatus.isPro || cachedStatus.subscriptionActive)) {
+                    this.isPro = true;
+                } else {
+                    this.isPro = false;
+                }
+            } else {
+                this.isPro = false;
+            }
         }
     }
 
