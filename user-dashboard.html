@@ -1950,14 +1950,125 @@
             return deviceId;
         }
 
-        // Get device metadata
+        // Get device metadata with enhanced detection
         function getDeviceMetadata() {
+            const ua = navigator.userAgent;
+            const platform = navigator.platform;
+
+            // Detect Browser
+            let browserName = 'Unknown Browser';
+            let browserVersion = '';
+
+            if (ua.includes('Edg/')) {
+                browserName = 'Edge';
+                browserVersion = ua.match(/Edg\/([\d\.]+)/)?.[1] || '';
+            } else if (ua.includes('Chrome/') && !ua.includes('Edg/')) {
+                browserName = 'Chrome';
+                browserVersion = ua.match(/Chrome\/([\d\.]+)/)?.[1] || '';
+            } else if (ua.includes('Safari/') && !ua.includes('Chrome')) {
+                browserName = 'Safari';
+                browserVersion = ua.match(/Version\/([\d\.]+)/)?.[1] || '';
+            } else if (ua.includes('Firefox/')) {
+                browserName = 'Firefox';
+                browserVersion = ua.match(/Firefox\/([\d\.]+)/)?.[1] || '';
+            } else if (ua.includes('Opera/') || ua.includes('OPR/')) {
+                browserName = 'Opera';
+                browserVersion = ua.match(/(?:Opera|OPR)\/([\d\.]+)/)?.[1] || '';
+            }
+
+            // Detect Device Type & OS
+            let deviceType = 'Desktop';
+            let osName = 'Unknown OS';
+            let osVersion = '';
+
+            // Mobile Detection
+            if (/Android/i.test(ua)) {
+                deviceType = 'Android Phone';
+                osName = 'Android';
+                osVersion = ua.match(/Android ([\d\.]+)/)?.[1] || '';
+
+                // Check if it's a tablet
+                if (/tablet/i.test(ua) || (!/mobile/i.test(ua) && /android/i.test(ua))) {
+                    deviceType = 'Android Tablet';
+                }
+            } else if (/iPhone/i.test(ua)) {
+                deviceType = 'iPhone';
+                osName = 'iOS';
+                osVersion = ua.match(/OS ([\d_]+)/)?.[1]?.replace(/_/g, '.') || '';
+            } else if (/iPad/i.test(ua)) {
+                deviceType = 'iPad';
+                osName = 'iPadOS';
+                osVersion = ua.match(/OS ([\d_]+)/)?.[1]?.replace(/_/g, '.') || '';
+            } else if (/Macintosh/i.test(ua) && navigator.maxTouchPoints > 1) {
+                // iPad Pro with desktop mode
+                deviceType = 'iPad Pro';
+                osName = 'iPadOS';
+            } else if (/Macintosh|MacIntel|MacPPC|Mac68K/i.test(platform)) {
+                deviceType = 'Mac';
+                osName = 'macOS';
+                osVersion = ua.match(/Mac OS X ([\d_]+)/)?.[1]?.replace(/_/g, '.') || '';
+            } else if (/Win/i.test(platform)) {
+                deviceType = 'Windows PC';
+                osName = 'Windows';
+
+                // Detect Windows version
+                if (ua.includes('Windows NT 10.0')) {
+                    osVersion = '10/11';
+                } else if (ua.includes('Windows NT 6.3')) {
+                    osVersion = '8.1';
+                } else if (ua.includes('Windows NT 6.2')) {
+                    osVersion = '8';
+                } else if (ua.includes('Windows NT 6.1')) {
+                    osVersion = '7';
+                }
+            } else if (/CrOS/i.test(ua)) {
+                deviceType = 'Chromebook';
+                osName = 'Chrome OS';
+                osVersion = ua.match(/CrOS [^\s]+ ([\d\.]+)/)?.[1] || '';
+            } else if (/Linux/i.test(platform)) {
+                deviceType = 'Linux PC';
+                osName = 'Linux';
+
+                // Try to detect specific distro
+                if (/Ubuntu/i.test(ua)) osName = 'Ubuntu';
+                else if (/Fedora/i.test(ua)) osName = 'Fedora';
+                else if (/Debian/i.test(ua)) osName = 'Debian';
+            }
+
+            // Create human-readable device name
+            const deviceName = `${browserName} on ${deviceType}`;
+            const fullDeviceInfo = osVersion
+                ? `${browserName} ${browserVersion.split('.')[0]} on ${osName} ${osVersion}`
+                : `${browserName} on ${osName}`;
+
             return {
-                browser: navigator.userAgent.match(/(Firefox|Chrome|Safari|Edge|Opera)\/[\d\.]+/)?.[0] || 'Unknown',
-                os: navigator.platform,
+                // Human-readable device name for display
+                deviceName: deviceName,
+                deviceType: deviceType,
+
+                // Browser info
+                browser: browserName,
+                browserVersion: browserVersion,
+                browserFull: `${browserName} ${browserVersion}`,
+
+                // OS info
+                os: osName,
+                osVersion: osVersion,
+                osFull: osVersion ? `${osName} ${osVersion}` : osName,
+
+                // Full description for analytics
+                fullDescription: fullDeviceInfo,
+
+                // Technical details
+                platform: platform,
+                userAgent: ua,
                 screenResolution: `${screen.width}x${screen.height}`,
                 language: navigator.language,
-                lastSeen: new Date().toISOString()
+                timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+
+                // Timestamps
+                lastSeen: new Date().toISOString(),
+                lastSeenReadable: new Date().toLocaleString()
             };
         }
 
@@ -2145,7 +2256,7 @@
                 if (limitText) {
                     const maxDevices = isPro ? DEVICE_CONFIG.MAX_DEVICES_PRO : DEVICE_CONFIG.MAX_DEVICES_FREE;
                     limitText.textContent = isPro ? `Pro: ${maxDevices} devices` : `Free: ${maxDevices} devices`;
-                    limitText.style.color = isPro ? '#14b8a6' : '#f59e0b';
+                    limitText.style.color = isPro ? '#a5b4fc' : '#f59e0b';
                 }
 
                 // Fetch devices from Supabase
@@ -2180,38 +2291,45 @@
                     const lastSeen = device.lastSeen ? new Date(device.lastSeen) : new Date(device.registeredAt);
                     const timeAgo = formatTimeAgo(lastSeen);
 
-                    // Device icon based on OS
-                    let deviceIcon = '💻'; // Default laptop
-                    if (device.os.includes('iPhone') || device.os.includes('Android')) {
-                        deviceIcon = '📱';
-                    } else if (device.os.includes('iPad')) {
-                        deviceIcon = '📱';
-                    }
+                    // Use enhanced device metadata for better display
+                    const deviceType = device.deviceType || 'Unknown';
+                    const deviceName = device.deviceName || `${device.browser || 'Browser'} on ${device.os || 'Unknown'}`;
+                    const fullDescription = device.fullDescription || deviceName;
+                    const timezone = device.timezone || 'Unknown timezone';
 
-                    // Device name
-                    let deviceName = device.browser.split('/')[0] || 'Unknown Browser';
-                    if (device.os.includes('iPhone')) {
-                        deviceName += ' (iPhone)';
-                    } else if (device.os.includes('Android')) {
-                        deviceName += ' (Android)';
-                    } else if (device.os.includes('Mac')) {
-                        deviceName += ' (Mac)';
-                    } else if (device.os.includes('Windows')) {
-                        deviceName += ' (Windows)';
-                    } else if (device.os.includes('Linux')) {
-                        deviceName += ' (Linux)';
+                    // Device icon based on device type (enhanced detection)
+                    let deviceIcon = '💻'; // Default laptop
+                    if (deviceType.includes('iPhone')) {
+                        deviceIcon = '📱';
+                    } else if (deviceType.includes('iPad')) {
+                        deviceIcon = '📱';
+                    } else if (deviceType.includes('Android Phone')) {
+                        deviceIcon = '📱';
+                    } else if (deviceType.includes('Android Tablet')) {
+                        deviceIcon = '📱';
+                    } else if (deviceType.includes('Chromebook')) {
+                        deviceIcon = '💻';
+                    } else if (deviceType.includes('Mac')) {
+                        deviceIcon = '🖥️';
+                    } else if (deviceType.includes('Windows')) {
+                        deviceIcon = '🖥️';
+                    } else if (deviceType.includes('Linux')) {
+                        deviceIcon = '🐧';
                     }
 
                     html += `
-                        <div style="display: flex; align-items: center; gap: 1rem; padding: 1rem; background: ${isCurrentDevice ? 'rgba(20, 184, 166, 0.1)' : '#1e293b'}; border: 1px solid ${isCurrentDevice ? '#14b8a6' : '#334155'}; border-radius: 0.75rem; margin-bottom: 0.75rem;">
+                        <div style="display: flex; align-items: center; gap: 1rem; padding: 1rem; background: ${isCurrentDevice ? 'rgba(99, 102, 241, 0.1)' : 'rgba(30, 41, 59, 0.6)'}; border: 1px solid ${isCurrentDevice ? 'rgba(99, 102, 241, 0.4)' : 'rgba(99, 102, 241, 0.2)'}; border-radius: 0.75rem; margin-bottom: 0.75rem; backdrop-filter: blur(10px);">
                             <div style="font-size: 2rem; flex-shrink: 0;">${deviceIcon}</div>
                             <div style="flex: 1; min-width: 0;">
                                 <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.25rem;">
                                     <strong style="color: #f8fafc; font-size: 0.9375rem;">${deviceName}</strong>
-                                    ${isCurrentDevice ? '<span style="padding: 0.125rem 0.5rem; background: #14b8a6; color: white; border-radius: 0.375rem; font-size: 0.75rem; font-weight: 600;">This Device</span>' : ''}
+                                    ${isCurrentDevice ? '<span style="padding: 0.125rem 0.5rem; background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%); color: white; border-radius: 0.375rem; font-size: 0.75rem; font-weight: 600;">This Device</span>' : ''}
+                                </div>
+                                <div style="color: #a5b4fc; font-size: 0.8125rem; margin-bottom: 0.25rem;">
+                                    ${fullDescription}
                                 </div>
                                 <div style="color: #94a3b8; font-size: 0.8125rem; margin-bottom: 0.25rem;">
-                                    ${device.screenResolution} • ${device.language}
+                                    ${device.screenResolution} • ${device.language} • ${timezone}
                                 </div>
                                 <div style="color: #64748b; font-size: 0.8125rem;">
                                     Last active: ${timeAgo}
