@@ -55,20 +55,20 @@
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'SF Pro Display', Roboto, Helvetica, Arial, sans-serif;
             line-height: 1.6;
-            color: #1e293b;
-            background: #f8fafc;
+            color: #e2e8f0;
+            background: #0f172a;
             min-height: 100vh;
         }
 
         /* Header */
         .header {
-            background: #ffffff;
-            border-bottom: 1px solid #e2e8f0;
+            background: #1e293b;
+            border-bottom: 1px solid rgba(99, 102, 241, 0.2);
             padding: 1rem 0;
             position: sticky;
             top: 0;
             z-index: 1000;
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
         }
 
         .header-content {
@@ -85,7 +85,7 @@
             align-items: center;
             font-size: 1.5rem;
             font-weight: 700;
-            color: #0f172a;
+            color: #f8fafc;
             text-decoration: none;
             transition: all 0.3s ease;
         }
@@ -163,9 +163,9 @@
         .logout-btn {
             padding: 0.5rem 1rem;
             background: transparent;
-            border: 1px solid #e2e8f0;
+            border: 1px solid rgba(255, 255, 255, 0.1);
             border-radius: 0.5rem;
-            color: #64748b;
+            color: #94a3b8;
             cursor: pointer;
             transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             text-decoration: none;
@@ -176,9 +176,9 @@
         }
 
         .logout-btn:hover {
-            background: #f1f5f9;
-            color: #0f172a;
-            border-color: #cbd5e1;
+            background: rgba(255, 255, 255, 0.05);
+            color: #f8fafc;
+            border-color: rgba(99, 102, 241, 0.4);
             transform: translateY(-1px);
         }
 
@@ -194,12 +194,13 @@
 
         /* Sidebar */
         .sidebar {
-            background: #ffffff;
+            background: rgba(30, 41, 59, 0.6);
+            backdrop-filter: blur(20px);
             border-radius: 1rem;
             padding: 1.5rem;
             height: fit-content;
-            border: 1px solid #e2e8f0;
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+            border: 1px solid rgba(99, 102, 241, 0.2);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
         }
 
         .nav-menu {
@@ -216,7 +217,7 @@
             gap: 0.875rem;
             padding: 0.75rem 1.125rem;
             border-radius: 1.5rem;
-            color: #64748b;
+            color: #94a3b8;
             text-decoration: none;
             transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             font-weight: 500;
@@ -310,30 +311,32 @@
         .page-title {
             font-size: 2rem;
             font-weight: 700;
-            color: #0f172a;
+            color: #f8fafc;
             margin-bottom: 0.5rem;
             letter-spacing: -0.02em;
         }
 
         .page-subtitle {
-            color: #64748b;
+            color: #94a3b8;
             font-size: 1rem;
             line-height: 1.5;
         }
 
         /* Cards */
         .card {
-            background: #ffffff;
+            background: rgba(30, 41, 59, 0.6);
+            backdrop-filter: blur(20px);
             border-radius: 1rem;
             padding: 1.75rem;
-            border: 1px solid #e2e8f0;
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+            border: 1px solid rgba(99, 102, 241, 0.2);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
             transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
         .card:hover {
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
             transform: translateY(-2px);
+            border-color: rgba(99, 102, 241, 0.3);
         }
 
         .card-header {
@@ -346,7 +349,7 @@
         .card-title {
             font-size: 1.125rem;
             font-weight: 600;
-            color: #0f172a;
+            color: #f8fafc;
             letter-spacing: -0.01em;
         }
 
@@ -378,15 +381,15 @@
 
         .card-action.secondary {
             background: transparent;
-            color: #64748b;
-            border: 1px solid #e2e8f0;
+            color: #94a3b8;
+            border: 1px solid rgba(255, 255, 255, 0.1);
             box-shadow: none;
         }
 
         .card-action.secondary:hover {
-            background: #f8fafc;
-            color: #0f172a;
-            border-color: #cbd5e1;
+            background: rgba(255, 255, 255, 0.05);
+            color: #f8fafc;
+            border-color: rgba(99, 102, 241, 0.4);
         }
 
         /* Delete Account Button */
@@ -644,18 +647,20 @@
         }
 
         .stat-card {
-            background: #ffffff;
+            background: rgba(30, 41, 59, 0.6);
+            backdrop-filter: blur(20px);
             border-radius: 1rem;
             padding: 1.75rem;
-            border: 1px solid #e2e8f0;
+            border: 1px solid rgba(99, 102, 241, 0.2);
             text-align: center;
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
             transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
         .stat-card:hover {
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
             transform: translateY(-2px);
+            border-color: rgba(99, 102, 241, 0.3);
         }
 
         .stat-icon {
@@ -674,7 +679,7 @@
         .stat-number {
             font-size: 2.25rem;
             font-weight: 700;
-            color: #0f172a;
+            color: #f8fafc;
             margin-bottom: 0.5rem;
             transition: all 0.3s ease;
             letter-spacing: -0.02em;
@@ -691,7 +696,7 @@
 
         @keyframes pulse-green {
             0%, 100% {
-                color: #0f172a;
+                color: #f8fafc;
                 transform: scale(1);
             }
             50% {
@@ -732,7 +737,7 @@
         }
 
         .stat-label {
-            color: #64748b;
+            color: #94a3b8;
             font-size: 0.875rem;
             font-weight: 500;
         }
@@ -752,8 +757,9 @@
 
         /* Subscription Section */
         .subscription-card {
-            background: linear-gradient(135deg, #1e293b 0%, #0f766e 100%);
-            border: 1px solid #14b8a6;
+            background: linear-gradient(135deg, rgba(99, 102, 241, 0.2) 0%, rgba(139, 92, 246, 0.2) 100%);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(99, 102, 241, 0.4);
         }
 
         .subscription-info {
@@ -1149,10 +1155,11 @@
             justify-content: space-between;
             align-items: center;
             padding: 0.75rem;
-            background: #0f172a;
+            background: rgba(15, 23, 42, 0.6);
             border-radius: 0.5rem;
             margin-bottom: 0.5rem;
-            border: 1px solid #334155;
+            border: 1px solid rgba(99, 102, 241, 0.2);
+            color: #e2e8f0;
         }
 
         .remove-btn {
@@ -1293,14 +1300,14 @@
                         <span id="user-name-display" style="background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;">User</span>
                         <span>!</span>
                     </h1>
-                    <p style="color: #64748b; font-size: 1rem; margin-top: 0.5rem;">Your browser looks good today.</p>
+                    <p style="color: #94a3b8; font-size: 1rem; margin-top: 0.5rem;">Your browser looks good today.</p>
                 </div>
 
                 <!-- Smart Suggestions Card -->
-                <div style="background: rgba(30, 41, 59, 0.6); backdrop-filter: blur(20px); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 1.5rem; padding: 2rem; margin-bottom: 1.5rem; box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);">
+                <div style="background: rgba(30, 41, 59, 0.6); backdrop-filter: blur(20px); border: 1px solid rgba(99, 102, 241, 0.2); border-radius: 1.5rem; padding: 2rem; margin-bottom: 1.5rem; box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);">
                     <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1.5rem;">
                         <div style="width: 40px; height: 40px; background: linear-gradient(135deg, #6366f1, #8b5cf6); border-radius: 0.75rem; display: flex; align-items: center; justify-content: center; font-size: 1.25rem;">💡</div>
-                        <h2 style="font-size: 1.25rem; font-weight: 700; margin: 0;">Smart Suggestions</h2>
+                        <h2 style="font-size: 1.25rem; font-weight: 700; margin: 0; color: #f8fafc;">Smart Suggestions</h2>
                     </div>
 
                     <div id="suggestions-content">
@@ -1311,7 +1318,7 @@
                 </div>
 
                 <!-- Recent Activity -->
-                <div style="background: rgba(30, 41, 59, 0.4); border: 1px solid rgba(255, 255, 255, 0.05); border-radius: 1rem; padding: 1.5rem; margin-top: 1rem;">
+                <div style="background: rgba(30, 41, 59, 0.4); border: 1px solid rgba(99, 102, 241, 0.15); border-radius: 1rem; padding: 1.5rem; margin-top: 1rem;">
                     <h3 style="font-size: 0.875rem; font-weight: 600; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 1rem;">Recent Activity</h3>
                     <div id="activity-list" style="display: flex; flex-direction: column; gap: 0.75rem;">
                         <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.875rem;">
@@ -1358,11 +1365,11 @@
                     <!-- Pro Plan -->
                     <div class="card subscription-card">
                         <div class="card-header">
-                            <h3 class="card-title" style="color: white;">Pro Plan</h3>
+                            <h3 class="card-title" style="color: #f8fafc;">Pro Plan</h3>
                             <div class="plan-badge pro" id="pro-status" style="display: none;">Current</div>
                         </div>
                         <div style="text-align: center; margin: 1rem 0;">
-                            <div style="font-size: 2.5rem; font-weight: 700; color: white;">$4.99</div>
+                            <div style="font-size: 2.5rem; font-weight: 700; color: #f8fafc;">$4.99</div>
                             <div style="color: rgba(255, 255, 255, 0.8);">per month</div>
                         </div>
                         <ul class="plan-features">
