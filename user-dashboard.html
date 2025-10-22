@@ -884,6 +884,60 @@
             font-size: 1.5rem;
         }
 
+        /* Auto-Close Slider Styling */
+        #autoclose-slider {
+            -webkit-appearance: none;
+            appearance: none;
+            background: transparent;
+        }
+
+        #autoclose-slider::-webkit-slider-track {
+            width: 100%;
+            height: 8px;
+            background: linear-gradient(to right, rgba(99, 102, 241, 0.3) 0%, rgba(139, 92, 246, 0.3) 100%);
+            border-radius: 4px;
+        }
+
+        #autoclose-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 24px;
+            height: 24px;
+            background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+            border-radius: 50%;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(99, 102, 241, 0.5);
+            transition: all 0.2s;
+        }
+
+        #autoclose-slider::-webkit-slider-thumb:hover {
+            transform: scale(1.2);
+            box-shadow: 0 6px 16px rgba(99, 102, 241, 0.7);
+        }
+
+        #autoclose-slider::-moz-range-track {
+            width: 100%;
+            height: 8px;
+            background: linear-gradient(to right, rgba(99, 102, 241, 0.3) 0%, rgba(139, 92, 246, 0.3) 100%);
+            border-radius: 4px;
+        }
+
+        #autoclose-slider::-moz-range-thumb {
+            width: 24px;
+            height: 24px;
+            background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+            border-radius: 50%;
+            cursor: pointer;
+            border: none;
+            box-shadow: 0 4px 12px rgba(99, 102, 241, 0.5);
+            transition: all 0.2s;
+        }
+
+        #autoclose-slider::-moz-range-thumb:hover {
+            transform: scale(1.2);
+            box-shadow: 0 6px 16px rgba(99, 102, 241, 0.7);
+        }
+
         /* Responsive */
         @media (max-width: 1024px) {
             .main-container {
@@ -1542,6 +1596,87 @@
             <div style="display: flex; gap: 1rem;">
                 <button class="card-action secondary" onclick="closeModal()" style="flex: 1;">Cancel</button>
                 <button class="card-action" onclick="processUpgrade()" style="flex: 1;">Upgrade Now</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Auto-Close Configuration Modal -->
+    <div class="modal" id="autoclose-modal">
+        <div class="modal-content" style="max-width: 540px; background: linear-gradient(135deg, rgba(30, 41, 59, 0.98) 0%, rgba(15, 23, 42, 0.98) 100%); border: 1px solid rgba(99, 102, 241, 0.2); backdrop-filter: blur(20px); box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);">
+            <button class="modal-close" onclick="closeAutoCloseModal()" style="color: #94a3b8; background: rgba(255, 255, 255, 0.05); border-radius: 0.5rem; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; border: 1px solid rgba(255, 255, 255, 0.1); transition: all 0.2s;">&times;</button>
+
+            <!-- Modal Header -->
+            <div style="text-align: center; margin-bottom: 2rem;">
+                <div style="width: 64px; height: 64px; margin: 0 auto 1rem; background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%); border-radius: 1rem; display: flex; align-items: center; justify-content: center; font-size: 2rem; box-shadow: 0 8px 24px rgba(99, 102, 241, 0.4);">
+                    ⏱️
+                </div>
+                <h2 style="color: #f8fafc; margin-bottom: 0.5rem; font-size: 1.75rem; font-weight: 700; letter-spacing: -0.02em;">Configure Auto-Close Timer</h2>
+                <p style="color: #94a3b8; font-size: 0.9375rem; line-height: 1.6;">Set how long tabs should be inactive before automatically closing</p>
+            </div>
+
+            <!-- Time Selector -->
+            <div style="background: rgba(15, 23, 42, 0.6); padding: 2rem; border-radius: 1rem; margin-bottom: 1.5rem; border: 1px solid rgba(255, 255, 255, 0.05);">
+                <!-- Current Value Display -->
+                <div style="text-align: center; margin-bottom: 1.5rem;">
+                    <div style="display: inline-flex; align-items: baseline; gap: 0.5rem; padding: 0.75rem 1.5rem; background: linear-gradient(135deg, rgba(99, 102, 241, 0.15), rgba(139, 92, 246, 0.15)); border-radius: 0.75rem; border: 1px solid rgba(99, 102, 241, 0.3);">
+                        <span id="autoclose-hours-display" style="font-size: 3rem; font-weight: 700; color: #fff; line-height: 1;">1</span>
+                        <span style="font-size: 1.25rem; color: #94a3b8; font-weight: 600;">hour<span id="hour-plural">s</span></span>
+                    </div>
+                </div>
+
+                <!-- Slider -->
+                <div style="margin-bottom: 1rem;">
+                    <input
+                        type="range"
+                        id="autoclose-slider"
+                        min="1"
+                        max="24"
+                        value="1"
+                        step="1"
+                        style="width: 100%; height: 8px; background: linear-gradient(to right, #6366f1 0%, #8b5cf6 100%); border-radius: 4px; outline: none; -webkit-appearance: none; cursor: pointer;"
+                    />
+                </div>
+
+                <!-- Slider Labels -->
+                <div style="display: flex; justify-content: space-between; color: #64748b; font-size: 0.75rem; font-weight: 600; margin-top: 0.5rem;">
+                    <span>1h</span>
+                    <span>6h</span>
+                    <span>12h</span>
+                    <span>24h</span>
+                </div>
+
+                <!-- Minimum Requirement Notice -->
+                <div style="margin-top: 1.5rem; padding: 1rem; background: rgba(99, 102, 241, 0.1); border-radius: 0.75rem; border: 1px solid rgba(99, 102, 241, 0.2); display: flex; align-items: flex-start; gap: 0.75rem;">
+                    <span style="font-size: 1.25rem; flex-shrink: 0; margin-top: 0.125rem;">ℹ️</span>
+                    <div style="flex: 1;">
+                        <strong style="color: #a5b4fc; display: block; margin-bottom: 0.25rem; font-size: 0.875rem;">Minimum: 1 Hour Required</strong>
+                        <p style="color: #94a3b8; font-size: 0.8125rem; margin: 0; line-height: 1.5;">To prevent accidental tab closures and ensure optimal browsing experience, the minimum auto-close time is set to 1 hour (60 minutes).</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quick Presets -->
+            <div style="margin-bottom: 1.5rem;">
+                <p style="color: #94a3b8; font-size: 0.8125rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.75rem;">Quick Presets</p>
+                <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.5rem;">
+                    <button onclick="setAutoCloseHours(1)" style="padding: 0.625rem; background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 0.5rem; color: #e2e8f0; font-size: 0.8125rem; font-weight: 600; cursor: pointer; transition: all 0.2s;" onmouseover="this.style.background='rgba(99, 102, 241, 0.2)'; this.style.borderColor='rgba(99, 102, 241, 0.4)'" onmouseout="this.style.background='rgba(255, 255, 255, 0.05)'; this.style.borderColor='rgba(255, 255, 255, 0.1)'">1h</button>
+                    <button onclick="setAutoCloseHours(2)" style="padding: 0.625rem; background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 0.5rem; color: #e2e8f0; font-size: 0.8125rem; font-weight: 600; cursor: pointer; transition: all 0.2s;" onmouseover="this.style.background='rgba(99, 102, 241, 0.2)'; this.style.borderColor='rgba(99, 102, 241, 0.4)'" onmouseout="this.style.background='rgba(255, 255, 255, 0.05)'; this.style.borderColor='rgba(255, 255, 255, 0.1)'">2h</button>
+                    <button onclick="setAutoCloseHours(6)" style="padding: 0.625rem; background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 0.5rem; color: #e2e8f0; font-size: 0.8125rem; font-weight: 600; cursor: pointer; transition: all 0.2s;" onmouseover="this.style.background='rgba(99, 102, 241, 0.2)'; this.style.borderColor='rgba(99, 102, 241, 0.4)'" onmouseout="this.style.background='rgba(255, 255, 255, 0.05)'; this.style.borderColor='rgba(255, 255, 255, 0.1)'">6h</button>
+                    <button onclick="setAutoCloseHours(12)" style="padding: 0.625rem; background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 0.5rem; color: #e2e8f0; font-size: 0.8125rem; font-weight: 600; cursor: pointer; transition: all 0.2s;" onmouseover="this.style.background='rgba(99, 102, 241, 0.2)'; this.style.borderColor='rgba(99, 102, 241, 0.4)'" onmouseout="this.style.background='rgba(255, 255, 255, 0.05)'; this.style.borderColor='rgba(255, 255, 255, 0.1)'">12h</button>
+                </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div style="display: flex; gap: 0.75rem;">
+                <button onclick="closeAutoCloseModal()" style="flex: 1; padding: 0.875rem 1.5rem; border: 1px solid rgba(255, 255, 255, 0.1); background: rgba(255, 255, 255, 0.05); color: #e2e8f0; border-radius: 0.75rem; font-size: 0.9375rem; font-weight: 600; cursor: pointer; transition: all 0.2s;" onmouseover="this.style.background='rgba(255, 255, 255, 0.1)'" onmouseout="this.style.background='rgba(255, 255, 255, 0.05)'">
+                    Cancel
+                </button>
+                <button onclick="saveAutoCloseTime()" style="flex: 1; padding: 0.875rem 1.5rem; border: none; background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%); color: #fff; border-radius: 0.75rem; font-size: 0.9375rem; font-weight: 600; cursor: pointer; transition: all 0.3s; box-shadow: 0 4px 14px rgba(99, 102, 241, 0.4);" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 8px 20px rgba(99, 102, 241, 0.5)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 14px rgba(99, 102, 241, 0.4)'">
+                    <span style="display: flex; align-items: center; justify-content: center; gap: 0.5rem;">
+                        <span>✓</span>
+                        <span>Save Settings</span>
+                    </span>
+                </button>
             </div>
         </div>
     </div>
@@ -2830,20 +2965,81 @@
 
         // Action: Configure Auto-Close (Pro feature)
         async function configureAutoClose() {
-            const currentTime = smartTabsData.autoCloseTime || 60;
-            const newTime = prompt(`⏱️ Set auto-close time (in minutes):\n\nTabs inactive for this long will automatically close.\n\nCurrent: ${currentTime} minutes`, currentTime);
+            // Open the beautiful new modal
+            openAutoCloseModal();
+        }
 
-            if (newTime && !isNaN(newTime) && newTime > 0) {
-                // Save to extension storage
-                window.postMessage({
-                    type: 'DASHBOARD_SET_AUTO_CLOSE_TIME',
-                    source: 'tabmangment-dashboard',
-                    time: parseInt(newTime)
-                }, '*');
+        // Auto-Close Modal Functions
+        function openAutoCloseModal() {
+            const modal = document.getElementById('autoclose-modal');
+            const slider = document.getElementById('autoclose-slider');
 
-                alert(`✅ Auto-close timer set to ${newTime} minutes!`);
-                smartTabsData.autoCloseTime = parseInt(newTime);
+            // Get current auto-close time (in minutes)
+            const currentMinutes = smartTabsData.autoCloseTime || 60;
+            // Convert to hours
+            const currentHours = Math.max(1, Math.round(currentMinutes / 60));
+
+            // Set slider value
+            slider.value = currentHours;
+
+            // Update display
+            updateHoursDisplay(currentHours);
+
+            // Show modal
+            modal.classList.add('show');
+        }
+
+        function closeAutoCloseModal() {
+            const modal = document.getElementById('autoclose-modal');
+            modal.classList.remove('show');
+        }
+
+        function updateHoursDisplay(hours) {
+            const display = document.getElementById('autoclose-hours-display');
+            const plural = document.getElementById('hour-plural');
+
+            display.textContent = hours;
+            plural.textContent = hours === 1 ? '' : 's';
+        }
+
+        function setAutoCloseHours(hours) {
+            // Enforce minimum of 1 hour
+            const validHours = Math.max(1, hours);
+
+            const slider = document.getElementById('autoclose-slider');
+            slider.value = validHours;
+            updateHoursDisplay(validHours);
+        }
+
+        async function saveAutoCloseTime() {
+            const slider = document.getElementById('autoclose-slider');
+            const hours = parseInt(slider.value);
+
+            // Enforce minimum 1 hour (60 minutes)
+            if (hours < 1) {
+                // Show error notification
+                showNotification('⚠️ Minimum auto-close time is 1 hour (60 minutes).', 'error');
+                return;
             }
+
+            // Convert hours to minutes
+            const minutes = hours * 60;
+
+            // Save to extension storage via postMessage
+            window.postMessage({
+                type: 'DASHBOARD_SET_AUTO_CLOSE_TIME',
+                source: 'tabmangment-dashboard',
+                time: minutes
+            }, '*');
+
+            // Update local data
+            smartTabsData.autoCloseTime = minutes;
+
+            // Show success notification
+            showNotification(`✅ Auto-close timer set to ${hours} hour${hours === 1 ? '' : 's'} (${minutes} minutes)!`, 'success');
+
+            // Close modal
+            closeAutoCloseModal();
         }
 
         // Action: Upgrade to Pro
@@ -5181,6 +5377,24 @@
         // Initialize dashboard on load
         document.addEventListener('DOMContentLoaded', () => {
             initDashboard();
+
+            // Auto-Close slider real-time update
+            const slider = document.getElementById('autoclose-slider');
+            if (slider) {
+                slider.addEventListener('input', (e) => {
+                    updateHoursDisplay(parseInt(e.target.value));
+                });
+            }
+
+            // Close auto-close modal on outside click
+            const autoCloseModal = document.getElementById('autoclose-modal');
+            if (autoCloseModal) {
+                autoCloseModal.addEventListener('click', (e) => {
+                    if (e.target === e.currentTarget) {
+                        closeAutoCloseModal();
+                    }
+                });
+            }
 
             // Check for hash navigation (e.g., #subscription from extension upgrade buttons)
             if (window.location.hash) {
