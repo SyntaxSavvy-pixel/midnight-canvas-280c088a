@@ -53,7 +53,7 @@
         }
 
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'SF Pro Display', Roboto, Helvetica, Arial, sans-serif;
             line-height: 1.6;
             color: #e2e8f0;
             background: #0f172a;
@@ -63,11 +63,12 @@
         /* Header */
         .header {
             background: #1e293b;
-            border-bottom: 1px solid #334155;
+            border-bottom: 1px solid rgba(99, 102, 241, 0.2);
             padding: 1rem 0;
             position: sticky;
             top: 0;
             z-index: 1000;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
         }
 
         .header-content {
@@ -83,15 +84,24 @@
             display: flex;
             align-items: center;
             font-size: 1.5rem;
-            font-weight: 600;
-            color: #e2e8f0;
+            font-weight: 700;
+            color: #f8fafc;
             text-decoration: none;
+            transition: all 0.3s ease;
+        }
+
+        .logo:hover {
+            transform: translateX(-2px);
         }
 
         .logo img {
             width: 32px;
             height: 32px;
             margin-right: 8px;
+            padding: 6px;
+            background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
         }
 
         .user-menu {
@@ -101,30 +111,32 @@
         }
 
         .plan-badge {
-            padding: 0.375rem 0.75rem;
-            border-radius: 0.5rem;
-            font-size: 0.875rem;
+            padding: 0.375rem 0.875rem;
+            border-radius: 1rem;
+            font-size: 0.8125rem;
             font-weight: 600;
             text-transform: uppercase;
-            letter-spacing: 0.025em;
+            letter-spacing: 0.05em;
+            transition: all 0.3s ease;
         }
 
         .plan-badge.free {
-            background: rgba(107, 114, 128, 0.2);
-            color: #9ca3af;
-            border: 1px solid #374151;
+            background: rgba(148, 163, 184, 0.1);
+            color: #64748b;
+            border: 1px solid rgba(148, 163, 184, 0.2);
         }
 
         .plan-badge.pro {
-            background: rgba(20, 184, 166, 0.2);
-            color: #14b8a6;
-            border: 1px solid #14b8a6;
+            background: linear-gradient(135deg, rgba(99, 102, 241, 0.1), rgba(139, 92, 246, 0.1));
+            color: #6366f1;
+            border: 1px solid rgba(99, 102, 241, 0.3);
+            box-shadow: 0 2px 8px rgba(99, 102, 241, 0.15);
         }
 
         .user-avatar {
             width: 40px;
             height: 40px;
-            background: #14b8a6;
+            background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
             border-radius: 50%;
             display: flex;
             align-items: center;
@@ -133,6 +145,13 @@
             font-weight: 600;
             cursor: pointer;
             overflow: hidden;
+            box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+            transition: all 0.3s ease;
+        }
+
+        .user-avatar:hover {
+            transform: scale(1.05);
+            box-shadow: 0 6px 16px rgba(99, 102, 241, 0.4);
         }
 
         .user-avatar img {
@@ -144,20 +163,23 @@
         .logout-btn {
             padding: 0.5rem 1rem;
             background: transparent;
-            border: 1px solid #475569;
+            border: 1px solid rgba(255, 255, 255, 0.1);
             border-radius: 0.5rem;
             color: #94a3b8;
             cursor: pointer;
-            transition: all 0.3s ease;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             text-decoration: none;
             display: flex;
             align-items: center;
             gap: 0.5rem;
+            font-weight: 500;
         }
 
         .logout-btn:hover {
-            background: #334155;
-            color: #e2e8f0;
+            background: rgba(255, 255, 255, 0.05);
+            color: #f8fafc;
+            border-color: rgba(99, 102, 241, 0.4);
+            transform: translateY(-1px);
         }
 
         /* Main Layout */
@@ -172,11 +194,13 @@
 
         /* Sidebar */
         .sidebar {
-            background: #1e293b;
-            border-radius: 0.75rem;
+            background: rgba(30, 41, 59, 0.6);
+            backdrop-filter: blur(20px);
+            border-radius: 1rem;
             padding: 1.5rem;
             height: fit-content;
-            border: 1px solid #334155;
+            border: 1px solid rgba(99, 102, 241, 0.2);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
         }
 
         .nav-menu {
@@ -184,25 +208,73 @@
         }
 
         .nav-item {
-            margin-bottom: 0.5rem;
+            margin-bottom: 0.375rem;
         }
 
         .nav-link {
             display: flex;
             align-items: center;
-            gap: 0.75rem;
-            padding: 0.75rem 1rem;
-            border-radius: 0.5rem;
+            gap: 0.875rem;
+            padding: 0.75rem 1.125rem;
+            border-radius: 1.5rem;
             color: #94a3b8;
             text-decoration: none;
-            transition: all 0.3s ease;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             font-weight: 500;
+            font-size: 0.9375rem;
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
         }
 
-        .nav-link:hover,
+        .nav-link::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, rgba(99, 102, 241, 0.1) 0%, rgba(139, 92, 246, 0.1) 100%);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            border-radius: 1.5rem;
+        }
+
+        .nav-link:hover {
+            color: #6366f1;
+            background: rgba(99, 102, 241, 0.05);
+            transform: translateX(4px);
+        }
+
+        .nav-link:hover::before {
+            opacity: 1;
+        }
+
         .nav-link.active {
-            background: #14b8a6;
+            background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
             color: white;
+            font-weight: 600;
+            box-shadow: 0 4px 14px rgba(99, 102, 241, 0.3);
+            transform: translateX(0);
+        }
+
+        .nav-link.active::before {
+            opacity: 0;
+        }
+
+        .nav-link svg, .nav-link i {
+            width: 20px;
+            height: 20px;
+            flex-shrink: 0;
+            transition: all 0.3s ease;
+        }
+
+        .nav-link:hover svg, .nav-link:hover i {
+            transform: scale(1.1);
+        }
+
+        .nav-link.active svg, .nav-link.active i {
+            filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));
         }
 
         /* Main Content */
@@ -212,8 +284,28 @@
             gap: 2rem;
         }
 
+        .page-content {
+            display: none;
+            animation: fadeIn 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .page-content.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
         .page-header {
-            margin-bottom: 1rem;
+            margin-bottom: 1.5rem;
         }
 
         .page-title {
@@ -221,63 +313,83 @@
             font-weight: 700;
             color: #f8fafc;
             margin-bottom: 0.5rem;
+            letter-spacing: -0.02em;
         }
 
         .page-subtitle {
             color: #94a3b8;
-            font-size: 1.1rem;
+            font-size: 1rem;
+            line-height: 1.5;
         }
 
         /* Cards */
         .card {
-            background: #1e293b;
-            border-radius: 0.75rem;
-            padding: 1.5rem;
-            border: 1px solid #334155;
+            background: rgba(30, 41, 59, 0.6);
+            backdrop-filter: blur(20px);
+            border-radius: 1rem;
+            padding: 1.75rem;
+            border: 1px solid rgba(99, 102, 241, 0.2);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .card:hover {
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+            transform: translateY(-2px);
+            border-color: rgba(99, 102, 241, 0.3);
         }
 
         .card-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 1rem;
+            margin-bottom: 1.25rem;
         }
 
         .card-title {
-            font-size: 1.25rem;
+            font-size: 1.125rem;
             font-weight: 600;
             color: #f8fafc;
+            letter-spacing: -0.01em;
         }
 
         .card-action {
-            padding: 0.5rem 1rem;
-            background: #14b8a6;
+            padding: 0.625rem 1.25rem;
+            background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
             color: white;
             border: none;
-            border-radius: 0.5rem;
+            border-radius: 0.75rem;
             cursor: pointer;
-            font-weight: 500;
-            transition: all 0.3s ease;
+            font-weight: 600;
+            font-size: 0.875rem;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             text-decoration: none;
             display: inline-flex;
             align-items: center;
             gap: 0.5rem;
+            box-shadow: 0 4px 14px rgba(99, 102, 241, 0.3);
         }
 
         .card-action:hover {
-            background: #0d9488;
-            transform: translateY(-1px);
+            box-shadow: 0 6px 20px rgba(99, 102, 241, 0.4);
+            transform: translateY(-2px);
+        }
+
+        .card-action:active {
+            transform: translateY(0);
         }
 
         .card-action.secondary {
             background: transparent;
             color: #94a3b8;
-            border: 1px solid #475569;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: none;
         }
 
         .card-action.secondary:hover {
-            background: #334155;
-            color: #e2e8f0;
+            background: rgba(255, 255, 255, 0.05);
+            color: #f8fafc;
+            border-color: rgba(99, 102, 241, 0.4);
         }
 
         /* Delete Account Button */
@@ -530,36 +642,47 @@
         .stats-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 1.5rem;
+            gap: 1.25rem;
             margin-bottom: 2rem;
         }
 
         .stat-card {
-            background: #1e293b;
-            border-radius: 0.75rem;
-            padding: 1.5rem;
-            border: 1px solid #334155;
+            background: rgba(30, 41, 59, 0.6);
+            backdrop-filter: blur(20px);
+            border-radius: 1rem;
+            padding: 1.75rem;
+            border: 1px solid rgba(99, 102, 241, 0.2);
             text-align: center;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .stat-card:hover {
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+            transform: translateY(-2px);
+            border-color: rgba(99, 102, 241, 0.3);
         }
 
         .stat-icon {
-            width: 48px;
-            height: 48px;
-            background: #14b8a6;
-            border-radius: 0.75rem;
+            width: 52px;
+            height: 52px;
+            background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+            border-radius: 1rem;
             display: flex;
             align-items: center;
             justify-content: center;
             color: white;
             margin: 0 auto 1rem;
+            box-shadow: 0 4px 14px rgba(99, 102, 241, 0.25);
         }
 
         .stat-number {
-            font-size: 2rem;
+            font-size: 2.25rem;
             font-weight: 700;
             color: #f8fafc;
             margin-bottom: 0.5rem;
             transition: all 0.3s ease;
+            letter-spacing: -0.02em;
         }
 
         .stat-number.stat-updated {
@@ -615,7 +738,8 @@
 
         .stat-label {
             color: #94a3b8;
-            font-size: 0.9rem;
+            font-size: 0.875rem;
+            font-weight: 500;
         }
 
         .stat-change {
@@ -633,8 +757,9 @@
 
         /* Subscription Section */
         .subscription-card {
-            background: linear-gradient(135deg, #1e293b 0%, #0f766e 100%);
-            border: 1px solid #14b8a6;
+            background: linear-gradient(135deg, rgba(99, 102, 241, 0.2) 0%, rgba(139, 92, 246, 0.2) 100%);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(99, 102, 241, 0.4);
         }
 
         .subscription-info {
@@ -884,6 +1009,60 @@
             font-size: 1.5rem;
         }
 
+        /* Auto-Close Slider Styling */
+        #autoclose-slider {
+            -webkit-appearance: none;
+            appearance: none;
+            background: transparent;
+        }
+
+        #autoclose-slider::-webkit-slider-track {
+            width: 100%;
+            height: 8px;
+            background: linear-gradient(to right, rgba(99, 102, 241, 0.3) 0%, rgba(139, 92, 246, 0.3) 100%);
+            border-radius: 4px;
+        }
+
+        #autoclose-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+            border-radius: 50%;
+            cursor: pointer;
+            box-shadow: 0 3px 10px rgba(99, 102, 241, 0.5);
+            transition: all 0.2s;
+        }
+
+        #autoclose-slider::-webkit-slider-thumb:hover {
+            transform: scale(1.15);
+            box-shadow: 0 4px 14px rgba(99, 102, 241, 0.7);
+        }
+
+        #autoclose-slider::-moz-range-track {
+            width: 100%;
+            height: 6px;
+            background: linear-gradient(to right, rgba(99, 102, 241, 0.3) 0%, rgba(139, 92, 246, 0.3) 100%);
+            border-radius: 3px;
+        }
+
+        #autoclose-slider::-moz-range-thumb {
+            width: 20px;
+            height: 20px;
+            background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+            border-radius: 50%;
+            cursor: pointer;
+            border: none;
+            box-shadow: 0 3px 10px rgba(99, 102, 241, 0.5);
+            transition: all 0.2s;
+        }
+
+        #autoclose-slider::-moz-range-thumb:hover {
+            transform: scale(1.15);
+            box-shadow: 0 4px 14px rgba(99, 102, 241, 0.7);
+        }
+
         /* Responsive */
         @media (max-width: 1024px) {
             .main-container {
@@ -976,10 +1155,11 @@
             justify-content: space-between;
             align-items: center;
             padding: 0.75rem;
-            background: #0f172a;
+            background: rgba(15, 23, 42, 0.6);
             border-radius: 0.5rem;
             margin-bottom: 0.5rem;
-            border: 1px solid #334155;
+            border: 1px solid rgba(99, 102, 241, 0.2);
+            color: #e2e8f0;
         }
 
         .remove-btn {
@@ -1120,14 +1300,14 @@
                         <span id="user-name-display" style="background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;">User</span>
                         <span>!</span>
                     </h1>
-                    <p style="color: #64748b; font-size: 1rem; margin-top: 0.5rem;">Your browser looks good today.</p>
+                    <p style="color: #94a3b8; font-size: 1rem; margin-top: 0.5rem;">Your browser looks good today.</p>
                 </div>
 
                 <!-- Smart Suggestions Card -->
-                <div style="background: rgba(30, 41, 59, 0.6); backdrop-filter: blur(20px); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 1.5rem; padding: 2rem; margin-bottom: 1.5rem; box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);">
+                <div style="background: rgba(30, 41, 59, 0.6); backdrop-filter: blur(20px); border: 1px solid rgba(99, 102, 241, 0.2); border-radius: 1.5rem; padding: 2rem; margin-bottom: 1.5rem; box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);">
                     <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1.5rem;">
                         <div style="width: 40px; height: 40px; background: linear-gradient(135deg, #6366f1, #8b5cf6); border-radius: 0.75rem; display: flex; align-items: center; justify-content: center; font-size: 1.25rem;">💡</div>
-                        <h2 style="font-size: 1.25rem; font-weight: 700; margin: 0;">Smart Suggestions</h2>
+                        <h2 style="font-size: 1.25rem; font-weight: 700; margin: 0; color: #f8fafc;">Smart Suggestions</h2>
                     </div>
 
                     <div id="suggestions-content">
@@ -1138,7 +1318,7 @@
                 </div>
 
                 <!-- Recent Activity -->
-                <div style="background: rgba(30, 41, 59, 0.4); border: 1px solid rgba(255, 255, 255, 0.05); border-radius: 1rem; padding: 1.5rem; margin-top: 1rem;">
+                <div style="background: rgba(30, 41, 59, 0.4); border: 1px solid rgba(99, 102, 241, 0.15); border-radius: 1rem; padding: 1.5rem; margin-top: 1rem;">
                     <h3 style="font-size: 0.875rem; font-weight: 600; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 1rem;">Recent Activity</h3>
                     <div id="activity-list" style="display: flex; flex-direction: column; gap: 0.75rem;">
                         <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.875rem;">
@@ -1185,11 +1365,11 @@
                     <!-- Pro Plan -->
                     <div class="card subscription-card">
                         <div class="card-header">
-                            <h3 class="card-title" style="color: white;">Pro Plan</h3>
+                            <h3 class="card-title" style="color: #f8fafc;">Pro Plan</h3>
                             <div class="plan-badge pro" id="pro-status" style="display: none;">Current</div>
                         </div>
                         <div style="text-align: center; margin: 1rem 0;">
-                            <div style="font-size: 2.5rem; font-weight: 700; color: white;">$4.99</div>
+                            <div style="font-size: 2.5rem; font-weight: 700; color: #f8fafc;">$4.99</div>
                             <div style="color: rgba(255, 255, 255, 0.8);">per month</div>
                         </div>
                         <ul class="plan-features">
@@ -1546,6 +1726,87 @@
         </div>
     </div>
 
+    <!-- Auto-Close Configuration Modal -->
+    <div class="modal" id="autoclose-modal">
+        <div class="modal-content" style="max-width: 400px; max-height: 85vh; overflow-y: auto; background: linear-gradient(135deg, rgba(30, 41, 59, 0.98) 0%, rgba(15, 23, 42, 0.98) 100%); border: 1px solid rgba(99, 102, 241, 0.2); backdrop-filter: blur(20px); box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5); padding: 1.5rem;">
+            <button class="modal-close" onclick="closeAutoCloseModal()" style="color: #94a3b8; background: rgba(255, 255, 255, 0.05); border-radius: 0.5rem; width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; border: 1px solid rgba(255, 255, 255, 0.1); transition: all 0.2s; font-size: 1.125rem;">&times;</button>
+
+            <!-- Modal Header -->
+            <div style="text-align: center; margin-bottom: 1.25rem;">
+                <div style="width: 48px; height: 48px; margin: 0 auto 0.75rem; background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%); border-radius: 0.75rem; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; box-shadow: 0 4px 16px rgba(99, 102, 241, 0.4);">
+                    ⏱️
+                </div>
+                <h2 style="color: #f8fafc; margin-bottom: 0.375rem; font-size: 1.25rem; font-weight: 700; letter-spacing: -0.02em;">Auto-Close Timer</h2>
+                <p style="color: #94a3b8; font-size: 0.8125rem; line-height: 1.5;">Set inactive time before tabs close</p>
+            </div>
+
+            <!-- Time Selector -->
+            <div style="background: rgba(15, 23, 42, 0.6); padding: 1.25rem; border-radius: 0.75rem; margin-bottom: 1rem; border: 1px solid rgba(255, 255, 255, 0.05);">
+                <!-- Current Value Display -->
+                <div style="text-align: center; margin-bottom: 1rem;">
+                    <div style="display: inline-flex; align-items: baseline; gap: 0.375rem; padding: 0.5rem 1rem; background: linear-gradient(135deg, rgba(99, 102, 241, 0.15), rgba(139, 92, 246, 0.15)); border-radius: 0.5rem; border: 1px solid rgba(99, 102, 241, 0.3);">
+                        <span id="autoclose-hours-display" style="font-size: 2rem; font-weight: 700; color: #fff; line-height: 1;">1</span>
+                        <span style="font-size: 1rem; color: #94a3b8; font-weight: 600;">hour<span id="hour-plural">s</span></span>
+                    </div>
+                </div>
+
+                <!-- Slider -->
+                <div style="margin-bottom: 0.75rem;">
+                    <input
+                        type="range"
+                        id="autoclose-slider"
+                        min="1"
+                        max="24"
+                        value="1"
+                        step="1"
+                        style="width: 100%; height: 6px; background: linear-gradient(to right, #6366f1 0%, #8b5cf6 100%); border-radius: 3px; outline: none; -webkit-appearance: none; cursor: pointer;"
+                    />
+                </div>
+
+                <!-- Slider Labels -->
+                <div style="display: flex; justify-content: space-between; color: #64748b; font-size: 0.6875rem; font-weight: 600; margin-top: 0.375rem;">
+                    <span>1h</span>
+                    <span>6h</span>
+                    <span>12h</span>
+                    <span>24h</span>
+                </div>
+
+                <!-- Minimum Requirement Notice -->
+                <div style="margin-top: 1rem; padding: 0.75rem; background: rgba(99, 102, 241, 0.1); border-radius: 0.5rem; border: 1px solid rgba(99, 102, 241, 0.2); display: flex; align-items: flex-start; gap: 0.5rem;">
+                    <span style="font-size: 1rem; flex-shrink: 0;">ℹ️</span>
+                    <div style="flex: 1;">
+                        <strong style="color: #a5b4fc; display: block; margin-bottom: 0.125rem; font-size: 0.75rem;">Minimum: 1 Hour</strong>
+                        <p style="color: #94a3b8; font-size: 0.6875rem; margin: 0; line-height: 1.4;">Prevents accidental closures</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quick Presets -->
+            <div style="margin-bottom: 1rem;">
+                <p style="color: #94a3b8; font-size: 0.6875rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.5rem;">Quick Presets</p>
+                <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.375rem;">
+                    <button onclick="setAutoCloseHours(1)" style="padding: 0.5rem; background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 0.375rem; color: #e2e8f0; font-size: 0.75rem; font-weight: 600; cursor: pointer; transition: all 0.2s;" onmouseover="this.style.background='rgba(99, 102, 241, 0.2)'; this.style.borderColor='rgba(99, 102, 241, 0.4)'" onmouseout="this.style.background='rgba(255, 255, 255, 0.05)'; this.style.borderColor='rgba(255, 255, 255, 0.1)'">1h</button>
+                    <button onclick="setAutoCloseHours(2)" style="padding: 0.5rem; background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 0.375rem; color: #e2e8f0; font-size: 0.75rem; font-weight: 600; cursor: pointer; transition: all 0.2s;" onmouseover="this.style.background='rgba(99, 102, 241, 0.2)'; this.style.borderColor='rgba(99, 102, 241, 0.4)'" onmouseout="this.style.background='rgba(255, 255, 255, 0.05)'; this.style.borderColor='rgba(255, 255, 255, 0.1)'">2h</button>
+                    <button onclick="setAutoCloseHours(6)" style="padding: 0.5rem; background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 0.375rem; color: #e2e8f0; font-size: 0.75rem; font-weight: 600; cursor: pointer; transition: all 0.2s;" onmouseover="this.style.background='rgba(99, 102, 241, 0.2)'; this.style.borderColor='rgba(99, 102, 241, 0.4)'" onmouseout="this.style.background='rgba(255, 255, 255, 0.05)'; this.style.borderColor='rgba(255, 255, 255, 0.1)'">6h</button>
+                    <button onclick="setAutoCloseHours(12)" style="padding: 0.5rem; background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 0.375rem; color: #e2e8f0; font-size: 0.75rem; font-weight: 600; cursor: pointer; transition: all 0.2s;" onmouseover="this.style.background='rgba(99, 102, 241, 0.2)'; this.style.borderColor='rgba(99, 102, 241, 0.4)'" onmouseout="this.style.background='rgba(255, 255, 255, 0.05)'; this.style.borderColor='rgba(255, 255, 255, 0.1)'">12h</button>
+                </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div style="display: flex; gap: 0.5rem;">
+                <button onclick="closeAutoCloseModal()" style="flex: 1; padding: 0.75rem 1rem; border: 1px solid rgba(255, 255, 255, 0.1); background: rgba(255, 255, 255, 0.05); color: #e2e8f0; border-radius: 0.5rem; font-size: 0.8125rem; font-weight: 600; cursor: pointer; transition: all 0.2s;" onmouseover="this.style.background='rgba(255, 255, 255, 0.1)'" onmouseout="this.style.background='rgba(255, 255, 255, 0.05)'">
+                    Cancel
+                </button>
+                <button onclick="saveAutoCloseTime()" style="flex: 1; padding: 0.75rem 1rem; border: none; background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%); color: #fff; border-radius: 0.5rem; font-size: 0.8125rem; font-weight: 600; cursor: pointer; transition: all 0.3s; box-shadow: 0 4px 14px rgba(99, 102, 241, 0.4);" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 8px 20px rgba(99, 102, 241, 0.5)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 14px rgba(99, 102, 241, 0.4)'">
+                    <span style="display: flex; align-items: center; justify-content: center; gap: 0.375rem;">
+                        <span>✓</span>
+                        <span>Save</span>
+                    </span>
+                </button>
+            </div>
+        </div>
+    </div>
+
     <!-- Delete Account Modal -->
     <div class="delete-modal" id="delete-modal">
         <div class="delete-modal-content">
@@ -1689,14 +1950,125 @@
             return deviceId;
         }
 
-        // Get device metadata
+        // Get device metadata with enhanced detection
         function getDeviceMetadata() {
+            const ua = navigator.userAgent;
+            const platform = navigator.platform;
+
+            // Detect Browser
+            let browserName = 'Unknown Browser';
+            let browserVersion = '';
+
+            if (ua.includes('Edg/')) {
+                browserName = 'Edge';
+                browserVersion = ua.match(/Edg\/([\d\.]+)/)?.[1] || '';
+            } else if (ua.includes('Chrome/') && !ua.includes('Edg/')) {
+                browserName = 'Chrome';
+                browserVersion = ua.match(/Chrome\/([\d\.]+)/)?.[1] || '';
+            } else if (ua.includes('Safari/') && !ua.includes('Chrome')) {
+                browserName = 'Safari';
+                browserVersion = ua.match(/Version\/([\d\.]+)/)?.[1] || '';
+            } else if (ua.includes('Firefox/')) {
+                browserName = 'Firefox';
+                browserVersion = ua.match(/Firefox\/([\d\.]+)/)?.[1] || '';
+            } else if (ua.includes('Opera/') || ua.includes('OPR/')) {
+                browserName = 'Opera';
+                browserVersion = ua.match(/(?:Opera|OPR)\/([\d\.]+)/)?.[1] || '';
+            }
+
+            // Detect Device Type & OS
+            let deviceType = 'Desktop';
+            let osName = 'Unknown OS';
+            let osVersion = '';
+
+            // Mobile Detection
+            if (/Android/i.test(ua)) {
+                deviceType = 'Android Phone';
+                osName = 'Android';
+                osVersion = ua.match(/Android ([\d\.]+)/)?.[1] || '';
+
+                // Check if it's a tablet
+                if (/tablet/i.test(ua) || (!/mobile/i.test(ua) && /android/i.test(ua))) {
+                    deviceType = 'Android Tablet';
+                }
+            } else if (/iPhone/i.test(ua)) {
+                deviceType = 'iPhone';
+                osName = 'iOS';
+                osVersion = ua.match(/OS ([\d_]+)/)?.[1]?.replace(/_/g, '.') || '';
+            } else if (/iPad/i.test(ua)) {
+                deviceType = 'iPad';
+                osName = 'iPadOS';
+                osVersion = ua.match(/OS ([\d_]+)/)?.[1]?.replace(/_/g, '.') || '';
+            } else if (/Macintosh/i.test(ua) && navigator.maxTouchPoints > 1) {
+                // iPad Pro with desktop mode
+                deviceType = 'iPad Pro';
+                osName = 'iPadOS';
+            } else if (/Macintosh|MacIntel|MacPPC|Mac68K/i.test(platform)) {
+                deviceType = 'Mac';
+                osName = 'macOS';
+                osVersion = ua.match(/Mac OS X ([\d_]+)/)?.[1]?.replace(/_/g, '.') || '';
+            } else if (/Win/i.test(platform)) {
+                deviceType = 'Windows PC';
+                osName = 'Windows';
+
+                // Detect Windows version
+                if (ua.includes('Windows NT 10.0')) {
+                    osVersion = '10/11';
+                } else if (ua.includes('Windows NT 6.3')) {
+                    osVersion = '8.1';
+                } else if (ua.includes('Windows NT 6.2')) {
+                    osVersion = '8';
+                } else if (ua.includes('Windows NT 6.1')) {
+                    osVersion = '7';
+                }
+            } else if (/CrOS/i.test(ua)) {
+                deviceType = 'Chromebook';
+                osName = 'Chrome OS';
+                osVersion = ua.match(/CrOS [^\s]+ ([\d\.]+)/)?.[1] || '';
+            } else if (/Linux/i.test(platform)) {
+                deviceType = 'Linux PC';
+                osName = 'Linux';
+
+                // Try to detect specific distro
+                if (/Ubuntu/i.test(ua)) osName = 'Ubuntu';
+                else if (/Fedora/i.test(ua)) osName = 'Fedora';
+                else if (/Debian/i.test(ua)) osName = 'Debian';
+            }
+
+            // Create human-readable device name
+            const deviceName = `${browserName} on ${deviceType}`;
+            const fullDeviceInfo = osVersion
+                ? `${browserName} ${browserVersion.split('.')[0]} on ${osName} ${osVersion}`
+                : `${browserName} on ${osName}`;
+
             return {
-                browser: navigator.userAgent.match(/(Firefox|Chrome|Safari|Edge|Opera)\/[\d\.]+/)?.[0] || 'Unknown',
-                os: navigator.platform,
+                // Human-readable device name for display
+                deviceName: deviceName,
+                deviceType: deviceType,
+
+                // Browser info
+                browser: browserName,
+                browserVersion: browserVersion,
+                browserFull: `${browserName} ${browserVersion}`,
+
+                // OS info
+                os: osName,
+                osVersion: osVersion,
+                osFull: osVersion ? `${osName} ${osVersion}` : osName,
+
+                // Full description for analytics
+                fullDescription: fullDeviceInfo,
+
+                // Technical details
+                platform: platform,
+                userAgent: ua,
                 screenResolution: `${screen.width}x${screen.height}`,
                 language: navigator.language,
-                lastSeen: new Date().toISOString()
+                timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+
+                // Timestamps
+                lastSeen: new Date().toISOString(),
+                lastSeenReadable: new Date().toLocaleString()
             };
         }
 
@@ -1884,7 +2256,7 @@
                 if (limitText) {
                     const maxDevices = isPro ? DEVICE_CONFIG.MAX_DEVICES_PRO : DEVICE_CONFIG.MAX_DEVICES_FREE;
                     limitText.textContent = isPro ? `Pro: ${maxDevices} devices` : `Free: ${maxDevices} devices`;
-                    limitText.style.color = isPro ? '#14b8a6' : '#f59e0b';
+                    limitText.style.color = isPro ? '#a5b4fc' : '#f59e0b';
                 }
 
                 // Fetch devices from Supabase
@@ -1919,38 +2291,45 @@
                     const lastSeen = device.lastSeen ? new Date(device.lastSeen) : new Date(device.registeredAt);
                     const timeAgo = formatTimeAgo(lastSeen);
 
-                    // Device icon based on OS
-                    let deviceIcon = '💻'; // Default laptop
-                    if (device.os.includes('iPhone') || device.os.includes('Android')) {
-                        deviceIcon = '📱';
-                    } else if (device.os.includes('iPad')) {
-                        deviceIcon = '📱';
-                    }
+                    // Use enhanced device metadata for better display
+                    const deviceType = device.deviceType || 'Unknown';
+                    const deviceName = device.deviceName || `${device.browser || 'Browser'} on ${device.os || 'Unknown'}`;
+                    const fullDescription = device.fullDescription || deviceName;
+                    const timezone = device.timezone || 'Unknown timezone';
 
-                    // Device name
-                    let deviceName = device.browser.split('/')[0] || 'Unknown Browser';
-                    if (device.os.includes('iPhone')) {
-                        deviceName += ' (iPhone)';
-                    } else if (device.os.includes('Android')) {
-                        deviceName += ' (Android)';
-                    } else if (device.os.includes('Mac')) {
-                        deviceName += ' (Mac)';
-                    } else if (device.os.includes('Windows')) {
-                        deviceName += ' (Windows)';
-                    } else if (device.os.includes('Linux')) {
-                        deviceName += ' (Linux)';
+                    // Device icon based on device type (enhanced detection)
+                    let deviceIcon = '💻'; // Default laptop
+                    if (deviceType.includes('iPhone')) {
+                        deviceIcon = '📱';
+                    } else if (deviceType.includes('iPad')) {
+                        deviceIcon = '📱';
+                    } else if (deviceType.includes('Android Phone')) {
+                        deviceIcon = '📱';
+                    } else if (deviceType.includes('Android Tablet')) {
+                        deviceIcon = '📱';
+                    } else if (deviceType.includes('Chromebook')) {
+                        deviceIcon = '💻';
+                    } else if (deviceType.includes('Mac')) {
+                        deviceIcon = '🖥️';
+                    } else if (deviceType.includes('Windows')) {
+                        deviceIcon = '🖥️';
+                    } else if (deviceType.includes('Linux')) {
+                        deviceIcon = '🐧';
                     }
 
                     html += `
-                        <div style="display: flex; align-items: center; gap: 1rem; padding: 1rem; background: ${isCurrentDevice ? 'rgba(20, 184, 166, 0.1)' : '#1e293b'}; border: 1px solid ${isCurrentDevice ? '#14b8a6' : '#334155'}; border-radius: 0.75rem; margin-bottom: 0.75rem;">
+                        <div style="display: flex; align-items: center; gap: 1rem; padding: 1rem; background: ${isCurrentDevice ? 'rgba(99, 102, 241, 0.1)' : 'rgba(30, 41, 59, 0.6)'}; border: 1px solid ${isCurrentDevice ? 'rgba(99, 102, 241, 0.4)' : 'rgba(99, 102, 241, 0.2)'}; border-radius: 0.75rem; margin-bottom: 0.75rem; backdrop-filter: blur(10px);">
                             <div style="font-size: 2rem; flex-shrink: 0;">${deviceIcon}</div>
                             <div style="flex: 1; min-width: 0;">
                                 <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.25rem;">
                                     <strong style="color: #f8fafc; font-size: 0.9375rem;">${deviceName}</strong>
-                                    ${isCurrentDevice ? '<span style="padding: 0.125rem 0.5rem; background: #14b8a6; color: white; border-radius: 0.375rem; font-size: 0.75rem; font-weight: 600;">This Device</span>' : ''}
+                                    ${isCurrentDevice ? '<span style="padding: 0.125rem 0.5rem; background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%); color: white; border-radius: 0.375rem; font-size: 0.75rem; font-weight: 600;">This Device</span>' : ''}
+                                </div>
+                                <div style="color: #a5b4fc; font-size: 0.8125rem; margin-bottom: 0.25rem;">
+                                    ${fullDescription}
                                 </div>
                                 <div style="color: #94a3b8; font-size: 0.8125rem; margin-bottom: 0.25rem;">
-                                    ${device.screenResolution} • ${device.language}
+                                    ${device.screenResolution} • ${device.language} • ${timezone}
                                 </div>
                                 <div style="color: #64748b; font-size: 0.8125rem;">
                                     Last active: ${timeAgo}
@@ -2067,7 +2446,7 @@
             stripeSubscriptionId: null
         };
 
-        // API Configuration - Update this with your Netlify domain
+        // API Configuration - Netlify Functions path
         const API_BASE = window.location.origin + '/.netlify/functions';
         let authToken = null;
         let STRIPE_PRICE_ID = null; // Will be fetched from API
@@ -2211,14 +2590,32 @@
             if (!authToken || !userEmail) {
                 // Check if user just logged out (don't force redirect in a loop)
                 const justLoggedOut = sessionStorage.getItem('user_logged_out');
+
+                // REDIRECT LOOP PREVENTION: Check if we just came from auth page
+                const lastRedirectTime = sessionStorage.getItem('auth_last_redirect_time');
+                const now = Date.now();
+                const timeSinceRedirect = lastRedirectTime ? (now - parseInt(lastRedirectTime)) : 999999;
+
+                // If we were redirected from auth less than 3 seconds ago, DON'T redirect back
+                // This prevents infinite loops
+                if (timeSinceRedirect < 3000) {
+                    console.warn('Recently redirected from auth - not redirecting back to prevent loop');
+                    console.warn('User needs to manually login or clear localStorage');
+                    return;
+                }
+
                 if (!justLoggedOut) {
                     // Only redirect to login if user didn't intentionally log out
-                    window.location.href = '/new-authentication';
+                    // Use replace to prevent back button issues
+                    window.location.replace('/new-authentication');
                 }
                 return;
             }
 
-            // Auth check passed!
+            // Auth check passed! Clear any logout flags and redirect counters
+            sessionStorage.removeItem('user_logged_out');
+            sessionStorage.removeItem('auth_redirect_count'); // Clear redirect loop counter
+            sessionStorage.removeItem('auth_last_redirect_time');
 
             // Load real user data from API
             await loadUserData(userEmail);
@@ -2279,26 +2676,43 @@
                 await verifyStripeSession(sessionId, userEmail);
             }
 
-            // CRITICAL: Sync login to extension when dashboard loads
-            // This ensures extension storage is updated with user data
+            // CRITICAL: Sync Pro status to extension when dashboard loads
+            // This ensures extension storage is updated with current subscription status
 
             if (bridgeReady && extensionId && userEmail) {
 
-                // Get full user data from localStorage
-                const storedUser = JSON.parse(localStorage.getItem('tabmangment_user') || '{}');
                 const storedToken = localStorage.getItem('tabmangment_token');
 
-                // Send USER_LOGGED_IN message (same format as auth page)
+                // Send SUBSCRIPTION_UPDATE with current Pro status from database
+                await sendMessageToExtension('SUBSCRIPTION_UPDATE', {
+                    isPro: userData.isPro,
+                    plan: userData.plan,
+                    status: userData.subscriptionStatus || 'active',
+                    currentPeriodEnd: userData.currentPeriodEnd,
+                    user: {
+                        email: userEmail,
+                        name: userData.name,
+                        id: userData.id || userEmail,
+                        plan: userData.plan,
+                        isPro: userData.isPro,
+                        currentPeriodEnd: userData.currentPeriodEnd
+                    }
+                }).catch(err => {
+                    console.error('Failed to sync Pro status to extension:', err);
+                });
+
+                // Also send USER_LOGGED_IN for general sync
                 window.postMessage({
                     type: 'USER_LOGGED_IN',
                     userData: {
                         email: userEmail,
-                        name: userData.name || storedUser.name,
-                        id: storedUser.id || userEmail,
-                        provider: userData.provider || storedUser.provider || 'email',
-                        avatar: userData.avatarUrl || storedUser.avatar,
+                        name: userData.name,
+                        id: userData.id || userEmail,
+                        provider: userData.provider || 'email',
+                        avatar: userData.avatar,
                         isPro: userData.isPro,
-                        plan: userData.plan
+                        plan: userData.plan,
+                        currentPeriodEnd: userData.currentPeriodEnd
                     },
                     token: storedToken
                 }, '*');
@@ -2365,6 +2779,12 @@
         };
 
         async function initSmartDashboard() {
+            // CRITICAL: Initialize Pro status from userData immediately
+            // This ensures Smart Suggestions shows correct upgrade/configure buttons
+            if (userData && userData.isPro !== undefined) {
+                smartTabsData.isPro = userData.isPro;
+            }
+
             // Update user name display - get from multiple sources
             let displayName = 'User';
 
@@ -2789,20 +3209,81 @@
 
         // Action: Configure Auto-Close (Pro feature)
         async function configureAutoClose() {
-            const currentTime = smartTabsData.autoCloseTime || 60;
-            const newTime = prompt(`⏱️ Set auto-close time (in minutes):\n\nTabs inactive for this long will automatically close.\n\nCurrent: ${currentTime} minutes`, currentTime);
+            // Open the beautiful new modal
+            openAutoCloseModal();
+        }
 
-            if (newTime && !isNaN(newTime) && newTime > 0) {
-                // Save to extension storage
-                window.postMessage({
-                    type: 'DASHBOARD_SET_AUTO_CLOSE_TIME',
-                    source: 'tabmangment-dashboard',
-                    time: parseInt(newTime)
-                }, '*');
+        // Auto-Close Modal Functions
+        function openAutoCloseModal() {
+            const modal = document.getElementById('autoclose-modal');
+            const slider = document.getElementById('autoclose-slider');
 
-                alert(`✅ Auto-close timer set to ${newTime} minutes!`);
-                smartTabsData.autoCloseTime = parseInt(newTime);
+            // Get current auto-close time (in minutes)
+            const currentMinutes = smartTabsData.autoCloseTime || 60;
+            // Convert to hours
+            const currentHours = Math.max(1, Math.round(currentMinutes / 60));
+
+            // Set slider value
+            slider.value = currentHours;
+
+            // Update display
+            updateHoursDisplay(currentHours);
+
+            // Show modal
+            modal.classList.add('show');
+        }
+
+        function closeAutoCloseModal() {
+            const modal = document.getElementById('autoclose-modal');
+            modal.classList.remove('show');
+        }
+
+        function updateHoursDisplay(hours) {
+            const display = document.getElementById('autoclose-hours-display');
+            const plural = document.getElementById('hour-plural');
+
+            display.textContent = hours;
+            plural.textContent = hours === 1 ? '' : 's';
+        }
+
+        function setAutoCloseHours(hours) {
+            // Enforce minimum of 1 hour
+            const validHours = Math.max(1, hours);
+
+            const slider = document.getElementById('autoclose-slider');
+            slider.value = validHours;
+            updateHoursDisplay(validHours);
+        }
+
+        async function saveAutoCloseTime() {
+            const slider = document.getElementById('autoclose-slider');
+            const hours = parseInt(slider.value);
+
+            // Enforce minimum 1 hour (60 minutes)
+            if (hours < 1) {
+                // Show error notification
+                showNotification('⚠️ Minimum auto-close time is 1 hour (60 minutes).', 'error');
+                return;
             }
+
+            // Convert hours to minutes
+            const minutes = hours * 60;
+
+            // Save to extension storage via postMessage
+            window.postMessage({
+                type: 'DASHBOARD_SET_AUTO_CLOSE_TIME',
+                source: 'tabmangment-dashboard',
+                time: minutes
+            }, '*');
+
+            // Update local data
+            smartTabsData.autoCloseTime = minutes;
+
+            // Show success notification
+            showNotification(`✅ Auto-close timer set to ${hours} hour${hours === 1 ? '' : 's'} (${minutes} minutes)!`, 'success');
+
+            // Close modal
+            closeAutoCloseModal();
         }
 
         // Action: Upgrade to Pro
@@ -2844,32 +3325,62 @@
         // Load user data from API
         async function loadUserData(email) {
             try {
-                // Get user from Supabase (primary source of truth)
+                // Get user from Supabase Auth (primary source of truth)
                 const { data: { user: supabaseUser }, error: supabaseError } = await supabaseClient.auth.getUser();
 
                 if (supabaseError || !supabaseUser) {
                     throw new Error('Failed to load user from Supabase');
                 }
 
-                // Update userData from Supabase
+                // Update userData from Supabase Auth
                 userData.email = supabaseUser.email || email;
                 userData.name = supabaseUser.user_metadata?.name || supabaseUser.user_metadata?.display_name || email.split('@')[0];
 
-                // Load subscription data from localStorage (set during payment/upgrade)
-                const storedUserData = localStorage.getItem('tabmangment_user');
-                if (storedUserData) {
-                    const stored = JSON.parse(storedUserData);
-                    userData.plan = stored.plan || 'free';
-                    userData.isPro = stored.isPro || stored.isPremium || false;
-                    userData.subscriptionStatus = stored.subscriptionStatus || 'free';
-                    userData.currentPeriodEnd = stored.currentPeriodEnd;
-                    userData.stripeCustomerId = stored.stripeCustomerId;
-                    userData.stripeSubscriptionId = stored.stripeSubscriptionId;
-                } else {
-                    // Default to free plan
-                    userData.plan = 'free';
-                    userData.isPro = false;
-                    userData.subscriptionStatus = 'free';
+                // CRITICAL: Load subscription data from Supabase DATABASE (source of truth!)
+                try {
+                    const { data: dbUser, error: dbError } = await supabaseClient
+                        .from('users_auth')
+                        .select('is_pro, plan_type, subscription_status, current_period_end, stripe_customer_id, stripe_subscription_id')
+                        .eq('email', userData.email)
+                        .single();
+
+                    if (!dbError && dbUser) {
+                        // Use database as source of truth
+                        userData.isPro = dbUser.is_pro || false;
+                        userData.plan = dbUser.is_pro ? 'pro' : 'free';
+                        userData.subscriptionStatus = dbUser.subscription_status || 'inactive';
+                        userData.currentPeriodEnd = dbUser.current_period_end;
+                        userData.stripeCustomerId = dbUser.stripe_customer_id;
+                        userData.stripeSubscriptionId = dbUser.stripe_subscription_id;
+                    } else {
+                        // Fallback to localStorage if database query fails
+                        const storedUserData = localStorage.getItem('tabmangment_user');
+                        if (storedUserData) {
+                            const stored = JSON.parse(storedUserData);
+                            userData.plan = stored.plan || 'free';
+                            userData.isPro = stored.isPro || false;
+                            userData.subscriptionStatus = stored.subscriptionStatus || 'inactive';
+                            userData.currentPeriodEnd = stored.currentPeriodEnd;
+                            userData.stripeCustomerId = stored.stripeCustomerId;
+                            userData.stripeSubscriptionId = stored.stripeSubscriptionId;
+                        } else {
+                            // Default to free plan
+                            userData.plan = 'free';
+                            userData.isPro = false;
+                            userData.subscriptionStatus = 'inactive';
+                        }
+                    }
+                } catch (dbError) {
+                    // If database query fails, fallback to localStorage
+                    const storedUserData = localStorage.getItem('tabmangment_user');
+                    if (storedUserData) {
+                        const stored = JSON.parse(storedUserData);
+                        userData.plan = stored.plan || 'free';
+                        userData.isPro = stored.isPro || false;
+                    } else {
+                        userData.plan = 'free';
+                        userData.isPro = false;
+                    }
                 }
 
                 // Handle avatar
@@ -2879,7 +3390,7 @@
                     userData.avatar = userData.name.split(' ').map(n => n[0]).join('').toUpperCase();
                 }
 
-                // Save updated data to localStorage
+                // Save updated data to localStorage for offline access
                 localStorage.setItem('tabmangment_user', JSON.stringify(userData));
 
             } catch (error) {
@@ -3101,14 +3612,30 @@
             }
 
             if (userData.plan === 'pro') {
-                planBadge.textContent = 'Pro';
-                planBadge.className = 'plan-badge pro';
-                if (planActionBtn) planActionBtn.textContent = 'Downgrade to Free';
+                // Check if subscription is cancelled but still active
+                if (userData.subscriptionStatus === 'cancelling' && userData.currentPeriodEnd) {
+                    const endDate = new Date(userData.currentPeriodEnd);
+                    const formattedDate = endDate.toLocaleDateString('en-US', {
+                        month: 'short',
+                        day: 'numeric',
+                        year: 'numeric'
+                    });
+                    planBadge.textContent = `Pro (Cancels ${formattedDate})`;
+                    planBadge.className = 'plan-badge pro';
+                    planBadge.style.fontSize = '0.85rem'; // Slightly smaller to fit text
+                } else {
+                    planBadge.textContent = 'Pro';
+                    planBadge.className = 'plan-badge pro';
+                    planBadge.style.fontSize = ''; // Reset to default
+                }
+
+                if (planActionBtn) planActionBtn.textContent = 'Manage Subscription';
                 if (freeStatus) freeStatus.style.display = 'none';
                 if (proStatus) proStatus.style.display = 'block';
             } else {
                 planBadge.textContent = 'Free';
                 planBadge.className = 'plan-badge free';
+                planBadge.style.fontSize = ''; // Reset to default
                 if (planActionBtn) planActionBtn.textContent = 'Upgrade to Pro';
                 if (freeStatus) freeStatus.style.display = 'block';
                 if (proStatus) proStatus.style.display = 'none';
@@ -3118,12 +3645,13 @@
         }
 
         // Subscription management
-        function toggleSubscription() {
+        async function toggleSubscription() {
             if (userData.plan === 'free') {
                 // Directly process upgrade (no modal needed)
                 processUpgrade();
             } else {
-                downgradeToFree();
+                // Open Stripe billing portal for Pro users to manage subscription
+                await openBillingPortal();
             }
         }
 
@@ -3200,11 +3728,48 @@
             }
         }
 
-        function downgradeToFree() {
-            if (confirm('Are you sure you want to downgrade to the Free plan? You will lose access to Pro features.')) {
-                userData.plan = 'free';
-                updatePlanDisplay();
-                syncWithExtension();
+        async function openBillingPortal() {
+            try {
+                // Get user email
+                const { data: { user } } = await supabaseClient.auth.getUser();
+                const userEmail = user?.email || userData.email;
+
+                if (!userEmail) {
+                    alert('Please log in to manage your subscription.');
+                    return;
+                }
+
+                // Get auth token
+                const { data: { session } } = await supabaseClient.auth.getSession();
+                const authToken = session?.access_token || localStorage.getItem('tabmangment_token');
+
+                // Call billing-portal function to get portal URL
+                const response = await fetch('/.netlify/functions/billing-portal', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${authToken}`
+                    },
+                    body: JSON.stringify({
+                        email: userEmail
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error('Failed to open billing portal');
+                }
+
+                const result = await response.json();
+
+                if (result.url) {
+                    // Redirect to Stripe billing portal
+                    window.location.href = result.url;
+                } else {
+                    throw new Error('No portal URL returned');
+                }
+
+            } catch (error) {
+                alert('Failed to open billing portal. Please try again or contact support.');
             }
         }
 
@@ -3826,17 +4391,9 @@
                 titleEl.style.color = '';
                 descEl.textContent = 'Irreversible actions that will permanently affect your account';
 
-                // Show export and delete buttons
+                // Show delete button
                 buttonsContainer.innerHTML = `
-                    <button class="card-action secondary" onclick="exportData()" style="flex: 1;">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                            <polyline points="7 10 12 15 17 10"></polyline>
-                            <line x1="12" y1="15" x2="12" y2="3"></line>
-                        </svg>
-                        Export Data
-                    </button>
-                    <button class="delete-account-btn" onclick="showDeleteModal()">
+                    <button class="delete-account-btn" onclick="showDeleteModal()" style="width: 100%;">
                         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <polyline points="3 6 5 6 21 6"></polyline>
                             <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
@@ -4585,13 +5142,30 @@
                 const ctx = document.getElementById('usage-chart');
                 if (!ctx) return;
 
+                // Create labels with favicons using Logo.dev API
+                const LOGO_API_KEY = 'pk_YIMtrjZvSpG8_u5_F5uxoA';
+                const chartLabels = analyticsData.domains.map((domain, index) => {
+                    // Get clean domain name (remove www., http://, etc.)
+                    const cleanDomain = domain.replace(/^(https?:\/\/)?(www\.)?/, '').split('/')[0];
+                    const title = analyticsData.titles?.[index] || domain;
+
+                    // Return just the title/domain for now - we'll add icons via plugin
+                    return title.length > 30 ? title.substring(0, 30) + '...' : title;
+                });
+
+                // Store favicons for later use
+                window.chartFavicons = analyticsData.domains.map(domain => {
+                    const cleanDomain = domain.replace(/^(https?:\/\/)?(www\.)?/, '').split('/')[0];
+                    return `https://img.logo.dev/${cleanDomain}?token=${LOGO_API_KEY}&size=32`;
+                });
+
                 // Create horizontal bar chart
                 usageChart = new Chart(ctx.getContext('2d'), {
                     type: 'bar',
                     data: {
-                        labels: analyticsData.domains,
+                        labels: chartLabels,
                         datasets: [{
-                            label: 'Hours Spent',
+                            label: 'Time Spent',
                             data: analyticsData.hours,
                             backgroundColor: [
                                 'rgba(20, 184, 166, 0.8)',
@@ -4607,24 +5181,53 @@
                                 '#ec4899',
                                 '#8b5cf6'
                             ],
-                            borderWidth: 2
+                            borderWidth: 2,
+                            borderRadius: 8,
+                            barThickness: 40
                         }]
                     },
                     options: {
                         indexAxis: 'y', // Horizontal bars
                         responsive: true,
                         maintainAspectRatio: false,
+                        layout: {
+                            padding: {
+                                left: 50 // Make room for favicon images
+                            }
+                        },
                         plugins: {
                             legend: {
                                 display: false
                             },
                             tooltip: {
+                                backgroundColor: 'rgba(15, 23, 42, 0.95)',
+                                titleColor: '#f1f5f9',
+                                bodyColor: '#f1f5f9',
+                                borderColor: '#334155',
+                                borderWidth: 1,
+                                padding: 12,
+                                displayColors: true,
                                 callbacks: {
+                                    title: function(context) {
+                                        const index = context[0].dataIndex;
+                                        return analyticsData.domains[index];
+                                    },
                                     label: function(context) {
                                         const hours = context.parsed.x;
                                         const minutes = Math.round((hours % 1) * 60);
                                         const wholeHours = Math.floor(hours);
+                                        if (wholeHours === 0) {
+                                            return `${minutes}m`;
+                                        }
                                         return `${wholeHours}h ${minutes}m`;
+                                    },
+                                    afterLabel: function(context) {
+                                        const index = context.dataIndex;
+                                        const title = analyticsData.titles?.[index];
+                                        if (title && title !== analyticsData.domains[index]) {
+                                            return `App: ${title}`;
+                                        }
+                                        return '';
                                     }
                                 }
                             }
@@ -4634,32 +5237,101 @@
                                 beginAtZero: true,
                                 ticks: {
                                     color: '#94a3b8',
+                                    font: {
+                                        size: 11,
+                                        weight: '500'
+                                    },
                                     callback: function(value) {
-                                        return value + 'h';
+                                        if (value === 0) return '0';
+                                        if (value < 1) return Math.round(value * 60) + 'm';
+                                        return Math.round(value) + 'h';
                                     }
                                 },
                                 grid: {
-                                    color: '#334155'
+                                    color: 'rgba(51, 65, 85, 0.3)',
+                                    drawBorder: false
+                                },
+                                border: {
+                                    display: false
                                 },
                                 title: {
                                     display: true,
-                                    text: 'Time Spent (hours)',
-                                    color: '#94a3b8'
+                                    text: 'Time Spent',
+                                    color: '#94a3b8',
+                                    font: {
+                                        size: 13,
+                                        weight: '600'
+                                    },
+                                    padding: { top: 10 }
                                 }
                             },
                             y: {
                                 ticks: {
-                                    color: '#94a3b8',
+                                    color: '#cbd5e1',
                                     font: {
-                                        size: 12
-                                    }
+                                        size: 13,
+                                        weight: '500'
+                                    },
+                                    padding: 10
                                 },
                                 grid: {
+                                    display: false
+                                },
+                                border: {
                                     display: false
                                 }
                             }
                         }
-                    }
+                    },
+                    plugins: [{
+                        id: 'faviconPlugin',
+                        afterDraw: (chart) => {
+                            const ctx = chart.ctx;
+                            const yAxis = chart.scales.y;
+                            const xAxis = chart.scales.x;
+
+                            if (!window.chartFavicons) return;
+
+                            chart.data.labels.forEach((label, index) => {
+                                const y = yAxis.getPixelForValue(index);
+                                const x = xAxis.left - 35; // Position favicon to the left
+
+                                // Create and cache images
+                                if (!window.faviconImages) window.faviconImages = {};
+
+                                const faviconUrl = window.chartFavicons[index];
+                                if (!window.faviconImages[faviconUrl]) {
+                                    const img = new Image();
+                                    img.src = faviconUrl;
+                                    img.onload = () => {
+                                        window.faviconImages[faviconUrl] = img;
+                                        chart.update('none');
+                                    };
+                                    img.onerror = () => {
+                                        // Fallback to generic icon
+                                        window.faviconImages[faviconUrl] = 'failed';
+                                    };
+                                } else if (window.faviconImages[faviconUrl] !== 'failed' && window.faviconImages[faviconUrl] instanceof Image) {
+                                    // Draw the favicon
+                                    ctx.save();
+                                    ctx.beginPath();
+                                    ctx.arc(x, y, 14, 0, Math.PI * 2);
+                                    ctx.fillStyle = '#1e293b';
+                                    ctx.fill();
+                                    ctx.clip();
+                                    ctx.drawImage(window.faviconImages[faviconUrl], x - 12, y - 12, 24, 24);
+                                    ctx.restore();
+
+                                    // Add border
+                                    ctx.strokeStyle = '#334155';
+                                    ctx.lineWidth = 2;
+                                    ctx.beginPath();
+                                    ctx.arc(x, y, 14, 0, Math.PI * 2);
+                                    ctx.stroke();
+                                }
+                            });
+                        }
+                    }]
                 });
 
             } catch (error) {
@@ -4707,7 +5379,9 @@
                     .map(([domain, data]) => ({
                         domain: domain,
                         totalTime: data.totalTime || 0,
-                        totalTabs: data.totalTabs || 0
+                        totalTabs: data.totalTabs || 0,
+                        favicon: data.favicon || null,
+                        title: data.title || domain
                     }))
                     .sort((a, b) => b.totalTime - a.totalTime)
                     .slice(0, 5);
@@ -4715,18 +5389,24 @@
                 if (sorted.length === 0) {
                     return {
                         domains: ['No data yet'],
-                        hours: [0]
+                        hours: [0],
+                        favicons: [],
+                        titles: ['No data yet']
                     };
                 }
 
                 return {
                     domains: sorted.map(item => item.domain),
-                    hours: sorted.map(item => item.totalTime / (1000 * 60 * 60)) // Convert ms to hours
+                    hours: sorted.map(item => item.totalTime / (1000 * 60 * 60)), // Convert ms to hours
+                    favicons: sorted.map(item => item.favicon),
+                    titles: sorted.map(item => item.title || item.domain)
                 };
             } catch (error) {
                 return {
                     domains: ['Error loading data'],
-                    hours: [0]
+                    hours: [0],
+                    favicons: [],
+                    titles: ['Error loading data']
                 };
             }
         }
@@ -4738,7 +5418,24 @@
             try {
                 const analyticsData = await getMonthlyAnalytics();
 
-                usageChart.data.labels = analyticsData.domains;
+                // Update labels with titles
+                const LOGO_API_KEY = 'pk_YIMtrjZvSpG8_u5_F5uxoA';
+                const chartLabels = analyticsData.domains.map((domain, index) => {
+                    const cleanDomain = domain.replace(/^(https?:\/\/)?(www\.)?/, '').split('/')[0];
+                    const title = analyticsData.titles?.[index] || domain;
+                    return title.length > 30 ? title.substring(0, 30) + '...' : title;
+                });
+
+                // Update favicons
+                window.chartFavicons = analyticsData.domains.map(domain => {
+                    const cleanDomain = domain.replace(/^(https?:\/\/)?(www\.)?/, '').split('/')[0];
+                    return `https://img.logo.dev/${cleanDomain}?token=${LOGO_API_KEY}&size=32`;
+                });
+
+                // Clear cached favicon images when updating
+                window.faviconImages = {};
+
+                usageChart.data.labels = chartLabels;
                 usageChart.data.datasets[0].data = analyticsData.hours;
                 usageChart.update('none'); // Update without animation for smoothness
 
@@ -4770,38 +5467,21 @@
                 if (result.success && result.paid && result.isPro) {
                     // Payment verified and Pro activated!
 
-                    // Update local data
+                    // Update local data IMMEDIATELY
                     userData.plan = 'pro';
                     userData.isPro = true;
                     userData.subscriptionStatus = result.subscriptionStatus || 'active';
                     userData.stripeCustomerId = result.customerId;
                     userData.stripeSubscriptionId = result.subscriptionId;
+                    userData.currentPeriodStart = result.currentPeriodStart;
+                    userData.currentPeriodEnd = result.currentPeriodEnd;
 
                     // Save to localStorage
                     localStorage.setItem('tabmangment_user', JSON.stringify(userData));
 
-                    // Update display
+                    // Update UI INSTANTLY (before any async operations)
                     updatePlanDisplay();
-
-                    // Reload user data from API
-                    await loadUserData(userEmail);
-
-                    // Notify extension IMMEDIATELY
-                    if (bridgeReady && extensionId) {
-                        await sendMessageToExtension('SUBSCRIPTION_UPDATE', {
-                            plan: 'pro',
-                            isPro: true,
-                            status: 'active',
-                            user: {
-                                email: userEmail,
-                                plan: 'pro',
-                                isPro: true
-                            }
-                        });
-
-                        // DON'T call CHECK_USER_PLAN - storage is source of truth
-                        // The SUBSCRIPTION_UPDATE above already set Pro status in storage
-                    }
+                    updateUserDisplay();
 
                     // Show success notification
                     showNotification('🎉 Payment successful! You are now a Pro member!', 'success');
@@ -4809,9 +5489,21 @@
                     // Remove session_id from URL
                     window.history.replaceState({}, document.title, '/user-dashboard.html');
 
-                    // Force UI update
-                    updatePlanDisplay();
-                    updateUserDisplay();
+                    // Notify extension in background (don't await - let it run async)
+                    if (bridgeReady && extensionId) {
+                        sendMessageToExtension('SUBSCRIPTION_UPDATE', {
+                            plan: 'pro',
+                            isPro: true,
+                            status: 'active',
+                            currentPeriodEnd: result.currentPeriodEnd,
+                            user: {
+                                email: userEmail,
+                                plan: 'pro',
+                                isPro: true,
+                                currentPeriodEnd: result.currentPeriodEnd
+                            }
+                        }).catch(err => console.error('Extension sync failed:', err));
+                    }
 
                     return;
                 }
@@ -4929,6 +5621,24 @@
         // Initialize dashboard on load
         document.addEventListener('DOMContentLoaded', () => {
             initDashboard();
+
+            // Auto-Close slider real-time update
+            const slider = document.getElementById('autoclose-slider');
+            if (slider) {
+                slider.addEventListener('input', (e) => {
+                    updateHoursDisplay(parseInt(e.target.value));
+                });
+            }
+
+            // Close auto-close modal on outside click
+            const autoCloseModal = document.getElementById('autoclose-modal');
+            if (autoCloseModal) {
+                autoCloseModal.addEventListener('click', (e) => {
+                    if (e.target === e.currentTarget) {
+                        closeAutoCloseModal();
+                    }
+                });
+            }
 
             // Check for hash navigation (e.g., #subscription from extension upgrade buttons)
             if (window.location.hash) {
