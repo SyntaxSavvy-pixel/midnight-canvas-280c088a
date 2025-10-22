@@ -1222,6 +1222,33 @@ function generateInfiniteTabs() {
 // Check if user is already logged in
 (async function checkExistingSession() {
     try {
+        // ============================================
+        // REDIRECT LOOP PREVENTION
+        // ============================================
+        const REDIRECT_COOLDOWN_MS = 2000; // 2 seconds between redirects
+        const MAX_REDIRECT_ATTEMPTS = 3;   // Max 3 attempts before giving up
+
+        // Check if we're in a redirect loop
+        const lastRedirectTime = sessionStorage.getItem('auth_last_redirect_time');
+        const redirectCount = parseInt(sessionStorage.getItem('auth_redirect_count') || '0');
+        const now = Date.now();
+
+        // If too many redirects in short time, stop and show error
+        if (redirectCount >= MAX_REDIRECT_ATTEMPTS) {
+            console.warn('Redirect loop detected - stopping automatic redirects');
+            sessionStorage.removeItem('auth_redirect_count');
+            sessionStorage.removeItem('auth_last_redirect_time');
+            // Let user manually login instead of looping
+            return;
+        }
+
+        // If redirected recently, wait before checking again
+        if (lastRedirectTime && (now - parseInt(lastRedirectTime)) < REDIRECT_COOLDOWN_MS) {
+            console.log('Waiting for redirect cooldown...');
+            return;
+        }
+        // ============================================
+
         const urlParams = new URLSearchParams(window.location.search);
         const hashParams = new URLSearchParams(window.location.hash.substring(1));
         const isLoggingOut = urlParams.get('logout') === 'true';
@@ -1232,6 +1259,9 @@ function generateInfiniteTabs() {
         // Clear logout flag and don't redirect if user just logged out
         if (isLoggingOut || justLoggedOut) {
             sessionStorage.setItem('user_logged_out', 'true');
+            // Clear redirect tracking when logging out
+            sessionStorage.removeItem('auth_redirect_count');
+            sessionStorage.removeItem('auth_last_redirect_time');
             window.history.replaceState({}, document.title, window.location.pathname);
             return;
         }
@@ -1242,15 +1272,20 @@ function generateInfiniteTabs() {
         }
 
         // Give localStorage time to be set by login functions
-        await new Promise(resolve => setTimeout(resolve, 100));
+        await new Promise(resolve => setTimeout(resolve, 300)); // Increased from 100ms to 300ms
 
         // Check localStorage first (faster than Supabase call)
         const storedToken = localStorage.getItem('tabmangment_token');
         const storedUser = localStorage.getItem('tabmangment_user');
 
         if (storedToken && storedUser) {
-            // User is logged in, redirect immediately
+            // User is logged in, redirect to dashboard
             sessionStorage.removeItem('user_logged_out');
+
+            // Track redirect to prevent loops
+            sessionStorage.setItem('auth_redirect_count', String(redirectCount + 1));
+            sessionStorage.setItem('auth_last_redirect_time', String(now));
+
             window.location.replace('/user-dashboard.html');
             return;
         }
@@ -1272,6 +1307,10 @@ function generateInfiniteTabs() {
             localStorage.setItem('tabmangment_token', session.access_token);
             localStorage.setItem('tabmangment_remember', 'true');
             sessionStorage.removeItem('user_logged_out');
+
+            // Track redirect to prevent loops
+            sessionStorage.setItem('auth_redirect_count', String(redirectCount + 1));
+            sessionStorage.setItem('auth_last_redirect_time', String(now));
 
             window.location.replace('/user-dashboard.html');
         }
@@ -1449,6 +1488,9 @@ async function handleEmailLogin(e) {
         localStorage.setItem('tabmangment_token', data.session.access_token);
         localStorage.setItem('tabmangment_remember', 'true');
         sessionStorage.removeItem('user_logged_out'); // Clear logout flag
+        // Clear redirect loop prevention counters on successful login
+        sessionStorage.removeItem('auth_redirect_count');
+        sessionStorage.removeItem('auth_last_redirect_time');
 
         window.postMessage({ type: 'USER_LOGGED_IN', userData: { email: userData.email, name: userData.name, id: userData.id } }, '*');
 
@@ -1499,6 +1541,9 @@ async function handleEmailSignup(e) {
             localStorage.setItem('tabmangment_token', data.session.access_token);
             localStorage.setItem('tabmangment_remember', 'true');
             sessionStorage.removeItem('user_logged_out'); // Clear logout flag
+            // Clear redirect loop prevention counters on successful signup
+            sessionStorage.removeItem('auth_redirect_count');
+            sessionStorage.removeItem('auth_last_redirect_time');
 
             window.postMessage({ type: 'USER_LOGGED_IN', userData: { email: userData.email, name: userData.name, id: userData.id } }, '*');
 
@@ -1627,6 +1672,10 @@ async function handleGithubLogin() {
             localStorage.setItem('tabmangment_token', session.access_token);
             localStorage.setItem('tabmangment_remember', 'true');
         }
+
+        // Clear redirect loop prevention counters on successful OAuth login
+        sessionStorage.removeItem('auth_redirect_count');
+        sessionStorage.removeItem('auth_last_redirect_time');
 
         window.postMessage({
             type: 'USER_LOGGED_IN',

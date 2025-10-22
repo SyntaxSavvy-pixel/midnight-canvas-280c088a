@@ -2211,6 +2211,20 @@
             if (!authToken || !userEmail) {
                 // Check if user just logged out (don't force redirect in a loop)
                 const justLoggedOut = sessionStorage.getItem('user_logged_out');
+
+                // REDIRECT LOOP PREVENTION: Check if we just came from auth page
+                const lastRedirectTime = sessionStorage.getItem('auth_last_redirect_time');
+                const now = Date.now();
+                const timeSinceRedirect = lastRedirectTime ? (now - parseInt(lastRedirectTime)) : 999999;
+
+                // If we were redirected from auth less than 3 seconds ago, DON'T redirect back
+                // This prevents infinite loops
+                if (timeSinceRedirect < 3000) {
+                    console.warn('Recently redirected from auth - not redirecting back to prevent loop');
+                    console.warn('User needs to manually login or clear localStorage');
+                    return;
+                }
+
                 if (!justLoggedOut) {
                     // Only redirect to login if user didn't intentionally log out
                     // Use replace to prevent back button issues
@@ -2219,8 +2233,10 @@
                 return;
             }
 
-            // Auth check passed! Clear any logout flags
+            // Auth check passed! Clear any logout flags and redirect counters
             sessionStorage.removeItem('user_logged_out');
+            sessionStorage.removeItem('auth_redirect_count'); // Clear redirect loop counter
+            sessionStorage.removeItem('auth_last_redirect_time');
 
             // Load real user data from API
             await loadUserData(userEmail);
