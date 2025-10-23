@@ -6491,6 +6491,9 @@ Thank you!`);
 let popup;
 if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', async () => {
+        // Apply theme FIRST before creating popup
+        await applyStoredTheme();
+
         popup = new TabmangmentPopup();
         window.popup = popup;
 
@@ -6504,6 +6507,9 @@ if (document.readyState === 'loading') {
         // await popup.checkAndApplyProStatus();
     });
 } else {
+    // Apply theme FIRST before creating popup
+    applyStoredTheme();
+
     popup = new TabmangmentPopup();
     window.popup = popup;
 
