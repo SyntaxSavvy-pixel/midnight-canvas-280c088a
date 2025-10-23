@@ -162,32 +162,29 @@ class SimpleAuth {
                 return;
             }
 
-            // CRITICAL FIX: Get cached Pro status BEFORE making API call
-            // This prevents losing Pro status when dashboard is closed and API calls fail
-            let cachedStatus = null;
-            if (chrome && chrome.storage) {
-                cachedStatus = await chrome.storage.local.get(['isPremium', 'isPro', 'subscriptionActive', 'planType']);
-            }
+            // NEW: Get plan status from localStorage (set by dashboard)
+            // This avoids 404 errors from old API endpoints
+            let isPro = false;
 
-            const response = await fetch(`${this.apiUrl}/api/me?email=${encodeURIComponent(this.userEmail)}`);
-
-            if (!response.ok) {
-                // If API fails, KEEP cached Pro status instead of clearing it
-                // This ensures Pro users don't lose access when dashboard closes or API is unreachable
-                if (cachedStatus && (cachedStatus.isPremium || cachedStatus.isPro || cachedStatus.subscriptionActive)) {
-                    this.isPro = true;
-                } else {
-                    this.isPro = false;
+            // Check localStorage (dashboard saves here)
+            try {
+                const storedUserData = localStorage.getItem('tabmangment_user');
+                if (storedUserData) {
+                    const userData = JSON.parse(storedUserData);
+                    isPro = userData.isPro === true || userData.plan === 'pro';
                 }
-                return;
+            } catch (e) {
+                // If localStorage fails, check chrome.storage
             }
 
-            const userData = await response.json();
+            // Fallback to chrome.storage
+            if (!isPro && chrome && chrome.storage) {
+                const cachedStatus = await chrome.storage.local.get(['isPremium', 'isPro', 'subscriptionActive', 'planType']);
+                isPro = cachedStatus && (cachedStatus.isPremium || cachedStatus.isPro || cachedStatus.subscriptionActive);
+            }
 
-
-            // CRITICAL: API is now the source of truth - sync plan status
-            // This allows both upgrading AND downgrading based on actual subscription status
-            if (userData.plan === 'pro' || userData.isPro === true) {
+            // Set Pro status based on stored data
+            if (isPro) {
                 this.isPro = true;
                 await this.activateProFeatures();
             } else {
@@ -196,8 +193,7 @@ class SimpleAuth {
             }
 
         } catch (error) {
-            // On error, KEEP cached Pro status instead of clearing it
-            // This prevents Pro users from losing access when network is down
+            // On error, fallback to chrome.storage
             if (chrome && chrome.storage) {
                 const cachedStatus = await chrome.storage.local.get(['isPremium', 'isPro', 'subscriptionActive', 'planType']);
                 if (cachedStatus && (cachedStatus.isPremium || cachedStatus.isPro || cachedStatus.subscriptionActive)) {

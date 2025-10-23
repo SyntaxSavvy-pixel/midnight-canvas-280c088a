@@ -472,37 +472,47 @@ class TabManager {
 
     async checkAndActivateSubscription(email) {
         try {
-            // Skip API check for fallback emails - they're always free plan
+            // Skip check for fallback emails - they're always free plan
             if (email && email.startsWith('fallback_')) {
                 return false;
             }
 
-            const response = await fetch(`${CONFIG.API.CHECK_STATUS}?email=${encodeURIComponent(email)}`);
+            // NEW: Check localStorage for plan status (set by dashboard)
+            // This avoids 404 errors from old API endpoints
+            let isPro = false;
+            let userData = null;
 
-            if (response.ok) {
-                const data = await response.json();
-
-                if (data.active && data.plan === 'pro') {
-
-                    await chrome.storage.local.set({
-                        isPremium: true,
-                        subscriptionActive: true,
-                        planType: 'pro',
-                        subscriptionId: data.subscriptionId,
-                        stripeCustomerId: data.customerId,
-                        currentPeriodEnd: data.currentPeriodEnd,
-                        activatedAt: Date.now(),
-                        userEmail: email
-                    });
-
-                    return true;
+            try {
+                const storedUserData = localStorage.getItem('tabmangment_user');
+                if (storedUserData) {
+                    userData = JSON.parse(storedUserData);
+                    isPro = userData.isPro === true || userData.plan === 'pro';
                 }
+            } catch (e) {
+                // localStorage not available in service worker, use chrome.storage
+                const stored = await chrome.storage.local.get(['isPremium', 'isPro', 'planType']);
+                isPro = stored && (stored.isPremium || stored.isPro || stored.planType === 'pro');
+            }
+
+            if (isPro && userData) {
+                // Update chrome.storage with Pro status
+                await chrome.storage.local.set({
+                    isPremium: true,
+                    subscriptionActive: true,
+                    planType: 'pro',
+                    subscriptionId: userData.stripeSubscriptionId,
+                    stripeCustomerId: userData.stripeCustomerId,
+                    currentPeriodEnd: userData.currentPeriodEnd,
+                    activatedAt: Date.now(),
+                    userEmail: email
+                });
+
+                return true;
             }
 
             return false;
 
         } catch (error) {
-
             return false;
         }
     }

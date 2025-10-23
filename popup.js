@@ -6664,4 +6664,203 @@ TabmangmentPopup.prototype.sendStatsToLocalStorage = async function() {
 
     } catch (error) {
     }
+};    } catch (error) {
+    }
 };
+
+// ========== THEME APPLICATION FUNCTIONALITY ==========
+
+/**
+ * Apply stored theme from localStorage to popup
+ */
+async function applyStoredTheme() {
+    try {
+        // Get theme config from localStorage (set by dashboard)
+        const themeConfigStr = localStorage.getItem('themeConfig');
+
+        if (!themeConfigStr) {
+            // No theme set, use defaults
+            return;
+        }
+
+        const themeConfig = JSON.parse(themeConfigStr);
+
+        // Apply theme to popup
+        applyThemeToPopup(themeConfig);
+
+    } catch (error) {
+        console.log('Error loading theme:', error);
+    }
+}
+
+/**
+ * Apply theme configuration to popup elements
+ */
+function applyThemeToPopup(theme) {
+    try {
+        // Create style element for theme
+        const themeStyle = document.createElement('style');
+        themeStyle.id = 'custom-theme-styles';
+
+        // Remove existing theme styles
+        const existingStyle = document.getElementById('custom-theme-styles');
+        if (existingStyle) {
+            existingStyle.remove();
+        }
+
+        // Build CSS based on theme config
+        let css = '';
+
+        // Background gradient for BOTH body and loader
+        if (theme.bgType === 'gradient' || !theme.bgType) {
+            css += `
+                body {
+                    background: linear-gradient(${theme.gradientDirection || '135deg'}, ${theme.primaryColor} 0%, ${theme.secondaryColor} 100%) !important;
+                }
+                #app-loader {
+                    background: linear-gradient(${theme.gradientDirection || '135deg'}, ${theme.primaryColor} 0%, ${theme.secondaryColor} 100%) !important;
+                }
+            `;
+        } else if (theme.bgType === 'solid') {
+            css += `
+                body {
+                    background: ${theme.primaryColor} !important;
+                }
+                #app-loader {
+                    background: ${theme.primaryColor} !important;
+                }
+            `;
+        } else if (theme.bgType === 'pattern') {
+            css += `
+                body {
+                    background: linear-gradient(${theme.gradientDirection || '135deg'}, ${theme.primaryColor} 0%, ${theme.secondaryColor} 100%) !important;
+                    background-image: radial-gradient(circle, rgba(255,255,255,0.1) 1px, transparent 1px) !important;
+                    background-size: 20px 20px !important;
+                }
+                #app-loader {
+                    background: linear-gradient(${theme.gradientDirection || '135deg'}, ${theme.primaryColor} 0%, ${theme.secondaryColor} 100%) !important;
+                    background-image: radial-gradient(circle, rgba(255,255,255,0.1) 1px, transparent 1px) !important;
+                    background-size: 20px 20px !important;
+                }
+            `;
+        }
+
+        // Font family
+        if (theme.fontFamily) {
+            css += `
+                body {
+                    font-family: ${theme.fontFamily} !important;
+                }
+            `;
+        }
+
+        // Font size
+        if (theme.fontSize) {
+            css += `
+                body {
+                    font-size: ${theme.fontSize} !important;
+                }
+                .tab-title {
+                    font-size: ${theme.fontSize} !important;
+                }
+            `;
+        }
+
+        // Button and UI element colors
+        css += `
+            .header-btn.premium-btn {
+                background: linear-gradient(135deg, ${theme.primaryColor} 0%, ${theme.secondaryColor} 100%) !important;
+            }
+            .header-btn.premium-btn:hover {
+                transform: translateY(-2px);
+                box-shadow: 0 8px 16px ${theme.primaryColor}40 !important;
+            }
+            .control-btn {
+                background: linear-gradient(135deg, ${theme.primaryColor}15 0%, ${theme.secondaryColor}15 100%) !important;
+                border-color: ${theme.primaryColor}40 !important;
+            }
+            .control-btn:hover {
+                background: linear-gradient(135deg, ${theme.primaryColor}25 0%, ${theme.secondaryColor}25 100%) !important;
+            }
+
+            /* Ensure stat cards stay visible */
+            .stat-card {
+                background: rgba(255, 255, 255, 0.95) !important;
+                backdrop-filter: blur(10px);
+            }
+        `;
+
+        // Animations
+        if (theme.animationsEnabled) {
+            const animationDuration = theme.animationSpeed || '300ms';
+
+            if (theme.animationStyle === 'fade') {
+                css += `
+                    .tab-item {
+                        animation: fadeIn ${animationDuration} ease !important;
+                    }
+                    @keyframes fadeIn {
+                        from { opacity: 0; }
+                        to { opacity: 1; }
+                    }
+                `;
+            } else if (theme.animationStyle === 'slide') {
+                css += `
+                    .tab-item {
+                        animation: slideUp ${animationDuration} ease !important;
+                    }
+                    @keyframes slideUp {
+                        from { opacity: 0; transform: translateY(10px); }
+                        to { opacity: 1; transform: translateY(0); }
+                    }
+                `;
+            } else if (theme.animationStyle === 'bounce') {
+                css += `
+                    .tab-item {
+                        animation: bounce ${animationDuration} cubic-bezier(0.68, -0.55, 0.265, 1.55) !important;
+                    }
+                    @keyframes bounce {
+                        from { opacity: 0; transform: scale(0.8); }
+                        to { opacity: 1; transform: scale(1); }
+                    }
+                `;
+            } else if (theme.animationStyle === 'zoom') {
+                css += `
+                    .tab-item {
+                        animation: zoomIn ${animationDuration} ease !important;
+                    }
+                    @keyframes zoomIn {
+                        from { opacity: 0; transform: scale(0.95); }
+                        to { opacity: 1; transform: scale(1); }
+                    }
+                `;
+            }
+        }
+
+        themeStyle.textContent = css;
+        document.head.appendChild(themeStyle);
+
+    } catch (error) {
+        console.log('Error applying theme:', error);
+    }
+}
+
+// Listen for theme changes from dashboard via chrome.runtime messages
+if (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.onMessage) {
+    chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+        if (message.type === 'THEME_UPDATE') {
+            // Theme was changed in dashboard, apply it
+            if (message.themeConfig) {
+                // Save to localStorage
+                localStorage.setItem('activeTheme', message.themeName);
+                localStorage.setItem('themeConfig', JSON.stringify(message.themeConfig));
+
+                // Apply immediately
+                applyThemeToPopup(message.themeConfig);
+
+                sendResponse({ status: 'Theme applied' });
+            }
+        }
+        return true;
+    });
+}
