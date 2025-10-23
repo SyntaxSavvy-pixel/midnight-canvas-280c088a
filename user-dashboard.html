@@ -6464,24 +6464,20 @@
 
 
         // Verify Stripe session immediately on return from payment
+        // DISABLED: Using Stripe webhooks → Supabase instead
         async function verifyStripeSession(sessionId, userEmail) {
+            console.log('Session verification disabled - using Stripe webhooks');
+
             try {
+                // Just reload user data from Supabase (which was updated by webhook)
+                await loadUserData(userEmail);
 
-                const response = await fetch(`${API_BASE}/verify-session`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        session_id: sessionId
-                    })
-                });
-
-                if (!response.ok) {
-                    throw new Error('Verification failed');
-                }
-
-                const result = await response.json();
+                // Check if user is now Pro
+                const result = {
+                    success: userData.isPro,
+                    paid: userData.isPro,
+                    isPro: userData.isPro
+                };
 
                 if (result.success && result.paid && result.isPro) {
                     // Payment verified and Pro activated!
@@ -6537,70 +6533,38 @@
         }
 
         // Poll for subscription updates after payment
+        // DISABLED: Using Supabase + Stripe webhooks instead of polling
         async function startSubscriptionPolling(userEmail) {
-            let pollAttempts = 0;
-            const maxAttempts = 60; // Poll for up to 60 seconds (every 1s)
+            console.log('Subscription polling disabled - using Supabase/Stripe webhooks');
 
-
-            const pollInterval = setInterval(async () => {
-                pollAttempts++;
-
+            // Just reload user data after a delay to get updated Pro status from Supabase
+            setTimeout(async () => {
                 try {
-                    const response = await fetch(`${API_BASE}/status?email=${encodeURIComponent(userEmail)}`);
-                    if (response.ok) {
-                        const data = await response.json();
+                    await loadUserData(userEmail);
+                    updatePlanDisplay();
 
-                        // Check if plan is now Pro
-                        if (data.active && data.plan === 'pro') {
-                            clearInterval(pollInterval);
-
-
-                            // Update local data
-                            userData.plan = 'pro';
-                            userData.isPro = true;
-                            userData.subscriptionStatus = 'active';
-
-                            // Save to localStorage
-                            localStorage.setItem('tabmangment_user', JSON.stringify(userData));
-
-                            // Update display
-                            updatePlanDisplay();
-
-                            // Notify extension to refresh plan - WITH USER DATA
-                            if (bridgeReady && extensionId) {
-                                await sendMessageToExtension('SUBSCRIPTION_UPDATE', {
-                                    plan: 'pro',
-                                    isPro: true,
-                                    status: 'active',
-                                    user: {
-                                        email: userEmail,
-                                        plan: 'pro',
-                                        isPro: true
-                                    }
-                                });
-
-                                // DON'T call CHECK_USER_PLAN - storage is source of truth
-                                // The SUBSCRIPTION_UPDATE above already set Pro status in storage
+                    // Notify extension of potential subscription update
+                    if (bridgeReady && extensionId) {
+                        await sendMessageToExtension('SUBSCRIPTION_UPDATE', {
+                            plan: userData.plan || 'free',
+                            isPro: userData.isPro || false,
+                            status: userData.subscriptionStatus || 'inactive',
+                            user: {
+                                email: userEmail,
+                                plan: userData.plan || 'free',
+                                isPro: userData.isPro || false
                             }
+                        });
+                    }
 
-                            // Reload user data from API
-                            await loadUserData(userEmail);
-
-                            // Remove session_id from URL
-                            window.history.replaceState({}, document.title, window.location.pathname);
-                            return;
-                        }
+                    // Remove session_id from URL if present
+                    if (window.location.search.includes('session_id')) {
+                        window.history.replaceState({}, document.title, window.location.pathname);
                     }
                 } catch (error) {
+                    console.error('Error refreshing user data:', error);
                 }
-
-                // Stop polling after max attempts
-                if (pollAttempts >= maxAttempts) {
-                    clearInterval(pollInterval);
-                    // Force reload to get fresh data
-                    setTimeout(() => window.location.reload(), 2000);
-                }
-            }, 1000);
+            }, 3000); // Wait 3 seconds for webhook to process
         }
 
         // Close modal on outside click
