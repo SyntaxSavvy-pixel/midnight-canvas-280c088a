@@ -6520,6 +6520,9 @@ if (document.readyState === 'loading') {
         popup = new TabmangmentPopup();
         window.popup = popup;
 
+        // Apply theme from storage
+        await applyStoredTheme();
+
         // Start dashboard sync immediately after instance creation
         // (prototype methods are now available)
         if (typeof popup.startDashboardSync === 'function') {
@@ -6532,6 +6535,9 @@ if (document.readyState === 'loading') {
 } else {
     popup = new TabmangmentPopup();
     window.popup = popup;
+
+    // Apply theme from storage
+    applyStoredTheme();
 
     // Start dashboard sync immediately after instance creation
     // (prototype methods are now available)
@@ -6691,3 +6697,169 @@ TabmangmentPopup.prototype.sendStatsToLocalStorage = async function() {
     } catch (error) {
     }
 };
+
+// ========== THEME APPLICATION FUNCTIONALITY ==========
+
+/**
+ * Apply stored theme from chrome.storage to popup
+ */
+async function applyStoredTheme() {
+    try {
+        // Get theme config from storage
+        const result = await chrome.storage.local.get(['themeConfig', 'activeTheme']);
+        const themeConfig = result.themeConfig;
+        const activeTheme = result.activeTheme;
+
+        if (!themeConfig) {
+            // No theme set, use defaults
+            return;
+        }
+
+        // Apply theme to popup
+        applyThemeToPopup(themeConfig);
+
+    } catch (error) {
+        console.log('Error loading theme:', error);
+    }
+}
+
+/**
+ * Apply theme configuration to popup elements
+ */
+function applyThemeToPopup(theme) {
+    try {
+        // Create style element for theme
+        const themeStyle = document.createElement('style');
+        themeStyle.id = 'custom-theme-styles';
+
+        // Remove existing theme styles
+        const existingStyle = document.getElementById('custom-theme-styles');
+        if (existingStyle) {
+            existingStyle.remove();
+        }
+
+        // Build CSS based on theme config
+        let css = '';
+
+        // Background gradient
+        if (theme.bgType === 'gradient' || !theme.bgType) {
+            css += `
+                #app-loader {
+                    background: linear-gradient(${theme.gradientDirection || '135deg'}, ${theme.primaryColor} 0%, ${theme.secondaryColor} 100%) !important;
+                }
+            `;
+        } else if (theme.bgType === 'solid') {
+            css += `
+                #app-loader {
+                    background: ${theme.primaryColor} !important;
+                }
+            `;
+        } else if (theme.bgType === 'pattern') {
+            css += `
+                #app-loader {
+                    background: linear-gradient(${theme.gradientDirection || '135deg'}, ${theme.primaryColor} 0%, ${theme.secondaryColor} 100%) !important;
+                    background-image: radial-gradient(circle, rgba(255,255,255,0.1) 1px, transparent 1px) !important;
+                    background-size: 20px 20px !important;
+                }
+            `;
+        }
+
+        // Font family
+        if (theme.fontFamily) {
+            css += `
+                body {
+                    font-family: ${theme.fontFamily} !important;
+                }
+            `;
+        }
+
+        // Font size
+        if (theme.fontSize) {
+            css += `
+                body {
+                    font-size: ${theme.fontSize} !important;
+                }
+                .tab-title {
+                    font-size: ${theme.fontSize} !important;
+                }
+            `;
+        }
+
+        // Button colors
+        css += `
+            .header-btn.premium-btn {
+                background: linear-gradient(135deg, ${theme.primaryColor} 0%, ${theme.secondaryColor} 100%) !important;
+            }
+            .control-btn {
+                background: linear-gradient(135deg, ${theme.primaryColor}15 0%, ${theme.secondaryColor}15 100%) !important;
+                border-color: ${theme.primaryColor}40 !important;
+            }
+            .control-btn:hover {
+                background: linear-gradient(135deg, ${theme.primaryColor}25 0%, ${theme.secondaryColor}25 100%) !important;
+            }
+        `;
+
+        // Animations
+        if (theme.animationsEnabled) {
+            const animationDuration = theme.animationSpeed || '300ms';
+
+            if (theme.animationStyle === 'fade') {
+                css += `
+                    .tab-item {
+                        animation: fadeIn ${animationDuration} ease !important;
+                    }
+                    @keyframes fadeIn {
+                        from { opacity: 0; }
+                        to { opacity: 1; }
+                    }
+                `;
+            } else if (theme.animationStyle === 'slide') {
+                css += `
+                    .tab-item {
+                        animation: slideUp ${animationDuration} ease !important;
+                    }
+                    @keyframes slideUp {
+                        from { opacity: 0; transform: translateY(10px); }
+                        to { opacity: 1; transform: translateY(0); }
+                    }
+                `;
+            } else if (theme.animationStyle === 'bounce') {
+                css += `
+                    .tab-item {
+                        animation: bounce ${animationDuration} cubic-bezier(0.68, -0.55, 0.265, 1.55) !important;
+                    }
+                    @keyframes bounce {
+                        from { opacity: 0; transform: scale(0.8); }
+                        to { opacity: 1; transform: scale(1); }
+                    }
+                `;
+            } else if (theme.animationStyle === 'zoom') {
+                css += `
+                    .tab-item {
+                        animation: zoomIn ${animationDuration} ease !important;
+                    }
+                    @keyframes zoomIn {
+                        from { opacity: 0; transform: scale(0.95); }
+                        to { opacity: 1; transform: scale(1); }
+                    }
+                `;
+            }
+        }
+
+        themeStyle.textContent = css;
+        document.head.appendChild(themeStyle);
+
+    } catch (error) {
+        console.log('Error applying theme:', error);
+    }
+}
+
+// Listen for theme changes from dashboard
+chrome.storage.onChanged.addListener((changes, namespace) => {
+    if (namespace === 'local' && (changes.themeConfig || changes.activeTheme)) {
+        // Theme was changed, reload popup to apply new theme
+        if (changes.themeConfig && changes.themeConfig.newValue) {
+            applyThemeToPopup(changes.themeConfig.newValue);
+        }
+    }
+});

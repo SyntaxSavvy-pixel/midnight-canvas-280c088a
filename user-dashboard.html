@@ -1242,6 +1242,300 @@
             font-size: 1.5rem;
         }
 
+        /* ========== THEMES PAGE STYLES ========== */
+
+        /* Theme Tabs */
+        .theme-tab-btn {
+            padding: 0.75rem 1.5rem;
+            background: transparent;
+            border: none;
+            border-radius: 0.5rem;
+            color: #94a3b8;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 0.9375rem;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .theme-tab-btn:hover {
+            background: rgba(99, 102, 241, 0.1);
+            color: #6366f1;
+        }
+
+        .theme-tab-btn.active {
+            background: linear-gradient(135deg, rgba(99, 102, 241, 0.15), rgba(139, 92, 246, 0.15));
+            color: #6366f1;
+            border-bottom: 2px solid #6366f1;
+        }
+
+        .theme-tab-btn i {
+            width: 18px;
+            height: 18px;
+        }
+
+        .theme-tab-content {
+            display: none;
+        }
+
+        .theme-tab-content.active {
+            display: block;
+        }
+
+        /* Themes Grid */
+        .themes-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 2rem;
+        }
+
+        /* Theme Card */
+        .theme-card {
+            background: #1e293b;
+            border: 1px solid #334155;
+            border-radius: 1rem;
+            overflow: hidden;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            cursor: pointer;
+        }
+
+        .theme-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 12px 24px rgba(0, 0, 0, 0.4);
+            border-color: #6366f1;
+        }
+
+        .theme-preview {
+            height: 200px;
+            padding: 1.25rem;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .theme-preview-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+
+        .theme-preview-logo {
+            width: 32px;
+            height: 32px;
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 0.5rem;
+        }
+
+        .theme-preview-buttons {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .theme-preview-btn {
+            width: 20px;
+            height: 20px;
+            background: rgba(255, 255, 255, 0.25);
+            border-radius: 0.25rem;
+        }
+
+        .theme-preview-stats {
+            display: flex;
+            gap: 0.75rem;
+            margin-bottom: 1rem;
+        }
+
+        .theme-preview-stat {
+            flex: 1;
+            height: 48px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 0.5rem;
+        }
+
+        .theme-preview-tabs {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .theme-preview-tab {
+            height: 32px;
+            background: rgba(255, 255, 255, 0.15);
+            border-radius: 0.5rem;
+        }
+
+        .theme-card-info {
+            padding: 1.5rem;
+        }
+
+        .theme-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.75rem;
+        }
+
+        .theme-card-title {
+            color: #f8fafc;
+            font-size: 1.125rem;
+            font-weight: 600;
+            margin: 0;
+        }
+
+        .theme-badge {
+            padding: 0.25rem 0.75rem;
+            background: linear-gradient(135deg, rgba(99, 102, 241, 0.2), rgba(139, 92, 246, 0.2));
+            color: #6366f1;
+            border-radius: 1rem;
+            font-size: 0.75rem;
+            font-weight: 600;
+            border: 1px solid rgba(99, 102, 241, 0.3);
+        }
+
+        .theme-badge.active-theme {
+            background: linear-gradient(135deg, rgba(16, 185, 129, 0.2), rgba(5, 150, 105, 0.2));
+            color: #10b981;
+            border-color: rgba(16, 185, 129, 0.3);
+        }
+
+        .theme-card-description {
+            color: #94a3b8;
+            font-size: 0.875rem;
+            margin-bottom: 1.25rem;
+            line-height: 1.5;
+        }
+
+        .theme-apply-btn {
+            width: 100%;
+            padding: 0.75rem 1.5rem;
+            background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+            border: none;
+            border-radius: 0.5rem;
+            color: white;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+        }
+
+        .theme-apply-btn:hover {
+            box-shadow: 0 6px 20px rgba(99, 102, 241, 0.5);
+            transform: translateY(-2px);
+        }
+
+        .theme-apply-btn:active {
+            transform: translateY(0);
+        }
+
+        .theme-apply-btn i {
+            width: 18px;
+            height: 18px;
+        }
+
+        /* Range Slider */
+        .range-slider {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 100%;
+            height: 6px;
+            border-radius: 3px;
+            background: #334155;
+            outline: none;
+        }
+
+        .range-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+            cursor: pointer;
+            box-shadow: 0 2px 8px rgba(99, 102, 241, 0.4);
+            transition: all 0.3s;
+        }
+
+        .range-slider::-webkit-slider-thumb:hover {
+            box-shadow: 0 4px 12px rgba(99, 102, 241, 0.6);
+            transform: scale(1.1);
+        }
+
+        .range-slider::-moz-range-thumb {
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+            cursor: pointer;
+            border: none;
+            box-shadow: 0 2px 8px rgba(99, 102, 241, 0.4);
+            transition: all 0.3s;
+        }
+
+        .range-slider::-moz-range-thumb:hover {
+            box-shadow: 0 4px 12px rgba(99, 102, 241, 0.6);
+            transform: scale(1.1);
+        }
+
+        /* Toggle Switch */
+        .toggle-switch {
+            position: relative;
+            display: inline-block;
+            width: 48px;
+            height: 24px;
+        }
+
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .toggle-slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #334155;
+            transition: 0.3s;
+            border-radius: 24px;
+        }
+
+        .toggle-slider:before {
+            position: absolute;
+            content: "";
+            height: 18px;
+            width: 18px;
+            left: 3px;
+            bottom: 3px;
+            background-color: white;
+            transition: 0.3s;
+            border-radius: 50%;
+        }
+
+        .toggle-switch input:checked + .toggle-slider {
+            background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+        }
+
+        .toggle-switch input:checked + .toggle-slider:before {
+            transform: translateX(24px);
+        }
+
+        .toggle-slider:hover {
+            opacity: 0.9;
+        }
+
+        /* Custom Theme Editor Card Position */
+        .card {
+            position: relative;
+        }
+
     </style>
 </head>
 <body>
@@ -1290,6 +1584,12 @@
                     <a href="#" class="nav-link" data-page="profile">
                         <i data-feather="user"></i>
                         Profile
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="#" class="nav-link" data-page="themes">
+                        <i data-feather="palette"></i>
+                        Themes
                     </a>
                 </li>
             </ul>
@@ -1702,6 +2002,573 @@
                     </div>
                     <div style="display: flex; gap: 1rem; flex-wrap: wrap;" id="account-action-buttons">
                         <!-- This will be dynamically filled based on account status -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Themes Page -->
+            <div class="page-content" id="themes-page">
+                <div class="page-header">
+                    <h1 class="page-title">🎨 Themes & Customization</h1>
+                    <p class="page-subtitle">Personalize your popup extension with beautiful themes and custom styles</p>
+                </div>
+
+                <!-- Theme Tabs -->
+                <div style="display: flex; gap: 1rem; margin-bottom: 2rem; border-bottom: 1px solid #334155; padding-bottom: 1rem;">
+                    <button class="theme-tab-btn active" data-tab="preset">
+                        <i data-feather="grid"></i>
+                        Preset Themes
+                    </button>
+                    <button class="theme-tab-btn" data-tab="custom">
+                        <i data-feather="edit-3"></i>
+                        Custom Theme
+                        <span class="pro-badge" style="margin-left: 0.5rem; font-size: 0.625rem; padding: 0.125rem 0.375rem;">PRO</span>
+                    </button>
+                </div>
+
+                <!-- Preset Themes Tab -->
+                <div class="theme-tab-content active" id="preset-themes-tab">
+                    <div class="card">
+                        <h2 class="card-title">Choose from Preset Themes</h2>
+                        <p style="color: #94a3b8; margin-bottom: 2rem;">Select a beautifully crafted theme to instantly transform your popup</p>
+
+                        <div class="themes-grid">
+                            <!-- Default Theme -->
+                            <div class="theme-card" data-theme="default">
+                                <div class="theme-preview" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                                    <div class="theme-preview-header">
+                                        <div class="theme-preview-logo"></div>
+                                        <div class="theme-preview-buttons">
+                                            <div class="theme-preview-btn"></div>
+                                            <div class="theme-preview-btn"></div>
+                                        </div>
+                                    </div>
+                                    <div class="theme-preview-stats">
+                                        <div class="theme-preview-stat"></div>
+                                        <div class="theme-preview-stat"></div>
+                                    </div>
+                                    <div class="theme-preview-tabs">
+                                        <div class="theme-preview-tab"></div>
+                                        <div class="theme-preview-tab"></div>
+                                    </div>
+                                </div>
+                                <div class="theme-card-info">
+                                    <div class="theme-card-header">
+                                        <h3 class="theme-card-title">Default Purple</h3>
+                                        <span class="theme-badge active-theme" style="display: none;">Active</span>
+                                    </div>
+                                    <p class="theme-card-description">Classic gradient purple theme with modern aesthetics</p>
+                                    <button class="theme-apply-btn" onclick="applyTheme('default')">
+                                        <i data-feather="check"></i>
+                                        Apply Theme
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Japanese Theme -->
+                            <div class="theme-card" data-theme="japanese">
+                                <div class="theme-preview" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
+                                    <div class="theme-preview-header">
+                                        <div class="theme-preview-logo"></div>
+                                        <div class="theme-preview-buttons">
+                                            <div class="theme-preview-btn"></div>
+                                            <div class="theme-preview-btn"></div>
+                                        </div>
+                                    </div>
+                                    <div class="theme-preview-stats">
+                                        <div class="theme-preview-stat"></div>
+                                        <div class="theme-preview-stat"></div>
+                                    </div>
+                                    <div class="theme-preview-tabs">
+                                        <div class="theme-preview-tab"></div>
+                                        <div class="theme-preview-tab"></div>
+                                    </div>
+                                    <div style="position: absolute; top: 10px; right: 10px; font-size: 24px; opacity: 0.3;">🌸</div>
+                                </div>
+                                <div class="theme-card-info">
+                                    <div class="theme-card-header">
+                                        <h3 class="theme-card-title">🌸 Japanese Sakura</h3>
+                                        <span class="theme-badge active-theme" style="display: none;">Active</span>
+                                    </div>
+                                    <p class="theme-card-description">Elegant pink gradient inspired by cherry blossoms</p>
+                                    <button class="theme-apply-btn" onclick="applyTheme('japanese')">
+                                        <i data-feather="check"></i>
+                                        Apply Theme
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Ocean Theme -->
+                            <div class="theme-card" data-theme="ocean">
+                                <div class="theme-preview" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);">
+                                    <div class="theme-preview-header">
+                                        <div class="theme-preview-logo"></div>
+                                        <div class="theme-preview-buttons">
+                                            <div class="theme-preview-btn"></div>
+                                            <div class="theme-preview-btn"></div>
+                                        </div>
+                                    </div>
+                                    <div class="theme-preview-stats">
+                                        <div class="theme-preview-stat"></div>
+                                        <div class="theme-preview-stat"></div>
+                                    </div>
+                                    <div class="theme-preview-tabs">
+                                        <div class="theme-preview-tab"></div>
+                                        <div class="theme-preview-tab"></div>
+                                    </div>
+                                    <div style="position: absolute; top: 10px; right: 10px; font-size: 24px; opacity: 0.3;">🌊</div>
+                                </div>
+                                <div class="theme-card-info">
+                                    <div class="theme-card-header">
+                                        <h3 class="theme-card-title">🌊 Ocean Breeze</h3>
+                                        <span class="theme-badge active-theme" style="display: none;">Active</span>
+                                    </div>
+                                    <p class="theme-card-description">Refreshing blue gradient like ocean waves</p>
+                                    <button class="theme-apply-btn" onclick="applyTheme('ocean')">
+                                        <i data-feather="check"></i>
+                                        Apply Theme
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Sunset Theme -->
+                            <div class="theme-card" data-theme="sunset">
+                                <div class="theme-preview" style="background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);">
+                                    <div class="theme-preview-header">
+                                        <div class="theme-preview-logo"></div>
+                                        <div class="theme-preview-buttons">
+                                            <div class="theme-preview-btn"></div>
+                                            <div class="theme-preview-btn"></div>
+                                        </div>
+                                    </div>
+                                    <div class="theme-preview-stats">
+                                        <div class="theme-preview-stat"></div>
+                                        <div class="theme-preview-stat"></div>
+                                    </div>
+                                    <div class="theme-preview-tabs">
+                                        <div class="theme-preview-tab"></div>
+                                        <div class="theme-preview-tab"></div>
+                                    </div>
+                                    <div style="position: absolute; top: 10px; right: 10px; font-size: 24px; opacity: 0.3;">🌅</div>
+                                </div>
+                                <div class="theme-card-info">
+                                    <div class="theme-card-header">
+                                        <h3 class="theme-card-title">🌅 Sunset Glow</h3>
+                                        <span class="theme-badge active-theme" style="display: none;">Active</span>
+                                    </div>
+                                    <p class="theme-card-description">Warm pink to yellow gradient like a sunset</p>
+                                    <button class="theme-apply-btn" onclick="applyTheme('sunset')">
+                                        <i data-feather="check"></i>
+                                        Apply Theme
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Forest Theme -->
+                            <div class="theme-card" data-theme="forest">
+                                <div class="theme-preview" style="background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);">
+                                    <div class="theme-preview-header">
+                                        <div class="theme-preview-logo"></div>
+                                        <div class="theme-preview-buttons">
+                                            <div class="theme-preview-btn"></div>
+                                            <div class="theme-preview-btn"></div>
+                                        </div>
+                                    </div>
+                                    <div class="theme-preview-stats">
+                                        <div class="theme-preview-stat"></div>
+                                        <div class="theme-preview-stat"></div>
+                                    </div>
+                                    <div class="theme-preview-tabs">
+                                        <div class="theme-preview-tab"></div>
+                                        <div class="theme-preview-tab"></div>
+                                    </div>
+                                    <div style="position: absolute; top: 10px; right: 10px; font-size: 24px; opacity: 0.3;">🌲</div>
+                                </div>
+                                <div class="theme-card-info">
+                                    <div class="theme-card-header">
+                                        <h3 class="theme-card-title">🌲 Forest Green</h3>
+                                        <span class="theme-badge active-theme" style="display: none;">Active</span>
+                                    </div>
+                                    <p class="theme-card-description">Fresh green gradient inspired by nature</p>
+                                    <button class="theme-apply-btn" onclick="applyTheme('forest')">
+                                        <i data-feather="check"></i>
+                                        Apply Theme
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Midnight Theme -->
+                            <div class="theme-card" data-theme="midnight">
+                                <div class="theme-preview" style="background: linear-gradient(135deg, #2c3e50 0%, #4ca1af 100%);">
+                                    <div class="theme-preview-header">
+                                        <div class="theme-preview-logo"></div>
+                                        <div class="theme-preview-buttons">
+                                            <div class="theme-preview-btn"></div>
+                                            <div class="theme-preview-btn"></div>
+                                        </div>
+                                    </div>
+                                    <div class="theme-preview-stats">
+                                        <div class="theme-preview-stat"></div>
+                                        <div class="theme-preview-stat"></div>
+                                    </div>
+                                    <div class="theme-preview-tabs">
+                                        <div class="theme-preview-tab"></div>
+                                        <div class="theme-preview-tab"></div>
+                                    </div>
+                                    <div style="position: absolute; top: 10px; right: 10px; font-size: 24px; opacity: 0.3;">🌙</div>
+                                </div>
+                                <div class="theme-card-info">
+                                    <div class="theme-card-header">
+                                        <h3 class="theme-card-title">🌙 Midnight Blue</h3>
+                                        <span class="theme-badge active-theme" style="display: none;">Active</span>
+                                    </div>
+                                    <p class="theme-card-description">Deep blue gradient perfect for night owls</p>
+                                    <button class="theme-apply-btn" onclick="applyTheme('midnight')">
+                                        <i data-feather="check"></i>
+                                        Apply Theme
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Avatar Theme -->
+                            <div class="theme-card" data-theme="avatar">
+                                <div class="theme-preview" style="background: linear-gradient(135deg, #00c6ff 0%, #0072ff 100%);">
+                                    <div class="theme-preview-header">
+                                        <div class="theme-preview-logo"></div>
+                                        <div class="theme-preview-buttons">
+                                            <div class="theme-preview-btn"></div>
+                                            <div class="theme-preview-btn"></div>
+                                        </div>
+                                    </div>
+                                    <div class="theme-preview-stats">
+                                        <div class="theme-preview-stat"></div>
+                                        <div class="theme-preview-stat"></div>
+                                    </div>
+                                    <div class="theme-preview-tabs">
+                                        <div class="theme-preview-tab"></div>
+                                        <div class="theme-preview-tab"></div>
+                                    </div>
+                                    <div style="position: absolute; top: 10px; right: 10px; font-size: 24px; opacity: 0.3;">💎</div>
+                                </div>
+                                <div class="theme-card-info">
+                                    <div class="theme-card-header">
+                                        <h3 class="theme-card-title">💎 Avatar Blue</h3>
+                                        <span class="theme-badge active-theme" style="display: none;">Active</span>
+                                    </div>
+                                    <p class="theme-card-description">Vibrant blue theme inspired by Avatar</p>
+                                    <button class="theme-apply-btn" onclick="applyTheme('avatar')">
+                                        <i data-feather="check"></i>
+                                        Apply Theme
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Lavender Theme -->
+                            <div class="theme-card" data-theme="lavender">
+                                <div class="theme-preview" style="background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);">
+                                    <div class="theme-preview-header">
+                                        <div class="theme-preview-logo"></div>
+                                        <div class="theme-preview-buttons">
+                                            <div class="theme-preview-btn"></div>
+                                            <div class="theme-preview-btn"></div>
+                                        </div>
+                                    </div>
+                                    <div class="theme-preview-stats">
+                                        <div class="theme-preview-stat"></div>
+                                        <div class="theme-preview-stat"></div>
+                                    </div>
+                                    <div class="theme-preview-tabs">
+                                        <div class="theme-preview-tab"></div>
+                                        <div class="theme-preview-tab"></div>
+                                    </div>
+                                    <div style="position: absolute; top: 10px; right: 10px; font-size: 24px; opacity: 0.3;">💜</div>
+                                </div>
+                                <div class="theme-card-info">
+                                    <div class="theme-card-header">
+                                        <h3 class="theme-card-title">💜 Soft Lavender</h3>
+                                        <span class="theme-badge active-theme" style="display: none;">Active</span>
+                                    </div>
+                                    <p class="theme-card-description">Gentle pastel gradient for a calm vibe</p>
+                                    <button class="theme-apply-btn" onclick="applyTheme('lavender')">
+                                        <i data-feather="check"></i>
+                                        Apply Theme
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Custom Theme Tab (Pro) -->
+                <div class="theme-tab-content" id="custom-themes-tab">
+                    <div class="card">
+                        <div class="card-header" style="margin-bottom: 2rem;">
+                            <h2 class="card-title">🎨 Custom Theme Builder</h2>
+                            <p style="color: #94a3b8; margin-top: 0.5rem;">Create your own unique theme with full control over colors, fonts, and animations</p>
+                        </div>
+
+                        <!-- Pro Gate Overlay -->
+                        <div id="custom-theme-pro-gate" style="display: none; position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: rgba(15, 23, 42, 0.95); backdrop-filter: blur(10px); border-radius: 1rem; z-index: 10; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 3rem;">
+                            <div style="background: linear-gradient(135deg, rgba(99, 102, 241, 0.2), rgba(139, 92, 246, 0.2)); padding: 1rem 1.5rem; border-radius: 1rem; margin-bottom: 1.5rem;">
+                                <span style="font-size: 2rem;">✨</span>
+                                <span style="color: #6366f1; font-weight: 700; font-size: 1.25rem; margin-left: 0.5rem;">PRO FEATURE</span>
+                            </div>
+                            <h3 style="color: #f8fafc; font-size: 1.75rem; margin-bottom: 1rem; text-align: center;">Unlock Custom Theme Creation</h3>
+                            <p style="color: #94a3b8; text-align: center; max-width: 500px; margin-bottom: 2rem; line-height: 1.6;">
+                                Create unlimited custom themes with full control over fonts, colors, backgrounds, and animations. Perfect for making the extension truly yours!
+                            </p>
+                            <div style="background: #0f172a; padding: 1.5rem; border-radius: 0.75rem; border: 1px solid #334155; margin-bottom: 2rem; max-width: 400px;">
+                                <div style="color: #f8fafc; font-weight: 600; margin-bottom: 1rem;">Pro Features Include:</div>
+                                <ul style="list-style: none; color: #94a3b8; font-size: 0.9375rem;">
+                                    <li style="margin-bottom: 0.75rem; display: flex; align-items: center;">
+                                        <i data-feather="check" style="color: #10b981; width: 16px; height: 16px; margin-right: 0.75rem;"></i>
+                                        100+ Premium Fonts
+                                    </li>
+                                    <li style="margin-bottom: 0.75rem; display: flex; align-items: center;">
+                                        <i data-feather="check" style="color: #10b981; width: 16px; height: 16px; margin-right: 0.75rem;"></i>
+                                        Custom Color Schemes
+                                    </li>
+                                    <li style="margin-bottom: 0.75rem; display: flex; align-items: center;">
+                                        <i data-feather="check" style="color: #10b981; width: 16px; height: 16px; margin-right: 0.75rem;"></i>
+                                        Background Customization
+                                    </li>
+                                    <li style="margin-bottom: 0.75rem; display: flex; align-items: center;">
+                                        <i data-feather="check" style="color: #10b981; width: 16px; height: 16px; margin-right: 0.75rem;"></i>
+                                        Animation Controls
+                                    </li>
+                                    <li style="display: flex; align-items: center;">
+                                        <i data-feather="check" style="color: #10b981; width: 16px; height: 16px; margin-right: 0.75rem;"></i>
+                                        Save Unlimited Themes
+                                    </li>
+                                </ul>
+                            </div>
+                            <div style="display: flex; gap: 1rem;">
+                                <button onclick="closeCustomThemeEditor()" style="padding: 0.75rem 1.5rem; background: transparent; border: 1px solid #475569; border-radius: 0.5rem; color: #94a3b8; cursor: pointer; font-weight: 600; transition: all 0.3s;">
+                                    Maybe Later
+                                </button>
+                                <button onclick="window.location.href='#subscription'" style="padding: 0.75rem 2rem; background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%); border: none; border-radius: 0.5rem; color: white; cursor: pointer; font-weight: 600; box-shadow: 0 4px 14px rgba(99, 102, 241, 0.4); transition: all 0.3s;">
+                                    Upgrade to Pro - $4.99/mo
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Custom Theme Editor (Unlocked for Pro) -->
+                        <div id="custom-theme-editor">
+                            <!-- Live Preview -->
+                            <div style="background: #0f172a; border: 2px solid #334155; border-radius: 1rem; padding: 2rem; margin-bottom: 2rem;">
+                                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+                                    <h3 style="color: #f8fafc; font-size: 1.125rem; font-weight: 600;">Live Preview</h3>
+                                    <button onclick="resetCustomTheme()" style="padding: 0.5rem 1rem; background: transparent; border: 1px solid #475569; border-radius: 0.5rem; color: #94a3b8; cursor: pointer; font-size: 0.875rem; transition: all 0.3s;">
+                                        <i data-feather="rotate-ccw" style="width: 14px; height: 14px; margin-right: 0.25rem;"></i>
+                                        Reset
+                                    </button>
+                                </div>
+                                <div id="custom-theme-preview" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 0.75rem; padding: 1.5rem; min-height: 300px; transition: all 0.3s;">
+                                    <!-- Mini popup preview -->
+                                    <div style="background: rgba(255, 255, 255, 0.1); backdrop-filter: blur(10px); border-radius: 0.5rem; padding: 1rem; margin-bottom: 1rem;">
+                                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                                            <div id="preview-font-demo" style="color: white; font-size: 1.25rem; font-weight: 600;">Tabmangment</div>
+                                            <div style="display: flex; gap: 0.5rem;">
+                                                <div style="width: 24px; height: 24px; background: rgba(255, 255, 255, 0.2); border-radius: 0.25rem;"></div>
+                                                <div style="width: 24px; height: 24px; background: rgba(255, 255, 255, 0.2); border-radius: 0.25rem;"></div>
+                                            </div>
+                                        </div>
+                                        <div style="display: flex; gap: 1rem; margin-bottom: 1rem;">
+                                            <div style="flex: 1; background: rgba(255, 255, 255, 0.1); padding: 0.75rem; border-radius: 0.5rem; text-align: center;">
+                                                <div style="color: white; font-size: 1.5rem; font-weight: 700;">12</div>
+                                                <div style="color: rgba(255, 255, 255, 0.7); font-size: 0.75rem;">Open</div>
+                                            </div>
+                                            <div style="flex: 1; background: rgba(255, 255, 255, 0.1); padding: 0.75rem; border-radius: 0.5rem; text-align: center;">
+                                                <div style="color: white; font-size: 1.5rem; font-weight: 700;">5</div>
+                                                <div style="color: rgba(255, 255, 255, 0.7); font-size: 0.75rem;">Saved</div>
+                                            </div>
+                                        </div>
+                                        <div style="background: rgba(255, 255, 255, 0.1); padding: 0.75rem; border-radius: 0.5rem; margin-bottom: 0.5rem;">
+                                            <div style="color: white; font-size: 0.875rem;">Example Tab 1</div>
+                                        </div>
+                                        <div style="background: rgba(255, 255, 255, 0.1); padding: 0.75rem; border-radius: 0.5rem;">
+                                            <div style="color: white; font-size: 0.875rem;">Example Tab 2</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Customization Controls -->
+                            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 2rem;">
+
+                                <!-- Font Settings -->
+                                <div style="background: #0f172a; padding: 1.5rem; border-radius: 0.75rem; border: 1px solid #334155;">
+                                    <h3 style="color: #f8fafc; font-size: 1rem; font-weight: 600; margin-bottom: 1rem; display: flex; align-items: center;">
+                                        <i data-feather="type" style="width: 18px; height: 18px; margin-right: 0.5rem; color: #6366f1;"></i>
+                                        Font Settings
+                                    </h3>
+
+                                    <div class="control-group" style="margin-bottom: 1.5rem;">
+                                        <label class="control-label" style="font-size: 0.875rem;">Font Family</label>
+                                        <select id="custom-font-family" class="control-input" onchange="updateCustomThemePreview()">
+                                            <optgroup label="Sans-Serif Fonts">
+                                                <option value="-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif">System Default</option>
+                                                <option value="'Inter', sans-serif">Inter</option>
+                                                <option value="'Roboto', sans-serif">Roboto</option>
+                                                <option value="'Open Sans', sans-serif">Open Sans</option>
+                                                <option value="'Lato', sans-serif">Lato</option>
+                                                <option value="'Montserrat', sans-serif">Montserrat</option>
+                                                <option value="'Poppins', sans-serif">Poppins</option>
+                                                <option value="'Raleway', sans-serif">Raleway</option>
+                                                <option value="'Nunito', sans-serif">Nunito</option>
+                                                <option value="'Ubuntu', sans-serif">Ubuntu</option>
+                                                <option value="'Work Sans', sans-serif">Work Sans</option>
+                                            </optgroup>
+                                            <optgroup label="Serif Fonts">
+                                                <option value="'Merriweather', serif">Merriweather</option>
+                                                <option value="'Playfair Display', serif">Playfair Display</option>
+                                                <option value="'Lora', serif">Lora</option>
+                                                <option value="'PT Serif', serif">PT Serif</option>
+                                                <option value="'Crimson Text', serif">Crimson Text</option>
+                                            </optgroup>
+                                            <optgroup label="Monospace Fonts">
+                                                <option value="'Fira Code', monospace">Fira Code</option>
+                                                <option value="'Source Code Pro', monospace">Source Code Pro</option>
+                                                <option value="'JetBrains Mono', monospace">JetBrains Mono</option>
+                                                <option value="'Courier New', monospace">Courier New</option>
+                                            </optgroup>
+                                            <optgroup label="Display Fonts">
+                                                <option value="'Bebas Neue', cursive">Bebas Neue</option>
+                                                <option value="'Righteous', cursive">Righteous</option>
+                                                <option value="'Pacifico', cursive">Pacifico</option>
+                                                <option value="'Satisfy', cursive">Satisfy</option>
+                                            </optgroup>
+                                        </select>
+                                    </div>
+
+                                    <div class="control-group">
+                                        <label class="control-label" style="font-size: 0.875rem;">Font Size</label>
+                                        <div style="display: flex; align-items: center; gap: 1rem;">
+                                            <input type="range" id="custom-font-size" min="12" max="20" value="14" class="range-slider" oninput="updateCustomThemePreview()" style="flex: 1;">
+                                            <span id="font-size-value" style="color: #6366f1; font-weight: 600; min-width: 45px;">14px</span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Color Settings -->
+                                <div style="background: #0f172a; padding: 1.5rem; border-radius: 0.75rem; border: 1px solid #334155;">
+                                    <h3 style="color: #f8fafc; font-size: 1rem; font-weight: 600; margin-bottom: 1rem; display: flex; align-items: center;">
+                                        <i data-feather="droplet" style="width: 18px; height: 18px; margin-right: 0.5rem; color: #6366f1;"></i>
+                                        Color Scheme
+                                    </h3>
+
+                                    <div class="control-group" style="margin-bottom: 1.5rem;">
+                                        <label class="control-label" style="font-size: 0.875rem;">Primary Color</label>
+                                        <div style="display: flex; gap: 0.75rem; align-items: center;">
+                                            <input type="color" id="custom-color-primary" value="#667eea" onchange="updateCustomThemePreview()" style="width: 60px; height: 40px; border: 2px solid #334155; border-radius: 0.5rem; cursor: pointer; background: transparent;">
+                                            <input type="text" id="custom-color-primary-text" value="#667eea" class="control-input" style="flex: 1; font-family: monospace;" oninput="updateCustomThemePreview()">
+                                        </div>
+                                    </div>
+
+                                    <div class="control-group">
+                                        <label class="control-label" style="font-size: 0.875rem;">Secondary Color</label>
+                                        <div style="display: flex; gap: 0.75rem; align-items: center;">
+                                            <input type="color" id="custom-color-secondary" value="#764ba2" onchange="updateCustomThemePreview()" style="width: 60px; height: 40px; border: 2px solid #334155; border-radius: 0.5rem; cursor: pointer; background: transparent;">
+                                            <input type="text" id="custom-color-secondary-text" value="#764ba2" class="control-input" style="flex: 1; font-family: monospace;" oninput="updateCustomThemePreview()">
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Background Settings -->
+                                <div style="background: #0f172a; padding: 1.5rem; border-radius: 0.75rem; border: 1px solid #334155;">
+                                    <h3 style="color: #f8fafc; font-size: 1rem; font-weight: 600; margin-bottom: 1rem; display: flex; align-items: center;">
+                                        <i data-feather="image" style="width: 18px; height: 18px; margin-right: 0.5rem; color: #6366f1;"></i>
+                                        Background
+                                    </h3>
+
+                                    <div class="control-group" style="margin-bottom: 1.5rem;">
+                                        <label class="control-label" style="font-size: 0.875rem;">Background Type</label>
+                                        <select id="custom-bg-type" class="control-input" onchange="updateCustomThemePreview()">
+                                            <option value="gradient">Gradient</option>
+                                            <option value="solid">Solid Color</option>
+                                            <option value="pattern">Pattern</option>
+                                        </select>
+                                    </div>
+
+                                    <div class="control-group">
+                                        <label class="control-label" style="font-size: 0.875rem;">Gradient Direction</label>
+                                        <select id="custom-gradient-direction" class="control-input" onchange="updateCustomThemePreview()">
+                                            <option value="135deg">Diagonal (↘)</option>
+                                            <option value="90deg">Horizontal (→)</option>
+                                            <option value="180deg">Vertical (↓)</option>
+                                            <option value="45deg">Diagonal (↗)</option>
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <!-- Animation Settings -->
+                                <div style="background: #0f172a; padding: 1.5rem; border-radius: 0.75rem; border: 1px solid #334155;">
+                                    <h3 style="color: #f8fafc; font-size: 1rem; font-weight: 600; margin-bottom: 1rem; display: flex; align-items: center;">
+                                        <i data-feather="zap" style="width: 18px; height: 18px; margin-right: 0.5rem; color: #6366f1;"></i>
+                                        Animations
+                                    </h3>
+
+                                    <div class="control-group" style="margin-bottom: 1.5rem;">
+                                        <label style="display: flex; align-items: center; justify-content: space-between; cursor: pointer;">
+                                            <span style="color: #e2e8f0; font-size: 0.875rem;">Enable Animations</span>
+                                            <div class="toggle-switch">
+                                                <input type="checkbox" id="custom-animations-enabled" checked onchange="updateCustomThemePreview()">
+                                                <span class="toggle-slider"></span>
+                                            </div>
+                                        </label>
+                                    </div>
+
+                                    <div class="control-group">
+                                        <label class="control-label" style="font-size: 0.875rem;">Animation Style</label>
+                                        <select id="custom-animation-style" class="control-input" onchange="updateCustomThemePreview()">
+                                            <option value="fade">Fade In</option>
+                                            <option value="slide">Slide Up</option>
+                                            <option value="bounce">Bounce</option>
+                                            <option value="zoom">Zoom In</option>
+                                        </select>
+                                    </div>
+
+                                    <div class="control-group">
+                                        <label class="control-label" style="font-size: 0.875rem;">Animation Speed</label>
+                                        <div style="display: flex; align-items: center; gap: 1rem;">
+                                            <input type="range" id="custom-animation-speed" min="100" max="1000" value="300" step="100" class="range-slider" oninput="updateCustomThemePreview()" style="flex: 1;">
+                                            <span id="animation-speed-value" style="color: #6366f1; font-weight: 600; min-width: 55px;">300ms</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Save Custom Theme -->
+                            <div style="display: flex; gap: 1rem; margin-top: 2rem; padding-top: 2rem; border-top: 1px solid #334155;">
+                                <div style="flex: 1;">
+                                    <label class="control-label" style="font-size: 0.875rem;">Theme Name</label>
+                                    <input type="text" id="custom-theme-name" class="control-input" placeholder="My Awesome Theme" style="margin-top: 0.5rem;">
+                                </div>
+                                <div style="display: flex; align-items: flex-end; gap: 1rem;">
+                                    <button onclick="saveCustomTheme()" style="padding: 0.75rem 2rem; background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%); border: none; border-radius: 0.5rem; color: white; cursor: pointer; font-weight: 600; box-shadow: 0 4px 14px rgba(99, 102, 241, 0.4); transition: all 0.3s; display: flex; align-items: center; gap: 0.5rem;">
+                                        <i data-feather="save"></i>
+                                        Save Theme
+                                    </button>
+                                    <button onclick="applyCustomTheme()" style="padding: 0.75rem 2rem; background: #10b981; border: none; border-radius: 0.5rem; color: white; cursor: pointer; font-weight: 600; box-shadow: 0 4px 14px rgba(16, 185, 129, 0.4); transition: all 0.3s; display: flex; align-items: center; gap: 0.5rem;">
+                                        <i data-feather="check"></i>
+                                        Apply Now
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Saved Custom Themes -->
+                    <div class="card" style="margin-top: 2rem;">
+                        <h2 class="card-title">Your Custom Themes</h2>
+                        <p style="color: #94a3b8; margin-bottom: 1.5rem;">Manage your saved custom themes</p>
+                        <div id="saved-custom-themes-list" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 1.5rem;">
+                            <div style="text-align: center; padding: 3rem; color: #64748b; grid-column: 1 / -1;">
+                                <i data-feather="inbox" style="width: 48px; height: 48px; margin-bottom: 1rem; opacity: 0.5;"></i>
+                                <p>No custom themes saved yet</p>
+                                <p style="font-size: 0.875rem; margin-top: 0.5rem;">Create and save your first custom theme above!</p>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -5832,6 +6699,456 @@
         //         updateStats(message.data);
         //     }
         // });
+
+        // ========== THEMES FUNCTIONALITY ==========
+
+        // Preset themes configuration
+        const presetThemes = {
+            default: {
+                name: 'Default Purple',
+                primaryColor: '#667eea',
+                secondaryColor: '#764ba2',
+                fontFamily: '-apple-system, BlinkMacSystemFont, \'Segoe UI\', sans-serif',
+                fontSize: '14px',
+                gradientDirection: '135deg',
+                animationsEnabled: true,
+                animationStyle: 'fade',
+                animationSpeed: '300ms'
+            },
+            japanese: {
+                name: 'Japanese Sakura',
+                primaryColor: '#f093fb',
+                secondaryColor: '#f5576c',
+                fontFamily: "'Poppins', sans-serif",
+                fontSize: '14px',
+                gradientDirection: '135deg',
+                animationsEnabled: true,
+                animationStyle: 'slide',
+                animationSpeed: '300ms'
+            },
+            ocean: {
+                name: 'Ocean Breeze',
+                primaryColor: '#4facfe',
+                secondaryColor: '#00f2fe',
+                fontFamily: "'Inter', sans-serif",
+                fontSize: '14px',
+                gradientDirection: '135deg',
+                animationsEnabled: true,
+                animationStyle: 'fade',
+                animationSpeed: '300ms'
+            },
+            sunset: {
+                name: 'Sunset Glow',
+                primaryColor: '#fa709a',
+                secondaryColor: '#fee140',
+                fontFamily: "'Raleway', sans-serif",
+                fontSize: '14px',
+                gradientDirection: '135deg',
+                animationsEnabled: true,
+                animationStyle: 'fade',
+                animationSpeed: '300ms'
+            },
+            forest: {
+                name: 'Forest Green',
+                primaryColor: '#11998e',
+                secondaryColor: '#38ef7d',
+                fontFamily: "'Ubuntu', sans-serif",
+                fontSize: '14px',
+                gradientDirection: '135deg',
+                animationsEnabled: true,
+                animationStyle: 'fade',
+                animationSpeed: '300ms'
+            },
+            midnight: {
+                name: 'Midnight Blue',
+                primaryColor: '#2c3e50',
+                secondaryColor: '#4ca1af',
+                fontFamily: "'Roboto', sans-serif",
+                fontSize: '14px',
+                gradientDirection: '135deg',
+                animationsEnabled: true,
+                animationStyle: 'fade',
+                animationSpeed: '300ms'
+            },
+            avatar: {
+                name: 'Avatar Blue',
+                primaryColor: '#00c6ff',
+                secondaryColor: '#0072ff',
+                fontFamily: "'Montserrat', sans-serif",
+                fontSize: '14px',
+                gradientDirection: '135deg',
+                animationsEnabled: true,
+                animationStyle: 'zoom',
+                animationSpeed: '300ms'
+            },
+            lavender: {
+                name: 'Soft Lavender',
+                primaryColor: '#a8edea',
+                secondaryColor: '#fed6e3',
+                fontFamily: "'Nunito', sans-serif",
+                fontSize: '14px',
+                gradientDirection: '135deg',
+                animationsEnabled: true,
+                animationStyle: 'fade',
+                animationSpeed: '300ms'
+            }
+        };
+
+        // Theme tab switching
+        document.querySelectorAll('.theme-tab-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                // Check if custom tab and user is not Pro
+                if (this.dataset.tab === 'custom' && !userData.isPro) {
+                    showCustomThemeProGate();
+                    return;
+                }
+
+                // Switch tabs
+                document.querySelectorAll('.theme-tab-btn').forEach(b => b.classList.remove('active'));
+                document.querySelectorAll('.theme-tab-content').forEach(c => c.classList.remove('active'));
+
+                this.classList.add('active');
+                document.getElementById(`${this.dataset.tab}-themes-tab`).classList.add('active');
+            });
+        });
+
+        // Show/Hide Pro gate for custom themes
+        function showCustomThemeProGate() {
+            const proGate = document.getElementById('custom-theme-pro-gate');
+            const editor = document.getElementById('custom-theme-editor');
+            if (proGate && editor) {
+                proGate.style.display = 'flex';
+                editor.style.filter = 'blur(8px)';
+                editor.style.pointerEvents = 'none';
+            }
+        }
+
+        function closeCustomThemeEditor() {
+            // Switch back to preset themes tab
+            document.querySelectorAll('.theme-tab-btn').forEach(b => b.classList.remove('active'));
+            document.querySelectorAll('.theme-tab-content').forEach(c => c.classList.remove('active'));
+
+            document.querySelector('.theme-tab-btn[data-tab="preset"]').classList.add('active');
+            document.getElementById('preset-themes-tab').classList.add('active');
+        }
+
+        // Initialize Pro state for custom themes
+        function initializeThemesPage() {
+            if (userData.isPro) {
+                const proGate = document.getElementById('custom-theme-pro-gate');
+                const editor = document.getElementById('custom-theme-editor');
+                if (proGate && editor) {
+                    proGate.style.display = 'none';
+                    editor.style.filter = 'none';
+                    editor.style.pointerEvents = 'auto';
+                }
+            }
+
+            // Load and display active theme
+            loadActiveTheme();
+        }
+
+        // Load active theme and mark it
+        async function loadActiveTheme() {
+            try {
+                const activeTheme = await chrome.storage.local.get('activeTheme');
+                const themeName = activeTheme.activeTheme || 'default';
+
+                // Mark the active theme
+                document.querySelectorAll('.theme-card').forEach(card => {
+                    const badge = card.querySelector('.active-theme');
+                    if (card.dataset.theme === themeName) {
+                        badge.style.display = 'block';
+                    } else {
+                        badge.style.display = 'none';
+                    }
+                });
+            } catch (error) {
+                console.log('Error loading active theme:', error);
+            }
+        }
+
+        // Apply preset theme
+        async function applyTheme(themeName) {
+            const theme = presetThemes[themeName];
+            if (!theme) {
+                console.error('Theme not found:', themeName);
+                return;
+            }
+
+            try {
+                // Save theme to chrome storage
+                await chrome.storage.local.set({
+                    activeTheme: themeName,
+                    themeConfig: theme
+                });
+
+                // Update UI to show active theme
+                loadActiveTheme();
+
+                // Show success message
+                showNotification('Theme Applied!', `${theme.name} has been applied to your popup.`, 'success');
+            } catch (error) {
+                console.error('Error applying theme:', error);
+                showNotification('Error', 'Failed to apply theme. Please try again.', 'error');
+            }
+        }
+
+        // Custom theme preview update
+        function updateCustomThemePreview() {
+            const primaryColor = document.getElementById('custom-color-primary').value;
+            const secondaryColor = document.getElementById('custom-color-secondary').value;
+            const fontFamily = document.getElementById('custom-font-family').value;
+            const fontSize = document.getElementById('custom-font-size').value;
+            const gradientDirection = document.getElementById('custom-gradient-direction').value;
+            const bgType = document.getElementById('custom-bg-type').value;
+            const animationSpeed = document.getElementById('custom-animation-speed').value;
+
+            // Update preview
+            const preview = document.getElementById('custom-theme-preview');
+            const fontDemo = document.getElementById('preview-font-demo');
+
+            if (bgType === 'gradient') {
+                preview.style.background = `linear-gradient(${gradientDirection}, ${primaryColor} 0%, ${secondaryColor} 100%)`;
+            } else if (bgType === 'solid') {
+                preview.style.background = primaryColor;
+            } else {
+                // Pattern (simple dots pattern)
+                preview.style.background = `linear-gradient(${gradientDirection}, ${primaryColor} 0%, ${secondaryColor} 100%)`;
+                preview.style.backgroundImage = `radial-gradient(circle, rgba(255,255,255,0.1) 1px, transparent 1px)`;
+                preview.style.backgroundSize = '20px 20px';
+            }
+
+            if (fontDemo) {
+                fontDemo.style.fontFamily = fontFamily;
+            }
+
+            // Update value displays
+            document.getElementById('font-size-value').textContent = fontSize + 'px';
+            document.getElementById('animation-speed-value').textContent = animationSpeed + 'ms';
+
+            // Sync color inputs
+            document.getElementById('custom-color-primary-text').value = primaryColor;
+            document.getElementById('custom-color-secondary-text').value = secondaryColor;
+        }
+
+        // Reset custom theme to defaults
+        function resetCustomTheme() {
+            document.getElementById('custom-color-primary').value = '#667eea';
+            document.getElementById('custom-color-secondary').value = '#764ba2';
+            document.getElementById('custom-font-family').selectedIndex = 0;
+            document.getElementById('custom-font-size').value = 14;
+            document.getElementById('custom-gradient-direction').selectedIndex = 0;
+            document.getElementById('custom-bg-type').selectedIndex = 0;
+            document.getElementById('custom-animations-enabled').checked = true;
+            document.getElementById('custom-animation-style').selectedIndex = 0;
+            document.getElementById('custom-animation-speed').value = 300;
+            document.getElementById('custom-theme-name').value = '';
+
+            updateCustomThemePreview();
+        }
+
+        // Save custom theme
+        async function saveCustomTheme() {
+            // Check Pro status
+            if (!userData.isPro) {
+                showUpgradeModal('Custom Themes', 'Save unlimited custom themes with full control over appearance.');
+                return;
+            }
+
+            const themeName = document.getElementById('custom-theme-name').value.trim();
+            if (!themeName) {
+                showNotification('Error', 'Please enter a theme name.', 'error');
+                return;
+            }
+
+            const customTheme = {
+                name: themeName,
+                primaryColor: document.getElementById('custom-color-primary').value,
+                secondaryColor: document.getElementById('custom-color-secondary').value,
+                fontFamily: document.getElementById('custom-font-family').value,
+                fontSize: document.getElementById('custom-font-size').value + 'px',
+                gradientDirection: document.getElementById('custom-gradient-direction').value,
+                bgType: document.getElementById('custom-bg-type').value,
+                animationsEnabled: document.getElementById('custom-animations-enabled').checked,
+                animationStyle: document.getElementById('custom-animation-style').value,
+                animationSpeed: document.getElementById('custom-animation-speed').value + 'ms',
+                isCustom: true,
+                createdAt: new Date().toISOString()
+            };
+
+            try {
+                // Get existing custom themes
+                const stored = await chrome.storage.local.get('customThemes');
+                const customThemes = stored.customThemes || [];
+
+                // Add new theme
+                customThemes.push(customTheme);
+
+                // Save to storage
+                await chrome.storage.local.set({ customThemes });
+
+                // Show success
+                showNotification('Theme Saved!', `${themeName} has been saved to your custom themes.`, 'success');
+
+                // Reset form
+                resetCustomTheme();
+
+                // Refresh saved themes list
+                loadSavedCustomThemes();
+            } catch (error) {
+                console.error('Error saving custom theme:', error);
+                showNotification('Error', 'Failed to save theme. Please try again.', 'error');
+            }
+        }
+
+        // Apply custom theme (from current editor settings)
+        async function applyCustomTheme() {
+            // Check Pro status
+            if (!userData.isPro) {
+                showUpgradeModal('Custom Themes', 'Apply custom themes to personalize your extension.');
+                return;
+            }
+
+            const customTheme = {
+                name: 'Custom',
+                primaryColor: document.getElementById('custom-color-primary').value,
+                secondaryColor: document.getElementById('custom-color-secondary').value,
+                fontFamily: document.getElementById('custom-font-family').value,
+                fontSize: document.getElementById('custom-font-size').value + 'px',
+                gradientDirection: document.getElementById('custom-gradient-direction').value,
+                bgType: document.getElementById('custom-bg-type').value,
+                animationsEnabled: document.getElementById('custom-animations-enabled').checked,
+                animationStyle: document.getElementById('custom-animation-style').value,
+                animationSpeed: document.getElementById('custom-animation-speed').value + 'ms',
+                isCustom: true
+            };
+
+            try {
+                // Save as active theme
+                await chrome.storage.local.set({
+                    activeTheme: 'custom',
+                    themeConfig: customTheme
+                });
+
+                showNotification('Theme Applied!', 'Your custom theme has been applied to your popup.', 'success');
+            } catch (error) {
+                console.error('Error applying custom theme:', error);
+                showNotification('Error', 'Failed to apply theme. Please try again.', 'error');
+            }
+        }
+
+        // Load saved custom themes
+        async function loadSavedCustomThemes() {
+            if (!userData.isPro) return;
+
+            try {
+                const stored = await chrome.storage.local.get('customThemes');
+                const customThemes = stored.customThemes || [];
+
+                const container = document.getElementById('saved-custom-themes-list');
+                if (!customThemes.length) {
+                    container.innerHTML = `
+                        <div style="text-align: center; padding: 3rem; color: #64748b; grid-column: 1 / -1;">
+                            <i data-feather="inbox" style="width: 48px; height: 48px; margin-bottom: 1rem; opacity: 0.5;"></i>
+                            <p>No custom themes saved yet</p>
+                            <p style="font-size: 0.875rem; margin-top: 0.5rem;">Create and save your first custom theme above!</p>
+                        </div>
+                    `;
+                    feather.replace();
+                    return;
+                }
+
+                container.innerHTML = customThemes.map((theme, index) => `
+                    <div class="theme-card">
+                        <div class="theme-preview" style="background: linear-gradient(${theme.gradientDirection || '135deg'}, ${theme.primaryColor} 0%, ${theme.secondaryColor} 100%);">
+                            <div class="theme-preview-header">
+                                <div class="theme-preview-logo"></div>
+                            </div>
+                            <div class="theme-preview-stats">
+                                <div class="theme-preview-stat"></div>
+                                <div class="theme-preview-stat"></div>
+                            </div>
+                        </div>
+                        <div class="theme-card-info">
+                            <div class="theme-card-header">
+                                <h3 class="theme-card-title">${theme.name}</h3>
+                            </div>
+                            <p class="theme-card-description" style="font-family: ${theme.fontFamily}; font-size: ${theme.fontSize};">
+                                Custom theme created ${new Date(theme.createdAt).toLocaleDateString()}
+                            </p>
+                            <div style="display: flex; gap: 0.5rem;">
+                                <button class="theme-apply-btn" onclick="applyStoredCustomTheme(${index})" style="flex: 1;">
+                                    <i data-feather="check"></i>
+                                    Apply
+                                </button>
+                                <button onclick="deleteCustomTheme(${index})" style="padding: 0.75rem; background: #ef4444; border: none; border-radius: 0.5rem; color: white; cursor: pointer; transition: all 0.3s;">
+                                    <i data-feather="trash-2" style="width: 18px; height: 18px;"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                `).join('');
+
+                feather.replace();
+            } catch (error) {
+                console.error('Error loading custom themes:', error);
+            }
+        }
+
+        // Apply a stored custom theme
+        async function applyStoredCustomTheme(index) {
+            try {
+                const stored = await chrome.storage.local.get('customThemes');
+                const customThemes = stored.customThemes || [];
+                const theme = customThemes[index];
+
+                if (!theme) return;
+
+                await chrome.storage.local.set({
+                    activeTheme: 'custom',
+                    themeConfig: theme
+                });
+
+                showNotification('Theme Applied!', `${theme.name} has been applied to your popup.`, 'success');
+            } catch (error) {
+                console.error('Error applying custom theme:', error);
+                showNotification('Error', 'Failed to apply theme. Please try again.', 'error');
+            }
+        }
+
+        // Delete custom theme
+        async function deleteCustomTheme(index) {
+            if (!confirm('Are you sure you want to delete this custom theme?')) return;
+
+            try {
+                const stored = await chrome.storage.local.get('customThemes');
+                const customThemes = stored.customThemes || [];
+
+                customThemes.splice(index, 1);
+
+                await chrome.storage.local.set({ customThemes });
+
+                showNotification('Theme Deleted', 'Custom theme has been removed.', 'success');
+                loadSavedCustomThemes();
+            } catch (error) {
+                console.error('Error deleting custom theme:', error);
+                showNotification('Error', 'Failed to delete theme. Please try again.', 'error');
+            }
+        }
+
+        // Initialize when themes page is loaded
+        if (window.location.hash === '#themes') {
+            initializeThemesPage();
+        }
+
+        // Re-initialize when navigating to themes page
+        document.querySelectorAll('.nav-link[data-page="themes"]').forEach(link => {
+            link.addEventListener('click', () => {
+                setTimeout(initializeThemesPage, 100);
+            });
+        });
+
     </script>
 </body>
 </html>
