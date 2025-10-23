@@ -6701,19 +6701,19 @@ TabmangmentPopup.prototype.sendStatsToLocalStorage = async function() {
 // ========== THEME APPLICATION FUNCTIONALITY ==========
 
 /**
- * Apply stored theme from chrome.storage to popup
+ * Apply stored theme from localStorage to popup
  */
 async function applyStoredTheme() {
     try {
-        // Get theme config from storage
-        const result = await chrome.storage.local.get(['themeConfig', 'activeTheme']);
-        const themeConfig = result.themeConfig;
-        const activeTheme = result.activeTheme;
+        // Get theme config from localStorage (set by dashboard)
+        const themeConfigStr = localStorage.getItem('themeConfig');
 
-        if (!themeConfig) {
+        if (!themeConfigStr) {
             // No theme set, use defaults
             return;
         }
+
+        const themeConfig = JSON.parse(themeConfigStr);
 
         // Apply theme to popup
         applyThemeToPopup(themeConfig);
@@ -6854,12 +6854,22 @@ function applyThemeToPopup(theme) {
     }
 }
 
-// Listen for theme changes from dashboard
-chrome.storage.onChanged.addListener((changes, namespace) => {
-    if (namespace === 'local' && (changes.themeConfig || changes.activeTheme)) {
-        // Theme was changed, reload popup to apply new theme
-        if (changes.themeConfig && changes.themeConfig.newValue) {
-            applyThemeToPopup(changes.themeConfig.newValue);
+// Listen for theme changes from dashboard via chrome.runtime messages
+if (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.onMessage) {
+    chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+        if (message.type === 'THEME_UPDATE') {
+            // Theme was changed in dashboard, apply it
+            if (message.themeConfig) {
+                // Save to localStorage
+                localStorage.setItem('activeTheme', message.themeName);
+                localStorage.setItem('themeConfig', JSON.stringify(message.themeConfig));
+
+                // Apply immediately
+                applyThemeToPopup(message.themeConfig);
+
+                sendResponse({ status: 'Theme applied' });
+            }
         }
-    }
-});
+        return true;
+    });
+}
