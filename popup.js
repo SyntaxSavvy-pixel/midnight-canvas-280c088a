@@ -6664,8 +6664,6 @@ TabmangmentPopup.prototype.sendStatsToLocalStorage = async function() {
 
     } catch (error) {
     }
-};    } catch (error) {
-    }
 };
 
 // ========== THEME APPLICATION FUNCTIONALITY ==========
