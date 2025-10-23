@@ -4451,46 +4451,27 @@ class TabmangmentPopup {
                 this.paymentStatusCacheTime = now;
                 return result;
             }
+            // NEW: Check localStorage (set by dashboard) instead of making API calls
+            let isPro = false;
+
+            // Check localStorage first
             try {
-                const userEmail = await this.getUserEmail();
-                if (!userEmail) {
-                    const result = { isPaid: false };
-                    this.paymentStatusCache = result;
-                    this.paymentStatusCacheTime = now;
-                    return result;
+                const storedUserData = localStorage.getItem('tabmangment_user');
+                if (storedUserData) {
+                    const userData = JSON.parse(storedUserData);
+                    isPro = userData.isPro === true || userData.plan === 'pro';
                 }
-
-                const backendUrl = await this.getBackendUrl();
-                if (!backendUrl) {
-                    throw new Error('Backend disabled for offline mode');
-                }
-                const response = await fetch(`${backendUrl}/api/status?email=${encodeURIComponent(userEmail)}`, {
-                    timeout: 3000
-                });
-                if (response.ok) {
-                    const contentType = response.headers.get('content-type');
-                    if (contentType && contentType.includes('application/json')) {
-                        const result = await response.json();
-                        this.paymentStatusCache = result;
-                        this.paymentStatusCacheTime = now;
-                        return result;
-                    }
-                }
-                if (response.status === 404) {
-                    const result = { isPaid: false };
-                    this.paymentStatusCache = result;
-                    this.paymentStatusCacheTime = now;
-                    return result;
-                }
-            } catch (apiError) {
-
-                const result = { isPaid: false };
-                this.paymentStatusCache = result;
-                this.paymentStatusCacheTime = now;
-                return result;
+            } catch (e) {
+                // Fall through to chrome.storage
             }
-            const localSub = await chrome.storage.local.get(['stripePaymentCompleted', 'isPremium']);
-            if (localSub.stripePaymentCompleted || localSub.isPremium) {
+
+            // Fallback to chrome.storage
+            const localSub = await chrome.storage.local.get(['stripePaymentCompleted', 'isPremium', 'isPro', 'planType']);
+            if (!isPro) {
+                isPro = localSub.stripePaymentCompleted || localSub.isPremium || localSub.isPro || localSub.planType === 'pro';
+            }
+
+            if (isPro) {
                 const result = {
                     isPaid: true,
                     customer_id: 'stripe_customer',
