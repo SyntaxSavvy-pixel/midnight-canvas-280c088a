@@ -6741,21 +6741,32 @@ function applyThemeToPopup(theme) {
         // Build CSS based on theme config
         let css = '';
 
-        // Background gradient
+        // Background gradient for BOTH body and loader
         if (theme.bgType === 'gradient' || !theme.bgType) {
             css += `
+                body {
+                    background: linear-gradient(${theme.gradientDirection || '135deg'}, ${theme.primaryColor} 0%, ${theme.secondaryColor} 100%) !important;
+                }
                 #app-loader {
                     background: linear-gradient(${theme.gradientDirection || '135deg'}, ${theme.primaryColor} 0%, ${theme.secondaryColor} 100%) !important;
                 }
             `;
         } else if (theme.bgType === 'solid') {
             css += `
+                body {
+                    background: ${theme.primaryColor} !important;
+                }
                 #app-loader {
                     background: ${theme.primaryColor} !important;
                 }
             `;
         } else if (theme.bgType === 'pattern') {
             css += `
+                body {
+                    background: linear-gradient(${theme.gradientDirection || '135deg'}, ${theme.primaryColor} 0%, ${theme.secondaryColor} 100%) !important;
+                    background-image: radial-gradient(circle, rgba(255,255,255,0.1) 1px, transparent 1px) !important;
+                    background-size: 20px 20px !important;
+                }
                 #app-loader {
                     background: linear-gradient(${theme.gradientDirection || '135deg'}, ${theme.primaryColor} 0%, ${theme.secondaryColor} 100%) !important;
                     background-image: radial-gradient(circle, rgba(255,255,255,0.1) 1px, transparent 1px) !important;
@@ -6785,10 +6796,14 @@ function applyThemeToPopup(theme) {
             `;
         }
 
-        // Button colors
+        // Button and UI element colors
         css += `
             .header-btn.premium-btn {
                 background: linear-gradient(135deg, ${theme.primaryColor} 0%, ${theme.secondaryColor} 100%) !important;
+            }
+            .header-btn.premium-btn:hover {
+                transform: translateY(-2px);
+                box-shadow: 0 8px 16px ${theme.primaryColor}40 !important;
             }
             .control-btn {
                 background: linear-gradient(135deg, ${theme.primaryColor}15 0%, ${theme.secondaryColor}15 100%) !important;
@@ -6796,6 +6811,12 @@ function applyThemeToPopup(theme) {
             }
             .control-btn:hover {
                 background: linear-gradient(135deg, ${theme.primaryColor}25 0%, ${theme.secondaryColor}25 100%) !important;
+            }
+
+            /* Ensure stat cards stay visible */
+            .stat-card {
+                background: rgba(255, 255, 255, 0.95) !important;
+                backdrop-filter: blur(10px);
             }
         `;
 
