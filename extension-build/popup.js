@@ -1726,21 +1726,13 @@ class TabmangmentPopup {
 
 
             if (stored.userEmail) {
-
+                // Check localStorage for user data (set by dashboard)
                 try {
-                    // Validate user with your API (uses email query param)
-                    const response = await fetch(`${CONFIG.API.BASE}/me?email=${encodeURIComponent(stored.userEmail)}`, {
-                        method: 'GET',
-                        headers: {
-                            'Content-Type': 'application/json'
-                        }
-                    });
+                    const storedUserData = localStorage.getItem('tabmangment_user');
+                    if (storedUserData) {
+                        const userData = JSON.parse(storedUserData);
 
-
-                    if (response.ok) {
-                        const userData = await response.json();
-
-                        // Update storage with fresh data from API
+                        // Update chrome.storage with data from dashboard
                         await chrome.storage.local.set({
                             userEmail: userData.email || stored.userEmail,
                             userName: userData.name || userData.email?.split('@')[0] || stored.userEmail.split('@')[0],
@@ -1748,16 +1740,11 @@ class TabmangmentPopup {
                             planType: userData.plan || 'free',
                             subscriptionActive: userData.isPro || userData.plan === 'pro' || false,
                         });
-
-                        return true;
-                    } else {
-                        const errorText = await response.text();
-                        // Don't clear userEmail immediately, just log the issue
                     }
-                } catch (apiError) {
-                    // If API fails, keep the stored user (might be network issue)
-                    return true; // Allow user to stay logged in if API is down
+                } catch (e) {
+                    // localStorage error, keep existing storage
                 }
+                return true; // User is logged in
             } else {
             }
 
@@ -3755,31 +3742,23 @@ class TabmangmentPopup {
                 return { isActive: true, plan: 'pro', subscriptionId: stored.subscriptionId };
             }
 
-            // SECOND: Check API for paid users
+            // SECOND: Check localStorage for Pro status (set by dashboard)
             try {
-                const response = await fetch(`${API_BASE}/me?email=${encodeURIComponent(userEmail)}`, {
-                    method: 'GET',
-                    headers: { 'Content-Type': 'application/json' },
-                    timeout: 10000
-                });
+                const storedUserData = localStorage.getItem('tabmangment_user');
+                if (storedUserData) {
+                    const userData = JSON.parse(storedUserData);
 
-                if (response.ok) {
-                    const data = await response.json();
-
-                    if (data.isPro && data.status === 'active') {
-
-                        // IMMEDIATE PRO ACTIVATION - Using proven working method
+                    if (userData.isPro === true || userData.plan === 'pro') {
+                        // IMMEDIATE PRO ACTIVATION from dashboard data
                         await chrome.storage.local.set({
                             isPremium: true,
                             subscriptionActive: true,
                             planType: 'pro',
                             activatedAt: new Date().toISOString(),
                             nextBillingDate: Date.now() + (30 * 24 * 60 * 60 * 1000),
-                            subscriptionId: data.subscriptionId || ('api_' + Date.now()),
+                            subscriptionId: userData.subscriptionId || ('dash_' + Date.now()),
                             paymentConfirmed: true,
-                            subscriptionStatus: data.status,
-                            currentPeriodEnd: data.currentPeriodEnd,
-                            apiConfirmed: true,
+                            subscriptionStatus: 'active',
                             userEmail: userEmail
                         });
 
@@ -3791,12 +3770,13 @@ class TabmangmentPopup {
 
                         return {
                             isActive: true,
-                            plan: data.plan || 'pro',
-                            subscriptionId: data.subscriptionId
+                            plan: 'pro',
+                            subscriptionId: userData.subscriptionId
                         };
                     }
                 }
             } catch (error) {
+                // localStorage error, continue to check chrome.storage
             }
 
             const localStatus = await chrome.storage.local.get(['isPremium', 'subscriptionActive', 'planType', 'subscriptionId', 'payment_success']);
@@ -3814,37 +3794,8 @@ class TabmangmentPopup {
                 }
             }
 
-            try {
-                const response = await fetch(`${API_BASE}/status?email=${encodeURIComponent(userEmail)}`, {
-                    method: 'GET',
-                    headers: { 'Content-Type': 'application/json' }
-                });
-                if (response.ok) {
-                    const data = await response.json();
-                    if (data.isPro && data.status === 'active') {
-
-                        await chrome.storage.local.set({
-                            isPremium: true,
-                            subscriptionActive: true,
-                            planType: data.plan,
-                            subscriptionId: data.subscriptionId,
-                            currentPeriodEnd: data.currentPeriodEnd,
-                            subscriptionStatus: data.status
-                        });
-                        return {
-                            isActive: true,
-                            plan: data.plan,
-                            subscriptionId: data.subscriptionId,
-                            currentPeriodEnd: data.currentPeriodEnd
-                        };
-                    }
-                    // CRITICAL FIX: Don't downgrade from Pro to Free based on API
-                    // Storage is the source of truth - only webhooks should downgrade
-                    // This prevents race conditions during payment processing
-                } else {
-                }
-            } catch (apiError) {
-            }
+            // REMOVED: API call to /status endpoint (no longer exists)
+            // Storage is the source of truth - updated by dashboard and webhooks
 
             if (localStatus.isPremium && localStatus.subscriptionActive) {
                 return {
@@ -4146,56 +4097,68 @@ class TabmangmentPopup {
     }
     async checkAndApplySubscriptionStatus() {
         try {
-            const stored = await chrome.storage.local.get(['userEmail']);
+            const stored = await chrome.storage.local.get(['userEmail', 'isPremium', 'planType', 'subscriptionActive']);
             if (!stored.userEmail) {
                 this.isPremium = false;
                 return;
             }
 
-            // Check subscription status via enhanced API
-            const response = await fetch(`${CONFIG.API.BASE}/me?email=${encodeURIComponent(stored.userEmail)}`);
-            const data = await response.json();
+            // Check localStorage for Pro status (set by dashboard)
+            let isPro = false;
+            let userData = null;
 
-            if (data.found && data.isPro) {
+            try {
+                const storedUserData = localStorage.getItem('tabmangment_user');
+                if (storedUserData) {
+                    userData = JSON.parse(storedUserData);
+                    isPro = userData.isPro === true || userData.plan === 'pro';
+                }
+            } catch (e) {
+                // localStorage error
+            }
+
+            // Fallback to chrome.storage
+            if (!isPro) {
+                isPro = stored.isPremium === true || stored.planType === 'pro' || stored.subscriptionActive === true;
+            }
+
+            if (isPro) {
                 // User has active Pro subscription
                 await chrome.storage.local.set({
                     hasProPlan: true,
                     isPremium: true,
                     subscriptionActive: true,
                     planType: 'pro',
-                    subscriptionStatus: data.subscriptionStatus,
-                    currentPeriodEnd: data.currentPeriodEnd,
-                    stripeCustomerId: data.stripeCustomerId,
-                    stripeSubscriptionId: data.stripeSubscriptionId,
+                    subscriptionStatus: userData?.subscriptionStatus || 'active',
+                    currentPeriodEnd: userData?.currentPeriodEnd || (Date.now() + (30 * 24 * 60 * 60 * 1000)),
+                    stripeCustomerId: userData?.stripeCustomerId,
+                    stripeSubscriptionId: userData?.stripeSubscriptionId,
                     lastStatusCheck: new Date().toISOString()
                 });
                 this.isPremium = true;
                 this.updateUIForProUser();
 
                 // Show subscription info in UI
-                this.updateSubscriptionInfo(data);
-            } else {
-                // API says Free - but check storage first! Don't overwrite Pro status
-                const storage = await chrome.storage.local.get(['isPremium', 'planType', 'subscriptionActive']);
-
-                // Only set to Free if storage doesn't already have Pro status
-                if (storage.isPremium !== true && storage.planType !== 'pro' && storage.subscriptionActive !== true) {
-                    await chrome.storage.local.set({
-                        hasProPlan: false,
-                        isPremium: false,
-                        subscriptionActive: false,
-                        planType: 'free',
-                        subscriptionStatus: data.subscriptionStatus || 'free',
-                        subscriptionId: null,
-                        lastStatusCheck: new Date().toISOString()
-                    });
-                    this.isPremium = false;
-                } else {
-                    this.isPremium = true;
+                if (userData) {
+                    this.updateSubscriptionInfo(userData);
                 }
+            } else {
+                // Not Pro - set to free
+                await chrome.storage.local.set({
+                    hasProPlan: false,
+                    isPremium: false,
+                    subscriptionActive: false,
+                    planType: 'free',
+                    subscriptionStatus: 'free',
+                    subscriptionId: null,
+                    lastStatusCheck: new Date().toISOString()
+                });
+                this.isPremium = false;
             }
         } catch (error) {
-            this.isPremium = false;
+            // On error, check chrome.storage for existing Pro status
+            const fallback = await chrome.storage.local.get(['isPremium']);
+            this.isPremium = fallback.isPremium === true;
         }
     }
 
