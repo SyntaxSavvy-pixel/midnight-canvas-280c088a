@@ -4438,52 +4438,31 @@ class TabmangmentPopup {
                 this.paymentStatusCacheTime = now;
                 return result;
             }
+            // NEW: Check localStorage (set by dashboard) instead of making API calls
+            let isPro = false;
+
             try {
-                const userEmail = await this.getUserEmail();
-                if (!userEmail) {
-                    const result = { isPaid: false };
-                    this.paymentStatusCache = result;
-                    this.paymentStatusCacheTime = now;
-                    return result;
+                const storedUserData = localStorage.getItem('tabmangment_user');
+                if (storedUserData) {
+                    const userData = JSON.parse(storedUserData);
+                    isPro = userData.isPro === true || userData.plan === 'pro';
                 }
-
-                const backendUrl = await this.getBackendUrl();
-                if (!backendUrl) {
-                    throw new Error('Backend disabled for offline mode');
-                }
-                const response = await fetch(`${backendUrl}/api/status?email=${encodeURIComponent(userEmail)}`, {
-                    timeout: 3000
-                });
-                if (response.ok) {
-                    const contentType = response.headers.get('content-type');
-                    if (contentType && contentType.includes('application/json')) {
-                        const result = await response.json();
-                        this.paymentStatusCache = result;
-                        this.paymentStatusCacheTime = now;
-                        return result;
-                    }
-                }
-                if (response.status === 404) {
-                    const result = { isPaid: false };
-                    this.paymentStatusCache = result;
-                    this.paymentStatusCacheTime = now;
-                    return result;
-                }
-            } catch (apiError) {
-
-                const result = { isPaid: false };
-                this.paymentStatusCache = result;
-                this.paymentStatusCacheTime = now;
-                return result;
+            } catch (e) {
+                // localStorage not accessible
             }
-            const localSub = await chrome.storage.local.get(['stripePaymentCompleted', 'isPremium']);
-            if (localSub.stripePaymentCompleted || localSub.isPremium) {
+            // Fallback to chrome.storage
+            const localSub = await chrome.storage.local.get(['stripePaymentCompleted', 'isPremium', 'isPro', 'planType']);
+            if (!isPro) {
+                isPro = localSub.stripePaymentCompleted || localSub.isPremium || localSub.isPro;
+            }
+
+            if (isPro) {
                 const result = {
                     isPaid: true,
                     customer_id: 'stripe_customer',
                     subscription_id: 'stripe_sub',
-                    subscription_type: 'monthly',
-                    next_billing_date: this.calculateNextBillingDate('monthly')
+                    subscription_type: localSub.planType || 'monthly',
+                    next_billing_date: this.calculateNextBillingDate(localSub.planType || 'monthly')
                 };
                 this.paymentStatusCache = result;
                 this.paymentStatusCacheTime = now;
@@ -6517,11 +6496,11 @@ Thank you!`);
 let popup;
 if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', async () => {
+        // Apply theme FIRST before creating popup
+        await applyStoredTheme();
+
         popup = new TabmangmentPopup();
         window.popup = popup;
-
-        // Apply theme from storage
-        await applyStoredTheme();
 
         // Start dashboard sync immediately after instance creation
         // (prototype methods are now available)
@@ -6533,11 +6512,11 @@ if (document.readyState === 'loading') {
         // await popup.checkAndApplyProStatus();
     });
 } else {
+    // Apply theme FIRST before creating popup
+    applyStoredTheme();
+
     popup = new TabmangmentPopup();
     window.popup = popup;
-
-    // Apply theme from storage
-    applyStoredTheme();
 
     // Start dashboard sync immediately after instance creation
     // (prototype methods are now available)
