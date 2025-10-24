@@ -542,6 +542,45 @@
             }
         }
 
+        /* Animation keyframes for custom theme preview */
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes bounceIn {
+            from {
+                opacity: 0;
+                transform: scale(0.8);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+        @keyframes zoomIn {
+            from {
+                opacity: 0;
+                transform: scale(0.95);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
         @keyframes slideOutRight {
             from {
                 transform: translateX(0);
@@ -2129,10 +2168,10 @@
                                                 <div style="color: rgba(255, 255, 255, 0.7); font-size: 0.75rem;">Saved</div>
                                             </div>
                                         </div>
-                                        <div style="background: rgba(255, 255, 255, 0.1); padding: 0.75rem; border-radius: 0.5rem; margin-bottom: 0.5rem;">
+                                        <div data-preview-tab data-preview-text style="background: rgba(255, 255, 255, 0.1); padding: 0.75rem; border-radius: 0.5rem; margin-bottom: 0.5rem;">
                                             <div style="color: white; font-size: 0.875rem;">Example Tab 1</div>
                                         </div>
-                                        <div style="background: rgba(255, 255, 255, 0.1); padding: 0.75rem; border-radius: 0.5rem;">
+                                        <div data-preview-tab data-preview-text style="background: rgba(255, 255, 255, 0.1); padding: 0.75rem; border-radius: 0.5rem;">
                                             <div style="color: white; font-size: 0.875rem;">Example Tab 2</div>
                                         </div>
                                     </div>
@@ -6997,8 +7036,39 @@
                 editor.style.pointerEvents = 'auto';
             }
 
+            // Load saved draft theme if exists (auto-restore)
+            loadCustomThemeDraft();
+
             // Load and display active theme (also called by renderThemeCards, but safe to call twice)
             loadActiveTheme();
+        }
+
+        // Load custom theme draft from localStorage
+        function loadCustomThemeDraft() {
+            try {
+                const draftJson = localStorage.getItem('customThemeDraft');
+                if (draftJson) {
+                    const draft = JSON.parse(draftJson);
+
+                    // Restore values to form inputs
+                    if (draft.primaryColor) document.getElementById('custom-color-primary').value = draft.primaryColor;
+                    if (draft.secondaryColor) document.getElementById('custom-color-secondary').value = draft.secondaryColor;
+                    if (draft.fontFamily) document.getElementById('custom-font-family').value = draft.fontFamily;
+                    if (draft.fontSize) document.getElementById('custom-font-size').value = parseInt(draft.fontSize);
+                    if (draft.gradientDirection) document.getElementById('custom-gradient-direction').value = draft.gradientDirection;
+                    if (draft.bgType) document.getElementById('custom-bg-type').value = draft.bgType;
+                    if (draft.animationsEnabled !== undefined) document.getElementById('custom-animations-enabled').checked = draft.animationsEnabled;
+                    if (draft.animationStyle) document.getElementById('custom-animation-style').value = draft.animationStyle;
+                    if (draft.animationSpeed) document.getElementById('custom-animation-speed').value = parseInt(draft.animationSpeed);
+
+                    // Update preview with restored values
+                    updateCustomThemePreview();
+
+                    console.log('✅ Restored custom theme draft from', draft.lastSaved);
+                }
+            } catch (error) {
+                console.log('No custom theme draft found or error loading:', error);
+            }
         }
 
         // Load active theme and mark it
@@ -7078,42 +7148,92 @@
             }
         }
 
-        // Custom theme preview update
+        // Custom theme preview update with auto-save
+        let autoSaveTimeout = null;
         function updateCustomThemePreview() {
-            const primaryColor = document.getElementById('custom-color-primary').value;
-            const secondaryColor = document.getElementById('custom-color-secondary').value;
-            const fontFamily = document.getElementById('custom-font-family').value;
-            const fontSize = document.getElementById('custom-font-size').value;
-            const gradientDirection = document.getElementById('custom-gradient-direction').value;
-            const bgType = document.getElementById('custom-bg-type').value;
-            const animationSpeed = document.getElementById('custom-animation-speed').value;
+            const primaryColor = document.getElementById('custom-color-primary')?.value || '#667eea';
+            const secondaryColor = document.getElementById('custom-color-secondary')?.value || '#764ba2';
+            const fontFamily = document.getElementById('custom-font-family')?.value || 'system-ui';
+            const fontSize = document.getElementById('custom-font-size')?.value || '14';
+            const gradientDirection = document.getElementById('custom-gradient-direction')?.value || '135deg';
+            const bgType = document.getElementById('custom-bg-type')?.value || 'gradient';
+            const animationSpeed = document.getElementById('custom-animation-speed')?.value || '300';
+            const animationsEnabled = document.getElementById('custom-animations-enabled')?.checked ?? true;
+            const animationStyle = document.getElementById('custom-animation-style')?.value || 'fade';
 
-            // Update preview
+            // Update preview background
             const preview = document.getElementById('custom-theme-preview');
-            const fontDemo = document.getElementById('preview-font-demo');
+            if (preview) {
+                if (bgType === 'gradient') {
+                    preview.style.background = `linear-gradient(${gradientDirection}, ${primaryColor} 0%, ${secondaryColor} 100%)`;
+                    preview.style.backgroundImage = 'none';
+                } else if (bgType === 'solid') {
+                    preview.style.background = primaryColor;
+                    preview.style.backgroundImage = 'none';
+                } else {
+                    // Pattern (simple dots pattern)
+                    preview.style.background = `linear-gradient(${gradientDirection}, ${primaryColor} 0%, ${secondaryColor} 100%)`;
+                    preview.style.backgroundImage = `radial-gradient(circle, rgba(255,255,255,0.1) 1px, transparent 1px)`;
+                    preview.style.backgroundSize = '20px 20px';
+                }
 
-            if (bgType === 'gradient') {
-                preview.style.background = `linear-gradient(${gradientDirection}, ${primaryColor} 0%, ${secondaryColor} 100%)`;
-            } else if (bgType === 'solid') {
-                preview.style.background = primaryColor;
-            } else {
-                // Pattern (simple dots pattern)
-                preview.style.background = `linear-gradient(${gradientDirection}, ${primaryColor} 0%, ${secondaryColor} 100%)`;
-                preview.style.backgroundImage = `radial-gradient(circle, rgba(255,255,255,0.1) 1px, transparent 1px)`;
-                preview.style.backgroundSize = '20px 20px';
+                // Apply animation if enabled
+                if (animationsEnabled) {
+                    const tabElements = preview.querySelectorAll('[data-preview-tab]');
+                    tabElements.forEach(tab => {
+                        tab.style.animation = `none`;
+                        // Force reflow
+                        void tab.offsetWidth;
+                        tab.style.animation = `${animationStyle}In ${animationSpeed}ms ease`;
+                    });
+                }
             }
 
+            // Update font demo
+            const fontDemo = document.getElementById('preview-font-demo');
             if (fontDemo) {
                 fontDemo.style.fontFamily = fontFamily;
+                fontDemo.style.fontSize = fontSize + 'px';
+            }
+
+            // Update all text elements in preview
+            const previewTexts = preview?.querySelectorAll('[data-preview-text]');
+            if (previewTexts) {
+                previewTexts.forEach(el => {
+                    el.style.fontFamily = fontFamily;
+                });
             }
 
             // Update value displays
-            document.getElementById('font-size-value').textContent = fontSize + 'px';
-            document.getElementById('animation-speed-value').textContent = animationSpeed + 'ms';
+            const fontSizeDisplay = document.getElementById('font-size-value');
+            const animSpeedDisplay = document.getElementById('animation-speed-value');
+            if (fontSizeDisplay) fontSizeDisplay.textContent = fontSize + 'px';
+            if (animSpeedDisplay) animSpeedDisplay.textContent = animationSpeed + 'ms';
 
             // Sync color inputs
-            document.getElementById('custom-color-primary-text').value = primaryColor;
-            document.getElementById('custom-color-secondary-text').value = secondaryColor;
+            const primaryTextInput = document.getElementById('custom-color-primary-text');
+            const secondaryTextInput = document.getElementById('custom-color-secondary-text');
+            if (primaryTextInput) primaryTextInput.value = primaryColor;
+            if (secondaryTextInput) secondaryTextInput.value = secondaryColor;
+
+            // AUTO-SAVE: Save draft theme to localStorage after user stops changing (debounced)
+            clearTimeout(autoSaveTimeout);
+            autoSaveTimeout = setTimeout(() => {
+                const draftTheme = {
+                    primaryColor,
+                    secondaryColor,
+                    fontFamily,
+                    fontSize: fontSize + 'px',
+                    gradientDirection,
+                    bgType,
+                    animationsEnabled,
+                    animationStyle,
+                    animationSpeed: animationSpeed + 'ms',
+                    lastSaved: new Date().toISOString()
+                };
+                localStorage.setItem('customThemeDraft', JSON.stringify(draftTheme));
+                console.log('✅ Auto-saved custom theme draft');
+            }, 1000); // Auto-save after 1 second of no changes
         }
 
         // Reset custom theme to defaults
