@@ -2039,269 +2039,8 @@
                         <h2 class="card-title">Choose from Preset Themes</h2>
                         <p style="color: #94a3b8; margin-bottom: 2rem;">Select a beautifully crafted theme to instantly transform your popup</p>
 
-                        <div class="themes-grid">
-                            <!-- Default Theme -->
-                            <div class="theme-card" data-theme="default">
-                                <div class="theme-preview" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
-                                    <div class="theme-preview-header">
-                                        <div class="theme-preview-logo"></div>
-                                        <div class="theme-preview-buttons">
-                                            <div class="theme-preview-btn"></div>
-                                            <div class="theme-preview-btn"></div>
-                                        </div>
-                                    </div>
-                                    <div class="theme-preview-stats">
-                                        <div class="theme-preview-stat"></div>
-                                        <div class="theme-preview-stat"></div>
-                                    </div>
-                                    <div class="theme-preview-tabs">
-                                        <div class="theme-preview-tab"></div>
-                                        <div class="theme-preview-tab"></div>
-                                    </div>
-                                </div>
-                                <div class="theme-card-info">
-                                    <div class="theme-card-header">
-                                        <h3 class="theme-card-title">Default Purple</h3>
-                                        <span class="theme-badge active-theme" style="display: none;">Active</span>
-                                    </div>
-                                    <p class="theme-card-description">Classic gradient purple theme with modern aesthetics</p>
-                                    <button class="theme-apply-btn" onclick="applyTheme('default')">
-                                        <i data-feather="check"></i>
-                                        Apply Theme
-                                    </button>
-                                </div>
-                            </div>
-
-                            <!-- Japanese Theme -->
-                            <div class="theme-card" data-theme="japanese">
-                                <div class="theme-preview" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
-                                    <div class="theme-preview-header">
-                                        <div class="theme-preview-logo"></div>
-                                        <div class="theme-preview-buttons">
-                                            <div class="theme-preview-btn"></div>
-                                            <div class="theme-preview-btn"></div>
-                                        </div>
-                                    </div>
-                                    <div class="theme-preview-stats">
-                                        <div class="theme-preview-stat"></div>
-                                        <div class="theme-preview-stat"></div>
-                                    </div>
-                                    <div class="theme-preview-tabs">
-                                        <div class="theme-preview-tab"></div>
-                                        <div class="theme-preview-tab"></div>
-                                    </div>
-                                    <div style="position: absolute; top: 10px; right: 10px; font-size: 24px; opacity: 0.3;">🌸</div>
-                                </div>
-                                <div class="theme-card-info">
-                                    <div class="theme-card-header">
-                                        <h3 class="theme-card-title">🌸 Japanese Sakura</h3>
-                                        <span class="theme-badge active-theme" style="display: none;">Active</span>
-                                    </div>
-                                    <p class="theme-card-description">Elegant pink gradient inspired by cherry blossoms</p>
-                                    <button class="theme-apply-btn" onclick="applyTheme('japanese')">
-                                        <i data-feather="check"></i>
-                                        Apply Theme
-                                    </button>
-                                </div>
-                            </div>
-
-                            <!-- Ocean Theme -->
-                            <div class="theme-card" data-theme="ocean">
-                                <div class="theme-preview" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);">
-                                    <div class="theme-preview-header">
-                                        <div class="theme-preview-logo"></div>
-                                        <div class="theme-preview-buttons">
-                                            <div class="theme-preview-btn"></div>
-                                            <div class="theme-preview-btn"></div>
-                                        </div>
-                                    </div>
-                                    <div class="theme-preview-stats">
-                                        <div class="theme-preview-stat"></div>
-                                        <div class="theme-preview-stat"></div>
-                                    </div>
-                                    <div class="theme-preview-tabs">
-                                        <div class="theme-preview-tab"></div>
-                                        <div class="theme-preview-tab"></div>
-                                    </div>
-                                    <div style="position: absolute; top: 10px; right: 10px; font-size: 24px; opacity: 0.3;">🌊</div>
-                                </div>
-                                <div class="theme-card-info">
-                                    <div class="theme-card-header">
-                                        <h3 class="theme-card-title">🌊 Ocean Breeze</h3>
-                                        <span class="theme-badge active-theme" style="display: none;">Active</span>
-                                    </div>
-                                    <p class="theme-card-description">Refreshing blue gradient like ocean waves</p>
-                                    <button class="theme-apply-btn" onclick="applyTheme('ocean')">
-                                        <i data-feather="check"></i>
-                                        Apply Theme
-                                    </button>
-                                </div>
-                            </div>
-
-                            <!-- Sunset Theme -->
-                            <div class="theme-card" data-theme="sunset">
-                                <div class="theme-preview" style="background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);">
-                                    <div class="theme-preview-header">
-                                        <div class="theme-preview-logo"></div>
-                                        <div class="theme-preview-buttons">
-                                            <div class="theme-preview-btn"></div>
-                                            <div class="theme-preview-btn"></div>
-                                        </div>
-                                    </div>
-                                    <div class="theme-preview-stats">
-                                        <div class="theme-preview-stat"></div>
-                                        <div class="theme-preview-stat"></div>
-                                    </div>
-                                    <div class="theme-preview-tabs">
-                                        <div class="theme-preview-tab"></div>
-                                        <div class="theme-preview-tab"></div>
-                                    </div>
-                                    <div style="position: absolute; top: 10px; right: 10px; font-size: 24px; opacity: 0.3;">🌅</div>
-                                </div>
-                                <div class="theme-card-info">
-                                    <div class="theme-card-header">
-                                        <h3 class="theme-card-title">🌅 Sunset Glow</h3>
-                                        <span class="theme-badge active-theme" style="display: none;">Active</span>
-                                    </div>
-                                    <p class="theme-card-description">Warm pink to yellow gradient like a sunset</p>
-                                    <button class="theme-apply-btn" onclick="applyTheme('sunset')">
-                                        <i data-feather="check"></i>
-                                        Apply Theme
-                                    </button>
-                                </div>
-                            </div>
-
-                            <!-- Forest Theme -->
-                            <div class="theme-card" data-theme="forest">
-                                <div class="theme-preview" style="background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);">
-                                    <div class="theme-preview-header">
-                                        <div class="theme-preview-logo"></div>
-                                        <div class="theme-preview-buttons">
-                                            <div class="theme-preview-btn"></div>
-                                            <div class="theme-preview-btn"></div>
-                                        </div>
-                                    </div>
-                                    <div class="theme-preview-stats">
-                                        <div class="theme-preview-stat"></div>
-                                        <div class="theme-preview-stat"></div>
-                                    </div>
-                                    <div class="theme-preview-tabs">
-                                        <div class="theme-preview-tab"></div>
-                                        <div class="theme-preview-tab"></div>
-                                    </div>
-                                    <div style="position: absolute; top: 10px; right: 10px; font-size: 24px; opacity: 0.3;">🌲</div>
-                                </div>
-                                <div class="theme-card-info">
-                                    <div class="theme-card-header">
-                                        <h3 class="theme-card-title">🌲 Forest Green</h3>
-                                        <span class="theme-badge active-theme" style="display: none;">Active</span>
-                                    </div>
-                                    <p class="theme-card-description">Fresh green gradient inspired by nature</p>
-                                    <button class="theme-apply-btn" onclick="applyTheme('forest')">
-                                        <i data-feather="check"></i>
-                                        Apply Theme
-                                    </button>
-                                </div>
-                            </div>
-
-                            <!-- Midnight Theme -->
-                            <div class="theme-card" data-theme="midnight">
-                                <div class="theme-preview" style="background: linear-gradient(135deg, #2c3e50 0%, #4ca1af 100%);">
-                                    <div class="theme-preview-header">
-                                        <div class="theme-preview-logo"></div>
-                                        <div class="theme-preview-buttons">
-                                            <div class="theme-preview-btn"></div>
-                                            <div class="theme-preview-btn"></div>
-                                        </div>
-                                    </div>
-                                    <div class="theme-preview-stats">
-                                        <div class="theme-preview-stat"></div>
-                                        <div class="theme-preview-stat"></div>
-                                    </div>
-                                    <div class="theme-preview-tabs">
-                                        <div class="theme-preview-tab"></div>
-                                        <div class="theme-preview-tab"></div>
-                                    </div>
-                                    <div style="position: absolute; top: 10px; right: 10px; font-size: 24px; opacity: 0.3;">🌙</div>
-                                </div>
-                                <div class="theme-card-info">
-                                    <div class="theme-card-header">
-                                        <h3 class="theme-card-title">🌙 Midnight Blue</h3>
-                                        <span class="theme-badge active-theme" style="display: none;">Active</span>
-                                    </div>
-                                    <p class="theme-card-description">Deep blue gradient perfect for night owls</p>
-                                    <button class="theme-apply-btn" onclick="applyTheme('midnight')">
-                                        <i data-feather="check"></i>
-                                        Apply Theme
-                                    </button>
-                                </div>
-                            </div>
-
-                            <!-- Avatar Theme -->
-                            <div class="theme-card" data-theme="avatar">
-                                <div class="theme-preview" style="background: linear-gradient(135deg, #00c6ff 0%, #0072ff 100%);">
-                                    <div class="theme-preview-header">
-                                        <div class="theme-preview-logo"></div>
-                                        <div class="theme-preview-buttons">
-                                            <div class="theme-preview-btn"></div>
-                                            <div class="theme-preview-btn"></div>
-                                        </div>
-                                    </div>
-                                    <div class="theme-preview-stats">
-                                        <div class="theme-preview-stat"></div>
-                                        <div class="theme-preview-stat"></div>
-                                    </div>
-                                    <div class="theme-preview-tabs">
-                                        <div class="theme-preview-tab"></div>
-                                        <div class="theme-preview-tab"></div>
-                                    </div>
-                                    <div style="position: absolute; top: 10px; right: 10px; font-size: 24px; opacity: 0.3;">💎</div>
-                                </div>
-                                <div class="theme-card-info">
-                                    <div class="theme-card-header">
-                                        <h3 class="theme-card-title">💎 Avatar Blue</h3>
-                                        <span class="theme-badge active-theme" style="display: none;">Active</span>
-                                    </div>
-                                    <p class="theme-card-description">Vibrant blue theme inspired by Avatar</p>
-                                    <button class="theme-apply-btn" onclick="applyTheme('avatar')">
-                                        <i data-feather="check"></i>
-                                        Apply Theme
-                                    </button>
-                                </div>
-                            </div>
-
-                            <!-- Lavender Theme -->
-                            <div class="theme-card" data-theme="lavender">
-                                <div class="theme-preview" style="background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);">
-                                    <div class="theme-preview-header">
-                                        <div class="theme-preview-logo"></div>
-                                        <div class="theme-preview-buttons">
-                                            <div class="theme-preview-btn"></div>
-                                            <div class="theme-preview-btn"></div>
-                                        </div>
-                                    </div>
-                                    <div class="theme-preview-stats">
-                                        <div class="theme-preview-stat"></div>
-                                        <div class="theme-preview-stat"></div>
-                                    </div>
-                                    <div class="theme-preview-tabs">
-                                        <div class="theme-preview-tab"></div>
-                                        <div class="theme-preview-tab"></div>
-                                    </div>
-                                    <div style="position: absolute; top: 10px; right: 10px; font-size: 24px; opacity: 0.3;">💜</div>
-                                </div>
-                                <div class="theme-card-info">
-                                    <div class="theme-card-header">
-                                        <h3 class="theme-card-title">💜 Soft Lavender</h3>
-                                        <span class="theme-badge active-theme" style="display: none;">Active</span>
-                                    </div>
-                                    <p class="theme-card-description">Gentle pastel gradient for a calm vibe</p>
-                                    <button class="theme-apply-btn" onclick="applyTheme('lavender')">
-                                        <i data-feather="check"></i>
-                                        Apply Theme
-                                    </button>
-                                </div>
-                            </div>
+                        <div class="themes-grid" id="themes-grid">
+                            <!-- Theme cards will be dynamically generated here -->
                         </div>
                     </div>
                 </div>
@@ -6806,95 +6545,405 @@
 
         // Preset themes configuration
         const presetThemes = {
-            default: {
-                name: 'Default Purple',
-                primaryColor: '#667eea',
-                secondaryColor: '#764ba2',
-                fontFamily: '-apple-system, BlinkMacSystemFont, \'Segoe UI\', sans-serif',
+            // ========== FREE THEMES (10) ==========
+            lightMinimal: {
+                name: 'Light Minimal',
+                primaryColor: '#4A90E2',
+                secondaryColor: '#F2F2F2',
+                backgroundColor: '#FFFFFF',
+                textColor: '#333333',
+                fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
                 fontSize: '14px',
                 gradientDirection: '135deg',
                 animationsEnabled: true,
                 animationStyle: 'fade',
-                animationSpeed: '300ms'
+                animationSpeed: '300ms',
+                isPro: false
             },
-            japanese: {
-                name: 'Japanese Sakura',
-                primaryColor: '#f093fb',
-                secondaryColor: '#f5576c',
-                fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', 'SF Pro Text', sans-serif",
+            darkSlate: {
+                name: 'Dark Slate',
+                primaryColor: '#2C2C2C',
+                secondaryColor: '#3A8DFF',
+                backgroundColor: '#1E1E1E',
+                textColor: '#FFFFFF',
+                fontFamily: "'Roboto', 'Helvetica Neue', Arial, sans-serif",
                 fontSize: '14px',
                 gradientDirection: '135deg',
                 animationsEnabled: true,
                 animationStyle: 'slide',
-                animationSpeed: '300ms'
+                animationSpeed: '300ms',
+                isPro: false
             },
-            ocean: {
-                name: 'Ocean Breeze',
-                primaryColor: '#4facfe',
-                secondaryColor: '#00f2fe',
-                fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif",
+            softPastel: {
+                name: 'Soft Pastel',
+                primaryColor: '#A8E6CF',
+                secondaryColor: '#FF8C94',
+                backgroundColor: '#FFF7F0',
+                textColor: '#2D2D2D',
+                fontFamily: "'Poppins', -apple-system, BlinkMacSystemFont, sans-serif",
                 fontSize: '14px',
                 gradientDirection: '135deg',
                 animationsEnabled: true,
                 animationStyle: 'fade',
-                animationSpeed: '300ms'
+                animationSpeed: '300ms',
+                isPro: false
             },
-            sunset: {
-                name: 'Sunset Glow',
-                primaryColor: '#fa709a',
-                secondaryColor: '#fee140',
-                fontFamily: "'Trebuchet MS', 'Lucida Grande', 'Lucida Sans Unicode', 'Lucida Sans', sans-serif",
+            neoClean: {
+                name: 'Neo Clean',
+                primaryColor: '#87CEFA',
+                secondaryColor: '#4A90E2',
+                backgroundColor: '#FAFAFA',
+                textColor: '#1C1C1C',
+                fontFamily: "'Helvetica Neue', Helvetica, Arial, sans-serif",
+                fontSize: '14px',
+                gradientDirection: '135deg',
+                animationsEnabled: true,
+                animationStyle: 'zoom',
+                animationSpeed: '300ms',
+                isPro: false
+            },
+            ecoGreen: {
+                name: 'Eco Green',
+                primaryColor: '#2E7D32',
+                secondaryColor: '#AEEA00',
+                backgroundColor: '#FDF6E3',
+                textColor: '#1B1B1B',
+                fontFamily: "'Lato', 'Helvetica Neue', Arial, sans-serif",
                 fontSize: '14px',
                 gradientDirection: '135deg',
                 animationsEnabled: true,
                 animationStyle: 'fade',
-                animationSpeed: '300ms'
+                animationSpeed: '300ms',
+                isPro: false
             },
-            forest: {
-                name: 'Forest Green',
-                primaryColor: '#11998e',
-                secondaryColor: '#38ef7d',
-                fontFamily: "'Ubuntu', 'Segoe UI', 'Helvetica Neue', Arial, sans-serif",
+            softGray: {
+                name: 'Soft Gray',
+                primaryColor: '#D9D9D9',
+                secondaryColor: '#A0A0A0',
+                backgroundColor: '#F7F7F7',
+                textColor: '#1A1A1A',
+                fontFamily: "'Nunito', -apple-system, BlinkMacSystemFont, sans-serif",
                 fontSize: '14px',
                 gradientDirection: '135deg',
                 animationsEnabled: true,
                 animationStyle: 'fade',
-                animationSpeed: '300ms'
+                animationSpeed: '300ms',
+                isPro: false
             },
-            midnight: {
-                name: 'Midnight Blue',
-                primaryColor: '#2c3e50',
-                secondaryColor: '#4ca1af',
+            sunnyDay: {
+                name: 'Sunny Day',
+                primaryColor: '#FFD966',
+                secondaryColor: '#FFB74D',
+                backgroundColor: '#FFF8E7',
+                textColor: '#2B2B2B',
+                fontFamily: "'Open Sans', 'Helvetica Neue', Arial, sans-serif",
+                fontSize: '14px',
+                gradientDirection: '135deg',
+                animationsEnabled: true,
+                animationStyle: 'slide',
+                animationSpeed: '300ms',
+                isPro: false
+            },
+            coolBlue: {
+                name: 'Cool Blue',
+                primaryColor: '#CCE0FF',
+                secondaryColor: '#4A90E2',
+                backgroundColor: '#E6F0FA',
+                textColor: '#1C1C1C',
                 fontFamily: "'Roboto', 'Helvetica Neue', Arial, sans-serif",
                 fontSize: '14px',
                 gradientDirection: '135deg',
                 animationsEnabled: true,
                 animationStyle: 'fade',
-                animationSpeed: '300ms'
+                animationSpeed: '300ms',
+                isPro: false
             },
-            avatar: {
-                name: 'Avatar Blue',
-                primaryColor: '#00c6ff',
-                secondaryColor: '#0072ff',
-                fontFamily: "'Montserrat', 'Helvetica Neue', Arial, sans-serif",
-                fontSize: '14px',
-                gradientDirection: '135deg',
-                animationsEnabled: true,
-                animationStyle: 'zoom',
-                animationSpeed: '300ms'
-            },
-            lavender: {
-                name: 'Soft Lavender',
-                primaryColor: '#a8edea',
-                secondaryColor: '#fed6e3',
-                fontFamily: "'Verdana', 'Geneva', 'Tahoma', sans-serif",
+            mutedEarth: {
+                name: 'Muted Earth',
+                primaryColor: '#C4B99A',
+                secondaryColor: '#8C715B',
+                backgroundColor: '#F3EFE0',
+                textColor: '#2B2B2B',
+                fontFamily: "'Lato', 'Helvetica Neue', Arial, sans-serif",
                 fontSize: '14px',
                 gradientDirection: '135deg',
                 animationsEnabled: true,
                 animationStyle: 'fade',
-                animationSpeed: '300ms'
+                animationSpeed: '300ms',
+                isPro: false
+            },
+            gentleLavender: {
+                name: 'Gentle Lavender',
+                primaryColor: '#D3C4FF',
+                secondaryColor: '#A077FF',
+                backgroundColor: '#F6F3FF',
+                textColor: '#1C1C1C',
+                fontFamily: "'Poppins', -apple-system, BlinkMacSystemFont, sans-serif",
+                fontSize: '14px',
+                gradientDirection: '135deg',
+                animationsEnabled: true,
+                animationStyle: 'fade',
+                animationSpeed: '300ms',
+                isPro: false
+            },
+
+            // ========== PRO THEMES (10) ==========
+            oceanicPro: {
+                name: 'Oceanic Pro',
+                primaryColor: '#001F3F',
+                secondaryColor: '#00BFA6',
+                backgroundColor: '#001F3F',
+                textColor: '#FFFFFF',
+                accentColor: '#FF6F61',
+                fontFamily: "'SF Pro Display', -apple-system, BlinkMacSystemFont, sans-serif",
+                fontSize: '14px',
+                gradientDirection: '135deg',
+                animationsEnabled: true,
+                animationStyle: 'fade',
+                animationSpeed: '300ms',
+                isPro: true
+            },
+            sunsetGlowPro: {
+                name: 'Sunset Glow Pro',
+                primaryColor: '#2D004B',
+                secondaryColor: '#FF2D95',
+                backgroundColor: '#2D004B',
+                textColor: '#FAFAFA',
+                accentColor: '#FF9A3C',
+                fontFamily: "'Montserrat', 'Helvetica Neue', Arial, sans-serif",
+                fontSize: '14px',
+                gradientDirection: '45deg',
+                animationsEnabled: true,
+                animationStyle: 'slide',
+                animationSpeed: '300ms',
+                isPro: true
+            },
+            techMetallicPro: {
+                name: 'Tech Metallic Pro',
+                primaryColor: '#2B2B2B',
+                secondaryColor: '#C0C0C0',
+                backgroundColor: '#2B2B2B',
+                textColor: '#FFFFFF',
+                accentColor: '#1E90FF',
+                fontFamily: "'Futura', 'Helvetica Neue', Arial, sans-serif",
+                fontSize: '14px',
+                gradientDirection: '135deg',
+                animationsEnabled: true,
+                animationStyle: 'zoom',
+                animationSpeed: '300ms',
+                isPro: true
+            },
+            auroraPro: {
+                name: 'Aurora Pro',
+                primaryColor: '#0B0033',
+                secondaryColor: '#1B00FF',
+                backgroundColor: '#0B0033',
+                textColor: '#FFFFFF',
+                accentColor: '#00FFE6',
+                fontFamily: "'Helvetica Neue', Helvetica, Arial, sans-serif",
+                fontSize: '14px',
+                gradientDirection: '180deg',
+                animationsEnabled: true,
+                animationStyle: 'fade',
+                animationSpeed: '300ms',
+                isPro: true
+            },
+            vibrantCoralPro: {
+                name: 'Vibrant Coral Pro',
+                primaryColor: '#FF6B6B',
+                secondaryColor: '#FFD93D',
+                backgroundColor: '#FFFAF0',
+                textColor: '#1C1C1C',
+                fontFamily: "'Poppins', -apple-system, BlinkMacSystemFont, sans-serif",
+                fontSize: '14px',
+                gradientDirection: '135deg',
+                animationsEnabled: true,
+                animationStyle: 'slide',
+                animationSpeed: '300ms',
+                isPro: true
+            },
+            galaxyPro: {
+                name: 'Galaxy Pro',
+                primaryColor: '#0A0A0A',
+                secondaryColor: '#8C30FF',
+                backgroundColor: '#0A0A0A',
+                textColor: '#FFFFFF',
+                accentColor: '#3D2C8D',
+                fontFamily: "'Roboto', 'Helvetica Neue', Arial, sans-serif",
+                fontSize: '14px',
+                gradientDirection: '135deg',
+                animationsEnabled: true,
+                animationStyle: 'zoom',
+                animationSpeed: '300ms',
+                isPro: true
+            },
+            cyberNeonPro: {
+                name: 'Cyber Neon Pro',
+                primaryColor: '#00FFFC',
+                secondaryColor: '#FF00FC',
+                backgroundColor: '#0F0F0F',
+                textColor: '#FFFFFF',
+                fontFamily: "'SF Pro Display', -apple-system, BlinkMacSystemFont, sans-serif",
+                fontSize: '14px',
+                gradientDirection: '45deg',
+                animationsEnabled: true,
+                animationStyle: 'slide',
+                animationSpeed: '300ms',
+                isPro: true
+            },
+            goldenHourPro: {
+                name: 'Golden Hour Pro',
+                primaryColor: '#2E1E00',
+                secondaryColor: '#FFD166',
+                backgroundColor: '#2E1E00',
+                textColor: '#FFFFFF',
+                accentColor: '#FFB400',
+                fontFamily: "'Montserrat', 'Helvetica Neue', Arial, sans-serif",
+                fontSize: '14px',
+                gradientDirection: '90deg',
+                animationsEnabled: true,
+                animationStyle: 'fade',
+                animationSpeed: '300ms',
+                isPro: true
+            },
+            iceCrystalPro: {
+                name: 'Ice Crystal Pro',
+                primaryColor: '#E0F7FA',
+                secondaryColor: '#00B0FF',
+                backgroundColor: '#E0F7FA',
+                textColor: '#1C1C1C',
+                accentColor: '#81D4FA',
+                fontFamily: "'Lato', 'Helvetica Neue', Arial, sans-serif",
+                fontSize: '14px',
+                gradientDirection: '135deg',
+                animationsEnabled: true,
+                animationStyle: 'fade',
+                animationSpeed: '300ms',
+                isPro: true
+            },
+            midnightVioletPro: {
+                name: 'Midnight Violet Pro',
+                primaryColor: '#1C0033',
+                secondaryColor: '#AA33FF',
+                backgroundColor: '#1C0033',
+                textColor: '#FFFFFF',
+                accentColor: '#5D00FF',
+                fontFamily: "'Nunito', -apple-system, BlinkMacSystemFont, sans-serif",
+                fontSize: '14px',
+                gradientDirection: 'radial',
+                animationsEnabled: true,
+                animationStyle: 'zoom',
+                animationSpeed: '300ms',
+                isPro: true
             }
         };
+
+        // Dynamic Theme Card Generation
+        function renderThemeCards() {
+            const themesGrid = document.getElementById('themes-grid');
+            if (!themesGrid) return;
+
+            themesGrid.innerHTML = ''; // Clear existing cards
+
+            // Get descriptions for themes
+            const themeDescriptions = {
+                lightMinimal: 'Clean and minimal design with modern Inter font',
+                darkSlate: 'Professional dark theme with Roboto typography',
+                softPastel: 'Soft pastel colors for a gentle, calming experience',
+                neoClean: 'Neo-minimalist design with Helvetica Neue',
+                ecoGreen: 'Nature-inspired green theme with Lato font',
+                softGray: 'Elegant gray tones with Nunito typography',
+                sunnyDay: 'Bright and cheerful yellow theme with Open Sans',
+                coolBlue: 'Cool blue tones for a refreshing look',
+                mutedEarth: 'Warm earth tones for a grounded feel',
+                gentleLavender: 'Soft lavender hues with Poppins font',
+                oceanicPro: 'Deep oceanic blue with turquoise accents - Premium',
+                sunsetGlowPro: 'Vibrant coral and orange sunset gradient - Premium',
+                techMetallicPro: 'Futuristic metallic silver design - Premium',
+                auroraPro: 'Mystical aurora borealis colors - Premium',
+                vibrantCoralPro: 'Bold coral pink with turquoise pop - Premium',
+                galaxyPro: 'Deep space-inspired purple galaxy - Premium',
+                cyberNeonPro: 'Neon cyberpunk aesthetic - Premium',
+                goldenHourPro: 'Warm golden hour gradient - Premium',
+                iceCrystalPro: 'Cool icy blue with crystal highlights - Premium',
+                midnightVioletPro: 'Deep midnight violet radial gradient - Premium'
+            };
+
+            // Render each theme card
+            Object.entries(presetThemes).forEach(([themeKey, theme]) => {
+                const card = document.createElement('div');
+                card.className = 'theme-card';
+                card.dataset.theme = themeKey;
+
+                // Determine gradient style based on gradientDirection
+                let gradientStyle;
+                if (theme.gradientDirection === 'radial') {
+                    gradientStyle = `radial-gradient(circle, ${theme.primaryColor} 0%, ${theme.secondaryColor} 100%)`;
+                } else {
+                    gradientStyle = `linear-gradient(${theme.gradientDirection}, ${theme.primaryColor} 0%, ${theme.secondaryColor} 100%)`;
+                }
+
+                card.innerHTML = `
+                    <div class="theme-preview" style="background: ${gradientStyle};">
+                        <div class="theme-preview-header">
+                            <div class="theme-preview-logo"></div>
+                            <div class="theme-preview-buttons">
+                                <div class="theme-preview-btn"></div>
+                                <div class="theme-preview-btn"></div>
+                            </div>
+                        </div>
+                        <div class="theme-preview-stats">
+                            <div class="theme-preview-stat"></div>
+                            <div class="theme-preview-stat"></div>
+                        </div>
+                        <div class="theme-preview-tabs">
+                            <div class="theme-preview-tab"></div>
+                            <div class="theme-preview-tab"></div>
+                        </div>
+                    </div>
+                    <div class="theme-card-info">
+                        <div class="theme-card-header">
+                            <h3 class="theme-card-title">${theme.name}</h3>
+                            ${theme.isPro ? '<span class="theme-badge" style="background: linear-gradient(135deg, rgba(251, 191, 36, 0.2), rgba(245, 158, 11, 0.2)); color: #fbbf24; border-color: rgba(251, 191, 36, 0.3); display: inline-block;">PRO</span>' : ''}
+                            <span class="theme-badge active-theme" style="display: none;">Active</span>
+                        </div>
+                        <p class="theme-card-description">${themeDescriptions[themeKey] || theme.fontFamily.split(',')[0].replace(/['"]/g, '')}</p>
+                        <button class="theme-apply-btn" onclick="handleThemeApplication('${themeKey}')">
+                            <i data-feather="check"></i>
+                            Apply Theme
+                        </button>
+                    </div>
+                `;
+
+                themesGrid.appendChild(card);
+            });
+
+            // Re-initialize feather icons
+            if (typeof feather !== 'undefined') {
+                feather.replace();
+            }
+
+            // Load and mark active theme
+            loadActiveTheme();
+        }
+
+        // Handle theme application with Pro gating
+        function handleThemeApplication(themeName) {
+            const theme = presetThemes[themeName];
+
+            // Check if theme requires Pro and user is not Pro
+            if (theme.isPro && !userData.isPro) {
+                showUpgradeModal(
+                    'Premium Theme',
+                    `The "${theme.name}" theme is a premium feature. Upgrade to Pro to unlock all premium themes!`,
+                    'Unlock Premium Themes'
+                );
+                return;
+            }
+
+            // Apply the theme
+            applyTheme(themeName);
+        }
 
         // Theme tab switching
         document.querySelectorAll('.theme-tab-btn').forEach(btn => {
@@ -6936,6 +6985,9 @@
 
         // Initialize Pro state for custom themes
         function initializeThemesPage() {
+            // Render theme cards dynamically
+            renderThemeCards();
+
             if (userData.isPro) {
                 const proGate = document.getElementById('custom-theme-pro-gate');
                 const editor = document.getElementById('custom-theme-editor');
@@ -6946,14 +6998,20 @@
                 }
             }
 
-            // Load and display active theme
+            // Load and display active theme (also called by renderThemeCards, but safe to call twice)
             loadActiveTheme();
         }
 
         // Load active theme and mark it
         function loadActiveTheme() {
             try {
-                const themeName = localStorage.getItem('activeTheme') || 'default';
+                let themeName = localStorage.getItem('activeTheme') || 'lightMinimal';
+
+                // If stored theme doesn't exist (old theme name), fall back to lightMinimal
+                if (!presetThemes[themeName] && themeName !== 'custom') {
+                    themeName = 'lightMinimal';
+                    localStorage.setItem('activeTheme', themeName);
+                }
 
                 // Mark the active theme
                 document.querySelectorAll('.theme-card').forEach(card => {
