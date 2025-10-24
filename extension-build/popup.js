@@ -6780,6 +6780,86 @@ function applyThemeToPopup(theme) {
                 background: rgba(255, 255, 255, 0.95) !important;
                 backdrop-filter: blur(10px);
             }
+
+            /* Tab Items - Full Theme Integration */
+            .tab-item {
+                background: rgba(255, 255, 255, 0.95) !important;
+                border: 1px solid rgba(255, 255, 255, 0.2) !important;
+                backdrop-filter: blur(10px);
+                transition: all 0.3s ease !important;
+            }
+
+            .tab-item:hover {
+                background: rgba(255, 255, 255, 0.98) !important;
+                border-color: ${theme.primaryColor}60 !important;
+                box-shadow: 0 4px 12px ${theme.primaryColor}30 !important;
+                transform: translateY(-2px) !important;
+            }
+
+            .tab-item.active {
+                background: rgba(255, 255, 255, 1) !important;
+                border-color: ${theme.primaryColor} !important;
+                box-shadow: 0 0 0 2px ${theme.primaryColor}40, 0 4px 16px ${theme.primaryColor}30 !important;
+            }
+
+            /* Tab Title and URL Colors */
+            .tab-title {
+                color: ${theme.textColor || '#1e293b'} !important;
+            }
+
+            .tab-url {
+                color: ${theme.textColor ? theme.textColor + '99' : '#64748b'} !important;
+            }
+
+            /* Tab Action Buttons */
+            .action-btn {
+                background: ${theme.primaryColor}15 !important;
+                border: 1px solid ${theme.primaryColor}30 !important;
+                color: ${theme.primaryColor} !important;
+                transition: all 0.2s ease !important;
+            }
+
+            .action-btn:hover:not(.disabled) {
+                background: ${theme.primaryColor}25 !important;
+                border-color: ${theme.primaryColor}60 !important;
+                transform: scale(1.1) !important;
+            }
+
+            .action-btn.danger {
+                background: rgba(239, 68, 68, 0.1) !important;
+                border-color: rgba(239, 68, 68, 0.3) !important;
+                color: #ef4444 !important;
+            }
+
+            .action-btn.danger:hover {
+                background: rgba(239, 68, 68, 0.2) !important;
+                border-color: rgba(239, 68, 68, 0.6) !important;
+                transform: scale(1.1) !important;
+            }
+
+            .action-btn.disabled {
+                background: rgba(148, 163, 184, 0.1) !important;
+                border-color: rgba(148, 163, 184, 0.2) !important;
+                color: #94a3b8 !important;
+                opacity: 0.6 !important;
+            }
+
+            /* Tabs Container */
+            .tabs-container {
+                /* Container inherits body background through transparency */
+            }
+
+            /* Tab Favicon Container */
+            .tab-favicon-container {
+                background: ${theme.primaryColor}10 !important;
+                border-color: ${theme.primaryColor}20 !important;
+            }
+
+            /* Tab Header Hover Effects */
+            .tab-header:hover .tab-favicon-container {
+                background: ${theme.primaryColor}20 !important;
+                border-color: ${theme.primaryColor}40 !important;
+            }
         `;
 
         // Animations
