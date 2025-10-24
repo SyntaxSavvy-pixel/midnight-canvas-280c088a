@@ -6623,18 +6623,16 @@ TabmangmentPopup.prototype.sendStatsToLocalStorage = async function() {
  */
 async function applyStoredTheme() {
     try {
-        // Get theme config from localStorage (set by dashboard)
-        const themeConfigStr = localStorage.getItem('themeConfig');
+        // Get theme config from chrome.storage.local (shared across extension)
+        const stored = await chrome.storage.local.get(['themeConfig', 'activeTheme']);
 
-        if (!themeConfigStr) {
+        if (!stored.themeConfig) {
             // No theme set, use defaults
             return;
         }
 
-        const themeConfig = JSON.parse(themeConfigStr);
-
         // Apply theme to popup
-        applyThemeToPopup(themeConfig);
+        applyThemeToPopup(stored.themeConfig);
 
     } catch (error) {
         console.log('Error loading theme:', error);
@@ -6799,16 +6797,17 @@ if (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.onMessage)
         if (message.type === 'THEME_UPDATE') {
             // Theme was changed in dashboard, apply it
             if (message.themeConfig) {
-                // Save to localStorage
-                localStorage.setItem('activeTheme', message.themeName);
-                localStorage.setItem('themeConfig', JSON.stringify(message.themeConfig));
-
-                // Apply immediately
-                applyThemeToPopup(message.themeConfig);
-
-                sendResponse({ status: 'Theme applied' });
+                // Save to chrome.storage.local (shared across extension)
+                chrome.storage.local.set({
+                    activeTheme: message.themeName,
+                    themeConfig: message.themeConfig
+                }, () => {
+                    // Apply immediately
+                    applyThemeToPopup(message.themeConfig);
+                    sendResponse({ status: 'Theme applied and saved' });
+                });
             }
         }
-        return true;
+        return true; // Required for async sendResponse
     });
 }
