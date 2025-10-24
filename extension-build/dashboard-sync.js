@@ -247,6 +247,50 @@
                     // Silent fail - extension might not be available
                 }
                 break;
+
+            case 'DASHBOARD_APPLY_THEME':
+                // Apply theme to extension
+                try {
+                    // Save theme to chrome.storage.local directly
+                    if (chrome.storage && chrome.storage.local) {
+                        chrome.storage.local.set({
+                            activeTheme: message.themeName,
+                            themeConfig: message.themeConfig
+                        }, () => {
+                            if (chrome.runtime.lastError) {
+                                window.postMessage({
+                                    type: 'THEME_APPLY_RESPONSE',
+                                    source: 'tabmangment-extension',
+                                    success: false,
+                                    error: chrome.runtime.lastError.message
+                                }, '*');
+                            } else {
+                                // Also notify popup to reload theme
+                                chrome.runtime.sendMessage({
+                                    type: 'THEME_UPDATE',
+                                    themeName: message.themeName,
+                                    themeConfig: message.themeConfig
+                                }, () => {
+                                    // Ignore errors if popup is not open
+                                });
+
+                                window.postMessage({
+                                    type: 'THEME_APPLY_RESPONSE',
+                                    source: 'tabmangment-extension',
+                                    success: true
+                                }, '*');
+                            }
+                        });
+                    }
+                } catch (error) {
+                    window.postMessage({
+                        type: 'THEME_APPLY_RESPONSE',
+                        source: 'tabmangment-extension',
+                        success: false,
+                        error: error.message
+                    }, '*');
+                }
+                break;
         }
     });
 

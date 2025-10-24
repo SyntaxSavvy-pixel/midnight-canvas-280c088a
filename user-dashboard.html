@@ -6862,28 +6862,21 @@
                 localStorage.setItem('activeTheme', themeName);
                 localStorage.setItem('themeConfig', JSON.stringify(theme));
 
-                // Save to chrome.storage.local (for extension popup)
-                if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
-                    chrome.storage.local.set({
-                        activeTheme: themeName,
-                        themeConfig: theme
-                    }, () => {
-                        if (chrome.runtime.lastError) {
-                            console.log('Could not save to chrome.storage:', chrome.runtime.lastError);
-                        } else {
-                            console.log('Theme saved to extension storage successfully!');
-                        }
-                    });
-                }
-
-                // Also try sending message to extension (fallback method)
-                sendThemeToExtension(themeName, theme);
+                // Send theme to extension via content script bridge
+                window.postMessage({
+                    type: 'DASHBOARD_APPLY_THEME',
+                    source: 'tabmangment-dashboard',
+                    themeName: themeName,
+                    themeConfig: theme
+                }, '*');
 
                 // Update UI to show active theme
                 loadActiveTheme();
 
                 // Show success message
                 showNotification(`${theme.name} theme applied successfully!`, 'success');
+
+                console.log('✅ Theme sent to extension:', themeName);
             } catch (error) {
                 console.error('Error applying theme:', error);
                 showNotification('Failed to apply theme. Please try again.', 'error');
@@ -7025,27 +7018,20 @@
                 localStorage.setItem('activeTheme', 'custom');
                 localStorage.setItem('themeConfig', JSON.stringify(customTheme));
 
-                // Save to chrome.storage.local (for extension popup)
-                if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
-                    chrome.storage.local.set({
-                        activeTheme: 'custom',
-                        themeConfig: customTheme
-                    }, () => {
-                        if (chrome.runtime.lastError) {
-                            console.log('Could not save to chrome.storage:', chrome.runtime.lastError);
-                        } else {
-                            console.log('Custom theme saved to extension storage successfully!');
-                        }
-                    });
-                }
-
-                // Send to extension (fallback method)
-                sendThemeToExtension('custom', customTheme);
+                // Send theme to extension via content script bridge
+                window.postMessage({
+                    type: 'DASHBOARD_APPLY_THEME',
+                    source: 'tabmangment-dashboard',
+                    themeName: 'custom',
+                    themeConfig: customTheme
+                }, '*');
 
                 // Update UI
                 loadActiveTheme();
 
                 showNotification('Custom theme applied successfully!', 'success');
+
+                console.log('✅ Custom theme sent to extension');
             } catch (error) {
                 console.error('Error applying custom theme:', error);
                 showNotification('Failed to apply theme. Please try again.', 'error');
