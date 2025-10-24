@@ -6931,15 +6931,15 @@
         function handleThemeApplication(themeName) {
             const theme = presetThemes[themeName];
 
-            // Check if theme requires Pro and user is not Pro
-            if (theme.isPro && !userData.isPro) {
-                showUpgradeModal(
-                    'Premium Theme',
-                    `The "${theme.name}" theme is a premium feature. Upgrade to Pro to unlock all premium themes!`,
-                    'Unlock Premium Themes'
-                );
-                return;
-            }
+            // TESTING MODE: Pro gating disabled for all themes
+            // if (theme.isPro && !userData.isPro) {
+            //     showUpgradeModal(
+            //         'Premium Theme',
+            //         `The "${theme.name}" theme is a premium feature. Upgrade to Pro to unlock all premium themes!`,
+            //         'Unlock Premium Themes'
+            //     );
+            //     return;
+            // }
 
             // Apply the theme
             applyTheme(themeName);
@@ -6948,11 +6948,11 @@
         // Theme tab switching
         document.querySelectorAll('.theme-tab-btn').forEach(btn => {
             btn.addEventListener('click', function() {
-                // Check if custom tab and user is not Pro
-                if (this.dataset.tab === 'custom' && !userData.isPro) {
-                    showCustomThemeProGate();
-                    return;
-                }
+                // TESTING MODE: Pro gating disabled for custom themes
+                // if (this.dataset.tab === 'custom' && !userData.isPro) {
+                //     showCustomThemeProGate();
+                //     return;
+                // }
 
                 // Switch tabs
                 document.querySelectorAll('.theme-tab-btn').forEach(b => b.classList.remove('active'));
@@ -6988,14 +6988,13 @@
             // Render theme cards dynamically
             renderThemeCards();
 
-            if (userData.isPro) {
-                const proGate = document.getElementById('custom-theme-pro-gate');
-                const editor = document.getElementById('custom-theme-editor');
-                if (proGate && editor) {
-                    proGate.style.display = 'none';
-                    editor.style.filter = 'none';
-                    editor.style.pointerEvents = 'auto';
-                }
+            // TESTING MODE: Always show custom theme editor (Pro gating disabled)
+            const proGate = document.getElementById('custom-theme-pro-gate');
+            const editor = document.getElementById('custom-theme-editor');
+            if (proGate && editor) {
+                proGate.style.display = 'none';
+                editor.style.filter = 'none';
+                editor.style.pointerEvents = 'auto';
             }
 
             // Load and display active theme (also called by renderThemeCards, but safe to call twice)
