@@ -6858,11 +6858,25 @@
             }
 
             try {
-                // Save theme to localStorage
+                // Save theme to localStorage (for dashboard preview)
                 localStorage.setItem('activeTheme', themeName);
                 localStorage.setItem('themeConfig', JSON.stringify(theme));
 
-                // Send to extension
+                // Save to chrome.storage.local (for extension popup)
+                if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
+                    chrome.storage.local.set({
+                        activeTheme: themeName,
+                        themeConfig: theme
+                    }, () => {
+                        if (chrome.runtime.lastError) {
+                            console.log('Could not save to chrome.storage:', chrome.runtime.lastError);
+                        } else {
+                            console.log('Theme saved to extension storage successfully!');
+                        }
+                    });
+                }
+
+                // Also try sending message to extension (fallback method)
                 sendThemeToExtension(themeName, theme);
 
                 // Update UI to show active theme
@@ -7007,11 +7021,25 @@
             };
 
             try {
-                // Save as active theme
+                // Save as active theme (localStorage for dashboard preview)
                 localStorage.setItem('activeTheme', 'custom');
                 localStorage.setItem('themeConfig', JSON.stringify(customTheme));
 
-                // Send to extension
+                // Save to chrome.storage.local (for extension popup)
+                if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
+                    chrome.storage.local.set({
+                        activeTheme: 'custom',
+                        themeConfig: customTheme
+                    }, () => {
+                        if (chrome.runtime.lastError) {
+                            console.log('Could not save to chrome.storage:', chrome.runtime.lastError);
+                        } else {
+                            console.log('Custom theme saved to extension storage successfully!');
+                        }
+                    });
+                }
+
+                // Send to extension (fallback method)
                 sendThemeToExtension('custom', customTheme);
 
                 // Update UI
