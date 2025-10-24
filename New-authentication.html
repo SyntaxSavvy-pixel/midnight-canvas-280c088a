@@ -1311,16 +1311,37 @@ function generateInfiniteTabs() {
                 deletionScheduledAt: session.user.user_metadata.deletion_scheduled_at || null
             };
 
+            // Save to localStorage SYNCHRONOUSLY
             localStorage.setItem('tabmangment_user', JSON.stringify(userData));
             localStorage.setItem('tabmangment_token', session.access_token);
             localStorage.setItem('tabmangment_remember', 'true');
             sessionStorage.removeItem('user_logged_out');
 
+            // Set flag that we just authenticated (prevents dashboard from redirecting back)
+            sessionStorage.setItem('just_authenticated', 'true');
+            sessionStorage.setItem('auth_timestamp', String(Date.now()));
+
             // Track redirect to prevent loops
             sessionStorage.setItem('auth_redirect_count', String(redirectCount + 1));
             sessionStorage.setItem('auth_last_redirect_time', String(now));
 
-            window.location.replace('/user-dashboard.html');
+            // Wait a bit to ensure localStorage is written to disk
+            await new Promise(resolve => setTimeout(resolve, 100));
+
+            // Verify localStorage was actually saved before redirecting
+            const verifyUser = localStorage.getItem('tabmangment_user');
+            const verifyToken = localStorage.getItem('tabmangment_token');
+
+            if (verifyUser && verifyToken) {
+                window.location.replace('/user-dashboard.html');
+            } else {
+                console.error('Failed to save auth data to localStorage');
+                // Try one more time
+                localStorage.setItem('tabmangment_user', JSON.stringify(userData));
+                localStorage.setItem('tabmangment_token', session.access_token);
+                await new Promise(resolve => setTimeout(resolve, 200));
+                window.location.replace('/user-dashboard.html');
+            }
         }
     } catch (error) {
         // Silently fail - user can still login manually

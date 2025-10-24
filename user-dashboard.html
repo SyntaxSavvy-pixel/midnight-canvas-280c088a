@@ -3054,19 +3054,26 @@
 
         // Show device limit warning
         function showDeviceLimitWarning(deviceCount, maxDevices, isPro) {
+            // Set flag that device limit was hit
+            window._deviceLimitReached = true;
+            sessionStorage.setItem('device_limit_hit', 'true');
+
             const modal = document.createElement('div');
+            modal.id = 'device-limit-modal-protected';
+            modal.setAttribute('data-protected', 'true');
             modal.style.cssText = `
                 position: fixed;
                 top: 0;
                 left: 0;
                 right: 0;
                 bottom: 0;
-                background: rgba(15, 23, 42, 0.95);
-                z-index: 10000;
+                background: rgba(15, 23, 42, 0.98);
+                z-index: 999999;
                 display: flex;
                 align-items: center;
                 justify-content: center;
                 animation: fadeIn 0.3s ease-out;
+                pointer-events: all !important;
             `;
 
             modal.innerHTML = `
@@ -3105,6 +3112,63 @@
             `;
 
             document.body.appendChild(modal);
+
+            // ANTI-BYPASS PROTECTION: Monitor for modal deletion and block page access
+            const protectionInterval = setInterval(() => {
+                // Check if modal still exists
+                const existingModal = document.getElementById('device-limit-modal-protected');
+
+                if (!existingModal && window._deviceLimitReached) {
+                    // Modal was deleted! Re-create it immediately
+                    console.warn('🚨 Device limit bypass attempt detected');
+
+                    // Blur/hide entire page content
+                    document.body.style.filter = 'blur(20px)';
+                    document.body.style.pointerEvents = 'none';
+                    document.body.style.userSelect = 'none';
+
+                    // Re-show modal
+                    showDeviceLimitWarning(deviceCount, maxDevices, isPro);
+                }
+
+                // Also hide all main content while modal is shown
+                if (existingModal) {
+                    const dashboard = document.querySelector('.dashboard-container');
+                    if (dashboard) {
+                        dashboard.style.display = 'none';
+                    }
+                }
+            }, 100); // Check every 100ms
+
+            // Store interval ID for potential cleanup
+            window._deviceLimitProtectionInterval = protectionInterval;
+
+            // Block all keyboard shortcuts that might help bypass
+            const blockKeyboard = (e) => {
+                if (window._deviceLimitReached) {
+                    // Block F12, Ctrl+Shift+I, Ctrl+Shift+C, Ctrl+Shift+J (dev tools)
+                    if (e.keyCode === 123 || // F12
+                        (e.ctrlKey && e.shiftKey && (e.keyCode === 73 || e.keyCode === 67 || e.keyCode === 74)) ||
+                        (e.metaKey && e.altKey && (e.keyCode === 73 || e.keyCode === 67 || e.keyCode === 74))) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        return false;
+                    }
+                }
+            };
+
+            document.addEventListener('keydown', blockKeyboard, { capture: true });
+
+            // Block right-click context menu
+            const blockContextMenu = (e) => {
+                if (window._deviceLimitReached) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    return false;
+                }
+            };
+
+            document.addEventListener('contextmenu', blockContextMenu, { capture: true });
         }
 
         // Handle device logout
@@ -3466,24 +3530,58 @@
                 const justLoggedOut = sessionStorage.getItem('user_logged_out');
 
                 // REDIRECT LOOP PREVENTION: Check if we just came from auth page
+                const justAuthenticated = sessionStorage.getItem('just_authenticated');
+                const authTimestamp = sessionStorage.getItem('auth_timestamp');
                 const lastRedirectTime = sessionStorage.getItem('auth_last_redirect_time');
                 const now = Date.now();
+                const timeSinceAuth = authTimestamp ? (now - parseInt(authTimestamp)) : 999999;
                 const timeSinceRedirect = lastRedirectTime ? (now - parseInt(lastRedirectTime)) : 999999;
 
-                // If we were redirected from auth less than 3 seconds ago, DON'T redirect back
-                // This prevents infinite loops
-                if (timeSinceRedirect < 3000) {
+                // If we JUST authenticated (< 5 seconds) but localStorage is empty,
+                // it's a timing/cache issue - wait and retry instead of redirecting
+                if (justAuthenticated === 'true' && timeSinceAuth < 5000) {
+                    console.log('Just authenticated but localStorage not ready - waiting...');
+                    // Wait 500ms and try again
+                    await new Promise(resolve => setTimeout(resolve, 500));
+                    authToken = localStorage.getItem('tabmangment_token');
+                    storedUserData = localStorage.getItem('tabmangment_user');
+
+                    if (authToken && storedUserData) {
+                        console.log('✅ Auth data loaded after waiting');
+                        // Clear the flag and continue initialization
+                        sessionStorage.removeItem('just_authenticated');
+                        const parsedData = JSON.parse(storedUserData);
+                        userEmail = parsedData.email;
+                        if (parsedData.id) userData.id = parsedData.id;
+                        if (parsedData.avatar) userData.avatarUrl = parsedData.avatar;
+                        if (parsedData.provider) userData.provider = parsedData.provider;
+                        if (parsedData.name) userData.name = parsedData.name;
+                        if (parsedData.deletionScheduledAt) userData.deletionScheduledAt = parsedData.deletionScheduledAt;
+                        // Don't return - continue with initialization below
+                    } else {
+                        console.error('❌ Auth data still not available after waiting - localStorage may be broken');
+                        sessionStorage.removeItem('just_authenticated');
+                        return; // Stay on page, show error
+                    }
+                } else if (timeSinceRedirect < 3000) {
+                    // If we were redirected from auth less than 3 seconds ago, DON'T redirect back
                     console.warn('Recently redirected from auth - not redirecting back to prevent loop');
                     console.warn('User needs to manually login or clear localStorage');
                     return;
-                }
-
-                if (!justLoggedOut) {
+                } else if (!justLoggedOut) {
                     // Only redirect to login if user didn't intentionally log out
                     // Use replace to prevent back button issues
                     window.location.replace('/new-authentication');
+                    return;
+                } else {
+                    return;
                 }
-                return;
+            }
+
+            // If we reach here with valid auth data, clear the just_authenticated flag
+            if (authToken && userEmail) {
+                sessionStorage.removeItem('just_authenticated');
+                sessionStorage.removeItem('auth_timestamp');
             }
 
             // Auth check passed! Clear any logout flags and redirect counters
