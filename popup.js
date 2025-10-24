@@ -6757,34 +6757,37 @@ function applyThemeToPopup(theme) {
                 backdrop-filter: blur(10px);
             }
 
-            /* Tab Items - Full Theme Integration */
+            /* Tab Items - Full Theme Integration - Adaptive Backgrounds */
             .tab-item {
-                background: rgba(255, 255, 255, 0.95) !important;
-                border: 1px solid rgba(255, 255, 255, 0.2) !important;
+                background: ${theme.backgroundColor || 'rgba(255, 255, 255, 0.95)'} !important;
+                border: 1px solid ${theme.primaryColor}30 !important;
                 backdrop-filter: blur(10px);
                 transition: all 0.3s ease !important;
+                box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
             }
 
             .tab-item:hover {
-                background: rgba(255, 255, 255, 0.98) !important;
-                border-color: ${theme.primaryColor}60 !important;
-                box-shadow: 0 4px 12px ${theme.primaryColor}30 !important;
+                background: ${theme.backgroundColor || 'rgba(255, 255, 255, 0.98)'} !important;
+                border-color: ${theme.primaryColor}80 !important;
+                box-shadow: 0 4px 12px ${theme.primaryColor}40 !important;
                 transform: translateY(-2px) !important;
             }
 
             .tab-item.active {
-                background: rgba(255, 255, 255, 1) !important;
+                background: ${theme.backgroundColor || 'rgba(255, 255, 255, 1)'} !important;
                 border-color: ${theme.primaryColor} !important;
-                box-shadow: 0 0 0 2px ${theme.primaryColor}40, 0 4px 16px ${theme.primaryColor}30 !important;
+                box-shadow: 0 0 0 2px ${theme.primaryColor}60, 0 4px 16px ${theme.primaryColor}40 !important;
             }
 
-            /* Tab Title and URL Colors */
+            /* Tab Title and URL Colors - Proper Contrast */
             .tab-title {
                 color: ${theme.textColor || '#1e293b'} !important;
+                font-weight: 500;
             }
 
             .tab-url {
-                color: ${theme.textColor ? theme.textColor + '99' : '#64748b'} !important;
+                color: ${theme.textColor || '#64748b'} !important;
+                opacity: 0.7 !important;
             }
 
             /* Tab Action Buttons */

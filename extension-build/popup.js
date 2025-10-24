@@ -74,12 +74,12 @@ class TabmangmentPopup {
 
                 if (webLogin) {
                     // Get the newly synced data
-                    const syncedData = await chrome.storage.local.get(['userEmail', 'userName', 'isPremium']);
+                    const syncedData = await chrome.storage.local.get(['userEmail', 'userName', 'isPremium', 'isPro']);
 
                     if (syncedData.userEmail) {
                         this.userEmail = syncedData.userEmail;
                         this.userName = syncedData.userName;
-                        this.isPremium = syncedData.isPremium || false;
+                        this.isPremium = syncedData.isPremium || syncedData.isPro || false;
                         // Continue with initialization
                     } else {
                         this.hideLoader();
@@ -667,12 +667,12 @@ class TabmangmentPopup {
                 if (newEmail && !newEmail.startsWith('fallback_') && !newEmail.startsWith('user_')) {
 
                     // Get all the user data from storage
-                    const userData = await chrome.storage.local.get(['userEmail', 'userName', 'authToken', 'isPremium', 'planType']);
+                    const userData = await chrome.storage.local.get(['userEmail', 'userName', 'authToken', 'isPremium', 'isPro', 'planType']);
 
                     // Update popup state
                     this.userEmail = userData.userEmail;
                     this.userName = userData.userName || userData.userEmail.split('@')[0];
-                    this.isPremium = userData.isPremium || false;
+                    this.isPremium = userData.isPremium || userData.isPro || false;
 
                     // IMPORTANT: Hide login screen first (if it exists)
                     const loginScreen = document.getElementById('login-screen');
@@ -1809,7 +1809,7 @@ class TabmangmentPopup {
                 return false; // Show login screen
             }
 
-            const stored = await chrome.storage.local.get(['userEmail', 'authToken', 'userName', 'isPremium', 'planType']);
+            const stored = await chrome.storage.local.get(['userEmail', 'authToken', 'userName', 'isPremium', 'isPro', 'planType', 'currentPeriodEnd', 'subscriptionStatus']);
 
             // Check if user has email (not fallback or anonymous)
             if (stored.userEmail &&
@@ -1818,10 +1818,8 @@ class TabmangmentPopup {
                 this.userEmail = stored.userEmail;
                 this.userName = stored.userName || stored.userEmail.split('@')[0];
 
-                // Also set premium status if available
-                if (stored.isPremium !== undefined) {
-                    this.isPremium = stored.isPremium;
-                }
+                // Set premium status - check both isPremium and isPro
+                this.isPremium = stored.isPremium || stored.isPro || false;
 
                 return true;
             }
@@ -4310,16 +4308,31 @@ class TabmangmentPopup {
         const planIndicator = document.getElementById('plan-indicator');
         if (planIndicator) {
 
-            const subData = await chrome.storage.local.get(['currentPeriodEnd', 'subscriptionId']);
+            const subData = await chrome.storage.local.get(['currentPeriodEnd', 'subscriptionId', 'subscriptionStatus']);
             let billingInfo = '';
+
             if (subData.currentPeriodEnd) {
-                const nextBilling = new Date(subData.currentPeriodEnd).toLocaleDateString();
-                billingInfo = `Next billing: ${nextBilling}`;
+                const nextBilling = new Date(subData.currentPeriodEnd);
+                const formattedDate = nextBilling.toLocaleDateString('en-US', {
+                    month: 'short',
+                    day: 'numeric',
+                    year: 'numeric'
+                });
+
+                // Check if subscription is being cancelled
+                if (subData.subscriptionStatus === 'cancelling') {
+                    billingInfo = `Ends ${formattedDate}`;
+                } else {
+                    billingInfo = `Renews ${formattedDate}`;
+                }
+            } else {
+                billingInfo = 'Pro features active';
             }
+
             planIndicator.className = 'plan-indicator pro-plan';
             planIndicator.innerHTML = `
                 <div class="plan-badge">PRO PLAN</div>
-                <div class="plan-description">${billingInfo || 'All features unlocked'}</div>
+                <div class="plan-description">${billingInfo}</div>
             `;
         }
     }
@@ -4404,6 +4417,7 @@ class TabmangmentPopup {
             // NEW: Check localStorage (set by dashboard) instead of making API calls
             let isPro = false;
 
+            // Check localStorage first
             try {
                 const storedUserData = localStorage.getItem('tabmangment_user');
                 if (storedUserData) {
@@ -4411,12 +4425,13 @@ class TabmangmentPopup {
                     isPro = userData.isPro === true || userData.plan === 'pro';
                 }
             } catch (e) {
-                // localStorage not accessible
+                // Fall through to chrome.storage
             }
+
             // Fallback to chrome.storage
             const localSub = await chrome.storage.local.get(['stripePaymentCompleted', 'isPremium', 'isPro', 'planType']);
             if (!isPro) {
-                isPro = localSub.stripePaymentCompleted || localSub.isPremium || localSub.isPro;
+                isPro = localSub.stripePaymentCompleted || localSub.isPremium || localSub.isPro || localSub.planType === 'pro';
             }
 
             if (isPro) {
@@ -4424,8 +4439,8 @@ class TabmangmentPopup {
                     isPaid: true,
                     customer_id: 'stripe_customer',
                     subscription_id: 'stripe_sub',
-                    subscription_type: localSub.planType || 'monthly',
-                    next_billing_date: this.calculateNextBillingDate(localSub.planType || 'monthly')
+                    subscription_type: 'monthly',
+                    next_billing_date: this.calculateNextBillingDate('monthly')
                 };
                 this.paymentStatusCache = result;
                 this.paymentStatusCacheTime = now;
@@ -4794,53 +4809,14 @@ class TabmangmentPopup {
     }
     async openStripeBillingPortal() {
         try {
-            const customerData = await chrome.storage.local.get(['stripeCustomerId', 'userEmail']);
-            const userEmail = customerData.userEmail || await this.getUserEmail();
-            if (!userEmail) {
-                this.showError('No email found. Please contact support.');
-                return;
-            }
-
-            let portalUrl = null;
-            try {
-                const backendUrl = await this.getBackendUrl();
-                if (backendUrl) {
-                    const controller = new AbortController();
-                    const timeoutId = setTimeout(() => controller.abort(), 5000);
-                    const response = await fetch(`${backendUrl}/api/billing-portal`, {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                        },
-                        body: JSON.stringify({
-                            email: userEmail
-                        }),
-                        signal: controller.signal
-                    });
-                    clearTimeout(timeoutId);
-                    if (response.ok) {
-                        const data = await response.json();
-                        portalUrl = data.url;
-                    } else {
-                    }
-                }
-            } catch (apiError) {
-            }
-
-            if (portalUrl) {
-                await chrome.tabs.create({
-                    url: portalUrl,
-                    active: true
-                });
-                setTimeout(() => {
-                    window.close();
-                }, 1500);
-                return;
-            }
-
-            this.showFallbackSubscriptionPortal(userEmail);
+            // Redirect to dashboard where user can click "Manage Subscription"
+            // This is more reliable than calling API from extension
+            await chrome.tabs.create({
+                url: `${CONFIG.WEB.DASHBOARD_URL}`,
+                active: true
+            });
         } catch (error) {
-            this.showFallbackSubscriptionPortal(userEmail || 'your account');
+            this.showError('Failed to open dashboard. Please try again.');
         }
     }
     async showFallbackSubscriptionPortal(userEmail) {
@@ -6781,34 +6757,37 @@ function applyThemeToPopup(theme) {
                 backdrop-filter: blur(10px);
             }
 
-            /* Tab Items - Full Theme Integration */
+            /* Tab Items - Full Theme Integration - Adaptive Backgrounds */
             .tab-item {
-                background: rgba(255, 255, 255, 0.95) !important;
-                border: 1px solid rgba(255, 255, 255, 0.2) !important;
+                background: ${theme.backgroundColor || 'rgba(255, 255, 255, 0.95)'} !important;
+                border: 1px solid ${theme.primaryColor}30 !important;
                 backdrop-filter: blur(10px);
                 transition: all 0.3s ease !important;
+                box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
             }
 
             .tab-item:hover {
-                background: rgba(255, 255, 255, 0.98) !important;
-                border-color: ${theme.primaryColor}60 !important;
-                box-shadow: 0 4px 12px ${theme.primaryColor}30 !important;
+                background: ${theme.backgroundColor || 'rgba(255, 255, 255, 0.98)'} !important;
+                border-color: ${theme.primaryColor}80 !important;
+                box-shadow: 0 4px 12px ${theme.primaryColor}40 !important;
                 transform: translateY(-2px) !important;
             }
 
             .tab-item.active {
-                background: rgba(255, 255, 255, 1) !important;
+                background: ${theme.backgroundColor || 'rgba(255, 255, 255, 1)'} !important;
                 border-color: ${theme.primaryColor} !important;
-                box-shadow: 0 0 0 2px ${theme.primaryColor}40, 0 4px 16px ${theme.primaryColor}30 !important;
+                box-shadow: 0 0 0 2px ${theme.primaryColor}60, 0 4px 16px ${theme.primaryColor}40 !important;
             }
 
-            /* Tab Title and URL Colors */
+            /* Tab Title and URL Colors - Proper Contrast */
             .tab-title {
                 color: ${theme.textColor || '#1e293b'} !important;
+                font-weight: 500;
             }
 
             .tab-url {
-                color: ${theme.textColor ? theme.textColor + '99' : '#64748b'} !important;
+                color: ${theme.textColor || '#64748b'} !important;
+                opacity: 0.7 !important;
             }
 
             /* Tab Action Buttons */

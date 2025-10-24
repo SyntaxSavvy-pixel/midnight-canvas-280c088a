@@ -7134,11 +7134,11 @@
 
         // Save custom theme
         function saveCustomTheme() {
-            // Check Pro status
-            if (!userData.isPro) {
-                showUpgradeModal('Custom Themes', 'Save unlimited custom themes with full control over appearance.');
-                return;
-            }
+            // TESTING MODE: Pro check disabled
+            // if (!userData.isPro) {
+            //     showUpgradeModal('Custom Themes', 'Save unlimited custom themes with full control over appearance.');
+            //     return;
+            // }
 
             const themeName = document.getElementById('custom-theme-name').value.trim();
             if (!themeName) {
@@ -7188,11 +7188,11 @@
 
         // Apply custom theme (from current editor settings)
         function applyCustomTheme() {
-            // Check Pro status
-            if (!userData.isPro) {
-                showUpgradeModal('Custom Themes', 'Apply custom themes to personalize your extension.');
-                return;
-            }
+            // TESTING MODE: Pro check disabled
+            // if (!userData.isPro) {
+            //     showUpgradeModal('Custom Themes', 'Apply custom themes to personalize your extension.');
+            //     return;
+            // }
 
             const customTheme = {
                 name: 'Custom',
