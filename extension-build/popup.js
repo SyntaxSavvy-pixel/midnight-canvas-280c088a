@@ -6715,16 +6715,32 @@ function applyThemeToPopup(theme) {
             `;
         }
 
-        // Font family
+        // Font family - Apply to ALL text elements
         if (theme.fontFamily) {
             css += `
-                body {
+                body,
+                body * {
+                    font-family: ${theme.fontFamily} !important;
+                }
+                .tab-title,
+                .tab-url,
+                .stat-value,
+                .stat-label,
+                .header-btn,
+                .control-btn,
+                .empty-state p,
+                .empty-state h3,
+                button,
+                input,
+                select,
+                textarea,
+                .loader-text {
                     font-family: ${theme.fontFamily} !important;
                 }
             `;
         }
 
-        // Font size
+        // Font size - Apply to body and key elements
         if (theme.fontSize) {
             css += `
                 body {
@@ -6732,6 +6748,12 @@ function applyThemeToPopup(theme) {
                 }
                 .tab-title {
                     font-size: ${theme.fontSize} !important;
+                }
+                .tab-url {
+                    font-size: calc(${theme.fontSize} - 1px) !important;
+                }
+                .stat-label {
+                    font-size: calc(${theme.fontSize} - 2px) !important;
                 }
             `;
         }

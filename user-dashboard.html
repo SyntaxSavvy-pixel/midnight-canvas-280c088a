@@ -17,9 +17,11 @@
             https://cdn.jsdelivr.net
             https://unpkg.com
             https://*.supabase.co;
-        style-src 'self' 'unsafe-inline';
+        style-src 'self' 'unsafe-inline'
+            https://fonts.googleapis.com;
         img-src 'self' data: https: blob:;
-        font-src 'self' data:;
+        font-src 'self' data:
+            https://fonts.gstatic.com;
         connect-src 'self'
             https://*.supabase.co
             wss://*.supabase.co
@@ -45,6 +47,11 @@
 
     <link rel="icon" type="image/png" sizes="32x32" href="/icons/icon-32.png">
     <link rel="icon" type="image/png" sizes="16x16" href="/icons/icon-16.png">
+
+    <!-- Google Fonts for Theme Previews -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600;700&family=Raleway:wght@300;400;500;600;700&family=Ubuntu:wght@300;400;500;700&family=Roboto:wght@300;400;500;700&family=Montserrat:wght@300;400;500;600;700&family=Nunito:wght@300;400;500;600;700&family=Lato:wght@300;400;700&family=Open+Sans:wght@300;400;600;700&family=Playfair+Display:wght@400;500;600;700&family=Merriweather:wght@300;400;700&family=Lora:wght@400;500;600;700&family=Fira+Code:wght@300;400;500;600;700&family=Source+Code+Pro:wght@300;400;500;600;700&family=JetBrains+Mono:wght@300;400;500;600;700&family=Pacifico&family=Righteous&family=Bebas+Neue&family=Permanent+Marker&family=Alfa+Slab+One&display=swap" rel="stylesheet">
 
     <!-- Supabase JavaScript Client -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
