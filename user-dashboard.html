@@ -3096,7 +3096,7 @@
 
                     <div style="display: flex; gap: 0.75rem; flex-direction: column;">
                         ${!isPro ? `
-                            <button onclick="window.location.href='/pricing'" style="padding: 0.875rem 1.5rem; background: linear-gradient(135deg, #14b8a6, #0d9488); color: white; border: none; border-radius: 0.75rem; font-weight: 600; cursor: pointer; font-size: 0.9375rem;">
+                            <button onclick="upgradeFromDeviceLimit()" style="padding: 0.875rem 1.5rem; background: linear-gradient(135deg, #14b8a6, #0d9488); color: white; border: none; border-radius: 0.75rem; font-weight: 600; cursor: pointer; font-size: 0.9375rem;">
                                 Upgrade to Pro (${DEVICE_CONFIG.MAX_DEVICES_PRO} devices)
                             </button>
                         ` : ''}
@@ -3169,6 +3169,39 @@
             };
 
             document.addEventListener('contextmenu', blockContextMenu, { capture: true });
+        }
+
+        // Handle upgrade from device limit modal
+        function upgradeFromDeviceLimit() {
+            // Clear device limit flags
+            window._deviceLimitReached = false;
+            sessionStorage.removeItem('device_limit_hit');
+
+            // Clear protection interval
+            if (window._deviceLimitProtectionInterval) {
+                clearInterval(window._deviceLimitProtectionInterval);
+                window._deviceLimitProtectionInterval = null;
+            }
+
+            // Remove modal
+            const modal = document.getElementById('device-limit-modal-protected');
+            if (modal) {
+                modal.remove();
+            }
+
+            // Reset page styles
+            document.body.style.filter = '';
+            document.body.style.pointerEvents = '';
+            document.body.style.userSelect = '';
+
+            // Show dashboard
+            const dashboard = document.querySelector('.dashboard-container');
+            if (dashboard) {
+                dashboard.style.display = '';
+            }
+
+            // Navigate to subscription page
+            showPage('subscription');
         }
 
         // Handle device logout
