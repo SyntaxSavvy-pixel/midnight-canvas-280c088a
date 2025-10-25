@@ -2084,119 +2084,105 @@
                     </div>
                 </div>
 
-                <!-- Custom Theme Tab (Pro) - COMPLETELY REDESIGNED -->
+                <!-- Custom Theme Tab - MODAL-BASED DESIGN -->
                 <div class="theme-tab-content" id="custom-themes-tab">
-                    <!-- Pro Gate Overlay -->
-                    <div id="custom-theme-pro-gate" style="display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.98); backdrop-filter: blur(20px); z-index: 10000; align-items: center; justify-content: center; padding: 3rem;">
-                        <div style="max-width: 500px; text-align: center;">
-                            <div style="background: linear-gradient(135deg, rgba(99, 102, 241, 0.2), rgba(139, 92, 246, 0.2)); padding: 1rem 2rem; border-radius: 1rem; margin-bottom: 2rem; display: inline-block;">
-                                <span style="font-size: 2.5rem;">✨</span>
-                                <span style="color: #6366f1; font-weight: 700; font-size: 1.5rem; margin-left: 0.75rem;">PRO FEATURE</span>
+                    <div class="card">
+                        <h2 class="card-title">Custom Themes</h2>
+                        <p style="color: #94a3b8; margin-bottom: 2rem;">Create and manage your personalized themes</p>
+
+                        <!-- Custom Themes Grid -->
+                        <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1.5rem;" id="custom-themes-grid">
+                            
+                            <!-- Create New Theme Card -->
+                            <div onclick="openCustomThemeStudio()" style="background: linear-gradient(135deg, #667eea15, #764ba215); border: 2px dashed #6366f1; border-radius: 1rem; padding: 3rem 2rem; cursor: pointer; transition: all 0.3s; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 280px; position: relative; overflow: hidden;" onmouseover="this.style.background='linear-gradient(135deg, #667eea25, #764ba225)'; this.style.transform='translateY(-4px)'; this.style.boxShadow='0 8px 32px rgba(99, 102, 241, 0.3)';" onmouseout="this.style.background='linear-gradient(135deg, #667eea15, #764ba215)'; this.style.transform='translateY(0)'; this.style.boxShadow='none';">
+                                
+                                <div style="background: linear-gradient(135deg, #6366f1, #8b5cf6); width: 80px; height: 80px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-bottom: 1.5rem; box-shadow: 0 8px 24px rgba(99, 102, 241, 0.4);">
+                                    <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                        <line x1="12" y1="5" x2="12" y2="19"></line>
+                                        <line x1="5" y1="12" x2="19" y2="12"></line>
+                                    </svg>
+                                </div>
+                                
+                                <h3 style="color: #f8fafc; font-size: 1.25rem; font-weight: 700; margin: 0 0 0.5rem 0;">Create Custom Theme</h3>
+                                <p style="color: #94a3b8; font-size: 0.9375rem; margin: 0; text-align: center;">Design your own unique theme with full customization</p>
+                                
+                                <div style="position: absolute; top: 1rem; right: 1rem; background: #6366f120; color: #6366f1; padding: 0.375rem 0.75rem; border-radius: 0.5rem; font-size: 0.75rem; font-weight: 700;">
+                                    NEW
+                                </div>
                             </div>
-                            <h3 style="color: #f8fafc; font-size: 2rem; margin-bottom: 1.5rem; font-weight: 700;">Unlock Custom Theme Creation</h3>
-                            <p style="color: #94a3b8; font-size: 1.125rem; line-height: 1.8; margin-bottom: 3rem;">
-                                Create unlimited custom themes with full control over fonts, colors, backgrounds, and animations.
-                            </p>
-                            <div style="display: flex; gap: 1rem; justify-content: center;">
-                                <button onclick="closeCustomThemeEditor()" style="padding: 1rem 2rem; background: transparent; border: 2px solid #475569; border-radius: 0.75rem; color: #94a3b8; cursor: pointer; font-weight: 600; font-size: 1rem; transition: all 0.3s;">
-                                    Maybe Later
-                                </button>
-                                <button onclick="window.location.href='#subscription'" style="padding: 1rem 2.5rem; background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%); border: none; border-radius: 0.75rem; color: white; cursor: pointer; font-weight: 600; font-size: 1rem; box-shadow: 0 8px 24px rgba(99, 102, 241, 0.5); transition: all 0.3s;">
-                                    Upgrade to Pro
-                                </button>
+
+                            <!-- Saved Custom Themes Will Appear Here -->
+                            <div id="saved-custom-themes-list" style="display: contents;">
+                                <!-- Dynamically populated -->
                             </div>
                         </div>
                     </div>
+                </div>
 
-                    <!-- Modern Theme Builder -->
-                    <div id="custom-theme-editor" style="padding: 0;">
-                        <!-- Builder Header -->
-                        <div style="background: linear-gradient(135deg, #667eea15, #764ba215); border: 1px solid #334155; border-radius: 1rem; padding: 2rem; margin-bottom: 2rem;">
-                            <div style="display: flex; justify-content: space-between; align-items: center;">
-                                <div>
-                                    <h2 style="color: #f8fafc; font-size: 1.75rem; font-weight: 700; margin: 0 0 0.5rem 0; display: flex; align-items: center; gap: 0.75rem;">
-                                        <span style="font-size: 2rem;">🎨</span>
-                                        Custom Theme Studio
-                                    </h2>
-                                    <p style="color: #94a3b8; margin: 0; font-size: 1rem;">Design your perfect theme with real-time preview</p>
-                                </div>
-                                <button onclick="resetCustomTheme()" style="padding: 0.75rem 1.5rem; background: #1e293b; border: 1px solid #334155; border-radius: 0.75rem; color: #cbd5e1; cursor: pointer; font-weight: 600; transition: all 0.3s; display: flex; align-items: center; gap: 0.5rem;">
-                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                        <polyline points="1 4 1 10 7 10"></polyline>
-                                        <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path>
-                                    </svg>
-                                    Reset All
-                                </button>
+                <!-- FULL-SCREEN THEME STUDIO MODAL -->
+                <div id="custom-theme-studio-modal" style="display: none; position: fixed; inset: 0; background: rgba(0, 0, 0, 0.95); backdrop-filter: blur(10px); z-index: 9999; overflow-y: auto; animation: fadeIn 0.3s ease;">
+                    <div style="min-height: 100vh; padding: 2rem; max-width: 1600px; margin: 0 auto;">
+                        
+                        <!-- Header with Go Back Button -->
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; padding-bottom: 1.5rem; border-bottom: 1px solid #ffffff20;">
+                            <div>
+                                <h1 style="color: #f8fafc; font-size: 2.5rem; font-weight: 700; margin: 0 0 0.5rem 0; display: flex; align-items: center; gap: 1rem;">
+                                    <span style="font-size: 3rem;">🎨</span>
+                                    Custom Theme Studio
+                                </h1>
+                                <p style="color: #94a3b8; margin: 0; font-size: 1.125rem;">Design your perfect theme with live preview</p>
                             </div>
+                            <button onclick="closeCustomThemeStudio()" style="padding: 1rem 2rem; background: #1e293b; border: 2px solid #334155; border-radius: 0.75rem; color: #f8fafc; cursor: pointer; font-weight: 700; font-size: 1rem; transition: all 0.2s; display: flex; align-items: center; gap: 0.75rem;" onmouseover="this.style.background='#334155'" onmouseout="this.style.background='#1e293b'">
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <line x1="19" y1="12" x2="5" y2="12"></line>
+                                    <polyline points="12 19 5 12 12 5"></polyline>
+                                </svg>
+                                Go Back
+                            </button>
                         </div>
 
-                        <!-- Split Screen Layout -->
-                        <div style="display: grid; grid-template-columns: 45% 1fr; gap: 2rem; min-height: 600px;">
+                        <!-- Grid Layout: Preview + Controls -->
+                        <div style="display: grid; grid-template-columns: 500px 1fr; gap: 3rem; margin-bottom: 2rem;">
+                            
+                            <!-- LEFT: Live Preview (Fixed Width) -->
+                            <div>
+                                <div style="position: sticky; top: 2rem;">
+                                    <div style="background: #1e293b; border: 2px solid #334155; border-radius: 1.25rem; padding: 1.5rem; box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);">
+                                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+                                            <h3 style="color: #f8fafc; font-size: 1rem; font-weight: 700; margin: 0;">Live Preview</h3>
+                                            <span style="background: #10b98120; color: #10b981; padding: 0.375rem 0.75rem; border-radius: 0.5rem; font-size: 0.75rem; font-weight: 700; display: flex; align-items: center; gap: 0.375rem;">
+                                                <span style="width: 6px; height: 6px; background: #10b981; border-radius: 50%; animation: pulse 2s ease-in-out infinite;"></span>
+                                                LIVE
+                                            </span>
+                                        </div>
 
-                            <!-- LEFT: Live Preview (Sticky) -->
-                            <div style="position: sticky; top: 2rem; height: fit-content;">
-                                <div style="background: #1e293b; border: 2px solid #334155; border-radius: 1.25rem; padding: 1.5rem; box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);">
-                                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
-                                        <h3 style="color: #f8fafc; font-size: 1rem; font-weight: 600; margin: 0; display: flex; align-items: center; gap: 0.5rem;">
-                                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                                <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
-                                            </svg>
-                                            Live Preview
-                                        </h3>
-                                        <span id="preview-status" style="background: #10b98120; color: #10b981; padding: 0.375rem 0.75rem; border-radius: 0.5rem; font-size: 0.75rem; font-weight: 600; display: flex; align-items: center; gap: 0.375rem;">
-                                            <span style="width: 6px; height: 6px; background: #10b981; border-radius: 50%; animation: pulse 2s ease-in-out infinite;"></span>
-                                            LIVE
-                                        </span>
-                                    </div>
-
-                                    <div id="custom-theme-preview" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 1rem; padding: 2rem; min-height: 450px; transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1); box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.1);">
-                                        <!-- Realistic Extension Preview -->
-                                        <div style="background: rgba(255, 255, 255, 0.15); backdrop-filter: blur(20px); border-radius: 0.75rem; padding: 1.5rem; box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);">
-                                            <!-- Header -->
-                                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; padding-bottom: 1rem; border-bottom: 1px solid rgba(255, 255, 255, 0.2);">
-                                                <div id="preview-font-demo" data-preview-text style="color: white; font-size: 1.5rem; font-weight: 700; text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);">TabManagement</div>
-                                                <div style="display: flex; gap: 0.5rem;">
-                                                    <div style="width: 32px; height: 32px; background: rgba(255, 255, 255, 0.25); border-radius: 0.5rem; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.35)'" onmouseout="this.style.background='rgba(255,255,255,0.25)'">
-                                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
-                                                            <circle cx="11" cy="11" r="8"></circle>
-                                                            <path d="M21 21l-4.35-4.35"></path>
-                                                        </svg>
+                                        <div id="custom-theme-preview" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 1rem; padding: 2rem; min-height: 500px; transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1); box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.1);">
+                                            <!-- Extension Preview -->
+                                            <div style="background: rgba(255, 255, 255, 0.15); backdrop-filter: blur(20px); border-radius: 0.75rem; padding: 1.5rem; box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);">
+                                                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; padding-bottom: 1rem; border-bottom: 1px solid rgba(255, 255, 255, 0.2);">
+                                                    <div id="preview-font-demo" data-preview-text style="color: white; font-size: 1.5rem; font-weight: 700;">TabManagement</div>
+                                                </div>
+                                                
+                                                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.5rem;">
+                                                    <div style="background: rgba(255, 255, 255, 0.12); padding: 1rem; border-radius: 0.75rem; text-align: center;">
+                                                        <div style="color: white; font-size: 2rem; font-weight: 700;">24</div>
+                                                        <div style="color: rgba(255, 255, 255, 0.8); font-size: 0.8125rem;">TABS</div>
                                                     </div>
-                                                    <div style="width: 32px; height: 32px; background: rgba(255, 255, 255, 0.25); border-radius: 0.5rem; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.35)'" onmouseout="this.style.background='rgba(255,255,255,0.25)'">
-                                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
-                                                            <circle cx="12" cy="12" r="1"></circle>
-                                                            <circle cx="12" cy="5" r="1"></circle>
-                                                            <circle cx="12" cy="19" r="1"></circle>
-                                                        </svg>
+                                                    <div style="background: rgba(255, 255, 255, 0.12); padding: 1rem; border-radius: 0.75rem; text-align: center;">
+                                                        <div style="color: white; font-size: 2rem; font-weight: 700;">8</div>
+                                                        <div style="color: rgba(255, 255, 255, 0.8); font-size: 0.8125rem;">SAVED</div>
                                                     </div>
                                                 </div>
-                                            </div>
 
-                                            <!-- Stats Cards -->
-                                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.5rem;">
-                                                <div style="background: rgba(255, 255, 255, 0.12); padding: 1rem; border-radius: 0.75rem; text-align: center; backdrop-filter: blur(10px);">
-                                                    <div style="color: white; font-size: 2rem; font-weight: 700; margin-bottom: 0.25rem;">24</div>
-                                                    <div style="color: rgba(255, 255, 255, 0.8); font-size: 0.8125rem; font-weight: 500;">OPEN TABS</div>
-                                                </div>
-                                                <div style="background: rgba(255, 255, 255, 0.12); padding: 1rem; border-radius: 0.75rem; text-align: center; backdrop-filter: blur(10px);">
-                                                    <div style="color: white; font-size: 2rem; font-weight: 700; margin-bottom: 0.25rem;">8</div>
-                                                    <div style="color: rgba(255, 255, 255, 0.8); font-size: 0.8125rem; font-weight: 500;">SAVED</div>
-                                                </div>
-                                            </div>
-
-                                            <!-- Tab Items -->
-                                            <div style="display: flex; flex-direction: column; gap: 0.75rem;">
-                                                <div data-preview-tab data-preview-text style="background: rgba(255, 255, 255, 0.12); padding: 1rem; border-radius: 0.75rem; backdrop-filter: blur(10px); cursor: pointer; transition: all 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.2)'" onmouseout="this.style.background='rgba(255,255,255,0.12)'">
-                                                    <div style="color: white; font-size: 0.9375rem; font-weight: 600; margin-bottom: 0.25rem;">GitHub - Your Dashboard</div>
-                                                    <div style="color: rgba(255, 255, 255, 0.7); font-size: 0.8125rem;">github.com</div>
-                                                </div>
-                                                <div data-preview-tab data-preview-text style="background: rgba(255, 255, 255, 0.12); padding: 1rem; border-radius: 0.75rem; backdrop-filter: blur(10px); cursor: pointer; transition: all 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.2)'" onmouseout="this.style.background='rgba(255,255,255,0.12)'">
-                                                    <div style="color: white; font-size: 0.9375rem; font-weight: 600; margin-bottom: 0.25rem;">Figma - Design Tool</div>
-                                                    <div style="color: rgba(255, 255, 255, 0.7); font-size: 0.8125rem;">figma.com</div>
-                                                </div>
-                                                <div data-preview-tab data-preview-text style="background: rgba(255, 255, 255, 0.12); padding: 1rem; border-radius: 0.75rem; backdrop-filter: blur(10px); cursor: pointer; transition: all 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.2)'" onmouseout="this.style.background='rgba(255,255,255,0.12)'">
-                                                    <div style="color: white; font-size: 0.9375rem; font-weight: 600; margin-bottom: 0.25rem;">VS Code Documentation</div>
-                                                    <div style="color: rgba(255, 255, 255, 0.7); font-size: 0.8125rem;">code.visualstudio.com</div>
+                                                <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+                                                    <div data-preview-tab data-preview-text style="background: rgba(255, 255, 255, 0.12); padding: 1rem; border-radius: 0.75rem;">
+                                                        <div style="color: white; font-size: 0.9375rem; font-weight: 600;">GitHub Dashboard</div>
+                                                        <div style="color: rgba(255, 255, 255, 0.7); font-size: 0.8125rem;">github.com</div>
+                                                    </div>
+                                                    <div data-preview-tab data-preview-text style="background: rgba(255, 255, 255, 0.12); padding: 1rem; border-radius: 0.75rem;">
+                                                        <div style="color: white; font-size: 0.9375rem; font-weight: 600;">Figma Design</div>
+                                                        <div style="color: rgba(255, 255, 255, 0.7); font-size: 0.8125rem;">figma.com</div>
+                                                    </div>
                                                 </div>
                                             </div>
                                         </div>
@@ -2204,266 +2190,153 @@
                                 </div>
                             </div>
 
-                            <!-- RIGHT: Tabbed Controls -->
+                            <!-- RIGHT: Controls in Grid -->
                             <div>
-                                <!-- Tab Navigation -->
-                                <div style="display: flex; gap: 0.5rem; margin-bottom: 1.5rem; background: #1e293b; padding: 0.5rem; border-radius: 0.75rem; border: 1px solid #334155;">
-                                    <button class="theme-control-tab active" data-tab="colors" style="flex: 1; padding: 0.75rem 1rem; background: #6366f1; border: none; border-radius: 0.5rem; color: white; cursor: pointer; font-weight: 600; font-size: 0.875rem; transition: all 0.2s; display: flex; align-items: center; justify-content: center; gap: 0.5rem;">
-                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                            <path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"></path>
-                                        </svg>
-                                        Colors
-                                    </button>
-                                    <button class="theme-control-tab" data-tab="typography" style="flex: 1; padding: 0.75rem 1rem; background: transparent; border: none; border-radius: 0.5rem; color: #94a3b8; cursor: pointer; font-weight: 600; font-size: 0.875rem; transition: all 0.2s; display: flex; align-items: center; justify-content: center; gap: 0.5rem;">
-                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                            <polyline points="4 7 4 4 20 4 20 7"></polyline>
-                                            <line x1="9" y1="20" x2="15" y2="20"></line>
-                                            <line x1="12" y1="4" x2="12" y2="20"></line>
-                                        </svg>
-                                        Typography
-                                    </button>
-                                    <button class="theme-control-tab" data-tab="background" style="flex: 1; padding: 0.75rem 1rem; background: transparent; border: none; border-radius: 0.5rem; color: #94a3b8; cursor: pointer; font-weight: 600; font-size: 0.875rem; transition: all 0.2s; display: flex; align-items: center; justify-content: center; gap: 0.5rem;">
-                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
-                                            <circle cx="8.5" cy="8.5" r="1.5"></circle>
-                                            <polyline points="21 15 16 10 5 21"></polyline>
-                                        </svg>
-                                        Background
-                                    </button>
-                                    <button class="theme-control-tab" data-tab="animations" style="flex: 1; padding: 0.75rem 1rem; background: transparent; border: none; border-radius: 0.5rem; color: #94a3b8; cursor: pointer; font-weight: 600; font-size: 0.875rem; transition: all 0.2s; display: flex; align-items: center; justify-content: center; gap: 0.5rem;">
-                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                            <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
-                                        </svg>
-                                        Animations
-                                    </button>
-                                </div>
+                                <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 1.5rem;">
 
-                                <!-- Tab Content Panels -->
-                                <div style="background: #1e293b; border: 1px solid #334155; border-radius: 1rem; padding: 2rem; min-height: 500px;">
-
-                                    <!-- COLORS TAB -->
-                                    <div class="theme-control-panel active" data-panel="colors">
-                                        <h3 style="color: #f8fafc; font-size: 1.25rem; font-weight: 700; margin: 0 0 1.5rem 0;">Color Scheme</h3>
-
-                                        <div style="display: flex; flex-direction: column; gap: 2rem;">
-                                            <!-- Primary Color -->
+                                    <!-- Colors Panel -->
+                                    <div style="background: #1e293b; border: 1px solid #334155; border-radius: 1rem; padding: 2rem;">
+                                        <h3 style="color: #f8fafc; font-size: 1.125rem; font-weight: 700; margin: 0 0 1.5rem 0; display: flex; align-items: center; gap: 0.5rem;">
+                                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#6366f1" stroke-width="2">
+                                                <path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"></path>
+                                            </svg>
+                                            Colors
+                                        </h3>
+                                        
+                                        <div style="display: flex; flex-direction: column; gap: 1.5rem;">
                                             <div>
-                                                <label style="color: #cbd5e1; font-size: 0.875rem; font-weight: 600; display: block; margin-bottom: 1rem;">Primary Color</label>
-                                                <div style="display: flex; gap: 1rem; align-items: center;">
-                                                    <div style="position: relative; flex-shrink: 0;">
-                                                        <input type="color" id="custom-color-primary" value="#667eea" oninput="updateCustomThemePreview()" style="width: 80px; height: 80px; border: 3px solid #334155; border-radius: 1rem; cursor: pointer; background: transparent;">
-                                                        <div style="position: absolute; bottom: -0.5rem; right: -0.5rem; background: #6366f1; color: white; padding: 0.25rem 0.5rem; border-radius: 0.375rem; font-size: 0.625rem; font-weight: 700; pointer-events: none;">PRIMARY</div>
-                                                    </div>
-                                                    <div style="flex: 1;">
-                                                        <input type="text" id="custom-color-primary-text" value="#667eea" class="control-input" style="font-family: 'Courier New', monospace; font-size: 1.125rem; font-weight: 600; padding: 1rem; background: #0f172a; border: 2px solid #334155; border-radius: 0.75rem; color: #f8fafc; width: 100%;" oninput="updateCustomThemePreview()">
-                                                    </div>
+                                                <label style="color: #cbd5e1; font-size: 0.875rem; font-weight: 600; display: block; margin-bottom: 0.75rem;">Primary</label>
+                                                <div style="display: flex; gap: 0.75rem;">
+                                                    <input type="color" id="custom-color-primary" value="#667eea" oninput="updateCustomThemePreview()" style="width: 60px; height: 60px; border: 3px solid #334155; border-radius: 0.75rem; cursor: pointer;">
+                                                    <input type="text" id="custom-color-primary-text" value="#667eea" oninput="updateCustomThemePreview()" style="flex: 1; padding: 0.75rem; background: #0f172a; border: 2px solid #334155; border-radius: 0.75rem; color: #f8fafc; font-family: monospace; font-size: 1rem;">
                                                 </div>
                                             </div>
-
-                                            <!-- Secondary Color -->
                                             <div>
-                                                <label style="color: #cbd5e1; font-size: 0.875rem; font-weight: 600; display: block; margin-bottom: 1rem;">Secondary Color</label>
-                                                <div style="display: flex; gap: 1rem; align-items: center;">
-                                                    <div style="position: relative; flex-shrink: 0;">
-                                                        <input type="color" id="custom-color-secondary" value="#764ba2" oninput="updateCustomThemePreview()" style="width: 80px; height: 80px; border: 3px solid #334155; border-radius: 1rem; cursor: pointer; background: transparent;">
-                                                        <div style="position: absolute; bottom: -0.5rem; right: -0.5rem; background: #8b5cf6; color: white; padding: 0.25rem 0.5rem; border-radius: 0.375rem; font-size: 0.625rem; font-weight: 700; pointer-events: none;">SECONDARY</div>
-                                                    </div>
-                                                    <div style="flex: 1;">
-                                                        <input type="text" id="custom-color-secondary-text" value="#764ba2" class="control-input" style="font-family: 'Courier New', monospace; font-size: 1.125rem; font-weight: 600; padding: 1rem; background: #0f172a; border: 2px solid #334155; border-radius: 0.75rem; color: #f8fafc; width: 100%;" oninput="updateCustomThemePreview()">
-                                                    </div>
-                                                </div>
-                                            </div>
-
-                                            <!-- Color Presets -->
-                                            <div>
-                                                <label style="color: #cbd5e1; font-size: 0.875rem; font-weight: 600; display: block; margin-bottom: 1rem;">Quick Presets</label>
-                                                <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(60px, 1fr)); gap: 0.75rem;">
-                                                    <button onclick="applyColorPreset('#667eea', '#764ba2')" style="height: 60px; border-radius: 0.75rem; border: 2px solid #334155; cursor: pointer; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); transition: all 0.2s;" onmouseover="this.style.transform='scale(1.1)'" onmouseout="this.style.transform='scale(1)'"></button>
-                                                    <button onclick="applyColorPreset('#f093fb', '#f5576c')" style="height: 60px; border-radius: 0.75rem; border: 2px solid #334155; cursor: pointer; background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); transition: all 0.2s;" onmouseover="this.style.transform='scale(1.1)'" onmouseout="this.style.transform='scale(1)'"></button>
-                                                    <button onclick="applyColorPreset('#4facfe', '#00f2fe')" style="height: 60px; border-radius: 0.75rem; border: 2px solid #334155; cursor: pointer; background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); transition: all 0.2s;" onmouseover="this.style.transform='scale(1.1)'" onmouseout="this.style.transform='scale(1)'"></button>
-                                                    <button onclick="applyColorPreset('#43e97b', '#38f9d7')" style="height: 60px; border-radius: 0.75rem; border: 2px solid #334155; cursor: pointer; background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%); transition: all 0.2s;" onmouseover="this.style.transform='scale(1.1)'" onmouseout="this.style.transform='scale(1)'"></button>
-                                                    <button onclick="applyColorPreset('#fa709a', '#fee140')" style="height: 60px; border-radius: 0.75rem; border: 2px solid #334155; cursor: pointer; background: linear-gradient(135deg, #fa709a 0%, #fee140 100%); transition: all 0.2s;" onmouseover="this.style.transform='scale(1.1)'" onmouseout="this.style.transform='scale(1)'"></button>
-                                                    <button onclick="applyColorPreset('#a8edea', '#fed6e3')" style="height: 60px; border-radius: 0.75rem; border: 2px solid #334155; cursor: pointer; background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%); transition: all 0.2s;" onmouseover="this.style.transform='scale(1.1)'" onmouseout="this.style.transform='scale(1)'"></button>
+                                                <label style="color: #cbd5e1; font-size: 0.875rem; font-weight: 600; display: block; margin-bottom: 0.75rem;">Secondary</label>
+                                                <div style="display: flex; gap: 0.75rem;">
+                                                    <input type="color" id="custom-color-secondary" value="#764ba2" oninput="updateCustomThemePreview()" style="width: 60px; height: 60px; border: 3px solid #334155; border-radius: 0.75rem; cursor: pointer;">
+                                                    <input type="text" id="custom-color-secondary-text" value="#764ba2" oninput="updateCustomThemePreview()" style="flex: 1; padding: 0.75rem; background: #0f172a; border: 2px solid #334155; border-radius: 0.75rem; color: #f8fafc; font-family: monospace; font-size: 1rem;">
                                                 </div>
                                             </div>
                                         </div>
                                     </div>
 
-                                    <!-- TYPOGRAPHY TAB -->
-                                    <div class="theme-control-panel" data-panel="typography" style="display: none;">
-                                        <h3 style="color: #f8fafc; font-size: 1.25rem; font-weight: 700; margin: 0 0 1.5rem 0;">Typography Settings</h3>
-
-                                        <div style="display: flex; flex-direction: column; gap: 2rem;">
-                                            <!-- Font Family -->
+                                    <!-- Typography Panel -->
+                                    <div style="background: #1e293b; border: 1px solid #334155; border-radius: 1rem; padding: 2rem;">
+                                        <h3 style="color: #f8fafc; font-size: 1.125rem; font-weight: 700; margin: 0 0 1.5rem 0; display: flex; align-items: center; gap: 0.5rem;">
+                                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#6366f1" stroke-width="2">
+                                                <polyline points="4 7 4 4 20 4 20 7"></polyline>
+                                                <line x1="9" y1="20" x2="15" y2="20"></line>
+                                                <line x1="12" y1="4" x2="12" y2="20"></line>
+                                            </svg>
+                                            Typography
+                                        </h3>
+                                        
+                                        <div style="display: flex; flex-direction: column; gap: 1.5rem;">
                                             <div>
-                                                <label style="color: #cbd5e1; font-size: 0.875rem; font-weight: 600; display: block; margin-bottom: 1rem;">Font Family</label>
-                                                <select id="custom-font-family" onchange="updateCustomThemePreview()" style="width: 100%; padding: 1rem; background: #0f172a; border: 2px solid #334155; border-radius: 0.75rem; color: #f8fafc; font-size: 1rem; cursor: pointer;">
-                                                    <optgroup label="Sans-Serif Fonts">
-                                                        <option value="-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif">System Default</option>
-                                                        <option value="'Inter', sans-serif">Inter</option>
-                                                        <option value="'Roboto', sans-serif">Roboto</option>
-                                                        <option value="'Open Sans', sans-serif">Open Sans</option>
-                                                        <option value="'Lato', sans-serif">Lato</option>
-                                                        <option value="'Montserrat', sans-serif">Montserrat</option>
-                                                        <option value="'Poppins', sans-serif">Poppins</option>
-                                                        <option value="'Nunito', sans-serif">Nunito</option>
-                                                    </optgroup>
-                                                    <optgroup label="Serif Fonts">
-                                                        <option value="'Merriweather', serif">Merriweather</option>
-                                                        <option value="'Playfair Display', serif">Playfair Display</option>
-                                                        <option value="'Lora', serif">Lora</option>
-                                                    </optgroup>
-                                                    <optgroup label="Monospace">
-                                                        <option value="'Fira Code', monospace">Fira Code</option>
-                                                        <option value="'JetBrains Mono', monospace">JetBrains Mono</option>
-                                                    </optgroup>
+                                                <label style="color: #cbd5e1; font-size: 0.875rem; font-weight: 600; display: block; margin-bottom: 0.75rem;">Font Family</label>
+                                                <select id="custom-font-family" onchange="updateCustomThemePreview()" style="width: 100%; padding: 0.75rem; background: #0f172a; border: 2px solid #334155; border-radius: 0.75rem; color: #f8fafc; font-size: 0.9375rem; cursor: pointer;">
+                                                    <option value="-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif">System Default</option>
+                                                    <option value="'Inter', sans-serif">Inter</option>
+                                                    <option value="'Roboto', sans-serif">Roboto</option>
+                                                    <option value="'Poppins', sans-serif">Poppins</option>
+                                                    <option value="'Montserrat', sans-serif">Montserrat</option>
                                                 </select>
                                             </div>
-
-                                            <!-- Font Size -->
                                             <div>
-                                                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                                                <div style="display: flex; justify-content: space-between; margin-bottom: 0.75rem;">
                                                     <label style="color: #cbd5e1; font-size: 0.875rem; font-weight: 600;">Font Size</label>
-                                                    <span id="font-size-value" style="color: #6366f1; font-weight: 700; font-size: 1.125rem; font-family: monospace;">14px</span>
+                                                    <span id="font-size-value" style="color: #6366f1; font-weight: 700; font-family: monospace;">14px</span>
                                                 </div>
-                                                <input type="range" id="custom-font-size" min="12" max="20" value="14" oninput="updateCustomThemePreview()" style="width: 100%; height: 8px; border-radius: 4px; background: #334155; outline: none; -webkit-appearance: none;">
-                                                <div style="display: flex; justify-content: space-between; color: #64748b; font-size: 0.75rem; margin-top: 0.5rem;">
-                                                    <span>12px</span>
-                                                    <span>14px</span>
-                                                    <span>16px</span>
-                                                    <span>18px</span>
-                                                    <span>20px</span>
-                                                </div>
+                                                <input type="range" id="custom-font-size" min="12" max="20" value="14" oninput="updateCustomThemePreview()" style="width: 100%;">
                                             </div>
                                         </div>
                                     </div>
 
-                                    <!-- BACKGROUND TAB -->
-                                    <div class="theme-control-panel" data-panel="background" style="display: none;">
-                                        <h3 style="color: #f8fafc; font-size: 1.25rem; font-weight: 700; margin: 0 0 1.5rem 0;">Background Settings</h3>
-
-                                        <div style="display: flex; flex-direction: column; gap: 2rem;">
-                                            <!-- Background Type -->
+                                    <!-- Background Panel -->
+                                    <div style="background: #1e293b; border: 1px solid #334155; border-radius: 1rem; padding: 2rem;">
+                                        <h3 style="color: #f8fafc; font-size: 1.125rem; font-weight: 700; margin: 0 0 1.5rem 0; display: flex; align-items: center; gap: 0.5rem;">
+                                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#6366f1" stroke-width="2">
+                                                <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                                            </svg>
+                                            Background
+                                        </h3>
+                                        
+                                        <div style="display: flex; flex-direction: column; gap: 1.5rem;">
                                             <div>
-                                                <label style="color: #cbd5e1; font-size: 0.875rem; font-weight: 600; display: block; margin-bottom: 1rem;">Background Type</label>
-                                                <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1rem;">
-                                                    <button onclick="selectBgType('gradient')" id="bg-gradient" style="padding: 1.5rem 1rem; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border: 3px solid #6366f1; border-radius: 0.75rem; cursor: pointer; font-weight: 600; color: white; transition: all 0.2s; position: relative;">
-                                                        <div style="position: absolute; top: 0.5rem; right: 0.5rem; background: white; color: #6366f1; padding: 0.25rem 0.5rem; border-radius: 0.375rem; font-size: 0.625rem; font-weight: 700;">ACTIVE</div>
-                                                        Gradient
-                                                    </button>
-                                                    <button onclick="selectBgType('solid')" id="bg-solid" style="padding: 1.5rem 1rem; background: #667eea; border: 3px solid #334155; border-radius: 0.75rem; cursor: pointer; font-weight: 600; color: white; transition: all 0.2s;">
-                                                        Solid
-                                                    </button>
-                                                    <button onclick="selectBgType('pattern')" id="bg-pattern" style="padding: 1.5rem 1rem; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%), radial-gradient(circle, rgba(255,255,255,0.1) 1px, transparent 1px); background-size: cover, 20px 20px; border: 3px solid #334155; border-radius: 0.75rem; cursor: pointer; font-weight: 600; color: white; transition: all 0.2s;">
-                                                        Pattern
-                                                    </button>
-                                                </div>
-                                                <input type="hidden" id="custom-bg-type" value="gradient">
+                                                <label style="color: #cbd5e1; font-size: 0.875rem; font-weight: 600; display: block; margin-bottom: 0.75rem;">Type</label>
+                                                <select id="custom-bg-type" onchange="updateCustomThemePreview()" style="width: 100%; padding: 0.75rem; background: #0f172a; border: 2px solid #334155; border-radius: 0.75rem; color: #f8fafc; font-size: 0.9375rem; cursor: pointer;">
+                                                    <option value="gradient">Gradient</option>
+                                                    <option value="solid">Solid Color</option>
+                                                    <option value="pattern">Pattern</option>
+                                                </select>
                                             </div>
-
-                                            <!-- Gradient Direction -->
                                             <div>
-                                                <label style="color: #cbd5e1; font-size: 0.875rem; font-weight: 600; display: block; margin-bottom: 1rem;">Gradient Direction</label>
-                                                <select id="custom-gradient-direction" onchange="updateCustomThemePreview()" style="width: 100%; padding: 1rem; background: #0f172a; border: 2px solid #334155; border-radius: 0.75rem; color: #f8fafc; font-size: 1rem; cursor: pointer;">
-                                                    <option value="135deg">Diagonal (↘)</option>
-                                                    <option value="90deg">Horizontal (→)</option>
-                                                    <option value="180deg">Vertical (↓)</option>
-                                                    <option value="45deg">Diagonal (↗)</option>
-                                                    <option value="270deg">Horizontal (←)</option>
-                                                    <option value="0deg">Vertical (↑)</option>
+                                                <label style="color: #cbd5e1; font-size: 0.875rem; font-weight: 600; display: block; margin-bottom: 0.75rem;">Direction</label>
+                                                <select id="custom-gradient-direction" onchange="updateCustomThemePreview()" style="width: 100%; padding: 0.75rem; background: #0f172a; border: 2px solid #334155; border-radius: 0.75rem; color: #f8fafc; font-size: 0.9375rem; cursor: pointer;">
+                                                    <option value="135deg">Diagonal ↘</option>
+                                                    <option value="90deg">Horizontal →</option>
+                                                    <option value="180deg">Vertical ↓</option>
+                                                    <option value="45deg">Diagonal ↗</option>
                                                 </select>
                                             </div>
                                         </div>
                                     </div>
 
-                                    <!-- ANIMATIONS TAB -->
-                                    <div class="theme-control-panel" data-panel="animations" style="display: none;">
-                                        <h3 style="color: #f8fafc; font-size: 1.25rem; font-weight: 700; margin: 0 0 1.5rem 0;">Animation Settings</h3>
-
-                                        <div style="display: flex; flex-direction: column; gap: 2rem;">
-                                            <!-- Enable Animations Toggle -->
-                                            <div style="display: flex; justify-content: space-between; align-items: center; padding: 1.5rem; background: #0f172a; border-radius: 0.75rem; border: 2px solid #334155;">
-                                                <div>
-                                                    <div style="color: #f8fafc; font-weight: 600; font-size: 1rem; margin-bottom: 0.25rem;">Enable Animations</div>
-                                                    <div style="color: #64748b; font-size: 0.875rem;">Animate tab items when they appear</div>
-                                                </div>
-                                                <label style="position: relative; display: inline-block; width: 60px; height: 32px;">
-                                                    <input type="checkbox" id="custom-animations-enabled" checked onchange="updateCustomThemePreview()" style="opacity: 0; width: 0; height: 0;">
-                                                    <span style="position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background: #6366f1; transition: 0.3s; border-radius: 32px;"></span>
-                                                    <span style="position: absolute; content: ''; height: 24px; width: 24px; left: 4px; bottom: 4px; background: white; transition: 0.3s; border-radius: 50%;"></span>
-                                                </label>
-                                            </div>
-
-                                            <!-- Animation Style -->
+                                    <!-- Animations Panel -->
+                                    <div style="background: #1e293b; border: 1px solid #334155; border-radius: 1rem; padding: 2rem;">
+                                        <h3 style="color: #f8fafc; font-size: 1.125rem; font-weight: 700; margin: 0 0 1.5rem 0; display: flex; align-items: center; gap: 0.5rem;">
+                                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#6366f1" stroke-width="2">
+                                                <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+                                            </svg>
+                                            Animations
+                                        </h3>
+                                        
+                                        <div style="display: flex; flex-direction: column; gap: 1.5rem;">
                                             <div>
-                                                <label style="color: #cbd5e1; font-size: 0.875rem; font-weight: 600; display: block; margin-bottom: 1rem;">Animation Style</label>
-                                                <select id="custom-animation-style" onchange="updateCustomThemePreview()" style="width: 100%; padding: 1rem; background: #0f172a; border: 2px solid #334155; border-radius: 0.75rem; color: #f8fafc; font-size: 1rem; cursor: pointer;">
+                                                <label style="color: #cbd5e1; font-size: 0.875rem; font-weight: 600; display: block; margin-bottom: 0.75rem;">Style</label>
+                                                <select id="custom-animation-style" onchange="updateCustomThemePreview()" style="width: 100%; padding: 0.75rem; background: #0f172a; border: 2px solid #334155; border-radius: 0.75rem; color: #f8fafc; font-size: 0.9375rem; cursor: pointer;">
                                                     <option value="fade">Fade In</option>
                                                     <option value="slide">Slide Up</option>
                                                     <option value="bounce">Bounce</option>
                                                     <option value="zoom">Zoom In</option>
                                                 </select>
                                             </div>
-
-                                            <!-- Animation Speed -->
                                             <div>
-                                                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
-                                                    <label style="color: #cbd5e1; font-size: 0.875rem; font-weight: 600;">Animation Speed</label>
-                                                    <span id="animation-speed-value" style="color: #6366f1; font-weight: 700; font-size: 1.125rem; font-family: monospace;">300ms</span>
+                                                <div style="display: flex; justify-content: space-between; margin-bottom: 0.75rem;">
+                                                    <label style="color: #cbd5e1; font-size: 0.875rem; font-weight: 600;">Speed</label>
+                                                    <span id="animation-speed-value" style="color: #6366f1; font-weight: 700; font-family: monospace;">300ms</span>
                                                 </div>
-                                                <input type="range" id="custom-animation-speed" min="100" max="1000" value="300" step="50" oninput="updateCustomThemePreview()" style="width: 100%; height: 8px; border-radius: 4px; background: #334155; outline: none; -webkit-appearance: none;">
-                                                <div style="display: flex; justify-content: space-between; color: #64748b; font-size: 0.75rem; margin-top: 0.5rem;">
-                                                    <span>100ms (Fast)</span>
-                                                    <span>500ms (Medium)</span>
-                                                    <span>1000ms (Slow)</span>
-                                                </div>
+                                                <input type="range" id="custom-animation-speed" min="100" max="1000" value="300" step="50" oninput="updateCustomThemePreview()" style="width: 100%;">
+                                                <input type="checkbox" id="custom-animations-enabled" checked onchange="updateCustomThemePreview()" style="display: none;">
                                             </div>
                                         </div>
                                     </div>
+
+                                </div>
+
+                                <!-- Action Bar -->
+                                <div style="margin-top: 2rem; padding: 2rem; background: #1e293b; border: 1px solid #334155; border-radius: 1rem; display: flex; gap: 1rem; align-items: center;">
+                                    <input type="text" id="custom-theme-name" placeholder="My Awesome Theme" style="flex: 1; padding: 1rem 1.5rem; background: #0f172a; border: 2px solid #334155; border-radius: 0.75rem; color: #f8fafc; font-size: 1rem; font-weight: 500;">
+                                    <button onclick="saveCustomTheme()" style="padding: 1rem 2rem; background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%); border: none; border-radius: 0.75rem; color: white; cursor: pointer; font-weight: 700; font-size: 1rem; display: flex; align-items: center; gap: 0.75rem; box-shadow: 0 4px 20px rgba(99, 102, 241, 0.4);">
+                                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
+                                        </svg>
+                                        Save
+                                    </button>
+                                    <button onclick="applyCustomTheme()" style="padding: 1rem 2rem; background: linear-gradient(135deg, #10b981 0%, #059669 100%); border: none; border-radius: 0.75rem; color: white; cursor: pointer; font-weight: 700; font-size: 1rem; display: flex; align-items: center; gap: 0.75rem; box-shadow: 0 4px 20px rgba(16, 185, 129, 0.4);">
+                                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <polyline points="20 6 9 17 4 12"></polyline>
+                                        </svg>
+                                        Apply
+                                    </button>
                                 </div>
                             </div>
-                        </div>
 
-                        <!-- Action Bar (Sticky Bottom) -->
-                        <div style="position: sticky; bottom: 0; margin-top: 2rem; padding: 1.5rem; background: linear-gradient(180deg, transparent 0%, #0f172a 20%); backdrop-filter: blur(20px); border-top: 1px solid #334155;">
-                            <div style="display: flex; gap: 1rem; align-items: center;">
-                                <div style="flex: 1; max-width: 400px;">
-                                    <input type="text" id="custom-theme-name" placeholder="My Awesome Theme" style="width: 100%; padding: 1rem 1.5rem; background: #1e293b; border: 2px solid #334155; border-radius: 0.75rem; color: #f8fafc; font-size: 1rem; font-weight: 500;" onkeypress="if(event.key==='Enter') saveCustomTheme();">
-                                </div>
-                                <button onclick="saveCustomTheme()" style="padding: 1rem 2rem; background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%); border: none; border-radius: 0.75rem; color: white; cursor: pointer; font-weight: 700; font-size: 1rem; box-shadow: 0 4px 20px rgba(99, 102, 241, 0.4); transition: all 0.3s; display: flex; align-items: center; gap: 0.75rem; min-width: 160px; justify-content: center;">
-                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                        <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
-                                        <polyline points="17 21 17 13 7 13 7 21"></polyline>
-                                        <polyline points="7 3 7 8 15 8"></polyline>
-                                    </svg>
-                                    Save Theme
-                                </button>
-                                <button onclick="applyCustomTheme()" style="padding: 1rem 2rem; background: linear-gradient(135deg, #10b981 0%, #059669 100%); border: none; border-radius: 0.75rem; color: white; cursor: pointer; font-weight: 700; font-size: 1rem; box-shadow: 0 4px 20px rgba(16, 185, 129, 0.4); transition: all 0.3s; display: flex; align-items: center; gap: 0.75rem; min-width: 180px; justify-content: center;">
-                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                        <polyline points="20 6 9 17 4 12"></polyline>
-                                    </svg>
-                                    Apply Now
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Saved Custom Themes -->
-                    <div style="margin-top: 3rem; padding: 2rem; background: #1e293b; border: 1px solid #334155; border-radius: 1rem;">
-                        <h2 style="color: #f8fafc; font-size: 1.5rem; font-weight: 700; margin: 0 0 0.5rem 0;">Your Custom Themes</h2>
-                        <p style="color: #94a3b8; margin: 0 0 2rem 0;">Manage and apply your saved custom themes</p>
-                        <div id="saved-custom-themes-list" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1.5rem;">
-                            <div style="text-align: center; padding: 4rem 2rem; color: #64748b; grid-column: 1 / -1; border: 2px dashed #334155; border-radius: 1rem;">
-                                <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="opacity: 0.3; margin: 0 auto 1.5rem;">
-                                    <polyline points="22 12 16 12 14 15 10 15 8 12 2 12"></polyline>
-                                    <path d="M5.45 5.11L2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"></path>
-                                </svg>
-                                <p style="font-size: 1.125rem; font-weight: 600; margin: 0 0 0.5rem 0;">No Custom Themes Yet</p>
-                                <p style="font-size: 0.9375rem; margin: 0;">Create and save your first custom theme above!</p>
-                            </div>
                         </div>
                     </div>
                 </div>
+
 
             </div>
         </main>
@@ -7257,6 +7130,27 @@
             } catch (error) {
                 console.error('Error applying theme:', error);
                 showNotification('Failed to apply theme. Please try again.', 'error');
+            }
+        }
+
+        // Custom Theme Studio Modal Functions
+        function openCustomThemeStudio() {
+            const modal = document.getElementById('custom-theme-studio-modal');
+            if (modal) {
+                modal.style.display = 'block';
+                document.body.style.overflow = 'hidden'; // Prevent background scrolling
+
+                // Load any existing draft or reset to defaults
+                loadCustomThemeDraft();
+                updateCustomThemePreview();
+            }
+        }
+
+        function closeCustomThemeStudio() {
+            const modal = document.getElementById('custom-theme-studio-modal');
+            if (modal) {
+                modal.style.display = 'none';
+                document.body.style.overflow = 'auto'; // Restore scrolling
             }
         }
 
