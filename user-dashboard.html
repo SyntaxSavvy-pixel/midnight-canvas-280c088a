@@ -1631,6 +1631,92 @@
             background: #1e293b !important;
         }
 
+        /* Range Slider Styling - Professional & Polished */
+        input[type="range"] {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 100%;
+            height: 6px;
+            background: linear-gradient(to right, #6366f1 0%, #6366f1 50%, #334155 50%, #334155 100%);
+            border-radius: 3px;
+            outline: none;
+            transition: all 0.3s ease;
+        }
+
+        input[type="range"]:hover {
+            background: linear-gradient(to right, #8b5cf6 0%, #8b5cf6 50%, #475569 50%, #475569 100%);
+        }
+
+        /* Webkit (Chrome, Safari, Edge) */
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 18px;
+            height: 18px;
+            background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+            border-radius: 50%;
+            cursor: pointer;
+            box-shadow: 0 2px 8px rgba(99, 102, 241, 0.4);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        input[type="range"]::-webkit-slider-thumb:hover {
+            transform: scale(1.2);
+            box-shadow: 0 4px 16px rgba(99, 102, 241, 0.6);
+        }
+
+        input[type="range"]::-webkit-slider-thumb:active {
+            transform: scale(1.1);
+            box-shadow: 0 2px 12px rgba(99, 102, 241, 0.8);
+        }
+
+        /* Firefox */
+        input[type="range"]::-moz-range-thumb {
+            width: 18px;
+            height: 18px;
+            background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+            border: none;
+            border-radius: 50%;
+            cursor: pointer;
+            box-shadow: 0 2px 8px rgba(99, 102, 241, 0.4);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        input[type="range"]::-moz-range-thumb:hover {
+            transform: scale(1.2);
+            box-shadow: 0 4px 16px rgba(99, 102, 241, 0.6);
+        }
+
+        input[type="range"]::-moz-range-thumb:active {
+            transform: scale(1.1);
+            box-shadow: 0 2px 12px rgba(99, 102, 241, 0.8);
+        }
+
+        input[type="range"]::-moz-range-track {
+            height: 6px;
+            background: #334155;
+            border-radius: 3px;
+        }
+
+        /* Microsoft Edge & IE */
+        input[type="range"]::-ms-thumb {
+            width: 18px;
+            height: 18px;
+            background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+            border: none;
+            border-radius: 50%;
+            cursor: pointer;
+            box-shadow: 0 2px 8px rgba(99, 102, 241, 0.4);
+        }
+
+        input[type="range"]::-ms-track {
+            height: 6px;
+            background: #334155;
+            border-radius: 3px;
+            border-color: transparent;
+            color: transparent;
+        }
+
     </style>
 </head>
 <body>
@@ -2352,62 +2438,29 @@
                                     </div>
                                 </div>
 
-                                <!-- Background & Animation Section -->
-                                <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 1.5rem;">
-                                    <!-- Background -->
-                                    <div style="background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); border: 2px solid #334155; border-radius: 0.875rem; padding: 1.5rem;">
-                                        <h3 style="color: #f8fafc; font-size: 1rem; font-weight: 700; margin: 0 0 1.25rem 0; display: flex; align-items: center; gap: 0.5rem;">
-                                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#6366f1" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                                <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
-                                            </svg>
-                                            Background
-                                        </h3>
-                                        <div style="display: flex; flex-direction: column; gap: 1rem;">
-                                            <div>
-                                                <label style="color: #cbd5e1; font-size: 0.8125rem; font-weight: 600; display: block; margin-bottom: 0.5rem;">Background Style</label>
-                                                <select id="custom-bg-type" onchange="toggleSecondaryColor(); updateCustomThemePreview();" style="width: 100%; padding: 0.625rem 0.75rem; background: #0f172a; border: 2px solid #334155; border-radius: 0.5rem; color: #f8fafc; font-size: 0.8125rem; cursor: pointer; transition: all 0.3s;" onfocus="this.style.borderColor='#6366f1'" onblur="this.style.borderColor='#334155'">
-                                                    <option value="solid">Solid Color</option>
-                                                    <option value="gradient" selected>Gradient</option>
-                                                    <option value="radial">Radial Gradient</option>
-                                                    <option value="pattern">Pattern</option>
-                                                </select>
-                                            </div>
-                                            <div id="gradient-options" style="padding: 0.75rem; background: rgba(99, 102, 241, 0.05); border: 1px solid rgba(99, 102, 241, 0.2); border-radius: 0.5rem;">
-                                                <label style="display: flex; align-items: center; gap: 0.625rem; cursor: pointer;">
-                                                    <input type="checkbox" id="enable-gradient" checked onchange="toggleSecondaryColor(); updateCustomThemePreview();" style="width: 16px; height: 16px; cursor: pointer; accent-color: #6366f1;">
-                                                    <span style="color: #cbd5e1; font-size: 0.8125rem; font-weight: 600;">Enable Secondary Color</span>
-                                                </label>
-                                            </div>
+                                <!-- Background Section -->
+                                <div style="background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); border: 2px solid #334155; border-radius: 0.875rem; padding: 1.5rem;">
+                                    <h3 style="color: #f8fafc; font-size: 1rem; font-weight: 700; margin: 0 0 1.25rem 0; display: flex; align-items: center; gap: 0.5rem;">
+                                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#6366f1" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                                        </svg>
+                                        Background
+                                    </h3>
+                                    <div style="display: flex; flex-direction: column; gap: 1rem;">
+                                        <div>
+                                            <label style="color: #cbd5e1; font-size: 0.8125rem; font-weight: 600; display: block; margin-bottom: 0.5rem;">Background Style</label>
+                                            <select id="custom-bg-type" onchange="toggleSecondaryColor(); updateCustomThemePreview();" style="width: 100%; padding: 0.625rem 0.75rem; background: #0f172a; border: 2px solid #334155; border-radius: 0.5rem; color: #f8fafc; font-size: 0.8125rem; cursor: pointer; transition: all 0.3s;" onfocus="this.style.borderColor='#6366f1'" onblur="this.style.borderColor='#334155'">
+                                                <option value="solid">Solid Color</option>
+                                                <option value="gradient" selected>Gradient</option>
+                                                <option value="radial">Radial Gradient</option>
+                                                <option value="pattern">Pattern</option>
+                                            </select>
                                         </div>
-                                    </div>
-
-                                    <!-- Animations -->
-                                    <div style="background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); border: 2px solid #334155; border-radius: 0.875rem; padding: 1.5rem;">
-                                        <h3 style="color: #f8fafc; font-size: 1rem; font-weight: 700; margin: 0 0 1.25rem 0; display: flex; align-items: center; gap: 0.5rem;">
-                                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#6366f1" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                                <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
-                                            </svg>
-                                            Animations
-                                        </h3>
-                                        <div style="display: flex; flex-direction: column; gap: 1rem;">
-                                            <div>
-                                                <label style="color: #cbd5e1; font-size: 0.8125rem; font-weight: 600; display: block; margin-bottom: 0.5rem;">Animation Style</label>
-                                                <select id="custom-animation-style" onchange="updateCustomThemePreview()" style="width: 100%; padding: 0.625rem 0.75rem; background: #0f172a; border: 2px solid #334155; border-radius: 0.5rem; color: #f8fafc; font-size: 0.8125rem; cursor: pointer; transition: all 0.3s;" onfocus="this.style.borderColor='#6366f1'" onblur="this.style.borderColor='#334155'">
-                                                    <option value="none">None</option>
-                                                    <option value="fade" selected>Fade In</option>
-                                                    <option value="slide">Slide Up</option>
-                                                    <option value="zoom">Zoom In</option>
-                                                    <option value="bounce">Bounce</option>
-                                                    <option value="flip">Flip</option>
-                                                </select>
-                                            </div>
-                                            <div>
-                                                <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
-                                                    <label style="color: #cbd5e1; font-size: 0.8125rem; font-weight: 600;">Speed</label>
-                                                    <span id="animation-speed-value" style="color: #6366f1; font-weight: 700; font-family: monospace; font-size: 0.8125rem;">250ms</span>
-                                                </div>
-                                                <input type="range" id="custom-animation-speed" min="100" max="500" value="250" step="25" oninput="updateCustomThemePreview()" style="width: 100%; cursor: pointer;">
-                                            </div>
+                                        <div id="gradient-options" style="padding: 0.75rem; background: rgba(99, 102, 241, 0.05); border: 1px solid rgba(99, 102, 241, 0.2); border-radius: 0.5rem;">
+                                            <label style="display: flex; align-items: center; gap: 0.625rem; cursor: pointer;">
+                                                <input type="checkbox" id="enable-gradient" checked onchange="toggleSecondaryColor(); updateCustomThemePreview();" style="width: 16px; height: 16px; cursor: pointer; accent-color: #6366f1;">
+                                                <span style="color: #cbd5e1; font-size: 0.8125rem; font-weight: 600;">Enable Secondary Color</span>
+                                            </label>
                                         </div>
                                     </div>
                                 </div>
@@ -7391,38 +7444,23 @@
             // Update preview background
             const preview = document.getElementById('custom-theme-preview');
             if (preview) {
+                // Clear all background properties first
+                preview.style.backgroundImage = '';
+                preview.style.backgroundColor = '';
+
                 if (bgType === 'gradient' && enableGradient) {
-                    preview.style.background = `linear-gradient(135deg, ${primaryColor} 0%, ${secondaryColor} 100%)`;
-                    preview.style.backgroundImage = 'none';
-                    preview.style.backgroundSize = 'cover';
+                    preview.style.backgroundImage = `linear-gradient(135deg, ${primaryColor} 0%, ${secondaryColor} 100%)`;
                 } else if (bgType === 'radial' && enableGradient) {
-                    preview.style.background = `radial-gradient(circle at top left, ${primaryColor} 0%, ${secondaryColor} 100%)`;
-                    preview.style.backgroundImage = 'none';
-                    preview.style.backgroundSize = 'cover';
+                    preview.style.backgroundImage = `radial-gradient(circle at top left, ${primaryColor} 0%, ${secondaryColor} 100%)`;
                 } else if (bgType === 'solid') {
-                    preview.style.background = primaryColor;
-                    preview.style.backgroundImage = 'none';
-                    preview.style.backgroundSize = 'cover';
+                    preview.style.backgroundColor = primaryColor;
                 } else if (bgType === 'pattern') {
-                    preview.style.background = primaryColor;
+                    preview.style.backgroundColor = primaryColor;
                     preview.style.backgroundImage = `radial-gradient(circle, rgba(255,255,255,0.1) 1px, transparent 1px)`;
                     preview.style.backgroundSize = '20px 20px';
                 } else {
-                    // Gradient without secondary (use primary only)
-                    preview.style.background = primaryColor;
-                    preview.style.backgroundImage = 'none';
-                    preview.style.backgroundSize = 'cover';
-                }
-
-                // Apply animation to tabs if style is not "none"
-                if (animationStyle && animationStyle !== 'none') {
-                    const tabElements = preview.querySelectorAll('[data-preview-tab]');
-                    tabElements.forEach(tab => {
-                        tab.style.animation = `none`;
-                        // Force reflow
-                        void tab.offsetWidth;
-                        tab.style.animation = `${animationStyle} ${animationSpeed}ms ease`;
-                    });
+                    // Fallback to primary color
+                    preview.style.backgroundColor = primaryColor;
                 }
             }
 
