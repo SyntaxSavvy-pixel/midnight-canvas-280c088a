@@ -1582,6 +1582,106 @@
             position: relative;
         }
 
+        /* Smooth Scrolling */
+        html {
+            scroll-behavior: smooth;
+        }
+
+        /* Custom Scrollbar for Modal */
+        #custom-theme-studio-modal::-webkit-scrollbar {
+            width: 12px;
+        }
+
+        #custom-theme-studio-modal::-webkit-scrollbar-track {
+            background: rgba(15, 23, 42, 0.5);
+            border-radius: 10px;
+        }
+
+        #custom-theme-studio-modal::-webkit-scrollbar-thumb {
+            background: linear-gradient(135deg, #6366f1, #8b5cf6);
+            border-radius: 10px;
+            border: 2px solid rgba(15, 23, 42, 0.5);
+        }
+
+        #custom-theme-studio-modal::-webkit-scrollbar-thumb:hover {
+            background: linear-gradient(135deg, #7c3aed, #a855f7);
+            box-shadow: 0 0 10px rgba(99, 102, 241, 0.5);
+        }
+
+        /* Smooth Range Slider Styling */
+        input[type="range"] {
+            -webkit-appearance: none;
+            appearance: none;
+            height: 6px;
+            background: linear-gradient(90deg, #334155 0%, #6366f1 0%, #6366f1 50%, #334155 50%);
+            border-radius: 5px;
+            outline: none;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            background: linear-gradient(135deg, #6366f1, #8b5cf6);
+            cursor: pointer;
+            border-radius: 50%;
+            box-shadow: 0 2px 8px rgba(99, 102, 241, 0.4);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        input[type="range"]::-webkit-slider-thumb:hover {
+            transform: scale(1.2);
+            box-shadow: 0 4px 16px rgba(99, 102, 241, 0.6);
+        }
+
+        input[type="range"]::-moz-range-thumb {
+            width: 20px;
+            height: 20px;
+            background: linear-gradient(135deg, #6366f1, #8b5cf6);
+            cursor: pointer;
+            border-radius: 50%;
+            border: none;
+            box-shadow: 0 2px 8px rgba(99, 102, 241, 0.4);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        input[type="range"]::-moz-range-thumb:hover {
+            transform: scale(1.2);
+            box-shadow: 0 4px 16px rgba(99, 102, 241, 0.6);
+        }
+
+        /* Smooth Color Input Styling */
+        input[type="color"]::-webkit-color-swatch {
+            border: none;
+            border-radius: 0.5rem;
+        }
+
+        input[type="color"]::-moz-color-swatch {
+            border: none;
+            border-radius: 0.5rem;
+        }
+
+        /* Fade In Animation for Modal */
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+            to {
+                opacity: 1;
+            }
+        }
+
+        /* Select Dropdown Styling */
+        select {
+            cursor: pointer;
+        }
+
+        select:hover {
+            background: #1e293b !important;
+        }
+
     </style>
 </head>
 <body>
@@ -2120,8 +2220,8 @@
                 </div>
 
                 <!-- FULL-SCREEN THEME STUDIO MODAL -->
-                <div id="custom-theme-studio-modal" style="display: none; position: fixed; inset: 0; background: rgba(0, 0, 0, 0.95); backdrop-filter: blur(10px); z-index: 9999; overflow-y: auto; animation: fadeIn 0.3s ease;">
-                    <div style="min-height: 100vh; padding: 2rem; max-width: 1600px; margin: 0 auto;">
+                <div id="custom-theme-studio-modal" style="display: none; position: fixed; inset: 0; background: rgba(0, 0, 0, 0.95); backdrop-filter: blur(10px); z-index: 9999; overflow-y: auto; scroll-behavior: smooth; animation: fadeIn 0.3s ease;">
+                    <div style="min-height: 100vh; padding: 2.5rem; max-width: 1600px; margin: 0 auto;">
                         
                         <!-- Header with Go Back Button -->
                         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; padding-bottom: 1.5rem; border-bottom: 1px solid #ffffff20;">
@@ -2132,8 +2232,8 @@
                                 </h1>
                                 <p style="color: #94a3b8; margin: 0; font-size: 1.125rem;">Design your perfect theme with live preview</p>
                             </div>
-                            <button onclick="closeCustomThemeStudio()" style="padding: 1rem 2rem; background: #1e293b; border: 2px solid #334155; border-radius: 0.75rem; color: #f8fafc; cursor: pointer; font-weight: 700; font-size: 1rem; transition: all 0.2s; display: flex; align-items: center; gap: 0.75rem;" onmouseover="this.style.background='#334155'" onmouseout="this.style.background='#1e293b'">
-                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <button onclick="closeCustomThemeStudio()" style="padding: 1rem 2rem; background: #1e293b; border: 2px solid #334155; border-radius: 0.75rem; color: #f8fafc; cursor: pointer; font-weight: 700; font-size: 1rem; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); display: flex; align-items: center; gap: 0.75rem; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);" onmouseover="this.style.background='#334155'; this.style.transform='translateY(-2px)'; this.style.boxShadow='0 6px 20px rgba(0, 0, 0, 0.4)'" onmouseout="this.style.background='#1e293b'; this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 12px rgba(0, 0, 0, 0.3)'">
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                     <line x1="19" y1="12" x2="5" y2="12"></line>
                                     <polyline points="12 19 5 12 12 5"></polyline>
                                 </svg>
@@ -2147,11 +2247,11 @@
                             <!-- LEFT: Live Preview (Fixed Width) -->
                             <div>
                                 <div style="position: sticky; top: 2rem;">
-                                    <div style="background: #1e293b; border: 2px solid #334155; border-radius: 1.25rem; padding: 1.5rem; box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);">
-                                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
-                                            <h3 style="color: #f8fafc; font-size: 1rem; font-weight: 700; margin: 0;">Live Preview</h3>
-                                            <span style="background: #10b98120; color: #10b981; padding: 0.375rem 0.75rem; border-radius: 0.5rem; font-size: 0.75rem; font-weight: 700; display: flex; align-items: center; gap: 0.375rem;">
-                                                <span style="width: 6px; height: 6px; background: #10b981; border-radius: 50%; animation: pulse 2s ease-in-out infinite;"></span>
+                                    <div style="background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); border: 2px solid #334155; border-radius: 1.25rem; padding: 1.75rem; box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6), 0 0 1px rgba(255, 255, 255, 0.1) inset;">
+                                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.75rem;">
+                                            <h3 style="color: #f8fafc; font-size: 1.0625rem; font-weight: 700; margin: 0; letter-spacing: -0.01em;">Live Preview</h3>
+                                            <span style="background: linear-gradient(135deg, #10b98115 0%, #10b98125 100%); color: #10b981; padding: 0.5rem 0.875rem; border-radius: 0.625rem; font-size: 0.75rem; font-weight: 700; display: flex; align-items: center; gap: 0.5rem; border: 1px solid #10b98130;">
+                                                <span style="width: 6px; height: 6px; background: #10b981; border-radius: 50%; animation: pulse 2s ease-in-out infinite; box-shadow: 0 0 8px #10b981;"></span>
                                                 LIVE
                                             </span>
                                         </div>
@@ -2192,50 +2292,50 @@
 
                             <!-- RIGHT: Controls in Grid -->
                             <div>
-                                <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 1.5rem;">
+                                <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 1.75rem;">
 
                                     <!-- Colors Panel -->
-                                    <div style="background: #1e293b; border: 1px solid #334155; border-radius: 1rem; padding: 2rem;">
-                                        <h3 style="color: #f8fafc; font-size: 1.125rem; font-weight: 700; margin: 0 0 1.5rem 0; display: flex; align-items: center; gap: 0.5rem;">
-                                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#6366f1" stroke-width="2">
+                                    <div style="background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); border: 1px solid #334155; border-radius: 1.125rem; padding: 2rem; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);" onmouseover="this.style.borderColor='#475569'; this.style.boxShadow='0 6px 20px rgba(0, 0, 0, 0.3)'" onmouseout="this.style.borderColor='#334155'; this.style.boxShadow='0 4px 12px rgba(0, 0, 0, 0.2)'">
+                                        <h3 style="color: #f8fafc; font-size: 1.125rem; font-weight: 700; margin: 0 0 1.75rem 0; display: flex; align-items: center; gap: 0.625rem; letter-spacing: -0.01em;">
+                                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#6366f1" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                                 <path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"></path>
                                             </svg>
                                             Colors
                                         </h3>
                                         
-                                        <div style="display: flex; flex-direction: column; gap: 1.5rem;">
+                                        <div style="display: flex; flex-direction: column; gap: 1.75rem;">
                                             <div>
-                                                <label style="color: #cbd5e1; font-size: 0.875rem; font-weight: 600; display: block; margin-bottom: 0.75rem;">Primary</label>
-                                                <div style="display: flex; gap: 0.75rem;">
-                                                    <input type="color" id="custom-color-primary" value="#667eea" oninput="updateCustomThemePreview()" style="width: 60px; height: 60px; border: 3px solid #334155; border-radius: 0.75rem; cursor: pointer;">
-                                                    <input type="text" id="custom-color-primary-text" value="#667eea" oninput="updateCustomThemePreview()" style="flex: 1; padding: 0.75rem; background: #0f172a; border: 2px solid #334155; border-radius: 0.75rem; color: #f8fafc; font-family: monospace; font-size: 1rem;">
+                                                <label style="color: #cbd5e1; font-size: 0.875rem; font-weight: 600; display: block; margin-bottom: 0.875rem;">Primary</label>
+                                                <div style="display: flex; gap: 0.875rem;">
+                                                    <input type="color" id="custom-color-primary" value="#667eea" oninput="updateCustomThemePreview()" style="width: 60px; height: 60px; border: 3px solid #334155; border-radius: 0.875rem; cursor: pointer; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);" onfocus="this.style.borderColor='#6366f1'; this.style.boxShadow='0 0 0 3px rgba(99, 102, 241, 0.2)'" onblur="this.style.borderColor='#334155'; this.style.boxShadow='none'">
+                                                    <input type="text" id="custom-color-primary-text" value="#667eea" oninput="updateCustomThemePreview()" style="flex: 1; padding: 0.875rem 1rem; background: #0f172a; border: 2px solid #334155; border-radius: 0.75rem; color: #f8fafc; font-family: monospace; font-size: 0.9375rem; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);" onfocus="this.style.borderColor='#6366f1'; this.style.background='#1e293b'; this.style.boxShadow='0 0 0 3px rgba(99, 102, 241, 0.15)'" onblur="this.style.borderColor='#334155'; this.style.background='#0f172a'; this.style.boxShadow='none'">
                                                 </div>
                                             </div>
                                             <div>
-                                                <label style="color: #cbd5e1; font-size: 0.875rem; font-weight: 600; display: block; margin-bottom: 0.75rem;">Secondary</label>
-                                                <div style="display: flex; gap: 0.75rem;">
-                                                    <input type="color" id="custom-color-secondary" value="#764ba2" oninput="updateCustomThemePreview()" style="width: 60px; height: 60px; border: 3px solid #334155; border-radius: 0.75rem; cursor: pointer;">
-                                                    <input type="text" id="custom-color-secondary-text" value="#764ba2" oninput="updateCustomThemePreview()" style="flex: 1; padding: 0.75rem; background: #0f172a; border: 2px solid #334155; border-radius: 0.75rem; color: #f8fafc; font-family: monospace; font-size: 1rem;">
+                                                <label style="color: #cbd5e1; font-size: 0.875rem; font-weight: 600; display: block; margin-bottom: 0.875rem;">Secondary</label>
+                                                <div style="display: flex; gap: 0.875rem;">
+                                                    <input type="color" id="custom-color-secondary" value="#764ba2" oninput="updateCustomThemePreview()" style="width: 60px; height: 60px; border: 3px solid #334155; border-radius: 0.875rem; cursor: pointer; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);" onfocus="this.style.borderColor='#6366f1'; this.style.boxShadow='0 0 0 3px rgba(99, 102, 241, 0.2)'" onblur="this.style.borderColor='#334155'; this.style.boxShadow='none'">
+                                                    <input type="text" id="custom-color-secondary-text" value="#764ba2" oninput="updateCustomThemePreview()" style="flex: 1; padding: 0.875rem 1rem; background: #0f172a; border: 2px solid #334155; border-radius: 0.75rem; color: #f8fafc; font-family: monospace; font-size: 0.9375rem; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);" onfocus="this.style.borderColor='#6366f1'; this.style.background='#1e293b'; this.style.boxShadow='0 0 0 3px rgba(99, 102, 241, 0.15)'" onblur="this.style.borderColor='#334155'; this.style.background='#0f172a'; this.style.boxShadow='none'">
                                                 </div>
                                             </div>
                                         </div>
                                     </div>
 
                                     <!-- Typography Panel -->
-                                    <div style="background: #1e293b; border: 1px solid #334155; border-radius: 1rem; padding: 2rem;">
-                                        <h3 style="color: #f8fafc; font-size: 1.125rem; font-weight: 700; margin: 0 0 1.5rem 0; display: flex; align-items: center; gap: 0.5rem;">
-                                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#6366f1" stroke-width="2">
+                                    <div style="background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); border: 1px solid #334155; border-radius: 1.125rem; padding: 2rem; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);" onmouseover="this.style.borderColor='#475569'; this.style.boxShadow='0 6px 20px rgba(0, 0, 0, 0.3)'" onmouseout="this.style.borderColor='#334155'; this.style.boxShadow='0 4px 12px rgba(0, 0, 0, 0.2)'">
+                                        <h3 style="color: #f8fafc; font-size: 1.125rem; font-weight: 700; margin: 0 0 1.75rem 0; display: flex; align-items: center; gap: 0.625rem; letter-spacing: -0.01em;">
+                                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#6366f1" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                                 <polyline points="4 7 4 4 20 4 20 7"></polyline>
                                                 <line x1="9" y1="20" x2="15" y2="20"></line>
                                                 <line x1="12" y1="4" x2="12" y2="20"></line>
                                             </svg>
                                             Typography
                                         </h3>
-                                        
-                                        <div style="display: flex; flex-direction: column; gap: 1.5rem;">
+
+                                        <div style="display: flex; flex-direction: column; gap: 1.75rem;">
                                             <div>
-                                                <label style="color: #cbd5e1; font-size: 0.875rem; font-weight: 600; display: block; margin-bottom: 0.75rem;">Font Family</label>
-                                                <select id="custom-font-family" onchange="updateCustomThemePreview()" style="width: 100%; padding: 0.75rem; background: #0f172a; border: 2px solid #334155; border-radius: 0.75rem; color: #f8fafc; font-size: 0.9375rem; cursor: pointer;">
+                                                <label style="color: #cbd5e1; font-size: 0.875rem; font-weight: 600; display: block; margin-bottom: 0.875rem;">Font Family</label>
+                                                <select id="custom-font-family" onchange="updateCustomThemePreview()" style="width: 100%; padding: 0.875rem 1rem; background: #0f172a; border: 2px solid #334155; border-radius: 0.75rem; color: #f8fafc; font-size: 0.9375rem; cursor: pointer; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);" onfocus="this.style.borderColor='#6366f1'; this.style.background='#1e293b'; this.style.boxShadow='0 0 0 3px rgba(99, 102, 241, 0.15)'" onblur="this.style.borderColor='#334155'; this.style.background='#0f172a'; this.style.boxShadow='none'">
                                                     <option value="-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif">System Default</option>
                                                     <option value="'Inter', sans-serif">Inter</option>
                                                     <option value="'Roboto', sans-serif">Roboto</option>
@@ -2244,36 +2344,36 @@
                                                 </select>
                                             </div>
                                             <div>
-                                                <div style="display: flex; justify-content: space-between; margin-bottom: 0.75rem;">
+                                                <div style="display: flex; justify-content: space-between; margin-bottom: 0.875rem;">
                                                     <label style="color: #cbd5e1; font-size: 0.875rem; font-weight: 600;">Font Size</label>
-                                                    <span id="font-size-value" style="color: #6366f1; font-weight: 700; font-family: monospace;">14px</span>
+                                                    <span id="font-size-value" style="color: #6366f1; font-weight: 700; font-family: monospace; font-size: 0.9375rem;">14px</span>
                                                 </div>
-                                                <input type="range" id="custom-font-size" min="12" max="20" value="14" oninput="updateCustomThemePreview()" style="width: 100%;">
+                                                <input type="range" id="custom-font-size" min="12" max="20" value="14" oninput="updateCustomThemePreview()" style="width: 100%; cursor: pointer;">
                                             </div>
                                         </div>
                                     </div>
 
                                     <!-- Background Panel -->
-                                    <div style="background: #1e293b; border: 1px solid #334155; border-radius: 1rem; padding: 2rem;">
-                                        <h3 style="color: #f8fafc; font-size: 1.125rem; font-weight: 700; margin: 0 0 1.5rem 0; display: flex; align-items: center; gap: 0.5rem;">
-                                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#6366f1" stroke-width="2">
+                                    <div style="background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); border: 1px solid #334155; border-radius: 1.125rem; padding: 2rem; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);" onmouseover="this.style.borderColor='#475569'; this.style.boxShadow='0 6px 20px rgba(0, 0, 0, 0.3)'" onmouseout="this.style.borderColor='#334155'; this.style.boxShadow='0 4px 12px rgba(0, 0, 0, 0.2)'">
+                                        <h3 style="color: #f8fafc; font-size: 1.125rem; font-weight: 700; margin: 0 0 1.75rem 0; display: flex; align-items: center; gap: 0.625rem; letter-spacing: -0.01em;">
+                                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#6366f1" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                                 <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
                                             </svg>
                                             Background
                                         </h3>
-                                        
-                                        <div style="display: flex; flex-direction: column; gap: 1.5rem;">
+
+                                        <div style="display: flex; flex-direction: column; gap: 1.75rem;">
                                             <div>
-                                                <label style="color: #cbd5e1; font-size: 0.875rem; font-weight: 600; display: block; margin-bottom: 0.75rem;">Type</label>
-                                                <select id="custom-bg-type" onchange="updateCustomThemePreview()" style="width: 100%; padding: 0.75rem; background: #0f172a; border: 2px solid #334155; border-radius: 0.75rem; color: #f8fafc; font-size: 0.9375rem; cursor: pointer;">
+                                                <label style="color: #cbd5e1; font-size: 0.875rem; font-weight: 600; display: block; margin-bottom: 0.875rem;">Type</label>
+                                                <select id="custom-bg-type" onchange="updateCustomThemePreview()" style="width: 100%; padding: 0.875rem 1rem; background: #0f172a; border: 2px solid #334155; border-radius: 0.75rem; color: #f8fafc; font-size: 0.9375rem; cursor: pointer; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);" onfocus="this.style.borderColor='#6366f1'; this.style.background='#1e293b'; this.style.boxShadow='0 0 0 3px rgba(99, 102, 241, 0.15)'" onblur="this.style.borderColor='#334155'; this.style.background='#0f172a'; this.style.boxShadow='none'">
                                                     <option value="gradient">Gradient</option>
                                                     <option value="solid">Solid Color</option>
                                                     <option value="pattern">Pattern</option>
                                                 </select>
                                             </div>
                                             <div>
-                                                <label style="color: #cbd5e1; font-size: 0.875rem; font-weight: 600; display: block; margin-bottom: 0.75rem;">Direction</label>
-                                                <select id="custom-gradient-direction" onchange="updateCustomThemePreview()" style="width: 100%; padding: 0.75rem; background: #0f172a; border: 2px solid #334155; border-radius: 0.75rem; color: #f8fafc; font-size: 0.9375rem; cursor: pointer;">
+                                                <label style="color: #cbd5e1; font-size: 0.875rem; font-weight: 600; display: block; margin-bottom: 0.875rem;">Direction</label>
+                                                <select id="custom-gradient-direction" onchange="updateCustomThemePreview()" style="width: 100%; padding: 0.875rem 1rem; background: #0f172a; border: 2px solid #334155; border-radius: 0.75rem; color: #f8fafc; font-size: 0.9375rem; cursor: pointer; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);" onfocus="this.style.borderColor='#6366f1'; this.style.background='#1e293b'; this.style.boxShadow='0 0 0 3px rgba(99, 102, 241, 0.15)'" onblur="this.style.borderColor='#334155'; this.style.background='#0f172a'; this.style.boxShadow='none'">
                                                     <option value="135deg">Diagonal ↘</option>
                                                     <option value="90deg">Horizontal →</option>
                                                     <option value="180deg">Vertical ↓</option>
@@ -2284,18 +2384,18 @@
                                     </div>
 
                                     <!-- Animations Panel -->
-                                    <div style="background: #1e293b; border: 1px solid #334155; border-radius: 1rem; padding: 2rem;">
-                                        <h3 style="color: #f8fafc; font-size: 1.125rem; font-weight: 700; margin: 0 0 1.5rem 0; display: flex; align-items: center; gap: 0.5rem;">
-                                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#6366f1" stroke-width="2">
+                                    <div style="background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); border: 1px solid #334155; border-radius: 1.125rem; padding: 2rem; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);" onmouseover="this.style.borderColor='#475569'; this.style.boxShadow='0 6px 20px rgba(0, 0, 0, 0.3)'" onmouseout="this.style.borderColor='#334155'; this.style.boxShadow='0 4px 12px rgba(0, 0, 0, 0.2)'">
+                                        <h3 style="color: #f8fafc; font-size: 1.125rem; font-weight: 700; margin: 0 0 1.75rem 0; display: flex; align-items: center; gap: 0.625rem; letter-spacing: -0.01em;">
+                                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#6366f1" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                                 <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
                                             </svg>
                                             Animations
                                         </h3>
-                                        
-                                        <div style="display: flex; flex-direction: column; gap: 1.5rem;">
+
+                                        <div style="display: flex; flex-direction: column; gap: 1.75rem;">
                                             <div>
-                                                <label style="color: #cbd5e1; font-size: 0.875rem; font-weight: 600; display: block; margin-bottom: 0.75rem;">Style</label>
-                                                <select id="custom-animation-style" onchange="updateCustomThemePreview()" style="width: 100%; padding: 0.75rem; background: #0f172a; border: 2px solid #334155; border-radius: 0.75rem; color: #f8fafc; font-size: 0.9375rem; cursor: pointer;">
+                                                <label style="color: #cbd5e1; font-size: 0.875rem; font-weight: 600; display: block; margin-bottom: 0.875rem;">Style</label>
+                                                <select id="custom-animation-style" onchange="updateCustomThemePreview()" style="width: 100%; padding: 0.875rem 1rem; background: #0f172a; border: 2px solid #334155; border-radius: 0.75rem; color: #f8fafc; font-size: 0.9375rem; cursor: pointer; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);" onfocus="this.style.borderColor='#6366f1'; this.style.background='#1e293b'; this.style.boxShadow='0 0 0 3px rgba(99, 102, 241, 0.15)'" onblur="this.style.borderColor='#334155'; this.style.background='#0f172a'; this.style.boxShadow='none'">
                                                     <option value="fade">Fade In</option>
                                                     <option value="slide">Slide Up</option>
                                                     <option value="bounce">Bounce</option>
@@ -2303,11 +2403,11 @@
                                                 </select>
                                             </div>
                                             <div>
-                                                <div style="display: flex; justify-content: space-between; margin-bottom: 0.75rem;">
+                                                <div style="display: flex; justify-content: space-between; margin-bottom: 0.875rem;">
                                                     <label style="color: #cbd5e1; font-size: 0.875rem; font-weight: 600;">Speed</label>
-                                                    <span id="animation-speed-value" style="color: #6366f1; font-weight: 700; font-family: monospace;">300ms</span>
+                                                    <span id="animation-speed-value" style="color: #6366f1; font-weight: 700; font-family: monospace; font-size: 0.9375rem;">300ms</span>
                                                 </div>
-                                                <input type="range" id="custom-animation-speed" min="100" max="1000" value="300" step="50" oninput="updateCustomThemePreview()" style="width: 100%;">
+                                                <input type="range" id="custom-animation-speed" min="100" max="1000" value="300" step="50" oninput="updateCustomThemePreview()" style="width: 100%; cursor: pointer;">
                                                 <input type="checkbox" id="custom-animations-enabled" checked onchange="updateCustomThemePreview()" style="display: none;">
                                             </div>
                                         </div>
@@ -2316,16 +2416,16 @@
                                 </div>
 
                                 <!-- Action Bar -->
-                                <div style="margin-top: 2rem; padding: 2rem; background: #1e293b; border: 1px solid #334155; border-radius: 1rem; display: flex; gap: 1rem; align-items: center;">
-                                    <input type="text" id="custom-theme-name" placeholder="My Awesome Theme" style="flex: 1; padding: 1rem 1.5rem; background: #0f172a; border: 2px solid #334155; border-radius: 0.75rem; color: #f8fafc; font-size: 1rem; font-weight: 500;">
-                                    <button onclick="saveCustomTheme()" style="padding: 1rem 2rem; background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%); border: none; border-radius: 0.75rem; color: white; cursor: pointer; font-weight: 700; font-size: 1rem; display: flex; align-items: center; gap: 0.75rem; box-shadow: 0 4px 20px rgba(99, 102, 241, 0.4);">
-                                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <div style="margin-top: 2.5rem; padding: 2rem; background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); border: 1px solid #334155; border-radius: 1.125rem; display: flex; gap: 1rem; align-items: center; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);">
+                                    <input type="text" id="custom-theme-name" placeholder="My Awesome Theme" style="flex: 1; padding: 1rem 1.5rem; background: #0f172a; border: 2px solid #334155; border-radius: 0.75rem; color: #f8fafc; font-size: 1rem; font-weight: 500; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);" onfocus="this.style.borderColor='#6366f1'; this.style.background='#1e293b'; this.style.boxShadow='0 0 0 3px rgba(99, 102, 241, 0.15)'" onblur="this.style.borderColor='#334155'; this.style.background='#0f172a'; this.style.boxShadow='none'">
+                                    <button onclick="saveCustomTheme()" style="padding: 1rem 2rem; background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%); border: none; border-radius: 0.75rem; color: white; cursor: pointer; font-weight: 700; font-size: 1rem; display: flex; align-items: center; gap: 0.75rem; box-shadow: 0 4px 20px rgba(99, 102, 241, 0.4); transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); white-space: nowrap;" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 6px 30px rgba(99, 102, 241, 0.5)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 20px rgba(99, 102, 241, 0.4)'">
+                                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                             <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
                                         </svg>
                                         Save
                                     </button>
-                                    <button onclick="applyCustomTheme()" style="padding: 1rem 2rem; background: linear-gradient(135deg, #10b981 0%, #059669 100%); border: none; border-radius: 0.75rem; color: white; cursor: pointer; font-weight: 700; font-size: 1rem; display: flex; align-items: center; gap: 0.75rem; box-shadow: 0 4px 20px rgba(16, 185, 129, 0.4);">
-                                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <button onclick="applyCustomTheme()" style="padding: 1rem 2rem; background: linear-gradient(135deg, #10b981 0%, #059669 100%); border: none; border-radius: 0.75rem; color: white; cursor: pointer; font-weight: 700; font-size: 1rem; display: flex; align-items: center; gap: 0.75rem; box-shadow: 0 4px 20px rgba(16, 185, 129, 0.4); transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); white-space: nowrap;" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 6px 30px rgba(16, 185, 129, 0.5)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 20px rgba(16, 185, 129, 0.4)'">
+                                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                             <polyline points="20 6 9 17 4 12"></polyline>
                                         </svg>
                                         Apply
