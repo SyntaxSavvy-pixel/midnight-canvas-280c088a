@@ -1,0 +1,301 @@
+// Dashboard Sync Script v3.1.0
+// This script runs on the dashboard page and acts as a bridge between the web page and Chrome extension
+// Handles user data sync AND Smart Suggestions data communication
+
+(async function() {
+    // Wait for page to fully load
+    if (document.readyState === 'loading') {
+        await new Promise(resolve => {
+            document.addEventListener('DOMContentLoaded', resolve);
+        });
+    }
+
+    // Give the page a moment to load user data
+    await new Promise(resolve => setTimeout(resolve, 100));
+
+    // ============================================
+    // USER DATA SYNC (existing functionality)
+    // ============================================
+
+    function syncUserDataToExtension() {
+        try {
+            const userStr = localStorage.getItem('tabmangment_user');
+            const token = localStorage.getItem('tabmangment_token');
+
+            if (!userStr || !token) {
+                return;
+            }
+
+            const user = JSON.parse(userStr);
+
+            if (typeof chrome === 'undefined' || !chrome.runtime || !chrome.runtime.sendMessage) {
+                return;
+            }
+
+            chrome.runtime.sendMessage({
+                type: 'USER_DATA_SYNC',
+                data: {
+                    userEmail: user.email,
+                    userName: user.name || user.email.split('@')[0],
+                    authToken: token,
+                    isPremium: user.isPro || user.plan === 'pro' || false,
+                    planType: user.plan || 'free',
+                    subscriptionActive: user.isPro || user.plan === 'pro' || false,
+                    userId: user.id || user.email,
+                    provider: user.provider || 'email',
+                    avatar: user.avatar || null,
+                    proActivatedAt: user.proActivatedAt || null,
+                    deletionScheduledAt: user.deletionScheduledAt || null,
+                    syncTimestamp: Date.now()
+                }
+            }, (response) => {
+                if (chrome.runtime.lastError) {
+                    return;
+                }
+            });
+
+        } catch (error) {
+            // Silent fail
+        }
+    }
+
+    // Initial sync
+    syncUserDataToExtension();
+
+    // Re-sync every 10 seconds
+    const syncInterval = setInterval(syncUserDataToExtension, 10000);
+
+    // Listen for storage changes
+    window.addEventListener('storage', (e) => {
+        if (e.key === 'tabmangment_user' || e.key === 'tabmangment_token') {
+            syncUserDataToExtension();
+        }
+    });
+
+    // ============================================
+    // SMART SUGGESTIONS BRIDGE (new functionality)
+    // ============================================
+
+    // Listen for messages from the dashboard page
+    window.addEventListener('message', async (event) => {
+        // Only accept messages from same origin
+        if (event.source !== window) return;
+
+        const message = event.data;
+
+        // Only process messages from our dashboard
+        if (message.source !== 'tabmangment-dashboard') return;
+
+        // Check if extension APIs are available
+        if (typeof chrome === 'undefined' || !chrome.runtime || !chrome.runtime.sendMessage) {
+            // Extension not available - send error response
+            window.postMessage({
+                type: 'EXTENSION_TABS_DATA_RESPONSE',
+                source: 'tabmangment-extension',
+                success: false,
+                error: 'Extension not available'
+            }, '*');
+            return;
+        }
+
+        // Handle different message types from dashboard
+        switch (message.type) {
+            case 'DASHBOARD_REQUEST_TABS_DATA':
+                // Request tabs data from extension
+                try {
+                    chrome.runtime.sendMessage({
+                        type: 'GET_TABS_DATA'
+                    }, (response) => {
+                        if (chrome.runtime.lastError) {
+                            window.postMessage({
+                                type: 'EXTENSION_TABS_DATA_RESPONSE',
+                                source: 'tabmangment-extension',
+                                success: false,
+                                error: chrome.runtime.lastError.message
+                            }, '*');
+                            return;
+                        }
+
+                        // Forward extension response to dashboard
+                        window.postMessage({
+                            type: 'EXTENSION_TABS_DATA_RESPONSE',
+                            source: 'tabmangment-extension',
+                            success: response.success,
+                            data: response.data
+                        }, '*');
+                    });
+                } catch (error) {
+                    window.postMessage({
+                        type: 'EXTENSION_TABS_DATA_RESPONSE',
+                        source: 'tabmangment-extension',
+                        success: false,
+                        error: 'Extension context invalidated. Please refresh the page.'
+                    }, '*');
+                }
+                break;
+
+            case 'DASHBOARD_CLEAN_TABS':
+                // Clean inactive tabs
+                try {
+                    chrome.runtime.sendMessage({
+                        type: 'CLEAN_INACTIVE_TABS'
+                    }, (response) => {
+                        if (chrome.runtime.lastError) {
+                            window.postMessage({
+                                type: 'EXTENSION_CLEAN_TABS_RESPONSE',
+                                source: 'tabmangment-extension',
+                                success: false,
+                                error: chrome.runtime.lastError.message
+                            }, '*');
+                            return;
+                        }
+
+                        window.postMessage({
+                            type: 'EXTENSION_CLEAN_TABS_RESPONSE',
+                            source: 'tabmangment-extension',
+                            success: response.success,
+                            data: response
+                        }, '*');
+                    });
+                } catch (error) {
+                    window.postMessage({
+                        type: 'EXTENSION_CLEAN_TABS_RESPONSE',
+                        source: 'tabmangment-extension',
+                        success: false,
+                        error: 'Extension context invalidated. Please refresh the page.'
+                    }, '*');
+                }
+                break;
+
+            case 'DASHBOARD_ENABLE_AUTO_CLEAN':
+                // Enable auto-clean
+                try {
+                    chrome.runtime.sendMessage({
+                        type: 'ENABLE_AUTO_CLEAN'
+                    }, (response) => {
+                        if (chrome.runtime.lastError) {
+                            window.postMessage({
+                                type: 'EXTENSION_AUTO_CLEAN_RESPONSE',
+                                source: 'tabmangment-extension',
+                                success: false,
+                                error: chrome.runtime.lastError.message
+                            }, '*');
+                            return;
+                        }
+
+                        window.postMessage({
+                            type: 'EXTENSION_AUTO_CLEAN_RESPONSE',
+                            source: 'tabmangment-extension',
+                            success: response.success
+                        }, '*');
+                    });
+                } catch (error) {
+                    window.postMessage({
+                        type: 'EXTENSION_AUTO_CLEAN_RESPONSE',
+                        source: 'tabmangment-extension',
+                        success: false,
+                        error: 'Extension context invalidated. Please refresh the page.'
+                    }, '*');
+                }
+                break;
+
+            case 'DASHBOARD_SET_AUTO_CLOSE_TIME':
+                // Set auto-close time (Pro feature)
+                try {
+                    chrome.runtime.sendMessage({
+                        type: 'SET_AUTO_CLOSE_TIME',
+                        time: message.time
+                    }, (response) => {
+                        if (chrome.runtime.lastError) {
+                            window.postMessage({
+                                type: 'EXTENSION_AUTO_CLOSE_TIME_RESPONSE',
+                                source: 'tabmangment-extension',
+                                success: false,
+                                error: chrome.runtime.lastError.message
+                            }, '*');
+                            return;
+                        }
+
+                        window.postMessage({
+                            type: 'EXTENSION_AUTO_CLOSE_TIME_RESPONSE',
+                            source: 'tabmangment-extension',
+                            success: response.success
+                        }, '*');
+                    });
+                } catch (error) {
+                    window.postMessage({
+                        type: 'EXTENSION_AUTO_CLOSE_TIME_RESPONSE',
+                        source: 'tabmangment-extension',
+                        success: false,
+                        error: 'Extension context invalidated. Please refresh the page.'
+                    }, '*');
+                }
+                break;
+
+            case 'DASHBOARD_SYNC_USER_NAME':
+                // Sync updated user name to extension storage
+                try {
+                    chrome.runtime.sendMessage({
+                        type: 'UPDATE_USER_NAME',
+                        name: message.name
+                    }, (response) => {
+                        if (chrome.runtime.lastError) {
+                            return;
+                        }
+                    });
+                } catch (error) {
+                    // Silent fail - extension might not be available
+                }
+                break;
+
+            case 'DASHBOARD_APPLY_THEME':
+                // Apply theme to extension
+                try {
+                    // Save theme to chrome.storage.local directly
+                    if (chrome.storage && chrome.storage.local) {
+                        chrome.storage.local.set({
+                            activeTheme: message.themeName,
+                            themeConfig: message.themeConfig
+                        }, () => {
+                            if (chrome.runtime.lastError) {
+                                window.postMessage({
+                                    type: 'THEME_APPLY_RESPONSE',
+                                    source: 'tabmangment-extension',
+                                    success: false,
+                                    error: chrome.runtime.lastError.message
+                                }, '*');
+                            } else {
+                                // Also notify popup to reload theme
+                                chrome.runtime.sendMessage({
+                                    type: 'THEME_UPDATE',
+                                    themeName: message.themeName,
+                                    themeConfig: message.themeConfig
+                                }, () => {
+                                    // Ignore errors if popup is not open
+                                });
+
+                                window.postMessage({
+                                    type: 'THEME_APPLY_RESPONSE',
+                                    source: 'tabmangment-extension',
+                                    success: true
+                                }, '*');
+                            }
+                        });
+                    }
+                } catch (error) {
+                    window.postMessage({
+                        type: 'THEME_APPLY_RESPONSE',
+                        source: 'tabmangment-extension',
+                        success: false,
+                        error: error.message
+                    }, '*');
+                }
+                break;
+        }
+    });
+
+    // Cleanup on page unload
+    window.addEventListener('beforeunload', () => {
+        clearInterval(syncInterval);
+    });
+})();

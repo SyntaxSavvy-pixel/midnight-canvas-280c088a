@@ -2693,10 +2693,392 @@
         const supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
         // ============================================
+        // SUPABASE STORAGE FUNCTIONS (Replaces localStorage)
+        // ============================================
+
+        // Cache for current user ID
+        let currentUserId = null;
+
+        // Get current user ID
+        async function getCurrentUserId() {
+            if (currentUserId) return currentUserId;
+
+            const { data: { user } } = await supabaseClient.auth.getUser();
+            if (user) {
+                currentUserId = user.id;
+                return user.id;
+            }
+            return null;
+        }
+
+        // USER PREFERENCES
+        async function getUserPreferences() {
+            const userId = await getCurrentUserId();
+            if (!userId) return null;
+
+            const { data, error } = await supabaseClient
+                .from('user_preferences')
+                .select('*')
+                .eq('user_id', userId)
+                .single();
+
+            if (error && error.code === 'PGRST116') {
+                // No preferences found, create default
+                return await createDefaultPreferences(userId);
+            }
+
+            return data;
+        }
+
+        async function createDefaultPreferences(userId) {
+            const defaults = {
+                user_id: userId,
+                sidebar_collapsed: false,
+                settings: {},
+                active_theme: 'lightMinimal',
+                theme_config: {},
+                extension_id: null
+            };
+
+            const { data, error } = await supabaseClient
+                .from('user_preferences')
+                .insert(defaults)
+                .select()
+                .single();
+
+            return data;
+        }
+
+        async function updateUserPreferences(updates) {
+            const userId = await getCurrentUserId();
+            if (!userId) return false;
+
+            const { error } = await supabaseClient
+                .from('user_preferences')
+                .upsert({
+                    user_id: userId,
+                    ...updates
+                });
+
+            return !error;
+        }
+
+        // Specific preference updates
+        async function saveSidebarState(collapsed) {
+            return await updateUserPreferences({ sidebar_collapsed: collapsed });
+        }
+
+        async function saveUserSettings(settings) {
+            return await updateUserPreferences({ settings });
+        }
+
+        async function saveActiveTheme(themeName, themeConfig = null) {
+            const updates = { active_theme: themeName };
+            if (themeConfig) {
+                updates.theme_config = themeConfig;
+            }
+            return await updateUserPreferences(updates);
+        }
+
+        async function saveExtensionId(extensionId) {
+            return await updateUserPreferences({ extension_id: extensionId });
+        }
+
+        // DEVICE TRACKING
+        async function registerDevice(deviceId, fingerprint, browserInfo = {}) {
+            const userId = await getCurrentUserId();
+            if (!userId) return null;
+
+            const { data, error } = await supabaseClient
+                .from('user_devices')
+                .upsert({
+                    user_id: userId,
+                    device_id: deviceId,
+                    device_fingerprint: fingerprint,
+                    browser_info: browserInfo,
+                    last_seen: new Date().toISOString()
+                }, {
+                    onConflict: 'device_id'
+                })
+                .select()
+                .single();
+
+            return data;
+        }
+
+        async function updateDeviceLastSeen(deviceId) {
+            const { error } = await supabaseClient
+                .from('user_devices')
+                .update({ last_seen: new Date().toISOString() })
+                .eq('device_id', deviceId);
+
+            return !error;
+        }
+
+        async function getUserDevices() {
+            const userId = await getCurrentUserId();
+            if (!userId) return [];
+
+            const { data, error } = await supabaseClient
+                .from('user_devices')
+                .select('*')
+                .eq('user_id', userId)
+                .order('last_seen', { ascending: false });
+
+            return data || [];
+        }
+
+        // CUSTOM THEMES
+        async function saveCustomTheme(name, themeData) {
+            const userId = await getCurrentUserId();
+            if (!userId) return false;
+
+            const { error } = await supabaseClient
+                .from('custom_themes')
+                .insert({
+                    user_id: userId,
+                    name,
+                    theme_data: themeData
+                });
+
+            return !error;
+        }
+
+        async function getCustomThemes() {
+            const userId = await getCurrentUserId();
+            if (!userId) return [];
+
+            const { data, error } = await supabaseClient
+                .from('custom_themes')
+                .select('*')
+                .eq('user_id', userId)
+                .order('created_at', { ascending: false });
+
+            return data || [];
+        }
+
+        async function deleteCustomTheme(themeId) {
+            const { error } = await supabaseClient
+                .from('custom_themes')
+                .delete()
+                .eq('id', themeId);
+
+            return !error;
+        }
+
+        // THEME DRAFTS
+        async function saveThemeDraft(draftData) {
+            const userId = await getCurrentUserId();
+            if (!userId) return false;
+
+            const { error } = await supabaseClient
+                .from('theme_drafts')
+                .upsert({
+                    user_id: userId,
+                    draft_data: draftData,
+                    last_saved: new Date().toISOString()
+                });
+
+            return !error;
+        }
+
+        async function getThemeDraft() {
+            const userId = await getCurrentUserId();
+            if (!userId) return null;
+
+            const { data, error } = await supabaseClient
+                .from('theme_drafts')
+                .select('*')
+                .eq('user_id', userId)
+                .single();
+
+            return data;
+        }
+
+        // TAB ANALYTICS
+        async function recordTabEvent(deviceId, eventType, count = 1) {
+            const userId = await getCurrentUserId();
+            if (!userId) return false;
+
+            // Get device UUID from device_id string
+            const { data: deviceData } = await supabaseClient
+                .from('user_devices')
+                .select('id')
+                .eq('device_id', deviceId)
+                .single();
+
+            if (!deviceData) return false;
+
+            // Call the stored procedure
+            const { error } = await supabaseClient
+                .rpc('record_tab_event', {
+                    p_user_id: userId,
+                    p_device_id: deviceData.id,
+                    p_event_type: eventType,
+                    p_count: count
+                });
+
+            return !error;
+        }
+
+        async function getTabAnalytics(startDate, endDate) {
+            const userId = await getCurrentUserId();
+            if (!userId) return [];
+
+            let query = supabaseClient
+                .from('tab_analytics')
+                .select('*')
+                .eq('user_id', userId)
+                .order('date', { ascending: false });
+
+            if (startDate) {
+                query = query.gte('date', startDate);
+            }
+            if (endDate) {
+                query = query.lte('date', endDate);
+            }
+
+            const { data, error } = await query;
+            return data || [];
+        }
+
+        // USER ACTIVITY LOG
+        async function logActivity(activityType, metadata = {}) {
+            const userId = await getCurrentUserId();
+            if (!userId) return false;
+
+            const { error } = await supabaseClient
+                .from('user_activity')
+                .insert({
+                    user_id: userId,
+                    activity_type: activityType,
+                    metadata
+                });
+
+            return !error;
+        }
+
+        // SUBSCRIPTION MANAGEMENT
+        async function checkSubscriptionStatus() {
+            const userId = await getCurrentUserId();
+            if (!userId) return null;
+
+            const { data, error } = await supabaseClient
+                .from('users')
+                .select('is_pro, subscription_status, current_period_end, stripe_subscription_id')
+                .eq('id', userId)
+                .single();
+
+            if (error) return null;
+
+            // Check if subscription is expired
+            if (data.current_period_end && new Date(data.current_period_end) < new Date()) {
+                // Subscription period ended, check if we should auto-suspend
+                if (data.subscription_status === 'past_due' || data.subscription_status === 'unpaid') {
+                    await autoSuspendSubscription(userId);
+                    data.is_pro = false;
+                    data.subscription_status = 'suspended';
+                }
+            }
+
+            return data;
+        }
+
+        async function autoSuspendSubscription(userId) {
+            // Update user to free plan
+            const { error: userError } = await supabaseClient
+                .from('users')
+                .update({
+                    is_pro: false,
+                    subscription_status: 'suspended'
+                })
+                .eq('id', userId);
+
+            // Log the suspension
+            const { error: historyError } = await supabaseClient
+                .from('subscription_history')
+                .insert({
+                    user_id: userId,
+                    action: 'auto_suspended',
+                    from_plan: 'pro',
+                    to_plan: 'free',
+                    reason: 'Payment failed - subscription expired'
+                });
+
+            return !userError && !historyError;
+        }
+
+        async function getSubscriptionHistory() {
+            const userId = await getCurrentUserId();
+            if (!userId) return [];
+
+            const { data, error } = await supabaseClient
+                .from('subscription_history')
+                .select('*')
+                .eq('user_id', userId)
+                .order('created_at', { ascending: false });
+
+            return data || [];
+        }
+
+        // USER DATA UPDATES
+        async function updateUserData(updates) {
+            const userId = await getCurrentUserId();
+            if (!userId) return false;
+
+            const { error } = await supabaseClient
+                .from('users')
+                .update(updates)
+                .eq('id', userId);
+
+            return !error;
+        }
+
+        async function updateNameWithCooldown(newName) {
+            const userId = await getCurrentUserId();
+            if (!userId) return { success: false, error: 'Not authenticated' };
+
+            // Check cooldown
+            const { data: userData } = await supabaseClient
+                .from('users')
+                .select('name_update_cooldown')
+                .eq('id', userId)
+                .single();
+
+            if (userData?.name_update_cooldown) {
+                const cooldownEnd = new Date(userData.name_update_cooldown);
+                if (new Date() < cooldownEnd) {
+                    return {
+                        success: false,
+                        error: 'Name update on cooldown',
+                        cooldownEnd: cooldownEnd
+                    };
+                }
+            }
+
+            // Update name and set new cooldown (24 hours)
+            const newCooldownEnd = new Date(Date.now() + (24 * 60 * 60 * 1000));
+
+            const { error } = await supabaseClient
+                .from('users')
+                .update({
+                    name: newName,
+                    name_update_cooldown: newCooldownEnd.toISOString()
+                })
+                .eq('id', userId);
+
+            if (error) {
+                return { success: false, error: error.message };
+            }
+
+            return { success: true, cooldownEnd: newCooldownEnd };
+        }
+
+        // ============================================
         // SIDEBAR TOGGLE FUNCTIONALITY
         // ============================================
 
-        function toggleSidebar() {
+        async function toggleSidebar() {
             const sidebar = document.querySelector('.sidebar');
             const mainContainer = document.querySelector('.main-container');
 
@@ -2708,19 +3090,19 @@
                 feather.replace();
             }
 
-            // Save preference to localStorage
+            // Save preference to Supabase
             const isCollapsed = sidebar.classList.contains('collapsed');
-            localStorage.setItem('sidebarCollapsed', isCollapsed);
+            await saveSidebarState(isCollapsed);
         }
 
         // Restore sidebar state on page load
-        window.addEventListener('DOMContentLoaded', () => {
-            const isCollapsed = localStorage.getItem('sidebarCollapsed') === 'true';
-            if (isCollapsed) {
+        async function restoreSidebarState() {
+            const prefs = await getUserPreferences();
+            if (prefs && prefs.sidebar_collapsed) {
                 document.querySelector('.sidebar')?.classList.add('collapsed');
                 document.querySelector('.main-container')?.classList.add('sidebar-collapsed');
             }
-        });
+        }
 
         // ============================================
         // DEVICE FINGERPRINTING & ANTI-SHARING SYSTEM
@@ -2794,16 +3176,50 @@
             return hashHex;
         }
 
-        // Get or create device ID
+        // Get or create device ID (uses Supabase)
         async function getDeviceId() {
-            let deviceId = localStorage.getItem('tabmangment_device_id');
+            // Try to get device ID from sessionStorage first (for this browser session)
+            let deviceId = sessionStorage.getItem('tabmangment_device_id');
 
             if (!deviceId) {
-                // Generate new device ID combining fingerprint + timestamp
+                // Generate fingerprint
                 const fingerprint = await generateDeviceFingerprint();
-                const timestamp = Date.now();
-                deviceId = `${fingerprint.substring(0, 16)}-${timestamp}`;
-                localStorage.setItem('tabmangment_device_id', deviceId);
+
+                // Check if this fingerprint exists in Supabase
+                const userId = await getCurrentUserId();
+                if (userId) {
+                    const { data: devices } = await supabaseClient
+                        .from('user_devices')
+                        .select('device_id')
+                        .eq('user_id', userId)
+                        .eq('device_fingerprint', fingerprint)
+                        .single();
+
+                    if (devices) {
+                        // Found existing device
+                        deviceId = devices.device_id;
+                        await updateDeviceLastSeen(deviceId);
+                    } else {
+                        // Create new device ID
+                        const timestamp = Date.now();
+                        deviceId = `${fingerprint.substring(0, 16)}-${timestamp}`;
+
+                        // Register in Supabase
+                        const browserInfo = getDeviceMetadata();
+                        await registerDevice(deviceId, fingerprint, browserInfo);
+                    }
+
+                    // Cache in sessionStorage for this browser session
+                    sessionStorage.setItem('tabmangment_device_id', deviceId);
+                } else {
+                    // Not authenticated, create temporary device ID
+                    const timestamp = Date.now();
+                    deviceId = `temp-${fingerprint.substring(0, 16)}-${timestamp}`;
+                    sessionStorage.setItem('tabmangment_device_id', deviceId);
+                }
+            } else {
+                // Update last seen for existing device
+                await updateDeviceLastSeen(deviceId);
             }
 
             return deviceId;
@@ -7196,11 +7612,11 @@
         }
 
         // Load custom theme draft from localStorage
-        function loadCustomThemeDraft() {
+        async function loadCustomThemeDraft() {
             try {
-                const draftJson = localStorage.getItem('customThemeDraft');
-                if (draftJson) {
-                    const draft = JSON.parse(draftJson);
+                const draftData = await getThemeDraft();
+                if (draftData && draftData.draft_data) {
+                    const draft = draftData.draft_data;
 
                     // Restore color values with null checks
                     const primaryInput = document.getElementById('custom-color-primary');
@@ -7237,8 +7653,6 @@
                     // Update preview with restored values
                     toggleSecondaryColor();
                     updateCustomThemePreview();
-
-                    // Restored custom theme draft
                 }
             } catch (error) {
                 // No custom theme draft found or error loading
@@ -7246,14 +7660,15 @@
         }
 
         // Load active theme and mark it
-        function loadActiveTheme() {
+        async function loadActiveTheme() {
             try {
-                let themeName = localStorage.getItem('activeTheme') || 'lightMinimal';
+                const prefs = await getUserPreferences();
+                let themeName = prefs?.active_theme || 'lightMinimal';
 
                 // If stored theme doesn't exist (old theme name), fall back to lightMinimal
                 if (!presetThemes[themeName] && themeName !== 'custom') {
                     themeName = 'lightMinimal';
-                    localStorage.setItem('activeTheme', themeName);
+                    await saveActiveTheme(themeName);
                 }
 
                 // Mark the active theme
