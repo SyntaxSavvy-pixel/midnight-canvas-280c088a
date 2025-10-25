@@ -2231,16 +2231,16 @@
 
                                                 <div style="display: flex; flex-direction: column; gap: 0.625rem;">
                                                     <div data-preview-tab data-preview-text style="background: rgba(255, 255, 255, 0.12); padding: 0.875rem; border-radius: 0.625rem;">
-                                                        <div style="color: white; font-size: 0.875rem; font-weight: 600;">GitHub Dashboard</div>
-                                                        <div style="color: rgba(255, 255, 255, 0.7); font-size: 0.75rem;">github.com</div>
+                                                        <div class="preview-tab-title" style="font-weight: 600;">GitHub Dashboard</div>
+                                                        <div class="preview-tab-url" style="opacity: 0.7;">github.com</div>
                                                     </div>
                                                     <div data-preview-tab data-preview-text style="background: rgba(255, 255, 255, 0.12); padding: 0.875rem; border-radius: 0.625rem;">
-                                                        <div style="color: white; font-size: 0.875rem; font-weight: 600;">Figma Design</div>
-                                                        <div style="color: rgba(255, 255, 255, 0.7); font-size: 0.75rem;">figma.com</div>
+                                                        <div class="preview-tab-title" style="font-weight: 600;">Figma Design</div>
+                                                        <div class="preview-tab-url" style="opacity: 0.7;">figma.com</div>
                                                     </div>
                                                     <div data-preview-tab data-preview-text style="background: rgba(255, 255, 255, 0.12); padding: 0.875rem; border-radius: 0.625rem;">
-                                                        <div style="color: white; font-size: 0.875rem; font-weight: 600;">Product Hunt</div>
-                                                        <div style="color: rgba(255, 255, 255, 0.7); font-size: 0.75rem;">producthunt.com</div>
+                                                        <div class="preview-tab-title" style="font-weight: 600;">Product Hunt</div>
+                                                        <div class="preview-tab-url" style="opacity: 0.7;">producthunt.com</div>
                                                     </div>
                                                 </div>
                                             </div>
@@ -7436,6 +7436,24 @@
             if (previewTexts) {
                 previewTexts.forEach(el => {
                     el.style.fontFamily = fontFamily;
+                });
+            }
+
+            // Update tab title and URL colors and font sizes
+            const tabTitles = preview?.querySelectorAll('.preview-tab-title');
+            const tabUrls = preview?.querySelectorAll('.preview-tab-url');
+
+            if (tabTitles) {
+                tabTitles.forEach(el => {
+                    el.style.color = textColor;
+                    el.style.fontSize = (parseInt(fontSize) - 1) + 'px'; // Slightly smaller than main font
+                });
+            }
+
+            if (tabUrls) {
+                tabUrls.forEach(el => {
+                    el.style.color = textColor;
+                    el.style.fontSize = (parseInt(fontSize) - 2) + 'px'; // Even smaller for URLs
                 });
             }
 
