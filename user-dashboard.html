@@ -4012,15 +4012,6 @@
                 `;
             }
 
-            // Enable Auto-Clean Button (Free & Pro)
-            if (!autoCleanEnabled) {
-                html += `
-                    <button onclick="enableAutoCleanNow()" style="padding: 0.875rem 1.5rem; border-radius: 0.875rem; font-size: 0.9375rem; font-weight: 600; cursor: pointer; transition: all 0.2s; border: none; display: flex; align-items: center; gap: 0.5rem; background: rgba(100, 116, 139, 0.2); color: #e2e8f0; border: 1px solid rgba(255, 255, 255, 0.1);">
-                        <span>⚙️</span>
-                        Enable Auto-Clean
-                    </button>
-                `;
-            }
 
             // Pro Feature: Auto-Close Timer (Pro users only)
             if (isPro && autoCleanEnabled) {
@@ -4150,51 +4141,6 @@
         }
 
         // Action: Enable auto-clean
-        async function enableAutoCleanNow() {
-            try {
-                const btn = event.target.closest('button');
-                btn.disabled = true;
-                btn.innerHTML = '<span>⏳</span> Enabling...';
-
-                // Send request via content script bridge
-                window.postMessage({
-                    type: 'DASHBOARD_ENABLE_AUTO_CLEAN',
-                    source: 'tabmangment-dashboard'
-                }, '*');
-
-                // Listen for response
-                const messageHandler = (event) => {
-                    if (event.data.type === 'EXTENSION_AUTO_CLEAN_RESPONSE' && event.data.source === 'tabmangment-extension') {
-                        window.removeEventListener('message', messageHandler);
-
-                        if (event.data.success) {
-                            alert('✅ Auto-clean enabled! Tabs will be managed automatically.');
-                            smartTabsData.autoCleanEnabled = true;
-                            renderSmartSuggestions();
-                        } else {
-                            alert('❌ Extension not available. Please make sure it is installed and enabled.');
-                        }
-                        btn.disabled = false;
-                        btn.innerHTML = '<span>⚙️</span> Enable Auto-Clean';
-                    }
-                };
-
-                window.addEventListener('message', messageHandler);
-
-                // Timeout after 5 seconds
-                setTimeout(() => {
-                    window.removeEventListener('message', messageHandler);
-                    if (btn.disabled) {
-                        btn.disabled = false;
-                        btn.innerHTML = '<span>⚙️</span> Enable Auto-Clean';
-                        alert('❌ Request timed out. Please try again.');
-                    }
-                }, 5000);
-
-            } catch (error) {
-                alert('❌ An error occurred. Please try again.');
-            }
-        }
 
         // Action: Fix Performance (aggressive clean for lagging devices)
         async function fixPerformanceNow() {
