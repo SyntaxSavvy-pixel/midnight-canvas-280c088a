@@ -11,7 +11,7 @@
     <link rel="dns-prefetch" href="https://www.google.com">
     <link rel="dns-prefetch" href="https://www.gstatic.com">
 
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net https://unpkg.com https://*.supabase.co; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; style-src-elem 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: https: blob:; font-src 'self' data: https://fonts.gstatic.com; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://cdn.jsdelivr.net https://unpkg.com https://api.emailjs.com https://buy.stripe.com https://billing.stripe.com https://js.stripe.com https://*.netlify.app https://tabmangment.com; frame-src 'self' https://buy.stripe.com https://billing.stripe.com https://js.stripe.com; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self';">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net https://unpkg.com https://*.supabase.co; style-src-elem 'self' 'unsafe-inline' https://fonts.googleapis.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: https: blob:; font-src 'self' data: https://fonts.gstatic.com; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://cdn.jsdelivr.net https://unpkg.com https://api.emailjs.com https://buy.stripe.com https://billing.stripe.com https://js.stripe.com https://*.netlify.app https://tabmangment.com; frame-src 'self' https://buy.stripe.com https://billing.stripe.com https://js.stripe.com; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self';">
     <title>Dashboard - TabManagement</title>
     <meta name="description" content="Manage your TabManagement subscription, view analytics, and control your tab management settings.">
 
@@ -3020,7 +3020,7 @@
 
                 if (!existingModal && window._deviceLimitReached) {
                     // Modal was deleted! Re-create it immediately
-                    console.warn('🚨 Device limit bypass attempt detected');
+                    // Device limit bypass attempt detected
 
                     // Blur/hide entire page content
                     document.body.style.filter = 'blur(20px)';
@@ -3473,14 +3473,14 @@
                 // If we JUST authenticated (< 5 seconds) but localStorage is empty,
                 // it's a timing/cache issue - wait and retry instead of redirecting
                 if (justAuthenticated === 'true' && timeSinceAuth < 5000) {
-                    console.log('Just authenticated but localStorage not ready - waiting...');
+                    // Just authenticated but localStorage not ready - waiting...
                     // Wait 500ms and try again
                     await new Promise(resolve => setTimeout(resolve, 500));
                     authToken = localStorage.getItem('tabmangment_token');
                     storedUserData = localStorage.getItem('tabmangment_user');
 
                     if (authToken && storedUserData) {
-                        console.log('✅ Auth data loaded after waiting');
+                        // Auth data loaded after waiting
                         // Clear the flag and continue initialization
                         sessionStorage.removeItem('just_authenticated');
                         const parsedData = JSON.parse(storedUserData);
@@ -3492,14 +3492,14 @@
                         if (parsedData.deletionScheduledAt) userData.deletionScheduledAt = parsedData.deletionScheduledAt;
                         // Don't return - continue with initialization below
                     } else {
-                        console.error('❌ Auth data still not available after waiting - localStorage may be broken');
+                        // Auth data still not available after waiting - localStorage may be broken
                         sessionStorage.removeItem('just_authenticated');
                         return; // Stay on page, show error
                     }
                 } else if (timeSinceRedirect < 3000) {
                     // If we were redirected from auth less than 3 seconds ago, DON'T redirect back
-                    console.warn('Recently redirected from auth - not redirecting back to prevent loop');
-                    console.warn('User needs to manually login or clear localStorage');
+                    // Recently redirected from auth - not redirecting back to prevent loop
+                    // User needs to manually login or clear localStorage
                     return;
                 } else if (!justLoggedOut) {
                     // Only redirect to login if user didn't intentionally log out
@@ -3603,7 +3603,7 @@
                         currentPeriodEnd: userData.currentPeriodEnd
                     }
                 }).catch(err => {
-                    console.error('Failed to sync Pro status to extension:', err);
+                    // Failed to sync Pro status to extension
                 });
 
                 // Also send USER_LOGGED_IN for general sync
@@ -6497,7 +6497,7 @@
         // Verify Stripe session immediately on return from payment
         // DISABLED: Using Stripe webhooks → Supabase instead
         async function verifyStripeSession(sessionId, userEmail) {
-            console.log('Session verification disabled - using Stripe webhooks');
+            // Session verification disabled - using Stripe webhooks
 
             try {
                 // Just reload user data from Supabase (which was updated by webhook)
@@ -6548,7 +6548,7 @@
                                 isPro: true,
                                 currentPeriodEnd: result.currentPeriodEnd
                             }
-                        }).catch(err => console.error('Extension sync failed:', err));
+                        }).catch(err => { /* Extension sync failed */ });
                     }
 
                     return;
@@ -6566,7 +6566,7 @@
         // Poll for subscription updates after payment
         // DISABLED: Using Supabase + Stripe webhooks instead of polling
         async function startSubscriptionPolling(userEmail) {
-            console.log('Subscription polling disabled - using Supabase/Stripe webhooks');
+            // Subscription polling disabled - using Supabase/Stripe webhooks
 
             // Just reload user data after a delay to get updated Pro status from Supabase
             setTimeout(async () => {
@@ -6593,7 +6593,7 @@
                         window.history.replaceState({}, document.title, window.location.pathname);
                     }
                 } catch (error) {
-                    console.error('Error refreshing user data:', error);
+                    // Error refreshing user data
                 }
             }, 3000); // Wait 3 seconds for webhook to process
         }
@@ -7207,10 +7207,10 @@
                     toggleSecondaryColor();
                     updateCustomThemePreview();
 
-                    console.log('✅ Restored custom theme draft from', draft.lastSaved);
+                    // Restored custom theme draft
                 }
             } catch (error) {
-                console.log('No custom theme draft found or error loading:', error);
+                // No custom theme draft found or error loading
             }
         }
 
@@ -7235,7 +7235,7 @@
                     }
                 });
             } catch (error) {
-                console.log('Error loading active theme:', error);
+                // Error loading active theme
             }
         }
 
@@ -7251,7 +7251,7 @@
                     themeConfig: themeConfig
                 }, (response) => {
                     if (chrome.runtime.lastError) {
-                        console.log('Extension not available for theme sync');
+                        // Extension not available for theme sync
                     }
                 });
             }
@@ -7261,7 +7261,7 @@
         function applyTheme(themeName) {
             const theme = presetThemes[themeName];
             if (!theme) {
-                console.error('Theme not found:', themeName);
+                // Theme not found
                 return;
             }
 
@@ -7284,9 +7284,9 @@
                 // Show success message
                 showNotification(`${theme.name} theme applied successfully!`, 'success');
 
-                console.log('✅ Theme sent to extension:', themeName);
+                // Theme sent to extension
             } catch (error) {
-                console.error('Error applying theme:', error);
+                // Error applying theme
                 showNotification('Failed to apply theme. Please try again.', 'error');
             }
         }
@@ -7559,7 +7559,7 @@
                     lastSaved: new Date().toISOString()
                 };
                 localStorage.setItem('customThemeDraft', JSON.stringify(draftTheme));
-                console.log('✅ Auto-saved custom theme draft');
+                // Auto-saved custom theme draft
             }, 1000); // Auto-save after 1 second of no changes
         }
 
@@ -7668,7 +7668,7 @@
                 // Refresh saved themes list
                 loadSavedCustomThemes();
             } catch (error) {
-                console.error('Error saving custom theme:', error);
+                // Error saving custom theme
                 showNotification('Failed to save theme. Please try again.', 'error');
             }
         }
@@ -7727,9 +7727,9 @@
 
                 showNotification('Custom theme applied successfully!', 'success');
 
-                console.log('✅ Custom theme sent to extension');
+                // Custom theme sent to extension
             } catch (error) {
-                console.error('Error applying custom theme:', error);
+                // Error applying custom theme
                 showNotification('Failed to apply theme. Please try again.', 'error');
             }
         }
@@ -7814,7 +7814,7 @@
 
                 feather.replace();
             } catch (error) {
-                console.error('Error loading custom themes:', error);
+                // Error loading custom themes
             }
         }
 
@@ -7839,7 +7839,7 @@
 
                 showNotification(`${theme.name} applied successfully!`, 'success');
             } catch (error) {
-                console.error('Error applying custom theme:', error);
+                // Error applying custom theme
                 showNotification('Failed to apply theme. Please try again.', 'error');
             }
         }
@@ -7859,7 +7859,7 @@
                 showNotification('Theme deleted successfully!', 'success');
                 loadSavedCustomThemes();
             } catch (error) {
-                console.error('Error deleting custom theme:', error);
+                // Error deleting custom theme
                 showNotification('Failed to delete theme. Please try again.', 'error');
             }
         }
