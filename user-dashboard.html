@@ -19,6 +19,8 @@
             https://*.supabase.co;
         style-src 'self' 'unsafe-inline'
             https://fonts.googleapis.com;
+        style-src-elem 'self' 'unsafe-inline'
+            https://fonts.googleapis.com;
         img-src 'self' data: https: blob:;
         font-src 'self' data:
             https://fonts.gstatic.com;
@@ -7193,18 +7195,40 @@
                 if (draftJson) {
                     const draft = JSON.parse(draftJson);
 
-                    // Restore values to form inputs
-                    if (draft.primaryColor) document.getElementById('custom-color-primary').value = draft.primaryColor;
-                    if (draft.secondaryColor) document.getElementById('custom-color-secondary').value = draft.secondaryColor;
-                    if (draft.fontFamily) document.getElementById('custom-font-family').value = draft.fontFamily;
-                    if (draft.fontSize) document.getElementById('custom-font-size').value = parseInt(draft.fontSize);
-                    if (draft.gradientDirection) document.getElementById('custom-gradient-direction').value = draft.gradientDirection;
-                    if (draft.bgType) document.getElementById('custom-bg-type').value = draft.bgType;
-                    if (draft.animationsEnabled !== undefined) document.getElementById('custom-animations-enabled').checked = draft.animationsEnabled;
-                    if (draft.animationStyle) document.getElementById('custom-animation-style').value = draft.animationStyle;
-                    if (draft.animationSpeed) document.getElementById('custom-animation-speed').value = parseInt(draft.animationSpeed);
+                    // Restore color values with null checks
+                    const primaryInput = document.getElementById('custom-color-primary');
+                    const accentInput = document.getElementById('custom-color-accent');
+                    const textInput = document.getElementById('custom-color-text');
+                    const secondaryInput = document.getElementById('custom-color-secondary');
+
+                    if (draft.primaryColor && primaryInput) primaryInput.value = draft.primaryColor;
+                    if (draft.accentColor && accentInput) accentInput.value = draft.accentColor;
+                    if (draft.textColor && textInput) textInput.value = draft.textColor;
+                    if (draft.secondaryColor && secondaryInput) secondaryInput.value = draft.secondaryColor;
+
+                    // Restore typography values with null checks
+                    const fontFamilySelect = document.getElementById('custom-font-family');
+                    const fontSizeInput = document.getElementById('custom-font-size');
+
+                    if (draft.fontFamily && fontFamilySelect) fontFamilySelect.value = draft.fontFamily;
+                    if (draft.fontSize && fontSizeInput) fontSizeInput.value = parseInt(draft.fontSize);
+
+                    // Restore background settings with null checks
+                    const bgTypeSelect = document.getElementById('custom-bg-type');
+                    const enableGradientCheckbox = document.getElementById('enable-gradient');
+
+                    if (draft.bgType && bgTypeSelect) bgTypeSelect.value = draft.bgType;
+                    if (draft.enableGradient !== undefined && enableGradientCheckbox) enableGradientCheckbox.checked = draft.enableGradient;
+
+                    // Restore animation settings with null checks
+                    const animationStyleSelect = document.getElementById('custom-animation-style');
+                    const animationSpeedInput = document.getElementById('custom-animation-speed');
+
+                    if (draft.animationStyle && animationStyleSelect) animationStyleSelect.value = draft.animationStyle;
+                    if (draft.animationSpeed && animationSpeedInput) animationSpeedInput.value = parseInt(draft.animationSpeed);
 
                     // Update preview with restored values
+                    toggleSecondaryColor();
                     updateCustomThemePreview();
 
                     console.log('✅ Restored custom theme draft from', draft.lastSaved);
@@ -7562,17 +7586,43 @@
 
         // Reset custom theme to defaults
         function resetCustomTheme() {
-            document.getElementById('custom-color-primary').value = '#667eea';
-            document.getElementById('custom-color-secondary').value = '#764ba2';
-            document.getElementById('custom-font-family').selectedIndex = 0;
-            document.getElementById('custom-font-size').value = 14;
-            document.getElementById('custom-gradient-direction').selectedIndex = 0;
-            document.getElementById('custom-bg-type').selectedIndex = 0;
-            document.getElementById('custom-animations-enabled').checked = true;
-            document.getElementById('custom-animation-style').selectedIndex = 0;
-            document.getElementById('custom-animation-speed').value = 300;
-            document.getElementById('custom-theme-name').value = '';
+            // Reset colors with null checks
+            const primaryInput = document.getElementById('custom-color-primary');
+            const accentInput = document.getElementById('custom-color-accent');
+            const textInput = document.getElementById('custom-color-text');
+            const secondaryInput = document.getElementById('custom-color-secondary');
 
+            if (primaryInput) primaryInput.value = '#667eea';
+            if (accentInput) accentInput.value = '#8b5cf6';
+            if (textInput) textInput.value = '#ffffff';
+            if (secondaryInput) secondaryInput.value = '#764ba2';
+
+            // Reset typography
+            const fontFamilySelect = document.getElementById('custom-font-family');
+            const fontSizeInput = document.getElementById('custom-font-size');
+
+            if (fontFamilySelect) fontFamilySelect.selectedIndex = 0;
+            if (fontSizeInput) fontSizeInput.value = 14;
+
+            // Reset background
+            const bgTypeSelect = document.getElementById('custom-bg-type');
+            const enableGradientCheckbox = document.getElementById('enable-gradient');
+
+            if (bgTypeSelect) bgTypeSelect.selectedIndex = 0;
+            if (enableGradientCheckbox) enableGradientCheckbox.checked = true;
+
+            // Reset animations
+            const animationStyleSelect = document.getElementById('custom-animation-style');
+            const animationSpeedInput = document.getElementById('custom-animation-speed');
+
+            if (animationStyleSelect) animationStyleSelect.selectedIndex = 0;
+            if (animationSpeedInput) animationSpeedInput.value = 250;
+
+            // Reset theme name
+            const themeNameInput = document.getElementById('custom-theme-name');
+            if (themeNameInput) themeNameInput.value = '';
+
+            toggleSecondaryColor();
             updateCustomThemePreview();
         }
 
@@ -7584,23 +7634,37 @@
             //     return;
             // }
 
-            const themeName = document.getElementById('custom-theme-name').value.trim();
+            const themeNameInput = document.getElementById('custom-theme-name');
+            const themeName = themeNameInput?.value.trim();
             if (!themeName) {
                 showNotification('Please enter a theme name.', 'error');
                 return;
             }
 
+            // Get all inputs with null checks
+            const primaryInput = document.getElementById('custom-color-primary');
+            const accentInput = document.getElementById('custom-color-accent');
+            const textInput = document.getElementById('custom-color-text');
+            const secondaryInput = document.getElementById('custom-color-secondary');
+            const fontFamilySelect = document.getElementById('custom-font-family');
+            const fontSizeInput = document.getElementById('custom-font-size');
+            const bgTypeSelect = document.getElementById('custom-bg-type');
+            const enableGradientCheckbox = document.getElementById('enable-gradient');
+            const animationStyleSelect = document.getElementById('custom-animation-style');
+            const animationSpeedInput = document.getElementById('custom-animation-speed');
+
             const customTheme = {
                 name: themeName,
-                primaryColor: document.getElementById('custom-color-primary').value,
-                secondaryColor: document.getElementById('custom-color-secondary').value,
-                fontFamily: document.getElementById('custom-font-family').value,
-                fontSize: document.getElementById('custom-font-size').value + 'px',
-                gradientDirection: document.getElementById('custom-gradient-direction').value,
-                bgType: document.getElementById('custom-bg-type').value,
-                animationsEnabled: document.getElementById('custom-animations-enabled').checked,
-                animationStyle: document.getElementById('custom-animation-style').value,
-                animationSpeed: document.getElementById('custom-animation-speed').value + 'ms',
+                primaryColor: primaryInput?.value || '#667eea',
+                accentColor: accentInput?.value || '#8b5cf6',
+                textColor: textInput?.value || '#ffffff',
+                secondaryColor: secondaryInput?.value || '#764ba2',
+                fontFamily: fontFamilySelect?.value || 'system-ui',
+                fontSize: (fontSizeInput?.value || '14') + 'px',
+                bgType: bgTypeSelect?.value || 'gradient',
+                enableGradient: enableGradientCheckbox?.checked ?? true,
+                animationStyle: animationStyleSelect?.value || 'fade',
+                animationSpeed: (animationSpeedInput?.value || '250') + 'ms',
                 isCustom: true,
                 createdAt: new Date().toISOString()
             };
@@ -7638,17 +7702,31 @@
             //     return;
             // }
 
+            // Get all inputs with null checks
+            const primaryInput = document.getElementById('custom-color-primary');
+            const accentInput = document.getElementById('custom-color-accent');
+            const textInput = document.getElementById('custom-color-text');
+            const secondaryInput = document.getElementById('custom-color-secondary');
+            const fontFamilySelect = document.getElementById('custom-font-family');
+            const fontSizeInput = document.getElementById('custom-font-size');
+            const bgTypeSelect = document.getElementById('custom-bg-type');
+            const enableGradientCheckbox = document.getElementById('enable-gradient');
+            const animationStyleSelect = document.getElementById('custom-animation-style');
+            const animationSpeedInput = document.getElementById('custom-animation-speed');
+
+            // Build custom theme object with safe defaults
             const customTheme = {
                 name: 'Custom',
-                primaryColor: document.getElementById('custom-color-primary').value,
-                secondaryColor: document.getElementById('custom-color-secondary').value,
-                fontFamily: document.getElementById('custom-font-family').value,
-                fontSize: document.getElementById('custom-font-size').value + 'px',
-                gradientDirection: document.getElementById('custom-gradient-direction').value,
-                bgType: document.getElementById('custom-bg-type').value,
-                animationsEnabled: document.getElementById('custom-animations-enabled').checked,
-                animationStyle: document.getElementById('custom-animation-style').value,
-                animationSpeed: document.getElementById('custom-animation-speed').value + 'ms',
+                primaryColor: primaryInput?.value || '#667eea',
+                accentColor: accentInput?.value || '#8b5cf6',
+                textColor: textInput?.value || '#ffffff',
+                secondaryColor: secondaryInput?.value || '#764ba2',
+                fontFamily: fontFamilySelect?.value || 'system-ui',
+                fontSize: (fontSizeInput?.value || '14') + 'px',
+                bgType: bgTypeSelect?.value || 'gradient',
+                enableGradient: enableGradientCheckbox?.checked ?? true,
+                animationStyle: animationStyleSelect?.value || 'fade',
+                animationSpeed: (animationSpeedInput?.value || '250') + 'ms',
                 isCustom: true
             };
 
@@ -7698,9 +7776,33 @@
                     return;
                 }
 
-                container.innerHTML = customThemes.map((theme, index) => `
+                container.innerHTML = customThemes.map((theme, index) => {
+                    // Generate background style based on theme format (handles both old and new formats)
+                    let bgStyle;
+                    if (theme.bgType) {
+                        // New format with bgType
+                        if (theme.bgType === 'gradient' && theme.enableGradient) {
+                            bgStyle = `background: linear-gradient(135deg, ${theme.primaryColor} 0%, ${theme.secondaryColor} 100%);`;
+                        } else if (theme.bgType === 'radial' && theme.enableGradient) {
+                            bgStyle = `background: radial-gradient(circle at top left, ${theme.primaryColor} 0%, ${theme.secondaryColor} 100%);`;
+                        } else if (theme.bgType === 'solid') {
+                            bgStyle = `background: ${theme.primaryColor};`;
+                        } else if (theme.bgType === 'pattern') {
+                            bgStyle = `background: ${theme.primaryColor}; background-image: radial-gradient(circle, rgba(255,255,255,0.1) 1px, transparent 1px); background-size: 20px 20px;`;
+                        } else {
+                            bgStyle = `background: linear-gradient(135deg, ${theme.primaryColor} 0%, ${theme.secondaryColor} 100%);`;
+                        }
+                    } else if (theme.gradientDirection) {
+                        // Old format with gradientDirection (backward compatibility)
+                        bgStyle = `background: linear-gradient(${theme.gradientDirection}, ${theme.primaryColor} 0%, ${theme.secondaryColor} 100%);`;
+                    } else {
+                        // Fallback
+                        bgStyle = `background: linear-gradient(135deg, ${theme.primaryColor} 0%, ${theme.secondaryColor} 100%);`;
+                    }
+
+                    return `
                     <div class="theme-card">
-                        <div class="theme-preview" style="background: linear-gradient(${theme.gradientDirection || '135deg'}, ${theme.primaryColor} 0%, ${theme.secondaryColor} 100%);">
+                        <div class="theme-preview" style="${bgStyle}">
                             <div class="theme-preview-header">
                                 <div class="theme-preview-logo"></div>
                             </div>
@@ -7727,7 +7829,8 @@
                             </div>
                         </div>
                     </div>
-                `).join('');
+                `;
+                }).join('');
 
                 feather.replace();
             } catch (error) {
