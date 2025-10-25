@@ -252,6 +252,57 @@
             transition: all 0.3s ease;
         }
 
+        /* Sidebar Toggle Button */
+        .sidebar-toggle {
+            width: 100%;
+            padding: 0.75rem;
+            margin-bottom: 1.5rem;
+            background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+            border: none;
+            border-radius: 0.75rem;
+            color: white;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 2px 8px rgba(99, 102, 241, 0.3);
+        }
+
+        .sidebar-toggle:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(99, 102, 241, 0.4);
+        }
+
+        .sidebar-toggle i {
+            width: 20px;
+            height: 20px;
+        }
+
+        /* Collapsed Sidebar State */
+        .sidebar.collapsed {
+            width: 80px;
+            padding: 1rem 0.5rem;
+        }
+
+        .sidebar.collapsed .sidebar-toggle {
+            padding: 0.75rem;
+        }
+
+        .sidebar.collapsed .nav-text {
+            display: none;
+        }
+
+        .sidebar.collapsed .nav-link {
+            justify-content: center;
+            padding: 0.75rem;
+        }
+
+        /* Expand main content when sidebar collapses */
+        .main-container.sidebar-collapsed .main-content {
+            margin-left: 100px;
+        }
+
         .nav-link:hover svg, .nav-link:hover i {
             transform: scale(1.1);
         }
@@ -1741,35 +1792,40 @@
     <div class="main-container">
         <!-- Sidebar -->
         <nav class="sidebar">
+            <!-- Sidebar Toggle Button -->
+            <button class="sidebar-toggle" onclick="toggleSidebar()" title="Toggle Sidebar">
+                <i data-feather="menu"></i>
+            </button>
+
             <ul class="nav-menu">
                 <li class="nav-item">
                     <a href="#" class="nav-link active" data-page="dashboard">
                         <i data-feather="home"></i>
-                        Dashboard
+                        <span class="nav-text">Dashboard</span>
                     </a>
                 </li>
                 <li class="nav-item">
                     <a href="#" class="nav-link" data-page="subscription">
                         <i data-feather="credit-card"></i>
-                        Subscription
+                        <span class="nav-text">Subscription</span>
                     </a>
                 </li>
                 <li class="nav-item">
                     <a href="#" class="nav-link" data-page="analytics">
                         <i data-feather="bar-chart-2"></i>
-                        Analytics
+                        <span class="nav-text">Analytics</span>
                     </a>
                 </li>
                 <li class="nav-item">
                     <a href="#" class="nav-link" data-page="profile">
                         <i data-feather="user"></i>
-                        Profile
+                        <span class="nav-text">Profile</span>
                     </a>
                 </li>
                 <li class="nav-item">
                     <a href="#" class="nav-link" data-page="themes">
                         <i data-feather="droplet"></i>
-                        Themes
+                        <span class="nav-text">Themes</span>
                     </a>
                 </li>
             </ul>
@@ -2635,6 +2691,36 @@
 
         const { createClient } = supabase;
         const supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        // ============================================
+        // SIDEBAR TOGGLE FUNCTIONALITY
+        // ============================================
+
+        function toggleSidebar() {
+            const sidebar = document.querySelector('.sidebar');
+            const mainContainer = document.querySelector('.main-container');
+
+            sidebar.classList.toggle('collapsed');
+            mainContainer.classList.toggle('sidebar-collapsed');
+
+            // Re-initialize feather icons after DOM change
+            if (typeof feather !== 'undefined') {
+                feather.replace();
+            }
+
+            // Save preference to localStorage
+            const isCollapsed = sidebar.classList.contains('collapsed');
+            localStorage.setItem('sidebarCollapsed', isCollapsed);
+        }
+
+        // Restore sidebar state on page load
+        window.addEventListener('DOMContentLoaded', () => {
+            const isCollapsed = localStorage.getItem('sidebarCollapsed') === 'true';
+            if (isCollapsed) {
+                document.querySelector('.sidebar')?.classList.add('collapsed');
+                document.querySelector('.main-container')?.classList.add('sidebar-collapsed');
+            }
+        });
 
         // ============================================
         // DEVICE FINGERPRINTING & ANTI-SHARING SYSTEM
