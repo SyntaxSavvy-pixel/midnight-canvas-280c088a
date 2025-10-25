@@ -7106,6 +7106,9 @@
 
             // Load and display active theme (also called by renderThemeCards, but safe to call twice)
             loadActiveTheme();
+
+            // Load saved custom themes
+            loadSavedCustomThemes();
         }
 
         // Load custom theme draft from localStorage
@@ -7695,7 +7698,8 @@
 
         // Load saved custom themes
         function loadSavedCustomThemes() {
-            if (!userData.isPro) return;
+            // TESTING MODE: Pro check disabled
+            // if (!userData.isPro) return;
 
             try {
                 const stored = localStorage.getItem('customThemes');
