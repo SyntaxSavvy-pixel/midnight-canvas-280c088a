@@ -4,22 +4,29 @@
 -- ============================================
 
 -- 1. USERS TABLE (Enhanced)
--- Note: If you already have a users table, modify it instead
-CREATE TABLE IF NOT EXISTS public.users (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    email TEXT UNIQUE NOT NULL,
-    name TEXT,
-    avatar TEXT,
-    stripe_customer_id TEXT UNIQUE,
-    stripe_subscription_id TEXT,
-    subscription_status TEXT DEFAULT 'free', -- 'free', 'active', 'past_due', 'canceled', 'trialing'
-    is_pro BOOLEAN DEFAULT FALSE,
-    current_period_end TIMESTAMPTZ,
-    deletion_scheduled_at TIMESTAMPTZ,
-    name_update_cooldown TIMESTAMPTZ,
-    created_at TIMESTAMPTZ DEFAULT NOW(),
-    updated_at TIMESTAMPTZ DEFAULT NOW()
-);
+-- Check if users table exists, if not create it
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT FROM pg_tables WHERE schemaname = 'public' AND tablename = 'users') THEN
+        CREATE TABLE public.users (
+            id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+            email TEXT UNIQUE NOT NULL,
+            name TEXT,
+            avatar TEXT,
+            created_at TIMESTAMPTZ DEFAULT NOW(),
+            updated_at TIMESTAMPTZ DEFAULT NOW()
+        );
+    END IF;
+END $$;
+
+-- Add new columns to existing users table if they don't exist
+ALTER TABLE public.users ADD COLUMN IF NOT EXISTS stripe_customer_id TEXT UNIQUE;
+ALTER TABLE public.users ADD COLUMN IF NOT EXISTS stripe_subscription_id TEXT;
+ALTER TABLE public.users ADD COLUMN IF NOT EXISTS subscription_status TEXT DEFAULT 'free';
+ALTER TABLE public.users ADD COLUMN IF NOT EXISTS is_pro BOOLEAN DEFAULT FALSE;
+ALTER TABLE public.users ADD COLUMN IF NOT EXISTS current_period_end TIMESTAMPTZ;
+ALTER TABLE public.users ADD COLUMN IF NOT EXISTS deletion_scheduled_at TIMESTAMPTZ;
+ALTER TABLE public.users ADD COLUMN IF NOT EXISTS name_update_cooldown TIMESTAMPTZ;
 
 -- 2. USER DEVICES - Track user devices for analytics
 CREATE TABLE IF NOT EXISTS public.user_devices (
@@ -140,12 +147,21 @@ ALTER TABLE public.user_activity ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.payment_events ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.subscription_history ENABLE ROW LEVEL SECURITY;
 
+-- Drop existing policies if they exist
+DROP POLICY IF EXISTS "Users can view own data" ON public.users;
+DROP POLICY IF EXISTS "Users can update own data" ON public.users;
+
 -- Users can only read/update their own data
 CREATE POLICY "Users can view own data" ON public.users
     FOR SELECT USING (auth.uid() = id);
 
 CREATE POLICY "Users can update own data" ON public.users
     FOR UPDATE USING (auth.uid() = id);
+
+-- Drop existing device policies
+DROP POLICY IF EXISTS "Users can view own devices" ON public.user_devices;
+DROP POLICY IF EXISTS "Users can insert own devices" ON public.user_devices;
+DROP POLICY IF EXISTS "Users can update own devices" ON public.user_devices;
 
 -- User devices policies
 CREATE POLICY "Users can view own devices" ON public.user_devices
@@ -157,6 +173,11 @@ CREATE POLICY "Users can insert own devices" ON public.user_devices
 CREATE POLICY "Users can update own devices" ON public.user_devices
     FOR UPDATE USING (auth.uid() = user_id);
 
+-- Drop existing preferences policies
+DROP POLICY IF EXISTS "Users can view own preferences" ON public.user_preferences;
+DROP POLICY IF EXISTS "Users can insert own preferences" ON public.user_preferences;
+DROP POLICY IF EXISTS "Users can update own preferences" ON public.user_preferences;
+
 -- User preferences policies
 CREATE POLICY "Users can view own preferences" ON public.user_preferences
     FOR SELECT USING (auth.uid() = user_id);
@@ -166,6 +187,12 @@ CREATE POLICY "Users can insert own preferences" ON public.user_preferences
 
 CREATE POLICY "Users can update own preferences" ON public.user_preferences
     FOR UPDATE USING (auth.uid() = user_id);
+
+-- Drop existing custom themes policies
+DROP POLICY IF EXISTS "Users can view own themes" ON public.custom_themes;
+DROP POLICY IF EXISTS "Users can insert own themes" ON public.custom_themes;
+DROP POLICY IF EXISTS "Users can update own themes" ON public.custom_themes;
+DROP POLICY IF EXISTS "Users can delete own themes" ON public.custom_themes;
 
 -- Custom themes policies
 CREATE POLICY "Users can view own themes" ON public.custom_themes
@@ -180,6 +207,11 @@ CREATE POLICY "Users can update own themes" ON public.custom_themes
 CREATE POLICY "Users can delete own themes" ON public.custom_themes
     FOR DELETE USING (auth.uid() = user_id);
 
+-- Drop existing theme drafts policies
+DROP POLICY IF EXISTS "Users can view own drafts" ON public.theme_drafts;
+DROP POLICY IF EXISTS "Users can insert own drafts" ON public.theme_drafts;
+DROP POLICY IF EXISTS "Users can update own drafts" ON public.theme_drafts;
+
 -- Theme drafts policies
 CREATE POLICY "Users can view own drafts" ON public.theme_drafts
     FOR SELECT USING (auth.uid() = user_id);
@@ -189,6 +221,11 @@ CREATE POLICY "Users can insert own drafts" ON public.theme_drafts
 
 CREATE POLICY "Users can update own drafts" ON public.theme_drafts
     FOR UPDATE USING (auth.uid() = user_id);
+
+-- Drop existing tab analytics policies
+DROP POLICY IF EXISTS "Users can view own analytics" ON public.tab_analytics;
+DROP POLICY IF EXISTS "Users can insert own analytics" ON public.tab_analytics;
+DROP POLICY IF EXISTS "Users can update own analytics" ON public.tab_analytics;
 
 -- Tab analytics policies
 CREATE POLICY "Users can view own analytics" ON public.tab_analytics
@@ -200,6 +237,10 @@ CREATE POLICY "Users can insert own analytics" ON public.tab_analytics
 CREATE POLICY "Users can update own analytics" ON public.tab_analytics
     FOR UPDATE USING (auth.uid() = user_id);
 
+-- Drop existing user activity policies
+DROP POLICY IF EXISTS "Users can view own activity" ON public.user_activity;
+DROP POLICY IF EXISTS "Users can insert own activity" ON public.user_activity;
+
 -- User activity policies
 CREATE POLICY "Users can view own activity" ON public.user_activity
     FOR SELECT USING (auth.uid() = user_id);
@@ -207,9 +248,15 @@ CREATE POLICY "Users can view own activity" ON public.user_activity
 CREATE POLICY "Users can insert own activity" ON public.user_activity
     FOR INSERT WITH CHECK (auth.uid() = user_id);
 
+-- Drop existing payment events policies
+DROP POLICY IF EXISTS "Users can view own payment events" ON public.payment_events;
+
 -- Payment events policies (read-only for users)
 CREATE POLICY "Users can view own payment events" ON public.payment_events
     FOR SELECT USING (auth.uid() = user_id);
+
+-- Drop existing subscription history policies
+DROP POLICY IF EXISTS "Users can view own subscription history" ON public.subscription_history;
 
 -- Subscription history policies (read-only for users)
 CREATE POLICY "Users can view own subscription history" ON public.subscription_history
@@ -227,6 +274,13 @@ BEGIN
     RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
+
+-- Drop existing triggers if they exist
+DROP TRIGGER IF EXISTS update_users_updated_at ON public.users;
+DROP TRIGGER IF EXISTS update_user_devices_updated_at ON public.user_devices;
+DROP TRIGGER IF EXISTS update_user_preferences_updated_at ON public.user_preferences;
+DROP TRIGGER IF EXISTS update_custom_themes_updated_at ON public.custom_themes;
+DROP TRIGGER IF EXISTS update_tab_analytics_updated_at ON public.tab_analytics;
 
 -- Apply trigger to all tables with updated_at
 CREATE TRIGGER update_users_updated_at BEFORE UPDATE ON public.users
