@@ -136,6 +136,30 @@ ALTER TABLE public.user_activity ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.payment_events ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.subscription_history ENABLE ROW LEVEL SECURITY;
 
+-- Drop old policies if they exist
+DROP POLICY IF EXISTS "Users can view own data" ON public.users_auth;
+DROP POLICY IF EXISTS "Users can update own data" ON public.users_auth;
+DROP POLICY IF EXISTS "Users can view own devices" ON public.user_devices;
+DROP POLICY IF EXISTS "Users can insert own devices" ON public.user_devices;
+DROP POLICY IF EXISTS "Users can update own devices" ON public.user_devices;
+DROP POLICY IF EXISTS "Users can view own preferences" ON public.user_preferences;
+DROP POLICY IF EXISTS "Users can insert own preferences" ON public.user_preferences;
+DROP POLICY IF EXISTS "Users can update own preferences" ON public.user_preferences;
+DROP POLICY IF EXISTS "Users can view own themes" ON public.custom_themes;
+DROP POLICY IF EXISTS "Users can insert own themes" ON public.custom_themes;
+DROP POLICY IF EXISTS "Users can update own themes" ON public.custom_themes;
+DROP POLICY IF EXISTS "Users can delete own themes" ON public.custom_themes;
+DROP POLICY IF EXISTS "Users can view own drafts" ON public.theme_drafts;
+DROP POLICY IF EXISTS "Users can insert own drafts" ON public.theme_drafts;
+DROP POLICY IF EXISTS "Users can update own drafts" ON public.theme_drafts;
+DROP POLICY IF EXISTS "Users can view own analytics" ON public.tab_analytics;
+DROP POLICY IF EXISTS "Users can insert own analytics" ON public.tab_analytics;
+DROP POLICY IF EXISTS "Users can update own analytics" ON public.tab_analytics;
+DROP POLICY IF EXISTS "Users can view own activity" ON public.user_activity;
+DROP POLICY IF EXISTS "Users can insert own activity" ON public.user_activity;
+DROP POLICY IF EXISTS "Users can view own payment events" ON public.payment_events;
+DROP POLICY IF EXISTS "Users can view own subscription history" ON public.subscription_history;
+
 -- Create RLS policies
 CREATE POLICY "Users can view own data" ON public.users_auth FOR SELECT USING (auth.uid() = id);
 CREATE POLICY "Users can update own data" ON public.users_auth FOR UPDATE USING (auth.uid() = id);
