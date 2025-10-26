@@ -51,7 +51,7 @@ END $$;
 -- 1. USER DEVICES - Track user devices for analytics
 CREATE TABLE IF NOT EXISTS public.user_devices (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    user_id UUID NOT NULL REFERENCES public.users_auth(uuid) ON DELETE CASCADE,
+    user_id UUID NOT NULL REFERENCES public.users_auth(id) ON DELETE CASCADE,
     device_id TEXT NOT NULL UNIQUE,
     device_fingerprint TEXT,
     browser_info JSONB DEFAULT '{}',
@@ -63,7 +63,7 @@ CREATE TABLE IF NOT EXISTS public.user_devices (
 -- 2. USER PREFERENCES - Settings, themes, UI state
 CREATE TABLE IF NOT EXISTS public.user_preferences (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    user_id UUID NOT NULL UNIQUE REFERENCES public.users_auth(uuid) ON DELETE CASCADE,
+    user_id UUID NOT NULL UNIQUE REFERENCES public.users_auth(id) ON DELETE CASCADE,
     sidebar_collapsed BOOLEAN DEFAULT FALSE,
     settings JSONB DEFAULT '{}',
     active_theme TEXT DEFAULT 'lightMinimal',
@@ -76,7 +76,7 @@ CREATE TABLE IF NOT EXISTS public.user_preferences (
 -- 3. CUSTOM THEMES - User-created themes
 CREATE TABLE IF NOT EXISTS public.custom_themes (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    user_id UUID NOT NULL REFERENCES public.users_auth(uuid) ON DELETE CASCADE,
+    user_id UUID NOT NULL REFERENCES public.users_auth(id) ON DELETE CASCADE,
     name TEXT NOT NULL,
     theme_data JSONB NOT NULL,
     created_at TIMESTAMPTZ DEFAULT NOW(),
@@ -86,7 +86,7 @@ CREATE TABLE IF NOT EXISTS public.custom_themes (
 -- 4. THEME DRAFTS - Auto-saved work in progress
 CREATE TABLE IF NOT EXISTS public.theme_drafts (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    user_id UUID NOT NULL UNIQUE REFERENCES public.users_auth(uuid) ON DELETE CASCADE,
+    user_id UUID NOT NULL UNIQUE REFERENCES public.users_auth(id) ON DELETE CASCADE,
     draft_data JSONB NOT NULL,
     last_saved TIMESTAMPTZ DEFAULT NOW()
 );
@@ -94,7 +94,7 @@ CREATE TABLE IF NOT EXISTS public.theme_drafts (
 -- 5. TAB ANALYTICS - Daily tab usage statistics
 CREATE TABLE IF NOT EXISTS public.tab_analytics (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    user_id UUID NOT NULL REFERENCES public.users_auth(uuid) ON DELETE CASCADE,
+    user_id UUID NOT NULL REFERENCES public.users_auth(id) ON DELETE CASCADE,
     device_id UUID REFERENCES public.user_devices(id) ON DELETE SET NULL,
     tabs_opened INTEGER DEFAULT 0,
     tabs_closed INTEGER DEFAULT 0,
@@ -109,7 +109,7 @@ CREATE TABLE IF NOT EXISTS public.tab_analytics (
 -- 6. USER ACTIVITY LOG - Detailed activity tracking
 CREATE TABLE IF NOT EXISTS public.user_activity (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    user_id UUID NOT NULL REFERENCES public.users_auth(uuid) ON DELETE CASCADE,
+    user_id UUID NOT NULL REFERENCES public.users_auth(id) ON DELETE CASCADE,
     device_id UUID REFERENCES public.user_devices(id) ON DELETE SET NULL,
     activity_type TEXT NOT NULL,
     metadata JSONB DEFAULT '{}',
@@ -119,7 +119,7 @@ CREATE TABLE IF NOT EXISTS public.user_activity (
 -- 7. PAYMENT EVENTS - Stripe webhook events
 CREATE TABLE IF NOT EXISTS public.payment_events (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    user_id UUID REFERENCES public.users_auth(uuid) ON DELETE SET NULL,
+    user_id UUID REFERENCES public.users_auth(id) ON DELETE SET NULL,
     stripe_event_id TEXT UNIQUE NOT NULL,
     event_type TEXT NOT NULL,
     event_data JSONB NOT NULL,
@@ -130,7 +130,7 @@ CREATE TABLE IF NOT EXISTS public.payment_events (
 -- 8. SUBSCRIPTION HISTORY - Track plan changes
 CREATE TABLE IF NOT EXISTS public.subscription_history (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    user_id UUID NOT NULL REFERENCES public.users_auth(uuid) ON DELETE CASCADE,
+    user_id UUID NOT NULL REFERENCES public.users_auth(id) ON DELETE CASCADE,
     action TEXT NOT NULL,
     from_plan TEXT NOT NULL,
     to_plan TEXT NOT NULL,
@@ -199,10 +199,10 @@ DROP POLICY IF EXISTS "Users can view own subscription history" ON public.subscr
 
 -- Users_auth policies
 CREATE POLICY "Users can view own data" ON public.users_auth
-    FOR SELECT USING (auth.uid() = uuid);
+    FOR SELECT USING (auth.uid() = id);
 
 CREATE POLICY "Users can update own data" ON public.users_auth
-    FOR UPDATE USING (auth.uid() = uuid);
+    FOR UPDATE USING (auth.uid() = id);
 
 -- User devices policies
 CREATE POLICY "Users can view own devices" ON public.user_devices
@@ -336,7 +336,7 @@ BEGIN
     -- Log the auto-suspension
     INSERT INTO public.subscription_history (user_id, action, from_plan, to_plan, reason)
     SELECT
-        uuid,
+        id,
         'auto_suspended',
         'pro',
         'free',
