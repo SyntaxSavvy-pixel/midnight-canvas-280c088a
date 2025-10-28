@@ -2964,7 +2964,7 @@
             if (!userId) return null;
 
             const { data, error } = await supabaseClient
-                .from('users')
+                .from('users_auth')
                 .select('is_pro, subscription_status, current_period_end, stripe_subscription_id')
                 .eq('id', userId)
                 .single();
@@ -2987,7 +2987,7 @@
         async function autoSuspendSubscription(userId) {
             // Update user to free plan
             const { error: userError } = await supabaseClient
-                .from('users')
+                .from('users_auth')
                 .update({
                     is_pro: false,
                     subscription_status: 'suspended'
@@ -3027,7 +3027,7 @@
             if (!userId) return false;
 
             const { error } = await supabaseClient
-                .from('users')
+                .from('users_auth')
                 .update(updates)
                 .eq('id', userId);
 
@@ -3040,7 +3040,7 @@
 
             // Check cooldown
             const { data: userData } = await supabaseClient
-                .from('users')
+                .from('users_auth')
                 .select('name_update_cooldown')
                 .eq('id', userId)
                 .single();
@@ -3060,7 +3060,7 @@
             const newCooldownEnd = new Date(Date.now() + (24 * 60 * 60 * 1000));
 
             const { error } = await supabaseClient
-                .from('users')
+                .from('users_auth')
                 .update({
                     name: newName,
                     name_update_cooldown: newCooldownEnd.toISOString()
