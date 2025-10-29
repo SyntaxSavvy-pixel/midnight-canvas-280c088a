@@ -641,6 +641,10 @@ class TabmangmentPopup {
         if (logoutBtn) {
             logoutBtn.addEventListener('click', () => this.handleLogout());
         }
+
+        // Search Panel Event Listeners
+        this.setupSearchPanel();
+
         chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
             if (message.action === 'updateClosingSoonCount') {
                 this.updateClosingSoonCounter(message.count);
@@ -705,6 +709,143 @@ class TabmangmentPopup {
         this.setupContactModal();
         this.setupPremiumModal();
     }
+
+    // Setup Search Panel
+    setupSearchPanel() {
+        const searchBtn = document.getElementById('search-btn');
+        const searchPanel = document.getElementById('search-panel');
+        const searchCloseBtn = document.getElementById('search-close-btn');
+        const searchInput = document.getElementById('search-input');
+        const searchClearBtn = document.getElementById('search-clear-btn');
+        const searchResultsCount = document.getElementById('search-results-count');
+        const filterBtns = document.querySelectorAll('.search-filter-btn');
+
+        this.currentSearchFilter = 'all';
+
+        // Open search panel
+        if (searchBtn) {
+            searchBtn.addEventListener('click', () => {
+                if (searchPanel) {
+                    searchPanel.classList.add('active');
+                    searchBtn.classList.add('active');
+                    setTimeout(() => {
+                        if (searchInput) searchInput.focus();
+                    }, 300);
+                }
+            });
+        }
+
+        // Close search panel
+        if (searchCloseBtn) {
+            searchCloseBtn.addEventListener('click', () => {
+                if (searchPanel) {
+                    searchPanel.classList.remove('active');
+                    if (searchBtn) searchBtn.classList.remove('active');
+                    if (searchInput) searchInput.value = '';
+                    if (searchClearBtn) searchClearBtn.style.display = 'none';
+                    this.filterTabs('');
+                }
+            });
+        }
+
+        // Search input
+        if (searchInput) {
+            searchInput.addEventListener('input', (e) => {
+                const query = e.target.value;
+
+                // Show/hide clear button
+                if (searchClearBtn) {
+                    searchClearBtn.style.display = query ? 'flex' : 'none';
+                }
+
+                // Filter tabs
+                this.filterTabs(query);
+            });
+        }
+
+        // Clear search
+        if (searchClearBtn) {
+            searchClearBtn.addEventListener('click', () => {
+                if (searchInput) {
+                    searchInput.value = '';
+                    searchInput.focus();
+                }
+                searchClearBtn.style.display = 'none';
+                this.filterTabs('');
+            });
+        }
+
+        // Filter buttons
+        filterBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                // Remove active class from all
+                filterBtns.forEach(b => b.classList.remove('active'));
+                // Add active to clicked
+                btn.classList.add('active');
+
+                // Update filter
+                this.currentSearchFilter = btn.dataset.filter;
+
+                // Re-apply search with new filter
+                const query = searchInput ? searchInput.value : '';
+                this.filterTabs(query);
+            });
+        });
+    }
+
+    // Filter tabs based on search query
+    filterTabs(query) {
+        const searchResultsCount = document.getElementById('search-results-count');
+        const tabItems = document.querySelectorAll('.tab-item');
+        let visibleCount = 0;
+
+        tabItems.forEach(tabItem => {
+            const title = tabItem.querySelector('.tab-title')?.textContent.toLowerCase() || '';
+            const url = tabItem.querySelector('.tab-url')?.textContent.toLowerCase() || '';
+            const isActive = tabItem.classList.contains('active');
+
+            // Extract domain from URL
+            let domain = '';
+            try {
+                const urlObj = new URL(url.startsWith('http') ? url : 'https://' + url);
+                domain = urlObj.hostname;
+            } catch (e) {
+                domain = url;
+            }
+
+            // Apply search query filter
+            let matchesQuery = true;
+            if (query) {
+                const lowerQuery = query.toLowerCase();
+                matchesQuery = title.includes(lowerQuery) ||
+                             url.includes(lowerQuery) ||
+                             domain.includes(lowerQuery);
+            }
+
+            // Apply filter button filter
+            let matchesFilter = true;
+            if (this.currentSearchFilter === 'active') {
+                matchesFilter = isActive;
+            } else if (this.currentSearchFilter === 'domain' && query) {
+                matchesFilter = domain.includes(query.toLowerCase());
+            }
+
+            // Show/hide based on both filters
+            if (matchesQuery && matchesFilter) {
+                tabItem.style.display = '';
+                visibleCount++;
+            } else {
+                tabItem.style.display = 'none';
+            }
+        });
+
+        // Update results count
+        if (searchResultsCount) {
+            const tabWord = visibleCount === 1 ? 'tab' : 'tabs';
+            searchResultsCount.textContent = `${visibleCount} ${tabWord} found`;
+        }
+    }
+
     setupControlButtons() {
         const collapseBtn = document.getElementById('collapse-btn');
         if (collapseBtn) {
