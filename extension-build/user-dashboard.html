@@ -2886,27 +2886,6 @@
         }
 
         // DEVICE TRACKING
-        async function registerDevice(deviceId, fingerprint, browserInfo = {}) {
-            const userId = await getCurrentUserId();
-            if (!userId) return null;
-
-            const { data, error } = await supabaseClient
-                .from('user_devices')
-                .upsert({
-                    user_id: userId,
-                    device_id: deviceId,
-                    device_fingerprint: fingerprint,
-                    browser_info: browserInfo,
-                    last_seen: new Date().toISOString()
-                }, {
-                    onConflict: 'device_id'
-                })
-                .select()
-                .single();
-
-            return data;
-        }
-
         async function updateDeviceLastSeen(deviceId) {
             const { error } = await supabaseClient
                 .from('user_devices')
@@ -3314,20 +3293,16 @@
                         .select('device_id')
                         .eq('user_id', userId)
                         .eq('device_fingerprint', fingerprint)
-                        .single();
+                        .maybeSingle(); // Changed from .single() to prevent errors
 
                     if (devices) {
                         // Found existing device
                         deviceId = devices.device_id;
                         await updateDeviceLastSeen(deviceId);
                     } else {
-                        // Create new device ID
+                        // Create new device ID (but don't register yet - that happens in verifyDevice flow)
                         const timestamp = Date.now();
                         deviceId = `${fingerprint.substring(0, 16)}-${timestamp}`;
-
-                        // Register in Supabase
-                        const browserInfo = getDeviceMetadata();
-                        await registerDevice(deviceId, fingerprint, browserInfo);
                     }
 
                     // Cache in sessionStorage for this browser session
@@ -4143,13 +4118,19 @@
                 // Device verification (non-blocking)
                 (async () => {
                     try {
+                        // CRITICAL: Only use userData.id (UUID), never email for foreign key relations
+                        if (!userData.id) {
+                            console.error('User ID not available for device verification');
+                            return;
+                        }
+
                         const deviceId = await getDeviceId();
-                        const verification = await verifyDevice(userData.id || userEmail, deviceId, userData.isPro);
+                        const verification = await verifyDevice(userData.id, deviceId, userData.isPro);
 
                         if (!verification.authorized) {
                             showDeviceLimitWarning(verification.deviceCount, verification.maxDevices, userData.isPro);
                         } else {
-                            await registerDevice(userData.id || userEmail, deviceId, userData.isPro);
+                            await registerDevice(userData.id, deviceId, userData.isPro);
                         }
                     } catch (error) {
                         console.error('Device verification failed:', error);
@@ -4924,6 +4905,7 @@
                 }
 
                 // Update userData from Supabase Auth
+                userData.id = supabaseUser.id; // CRITICAL: Store the UUID for database operations
                 userData.email = supabaseUser.email || email;
                 userData.name = supabaseUser.user_metadata?.name || supabaseUser.user_metadata?.display_name || email.split('@')[0];
 
@@ -4933,7 +4915,7 @@
                         .from('users_auth')
                         .select('is_pro, plan_type, subscription_status, current_period_end, stripe_customer_id, stripe_subscription_id')
                         .eq('email', userData.email)
-                        .single();
+                        .maybeSingle(); // Changed from .single() to prevent 406 errors
 
                     if (!dbError && dbUser) {
                         // Use database as source of truth
@@ -8262,7 +8244,7 @@
         }
 
         // Apply custom theme (from current editor settings)
-        function applyCustomTheme() {
+        async function applyCustomTheme() {
             // TESTING MODE: Pro check disabled
             // if (!userData.isPro) {
             //     showUpgradeModal('Custom Themes', 'Apply custom themes to personalize your extension.');
@@ -8309,6 +8291,9 @@
                 localStorage.setItem('activeTheme', 'custom');
                 localStorage.setItem('themeConfig', JSON.stringify(customTheme));
 
+                // Save to database for persistence across sessions
+                await saveActiveTheme('custom', customTheme);
+
                 // Send theme to extension via content script bridge
                 window.postMessage({
                     type: 'DASHBOARD_APPLY_THEME',
@@ -8318,7 +8303,7 @@
                 }, '*');
 
                 // Update UI
-                loadActiveTheme();
+                await loadActiveTheme();
 
                 showNotification('✓ Custom theme applied to extension!', 'success');
 
@@ -8328,7 +8313,7 @@
                 }, 500);
 
             } catch (error) {
-                // Error applying custom theme
+                console.error('Error applying custom theme:', error);
                 showNotification('Failed to apply theme. Please try again.', 'error');
             }
         }
