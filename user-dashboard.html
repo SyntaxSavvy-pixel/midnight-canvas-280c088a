@@ -8007,25 +8007,25 @@
                 });
             }
 
-            // Tab text uses auto-contrast since tabs have WHITE backgrounds
-            // This ensures tab content is always readable
-            const tabTextColor = getContrastingTextColor('#ffffff'); // Dark on white
-            const tabSecondaryText = getSecondaryTextColor('#ffffff'); // Gray on white
+            // Use USER'S text color for tab content (show their choice)
+            // Calculate a slightly lighter version for URLs
+            const tabUrlColor = textColor + 'cc'; // Add opacity to user's color
 
-            // Update tab title and URL colors
+            // Update tab title and URL colors with USER'S choice
             const tabTitles = preview?.querySelectorAll('.preview-tab-title');
             const tabUrls = preview?.querySelectorAll('.preview-tab-url');
 
             if (tabTitles) {
                 tabTitles.forEach(el => {
-                    el.style.color = tabTextColor; // Always readable on white tabs
+                    el.style.color = textColor; // Use user's chosen text color
                     el.style.fontSize = (parseInt(fontSize) - 1) + 'px';
                 });
             }
 
             if (tabUrls) {
                 tabUrls.forEach(el => {
-                    el.style.color = tabSecondaryText; // Gray for URLs
+                    el.style.color = textColor; // Use user's chosen text color
+                    el.style.opacity = '0.7'; // Slightly transparent for secondary text
                     el.style.fontSize = (parseInt(fontSize) - 2) + 'px';
                 });
             }
