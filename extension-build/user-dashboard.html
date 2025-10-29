@@ -8195,21 +8195,28 @@
             const fontFamilySelect = document.getElementById('custom-font-family');
             const fontSizeInput = document.getElementById('custom-font-size');
             const bgTypeSelect = document.getElementById('custom-bg-type');
-            const enableGradientCheckbox = document.getElementById('enable-gradient');
             const animationStyleSelect = document.getElementById('custom-animation-style');
             const animationSpeedInput = document.getElementById('custom-animation-speed');
 
-            // Build custom theme object with safe defaults
+            const primaryColor = primaryInput?.value || '#667eea';
+            const secondaryColor = secondaryInput?.value || '#764ba2';
+            const bgType = bgTypeSelect?.value || 'gradient';
+
+            // Build complete custom theme object with ALL required fields
             const customTheme = {
                 name: 'Custom',
-                primaryColor: primaryInput?.value || '#667eea',
+                primaryColor: primaryColor,
                 accentColor: accentInput?.value || '#8b5cf6',
                 textColor: textInput?.value || '#ffffff',
-                secondaryColor: secondaryInput?.value || '#764ba2',
+                secondaryColor: secondaryColor,
+                // Use white background for tab items for better visibility
+                backgroundColor: 'rgba(255, 255, 255, 0.95)',
                 fontFamily: fontFamilySelect?.value || 'system-ui',
                 fontSize: (fontSizeInput?.value || '14') + 'px',
-                bgType: bgTypeSelect?.value || 'gradient',
-                enableGradient: enableGradientCheckbox?.checked ?? true,
+                bgType: bgType,
+                gradientDirection: '135deg',
+                enableGradient: bgType === 'gradient',
+                animationsEnabled: true,
                 animationStyle: animationStyleSelect?.value || 'fade',
                 animationSpeed: (animationSpeedInput?.value || '250') + 'ms',
                 isCustom: true
@@ -8231,9 +8238,13 @@
                 // Update UI
                 loadActiveTheme();
 
-                showNotification('Custom theme applied successfully!', 'success');
+                showNotification('✓ Custom theme applied to extension!', 'success');
 
-                // Custom theme sent to extension
+                // Redirect to main themes page after 500ms to show the theme applied
+                setTimeout(() => {
+                    window.location.hash = '#themes';
+                }, 500);
+
             } catch (error) {
                 // Error applying custom theme
                 showNotification('Failed to apply theme. Please try again.', 'error');
