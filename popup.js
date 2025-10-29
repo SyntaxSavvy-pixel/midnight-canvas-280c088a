@@ -97,8 +97,10 @@ class TabmangmentPopup {
             this.initializeEmailJS();
             this.setupPaymentListener();
 
-            // Load and apply custom theme
-            await this.loadAndApplyTheme();
+            // Load and apply custom theme (non-blocking, don't break popup if fails)
+            loadAndApplyTheme().catch(err => {
+                console.log('Theme load failed:', err);
+            });
 
             // Load and show cached data IMMEDIATELY (non-blocking)
             this.loadData().then(() => {
