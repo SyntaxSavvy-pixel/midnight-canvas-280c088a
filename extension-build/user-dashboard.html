@@ -7958,15 +7958,6 @@
             const animationSpeed = document.getElementById('custom-animation-speed')?.value || '250';
             const animationStyle = document.getElementById('custom-animation-style')?.value || 'fade';
 
-            // Calculate auto-contrast colors
-            // For body background (gradient or solid)
-            const bodyTextColor = getContrastingTextColor(primaryColor);
-
-            // For tab items (white background for visibility)
-            const tabBgColor = '#ffffff';
-            const tabTextColor = getContrastingTextColor(tabBgColor);
-            const tabSecondaryText = getSecondaryTextColor(tabBgColor);
-
             // Update preview background
             const preview = document.getElementById('custom-theme-preview');
             if (preview) {
@@ -7990,12 +7981,12 @@
                 }
             }
 
-            // Update font demo with auto-contrast
+            // Update font demo with USER'S SELECTED text color
             const fontDemo = document.getElementById('preview-font-demo');
             if (fontDemo) {
                 fontDemo.style.fontFamily = fontFamily;
                 fontDemo.style.fontSize = fontSize + 'px';
-                fontDemo.style.color = bodyTextColor; // Auto-contrast against body
+                fontDemo.style.color = textColor; // Use user's choice, not auto-calculated
             }
 
             // Update all text elements in preview
@@ -8012,23 +8003,29 @@
                 tabItems.forEach(el => {
                     el.style.background = 'rgba(255, 255, 255, 0.95)';
                     el.style.backdropFilter = 'blur(10px)';
+                    el.style.border = `1px solid ${primaryColor}30`;
                 });
             }
 
-            // Update tab title and URL colors with AUTO-CONTRAST
+            // Tab text uses auto-contrast since tabs have WHITE backgrounds
+            // This ensures tab content is always readable
+            const tabTextColor = getContrastingTextColor('#ffffff'); // Dark on white
+            const tabSecondaryText = getSecondaryTextColor('#ffffff'); // Gray on white
+
+            // Update tab title and URL colors
             const tabTitles = preview?.querySelectorAll('.preview-tab-title');
             const tabUrls = preview?.querySelectorAll('.preview-tab-url');
 
             if (tabTitles) {
                 tabTitles.forEach(el => {
-                    el.style.color = tabTextColor; // Auto-contrast against white tab background
+                    el.style.color = tabTextColor; // Always readable on white tabs
                     el.style.fontSize = (parseInt(fontSize) - 1) + 'px';
                 });
             }
 
             if (tabUrls) {
                 tabUrls.forEach(el => {
-                    el.style.color = tabSecondaryText; // Secondary text color for URLs
+                    el.style.color = tabSecondaryText; // Gray for URLs
                     el.style.fontSize = (parseInt(fontSize) - 2) + 'px';
                 });
             }
