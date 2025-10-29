@@ -6,6 +6,14 @@ const CONFIG = {
         CHECK_STATUS: 'https://tabmangment.com/api/status',
         BILLING_PORTAL: 'https://tabmangment.com/api/billing-portal'
     },
+    PERPLEXITY: {
+        API_KEY: 'YOUR_API_KEY_HERE',
+        SEARCH_URL: 'https://api.perplexity.ai/search',
+        MAX_RESULTS: 10,
+        MAX_TOKENS: 25000,
+        MAX_TOKENS_PER_PAGE: 2048,
+        COUNTRY: 'US'
+    },
     WEB: {
         AUTH_URL: 'https://tabmangment.com/new-authentication',
         DASHBOARD_URL: 'https://tabmangment.com/user-dashboard.html'
