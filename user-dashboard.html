@@ -1519,6 +1519,18 @@
             animation: fadeInButton 0.5s ease-in-out;
         }
 
+        /* Slide up animation for modals */
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px) scale(0.95);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+
         /* Range Slider */
         .range-slider {
             -webkit-appearance: none;
@@ -2333,6 +2345,42 @@
                             <div id="saved-custom-themes-list" style="display: contents;">
                                 <!-- Dynamically populated -->
                             </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- DELETE CONFIRMATION MODAL -->
+                <div id="delete-theme-modal" onclick="if(event.target.id === 'delete-theme-modal') closeDeleteModal()" style="display: none; position: fixed; inset: 0; background: rgba(0, 0, 0, 0.7); backdrop-filter: blur(8px); z-index: 10000; display: flex; align-items: center; justify-content: center; animation: fadeIn 0.2s ease;">
+                    <div onclick="event.stopPropagation()" style="background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); border: 1px solid #334155; border-radius: 1.5rem; padding: 2rem; max-width: 480px; width: 90%; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5); animation: slideUp 0.3s ease; position: relative;">
+                        <!-- Header -->
+                        <div style="text-align: center; margin-bottom: 1.5rem;">
+                            <div style="background: linear-gradient(135deg, #ef4444, #dc2626); width: 64px; height: 64px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 1rem; box-shadow: 0 8px 24px rgba(239, 68, 68, 0.3);">
+                                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <polyline points="3 6 5 6 21 6"></polyline>
+                                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                                    <line x1="10" y1="11" x2="10" y2="17"></line>
+                                    <line x1="14" y1="11" x2="14" y2="17"></line>
+                                </svg>
+                            </div>
+                            <h3 style="color: #f8fafc; font-size: 1.5rem; font-weight: 700; margin: 0 0 0.5rem 0;">Delete Custom Theme?</h3>
+                            <p id="delete-theme-name" style="color: #94a3b8; font-size: 0.9375rem; margin: 0;">Are you sure you want to delete this theme?</p>
+                        </div>
+
+                        <!-- Warning Message -->
+                        <div style="background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3); border-radius: 0.75rem; padding: 1rem; margin-bottom: 1.5rem;">
+                            <p style="color: #fca5a5; font-size: 0.875rem; margin: 0; text-align: center;">
+                                ⚠️ This action cannot be undone. The theme will be permanently deleted.
+                            </p>
+                        </div>
+
+                        <!-- Action Buttons -->
+                        <div style="display: flex; gap: 0.75rem;">
+                            <button onclick="closeDeleteModal()" style="flex: 1; padding: 0.875rem 1.5rem; background: #334155; border: 1px solid #475569; border-radius: 0.75rem; color: #f8fafc; font-weight: 600; cursor: pointer; font-size: 0.9375rem; transition: all 0.3s;" onmouseover="this.style.background='#475569'" onmouseout="this.style.background='#334155'">
+                                Cancel
+                            </button>
+                            <button id="confirm-delete-btn" onclick="confirmDeleteTheme()" style="flex: 1; padding: 0.875rem 1.5rem; background: linear-gradient(135deg, #ef4444, #dc2626); border: none; border-radius: 0.75rem; color: white; font-weight: 600; cursor: pointer; font-size: 0.9375rem; transition: all 0.3s; box-shadow: 0 4px 12px rgba(239, 68, 68, 0.4);" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 6px 20px rgba(239, 68, 68, 0.5)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 12px rgba(239, 68, 68, 0.4)'">
+                                Delete Theme
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -8329,42 +8377,115 @@
                 const customThemes = stored ? JSON.parse(stored) : [];
                 const theme = customThemes[index];
 
-                if (!theme) return;
+                if (!theme) {
+                    showNotification('Theme not found.', 'error');
+                    return;
+                }
 
                 // Save as active theme
                 localStorage.setItem('activeTheme', 'custom');
                 localStorage.setItem('themeConfig', JSON.stringify(theme));
 
-                // Send to extension
+                // Send to extension via postMessage (for dashboard-bridge.js)
+                window.postMessage({
+                    type: 'DASHBOARD_APPLY_THEME',
+                    source: 'tabmangment-dashboard',
+                    themeName: 'custom',
+                    themeConfig: theme
+                }, '*');
+
+                // Also try chrome runtime messaging if available
                 sendThemeToExtension('custom', theme);
 
-                // Update UI
+                // Update UI to show active state
                 loadActiveTheme();
 
-                showNotification(`${theme.name} applied successfully!`, 'success');
+                showNotification(`✓ ${theme.name} applied successfully!`, 'success');
+
+                // Reload the saved themes list to update active badges
+                setTimeout(() => loadSavedCustomThemes(), 500);
             } catch (error) {
-                // Error applying custom theme
+                console.error('Error applying custom theme:', error);
                 showNotification('Failed to apply theme. Please try again.', 'error');
             }
         }
 
-        // Delete custom theme
+        // Store the index of theme to delete
+        let themeToDeleteIndex = null;
+
+        // Open delete confirmation modal
         function deleteCustomTheme(index) {
-            if (!confirm('Are you sure you want to delete this custom theme?')) return;
+            try {
+                const stored = localStorage.getItem('customThemes');
+                const customThemes = stored ? JSON.parse(stored) : [];
+                const theme = customThemes[index];
+
+                if (!theme) {
+                    showNotification('Theme not found.', 'error');
+                    return;
+                }
+
+                // Store the index
+                themeToDeleteIndex = index;
+
+                // Update modal with theme name
+                const themeNameElement = document.getElementById('delete-theme-name');
+                if (themeNameElement) {
+                    themeNameElement.textContent = `Are you sure you want to delete "${theme.name}"?`;
+                }
+
+                // Show modal with animation
+                const modal = document.getElementById('delete-theme-modal');
+                if (modal) {
+                    modal.style.display = 'flex';
+                    document.body.style.overflow = 'hidden';
+                }
+            } catch (error) {
+                console.error('Error opening delete modal:', error);
+                showNotification('Failed to open delete confirmation.', 'error');
+            }
+        }
+
+        // Close delete confirmation modal
+        function closeDeleteModal() {
+            const modal = document.getElementById('delete-theme-modal');
+            if (modal) {
+                modal.style.display = 'none';
+                document.body.style.overflow = 'auto';
+            }
+            themeToDeleteIndex = null;
+        }
+
+        // Confirm and delete the theme
+        function confirmDeleteTheme() {
+            if (themeToDeleteIndex === null) return;
 
             try {
                 const stored = localStorage.getItem('customThemes');
                 const customThemes = stored ? JSON.parse(stored) : [];
+                const themeName = customThemes[themeToDeleteIndex]?.name || 'Theme';
 
-                customThemes.splice(index, 1);
+                // Remove the theme
+                customThemes.splice(themeToDeleteIndex, 1);
 
+                // Save updated list
                 localStorage.setItem('customThemes', JSON.stringify(customThemes));
 
-                showNotification('Theme deleted successfully!', 'success');
-                loadSavedCustomThemes();
+                // Close modal
+                closeDeleteModal();
+
+                // Show success notification
+                showNotification(`✓ ${themeName} deleted successfully!`, 'success');
+
+                // Reload themes list with smooth transition
+                setTimeout(() => {
+                    loadSavedCustomThemes();
+                }, 200);
+
             } catch (error) {
-                // Error deleting custom theme
+                console.error('Error deleting custom theme:', error);
                 showNotification('Failed to delete theme. Please try again.', 'error');
+                closeDeleteModal();
             }
         }
 
