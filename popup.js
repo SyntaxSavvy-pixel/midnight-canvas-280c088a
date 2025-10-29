@@ -6647,6 +6647,40 @@ async function applyStoredTheme() {
 /**
  * Apply theme configuration to popup elements
  */
+// Calculate luminance of a color to determine if it's light or dark
+function getColorLuminance(hexColor) {
+    // Remove # if present
+    const hex = hexColor.replace('#', '');
+
+    // Convert to RGB
+    const r = parseInt(hex.substr(0, 2), 16) / 255;
+    const g = parseInt(hex.substr(2, 2), 16) / 255;
+    const b = parseInt(hex.substr(4, 2), 16) / 255;
+
+    // Calculate relative luminance
+    const luminance = 0.2126 * r + 0.7152 * g + 0.0722 * b;
+
+    return luminance;
+}
+
+// Get contrasting text color based on background
+function getContrastingTextColor(backgroundColor) {
+    const luminance = getColorLuminance(backgroundColor);
+
+    // If background is light (luminance > 0.5), use dark text
+    // If background is dark (luminance <= 0.5), use light text
+    return luminance > 0.5 ? '#1e293b' : '#ffffff';
+}
+
+// Get secondary text color (slightly transparent)
+function getSecondaryTextColor(backgroundColor) {
+    const luminance = getColorLuminance(backgroundColor);
+
+    // If background is light, use dark gray
+    // If background is dark, use light gray
+    return luminance > 0.5 ? '#64748b' : '#94a3b8';
+}
+
 // Load and apply custom theme from storage
 async function loadAndApplyTheme() {
     try {
@@ -6662,6 +6696,19 @@ async function loadAndApplyTheme() {
 
 function applyThemeToPopup(theme) {
     try {
+        // Auto-calculate contrasting text colors based on background
+        const bgColor = theme.primaryColor || '#667eea';
+        const primaryTextColor = theme.textColor || getContrastingTextColor(bgColor);
+        const secondaryTextColor = getSecondaryTextColor(bgColor);
+
+        // Log for debugging
+        console.log('🎨 Theme Applied:', {
+            background: bgColor,
+            primaryText: primaryTextColor,
+            secondaryText: secondaryTextColor,
+            isLightBackground: getColorLuminance(bgColor) > 0.5
+        });
+
         // Create style element for theme
         const themeStyle = document.createElement('style');
         themeStyle.id = 'custom-theme-styles';
@@ -6797,15 +6844,37 @@ function applyThemeToPopup(theme) {
                 box-shadow: 0 0 0 2px ${theme.primaryColor}60, 0 4px 16px ${theme.primaryColor}40 !important;
             }
 
-            /* Tab Title and URL Colors - Proper Contrast */
+            /* Tab Title and URL Colors - AUTO CONTRAST FOR VISIBILITY */
             .tab-title {
-                color: ${theme.textColor || '#1e293b'} !important;
+                color: ${primaryTextColor} !important;
                 font-weight: 500;
             }
 
             .tab-url {
-                color: ${theme.textColor || '#64748b'} !important;
-                opacity: 0.7 !important;
+                color: ${secondaryTextColor} !important;
+                opacity: 0.8 !important;
+            }
+
+            /* Stats and Labels - AUTO CONTRAST */
+            .stat-value,
+            .stat-number {
+                color: ${primaryTextColor} !important;
+            }
+
+            .stat-label {
+                color: ${secondaryTextColor} !important;
+            }
+
+            /* Empty State Text - AUTO CONTRAST */
+            .empty-state p,
+            .empty-state h3 {
+                color: ${primaryTextColor} !important;
+            }
+
+            /* Header and Buttons Text - AUTO CONTRAST */
+            .header-title,
+            .control-btn {
+                color: ${primaryTextColor} !important;
             }
 
             /* Tab Action Buttons */
