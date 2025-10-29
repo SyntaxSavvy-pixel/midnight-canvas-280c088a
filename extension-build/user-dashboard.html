@@ -8294,6 +8294,9 @@
                 // Save to database for persistence across sessions
                 await saveActiveTheme('custom', customTheme);
 
+                // CRITICAL: Update the live preview IMMEDIATELY so user sees changes
+                updateCustomThemePreview();
+
                 // Send theme to extension via content script bridge
                 window.postMessage({
                     type: 'DASHBOARD_APPLY_THEME',
@@ -8305,12 +8308,12 @@
                 // Update UI
                 await loadActiveTheme();
 
-                showNotification('✓ Custom theme applied to extension!', 'success');
+                showNotification('✓ Custom theme applied! Check the preview above.', 'success');
 
-                // Redirect to main themes page after 500ms to show the theme applied
+                // Redirect to main themes page after 1500ms to let user see the changes
                 setTimeout(() => {
                     window.location.hash = '#themes';
-                }, 500);
+                }, 1500);
 
             } catch (error) {
                 console.error('Error applying custom theme:', error);
