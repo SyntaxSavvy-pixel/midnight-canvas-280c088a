@@ -105,7 +105,7 @@ body::-webkit-scrollbar-thumb:hover {
 }
 
 .header {
-    padding: 18px 20px;
+    padding: 12px 16px;
     background: white;
     border-bottom: 2px solid rgba(226, 232, 240, 0.8);
 }
@@ -114,7 +114,7 @@ body::-webkit-scrollbar-thumb:hover {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 16px;
+    margin-bottom: 0;
     position: relative;
 }
 
@@ -129,62 +129,48 @@ body::-webkit-scrollbar-thumb:hover {
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 44px;
-    height: 44px;
-    border-radius: 12px;
-    background: linear-gradient(135deg, rgba(255, 255, 255, 0.9) 0%, rgba(248, 250, 252, 0.95) 100%);
-    backdrop-filter: blur(10px);
-    box-shadow:
-        0 8px 32px rgba(99, 102, 241, 0.1),
-        0 2px 8px rgba(0, 0, 0, 0.05),
-        inset 0 1px 0 rgba(255, 255, 255, 0.8);
-    border: 1px solid rgba(255, 255, 255, 0.5);
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    background: white;
+    box-shadow: 0 2px 6px rgba(99, 102, 241, 0.08);
+    border: 1px solid rgba(226, 232, 240, 0.6);
     transition: all var(--transition-slow);
-    animation: logoFloat 6s ease-in-out infinite;
 }
 
 .logo-icon-wrapper:hover {
-    transform: translateY(-1px) scale(1.02);
-    box-shadow:
-        0 12px 40px rgba(99, 102, 241, 0.15),
-        0 4px 12px rgba(0, 0, 0, 0.08),
-        inset 0 1px 0 rgba(255, 255, 255, 0.9);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(99, 102, 241, 0.12);
 }
 
 .logo-icon {
-    width: 28px;
-    height: 28px;
-    border-radius: 8px;
+    width: 20px;
+    height: 20px;
+    border-radius: 6px;
     object-fit: contain;
-    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));
     transition: all var(--transition);
-}
-
-.logo-icon-wrapper:hover .logo-icon {
-    filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.15));
 }
 
 .header-buttons {
     display: flex;
-    gap: 6px;
+    gap: 4px;
     align-items: center;
 }
 
 .header-btn {
     display: flex;
     align-items: center;
-    gap: 6px;
-    padding: 9px 14px;
+    gap: 5px;
+    padding: 7px 10px;
     border: 2px solid rgba(226, 232, 240, 0.6);
-    border-radius: 10px;
+    border-radius: 8px;
     font-family: var(--font-family);
-    font-size: 13px;
+    font-size: 12px;
     font-weight: 600;
     cursor: pointer;
     transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
     position: relative;
     overflow: hidden;
-    backdrop-filter: blur(10px);
     text-decoration: none;
     outline: none;
     background: white;
@@ -206,8 +192,8 @@ body::-webkit-scrollbar-thumb:hover {
 }
 
 .btn-icon {
-    width: 14px;
-    height: 14px;
+    width: 13px;
+    height: 13px;
     transition: all var(--transition);
 }
 
@@ -333,24 +319,23 @@ body::-webkit-scrollbar-thumb:hover {
     display: flex;
     justify-content: center;
     align-items: center;
-    gap: 12px;
-    padding: 16px 20px;
+    gap: 10px;
+    padding: 12px 16px;
 }
 
 .stat-card {
     background: white;
-    backdrop-filter: blur(20px) saturate(180%);
-    border-radius: 14px;
-    padding: 18px 20px;
+    border-radius: 10px;
+    padding: 14px 16px;
     text-align: center;
     border: 2px solid rgba(226, 232, 240, 0.8);
     transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
     position: relative;
     overflow: hidden;
-    min-width: 110px;
+    min-width: 100px;
     flex: 1;
-    max-width: 160px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+    max-width: 150px;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
 }
 
 .stat-card::before {
@@ -380,19 +365,19 @@ body::-webkit-scrollbar-thumb:hover {
 }
 
 .stat-number {
-    font-size: 32px;
+    font-size: 28px;
     font-weight: 700;
     background: var(--primary-gradient);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
-    margin-bottom: 6px;
+    margin-bottom: 4px;
     line-height: 1;
     letter-spacing: -0.5px;
 }
 
 .stat-label {
-    font-size: 11px;
+    font-size: 10px;
     color: var(--slate-600);
     font-weight: 600;
     text-transform: uppercase;
