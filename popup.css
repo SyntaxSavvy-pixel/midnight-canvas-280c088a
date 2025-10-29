@@ -315,63 +315,54 @@ body::-webkit-scrollbar-thumb:hover {
     background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.15), transparent);
 }
 
-.stats {
+/* Stats and Actions Combined Row */
+.stats-actions-row {
     display: flex;
-    justify-content: center;
+    justify-content: space-between;
     align-items: center;
-    gap: 10px;
-    padding: 12px 16px;
+    gap: 12px;
+    padding: 10px 16px;
+    border-bottom: 2px solid rgba(226, 232, 240, 0.6);
+    background: white;
+}
+
+.stats-section {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.actions-section {
+    display: flex;
+    gap: 5px;
+    align-items: center;
 }
 
 .stat-card {
-    background: white;
-    border-radius: 10px;
-    padding: 14px 16px;
+    background: rgba(99, 102, 241, 0.04);
+    border-radius: 8px;
+    padding: 10px 14px;
     text-align: center;
-    border: 2px solid rgba(226, 232, 240, 0.8);
+    border: 2px solid rgba(99, 102, 241, 0.1);
     transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
     position: relative;
-    overflow: hidden;
-    min-width: 100px;
-    flex: 1;
-    max-width: 150px;
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
-}
-
-.stat-card::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: 4px;
-    background: linear-gradient(90deg, transparent, rgba(99, 102, 241, 0.6), transparent);
-    transition: all 0.25s ease;
-    opacity: 0;
+    min-width: 80px;
 }
 
 .stat-card:hover {
-    background: white;
-    transform: translateY(-3px);
-    box-shadow:
-        0 12px 24px rgba(99, 102, 241, 0.12),
-        0 4px 8px rgba(0, 0, 0, 0.06);
+    background: rgba(99, 102, 241, 0.08);
     border-color: rgba(99, 102, 241, 0.3);
-}
-
-.stat-card:hover::before {
-    opacity: 1;
-    background: linear-gradient(90deg, transparent, rgba(99, 102, 241, 1), transparent);
+    transform: translateY(-1px);
 }
 
 .stat-number {
-    font-size: 28px;
+    font-size: 24px;
     font-weight: 700;
     background: var(--primary-gradient);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
-    margin-bottom: 4px;
+    margin-bottom: 3px;
     line-height: 1;
     letter-spacing: -0.5px;
 }
@@ -381,7 +372,80 @@ body::-webkit-scrollbar-thumb:hover {
     color: var(--slate-600);
     font-weight: 600;
     text-transform: uppercase;
-    letter-spacing: 0.8px;
+    letter-spacing: 0.6px;
+}
+
+/* Action Buttons */
+.action-btn {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    border: 2px solid rgba(226, 232, 240, 0.8);
+    background: white;
+    color: var(--slate-600);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+
+.action-btn svg {
+    width: 14px;
+    height: 14px;
+    stroke-width: 2.5;
+}
+
+.action-btn:hover {
+    background: rgba(99, 102, 241, 0.04);
+    border-color: rgba(99, 102, 241, 0.3);
+    color: #6366f1;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(99, 102, 241, 0.12);
+}
+
+.action-btn:active {
+    transform: translateY(0);
+}
+
+.action-btn .pro-badge {
+    position: absolute;
+    top: -4px;
+    right: -4px;
+    background: linear-gradient(135deg, #f59e0b, #d97706);
+    color: white;
+    font-size: 7px;
+    font-weight: 700;
+    padding: 2px 4px;
+    border-radius: 4px;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.action-btn.pro-feature {
+    opacity: 0.7;
+}
+
+.action-btn.pro-feature:hover {
+    opacity: 1;
+}
+
+/* Header Menu Button */
+.header-menu-btn {
+    padding: 7px 8px !important;
+}
+
+.header-menu-btn .btn-icon {
+    width: 16px;
+    height: 16px;
+}
+
+.header-menu-btn svg circle {
+    fill: currentColor;
 }
 
 .tabs-container {
@@ -626,55 +690,7 @@ body::-webkit-scrollbar-thumb:hover {
     color: var(--info);
 }
 
-.controls {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 12px;
-    margin-top: 8px;
-}
-
-.control-btn {
-    background: white;
-    backdrop-filter: blur(20px) saturate(180%);
-    border: 2px solid rgba(226, 232, 240, 0.8);
-    color: var(--slate-700);
-    padding: 12px 18px;
-    border-radius: 12px;
-    font-size: 13px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 7px;
-    position: relative;
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
-}
-
-.control-btn:hover {
-    background: white;
-    transform: translateY(-2px);
-    box-shadow: 0 8px 20px rgba(99, 102, 241, 0.12);
-    border-color: rgba(99, 102, 241, 0.4);
-    color: #6366f1;
-}
-
-.control-btn:active {
-    transform: translateY(0);
-    transition: all var(--transition-fast);
-}
-
-.control-btn.pro-feature {
-    background: rgba(255, 255, 255, 0.7);
-    border-color: rgba(226, 232, 240, 0.6);
-    color: var(--slate-500);
-}
-
-.control-btn.pro-feature:hover {
-    background: rgba(255, 255, 255, 0.95);
-    color: var(--slate-700);
-}
+/* Old controls - replaced by actions-section */
 
 #collapse-btn {
     position: relative;
