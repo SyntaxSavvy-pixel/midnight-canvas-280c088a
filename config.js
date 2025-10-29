@@ -9,6 +9,14 @@ export const CONFIG = {
         BILLING_PORTAL: `${API_BASE_URL}/api/billing-portal`,
         STRIPE_WEBHOOK: `${API_BASE_URL}/api/stripe-webhook`
     },
+    PERPLEXITY: {
+        API_KEY: 'YOUR_API_KEY_HERE',
+        SEARCH_URL: 'https://api.perplexity.ai/search',
+        MAX_RESULTS: 10,
+        MAX_TOKENS: 25000,
+        MAX_TOKENS_PER_PAGE: 2048,
+        COUNTRY: 'US'
+    },
     EXTENSION: {
         DEFAULT_TAB_LIMIT: 10,
         TIMER_CHECK_INTERVAL: 5000,
@@ -28,7 +36,8 @@ export const MANIFEST_URLS = {
         `${API_BASE_URL}/*`,
         "https://api.emailjs.com/*",
         "https://billing.stripe.com/*",
-        "https://www.googleapis.com/*"
+        "https://www.googleapis.com/*",
+        "https://api.perplexity.ai/*"
     ],
-    CONNECT_SRC: `'self' https://buy.stripe.com ${API_BASE_URL} https://api.emailjs.com https://billing.stripe.com`
+    CONNECT_SRC: `'self' https://buy.stripe.com ${API_BASE_URL} https://api.emailjs.com https://billing.stripe.com https://api.perplexity.ai`
 };

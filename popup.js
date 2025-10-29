@@ -717,10 +717,6 @@ class TabmangmentPopup {
         const searchCloseBtn = document.getElementById('search-close-btn');
         const searchInput = document.getElementById('search-input');
         const searchClearBtn = document.getElementById('search-clear-btn');
-        const searchResultsCount = document.getElementById('search-results-count');
-        const filterBtns = document.querySelectorAll('.search-filter-btn');
-
-        this.currentSearchFilter = 'all';
 
         // Open search panel
         if (searchBtn) {
@@ -745,12 +741,13 @@ class TabmangmentPopup {
                     document.body.classList.remove('search-active');
                     if (searchInput) searchInput.value = '';
                     if (searchClearBtn) searchClearBtn.style.display = 'none';
-                    this.filterTabs('');
+                    this.clearSearchResults();
                 }
             });
         }
 
-        // Search input
+        // Search input with debounce
+        let searchTimeout;
         if (searchInput) {
             searchInput.addEventListener('input', (e) => {
                 const query = e.target.value;
@@ -760,8 +757,26 @@ class TabmangmentPopup {
                     searchClearBtn.style.display = query ? 'flex' : 'none';
                 }
 
-                // Filter tabs
-                this.filterTabs(query);
+                // Debounce search
+                clearTimeout(searchTimeout);
+                if (query.trim()) {
+                    searchTimeout = setTimeout(() => {
+                        this.performAISearch(query);
+                    }, 800); // Wait 800ms after user stops typing
+                } else {
+                    this.clearSearchResults();
+                }
+            });
+
+            // Search on Enter key
+            searchInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    const query = e.target.value.trim();
+                    if (query) {
+                        clearTimeout(searchTimeout);
+                        this.performAISearch(query);
+                    }
+                }
             });
         }
 
@@ -773,79 +788,138 @@ class TabmangmentPopup {
                     searchInput.focus();
                 }
                 searchClearBtn.style.display = 'none';
-                this.filterTabs('');
+                this.clearSearchResults();
             });
         }
+    }
 
-        // Filter buttons
-        filterBtns.forEach(btn => {
-            btn.addEventListener('click', () => {
-                // Remove active class from all
-                filterBtns.forEach(b => b.classList.remove('active'));
-                // Add active to clicked
-                btn.classList.add('active');
+    // Clear search results and show empty state
+    clearSearchResults() {
+        const emptyState = document.getElementById('search-empty-state');
+        const loading = document.getElementById('search-loading');
+        const resultsList = document.getElementById('search-results-list');
+        const resultsInfo = document.getElementById('search-results-info');
 
-                // Update filter
-                this.currentSearchFilter = btn.dataset.filter;
+        if (emptyState) emptyState.style.display = 'flex';
+        if (loading) loading.style.display = 'none';
+        if (resultsList) resultsList.innerHTML = '';
+        if (resultsInfo) resultsInfo.style.display = 'none';
+    }
 
-                // Re-apply search with new filter
-                const query = searchInput ? searchInput.value : '';
-                this.filterTabs(query);
+    // Perform AI search using Perplexity API
+    async performAISearch(query) {
+        const emptyState = document.getElementById('search-empty-state');
+        const loading = document.getElementById('search-loading');
+        const resultsList = document.getElementById('search-results-list');
+        const resultsInfo = document.getElementById('search-results-info');
+        const resultsCount = document.getElementById('search-results-count');
+
+        // Show loading state
+        if (emptyState) emptyState.style.display = 'none';
+        if (loading) loading.style.display = 'flex';
+        if (resultsList) resultsList.innerHTML = '';
+        if (resultsInfo) resultsInfo.style.display = 'none';
+
+        try {
+            const response = await fetch('https://api.perplexity.ai/search', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${CONFIG.PERPLEXITY.API_KEY}`
+                },
+                body: JSON.stringify({
+                    query: query,
+                    max_results: CONFIG.PERPLEXITY.MAX_RESULTS,
+                    max_tokens: CONFIG.PERPLEXITY.MAX_TOKENS,
+                    max_tokens_per_page: CONFIG.PERPLEXITY.MAX_TOKENS_PER_PAGE,
+                    country: CONFIG.PERPLEXITY.COUNTRY
+                })
             });
+
+            if (!response.ok) {
+                throw new Error(`Search failed: ${response.statusText}`);
+            }
+
+            const data = await response.json();
+
+            // Hide loading
+            if (loading) loading.style.display = 'none';
+
+            if (data.results && data.results.length > 0) {
+                // Show results
+                this.displaySearchResults(data.results);
+
+                // Update results count
+                if (resultsInfo) resultsInfo.style.display = 'block';
+                if (resultsCount) {
+                    resultsCount.textContent = `${data.results.length} results`;
+                }
+            } else {
+                // No results found
+                if (resultsList) {
+                    resultsList.innerHTML = `
+                        <div class="search-empty-state">
+                            <p>No results found</p>
+                            <span>Try a different search term</span>
+                        </div>
+                    `;
+                }
+            }
+        } catch (error) {
+            console.error('Search error:', error);
+
+            // Hide loading
+            if (loading) loading.style.display = 'none';
+
+            // Show error message
+            if (resultsList) {
+                resultsList.innerHTML = `
+                    <div class="search-empty-state">
+                        <p>Search failed</p>
+                        <span>${error.message}</span>
+                    </div>
+                `;
+            }
+        }
+    }
+
+    // Display search results
+    displaySearchResults(results) {
+        const resultsList = document.getElementById('search-results-list');
+        if (!resultsList) return;
+
+        resultsList.innerHTML = '';
+
+        results.forEach(result => {
+            const resultItem = document.createElement('div');
+            resultItem.className = 'search-result-item';
+            resultItem.dataset.url = result.url;
+
+            resultItem.innerHTML = `
+                <div class="search-result-title">${this.escapeHtml(result.title)}</div>
+                <div class="search-result-url">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path>
+                        <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path>
+                    </svg>
+                    ${this.escapeHtml(result.url)}
+                </div>
+            `;
+
+            // Click to open in new tab
+            resultItem.addEventListener('click', () => {
+                chrome.tabs.create({ url: result.url });
+            });
+
+            resultsList.appendChild(resultItem);
         });
     }
 
-    // Filter tabs based on search query
-    filterTabs(query) {
-        const searchResultsCount = document.getElementById('search-results-count');
-        const tabItems = document.querySelectorAll('.tab-item');
-        let visibleCount = 0;
-
-        tabItems.forEach(tabItem => {
-            const title = tabItem.querySelector('.tab-title')?.textContent.toLowerCase() || '';
-            const url = tabItem.querySelector('.tab-url')?.textContent.toLowerCase() || '';
-            const isActive = tabItem.classList.contains('active');
-
-            // Extract domain from URL
-            let domain = '';
-            try {
-                const urlObj = new URL(url.startsWith('http') ? url : 'https://' + url);
-                domain = urlObj.hostname;
-            } catch (e) {
-                domain = url;
-            }
-
-            // Apply search query filter
-            let matchesQuery = true;
-            if (query) {
-                const lowerQuery = query.toLowerCase();
-                matchesQuery = title.includes(lowerQuery) ||
-                             url.includes(lowerQuery) ||
-                             domain.includes(lowerQuery);
-            }
-
-            // Apply filter button filter
-            let matchesFilter = true;
-            if (this.currentSearchFilter === 'active') {
-                matchesFilter = isActive;
-            } else if (this.currentSearchFilter === 'domain' && query) {
-                matchesFilter = domain.includes(query.toLowerCase());
-            }
-
-            // Show/hide based on both filters
-            if (matchesQuery && matchesFilter) {
-                tabItem.style.display = '';
-                visibleCount++;
-            } else {
-                tabItem.style.display = 'none';
-            }
-        });
-
-        // Update results count
-        if (searchResultsCount) {
-            const tabWord = visibleCount === 1 ? 'tab' : 'tabs';
-            searchResultsCount.textContent = `${visibleCount} ${tabWord} found`;
-        }
+    // Escape HTML to prevent XSS
+    escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
     }
 
     setupControlButtons() {

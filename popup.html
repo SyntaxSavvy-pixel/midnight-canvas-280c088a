@@ -68,7 +68,7 @@
                     <circle cx="11" cy="11" r="8"></circle>
                     <path d="m21 21-4.35-4.35"></path>
                 </svg>
-                Search Tabs
+                AI Search
             </h3>
             <button class="search-close-btn" id="search-close-btn" title="Close search">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -87,7 +87,7 @@
                 type="text"
                 class="search-input"
                 id="search-input"
-                placeholder="Search by title, URL, or domain..."
+                placeholder="Search anything with AI..."
                 autocomplete="off"
             >
             <button class="search-clear-btn" id="search-clear-btn" style="display: none;" title="Clear search">
@@ -99,32 +99,25 @@
             </button>
         </div>
 
-        <div class="search-results-info" id="search-results-info">
-            <span id="search-results-count">0 tabs found</span>
+        <div class="search-results-info" id="search-results-info" style="display: none;">
+            <span id="search-results-count">0 results</span>
         </div>
 
-        <div class="search-filters">
-            <button class="search-filter-btn active" data-filter="all">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+        <!-- Search Results Container -->
+        <div class="search-results-container" id="search-results-container">
+            <div class="search-empty-state" id="search-empty-state">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 48px; height: 48px; color: #cbd5e1;">
+                    <circle cx="11" cy="11" r="8"></circle>
+                    <path d="m21 21-4.35-4.35"></path>
                 </svg>
-                All
-            </button>
-            <button class="search-filter-btn" data-filter="active">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <polyline points="9 11 12 14 22 4"></polyline>
-                    <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path>
-                </svg>
-                Active
-            </button>
-            <button class="search-filter-btn" data-filter="domain">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <circle cx="12" cy="12" r="10"></circle>
-                    <line x1="2" y1="12" x2="22" y2="12"></line>
-                    <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
-                </svg>
-                Domain
-            </button>
+                <p>Search anything with AI</p>
+                <span>Get instant results powered by Perplexity</span>
+            </div>
+            <div class="search-loading" id="search-loading" style="display: none;">
+                <div class="loading-spinner"></div>
+                <p>Searching...</p>
+            </div>
+            <div class="search-results-list" id="search-results-list"></div>
         </div>
     </div>
 
