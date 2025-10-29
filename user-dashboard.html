@@ -2789,40 +2789,65 @@
 
         // USER PREFERENCES
         async function getUserPreferences() {
-            const userId = await getCurrentUserId();
-            if (!userId) return null;
+            try {
+                const userId = await getCurrentUserId();
+                if (!userId) return null;
 
-            const { data, error } = await supabaseClient
-                .from('user_preferences')
-                .select('*')
-                .eq('user_id', userId)
-                .single();
+                const { data, error } = await supabaseClient
+                    .from('user_preferences')
+                    .select('*')
+                    .eq('user_id', userId)
+                    .maybeSingle(); // Use maybeSingle to handle no results gracefully
 
-            if (error && error.code === 'PGRST116') {
-                // No preferences found, create default
-                return await createDefaultPreferences(userId);
+                if (error) {
+                    console.warn('Error fetching user preferences:', error.message);
+                    // If table doesn't exist or RLS blocking, return defaults without creating
+                    if (error.code === 'PGRST301' || error.code === '42P01' || error.code === '406') {
+                        return null; // Table doesn't exist, return null
+                    }
+                    return null;
+                }
+
+                if (!data) {
+                    // No preferences found, create default
+                    return await createDefaultPreferences(userId);
+                }
+
+                return data;
+            } catch (error) {
+                console.warn('Exception in getUserPreferences:', error);
+                return null; // Return null on any error to prevent crashes
             }
-
-            return data;
         }
 
         async function createDefaultPreferences(userId) {
-            const defaults = {
-                user_id: userId,
-                sidebar_collapsed: false,
-                settings: {},
-                active_theme: 'lightMinimal',
-                theme_config: {},
-                extension_id: null
-            };
+            try {
+                const defaults = {
+                    user_id: userId,
+                    sidebar_collapsed: false,
+                    settings: {},
+                    active_theme: 'lightMinimal',
+                    theme_config: {},
+                    extension_id: null
+                };
 
-            const { data, error } = await supabaseClient
-                .from('user_preferences')
-                .insert(defaults)
-                .select()
-                .single();
+                // Use upsert to avoid 409 conflicts
+                const { data, error } = await supabaseClient
+                    .from('user_preferences')
+                    .upsert(defaults, { onConflict: 'user_id' })
+                    .select()
+                    .maybeSingle();
 
-            return data;
+                if (error) {
+                    console.warn('Error creating default preferences:', error.message);
+                    return null;
+                }
+
+                return data;
+            } catch (error) {
+                console.warn('Exception in createDefaultPreferences:', error);
+                return null;
+            }
         }
 
         async function updateUserPreferences(updates) {
@@ -2944,31 +2969,51 @@
 
         // THEME DRAFTS
         async function saveThemeDraft(draftData) {
-            const userId = await getCurrentUserId();
-            if (!userId) return false;
+            try {
+                const userId = await getCurrentUserId();
+                if (!userId) return false;
 
-            const { error } = await supabaseClient
-                .from('theme_drafts')
-                .upsert({
-                    user_id: userId,
-                    draft_data: draftData,
-                    last_saved: new Date().toISOString()
-                });
+                const { error } = await supabaseClient
+                    .from('theme_drafts')
+                    .upsert({
+                        user_id: userId,
+                        draft_data: draftData,
+                        last_saved: new Date().toISOString()
+                    }, { onConflict: 'user_id' }); // Specify conflict column
 
-            return !error;
+                if (error) {
+                    console.warn('Error saving theme draft:', error.message);
+                    return false;
+                }
+
+                return true;
+            } catch (error) {
+                console.warn('Exception in saveThemeDraft:', error);
+                return false;
+            }
         }
 
         async function getThemeDraft() {
-            const userId = await getCurrentUserId();
-            if (!userId) return null;
+            try {
+                const userId = await getCurrentUserId();
+                if (!userId) return null;
 
-            const { data, error } = await supabaseClient
-                .from('theme_drafts')
-                .select('*')
-                .eq('user_id', userId)
-                .single();
+                const { data, error } = await supabaseClient
+                    .from('theme_drafts')
+                    .select('*')
+                    .eq('user_id', userId)
+                    .maybeSingle(); // Use maybeSingle to handle no results gracefully
 
-            return data;
+                if (error) {
+                    console.warn('Error fetching theme draft:', error.message);
+                    return null; // Return null on error, don't crash
+                }
+
+                return data;
+            } catch (error) {
+                console.warn('Exception in getThemeDraft:', error);
+                return null;
+            }
         }
 
         // TAB ANALYTICS
