@@ -102,6 +102,22 @@ window.addEventListener('message', async (event) => {
         }
         return;
     }
+
+    // Handle DASHBOARD_APPLY_THEME event from dashboard
+    if (message.type === 'DASHBOARD_APPLY_THEME') {
+        try {
+            const response = await chrome.runtime.sendMessage({
+                type: 'DASHBOARD_APPLY_THEME',
+                themeName: message.themeName,
+                themeConfig: message.themeConfig
+            });
+        } catch (error) {
+            if (!isExtensionUnavailableError(error)) {
+                console.log('Theme update error:', error);
+            }
+        }
+        return;
+    }
 });
 
 // Listen for messages from the background script

@@ -97,6 +97,9 @@ class TabmangmentPopup {
             this.initializeEmailJS();
             this.setupPaymentListener();
 
+            // Load and apply custom theme
+            await this.loadAndApplyTheme();
+
             // Load and show cached data IMMEDIATELY (non-blocking)
             this.loadData().then(() => {
                 this.render();
@@ -6642,6 +6645,19 @@ async function applyStoredTheme() {
 /**
  * Apply theme configuration to popup elements
  */
+// Load and apply custom theme from storage
+async function loadAndApplyTheme() {
+    try {
+        const { activeTheme, themeConfig } = await chrome.storage.local.get(['activeTheme', 'themeConfig']);
+
+        if (themeConfig) {
+            applyThemeToPopup(themeConfig);
+        }
+    } catch (error) {
+        console.log('Error loading theme:', error);
+    }
+}
+
 function applyThemeToPopup(theme) {
     try {
         // Create style element for theme
