@@ -7917,6 +7917,28 @@
 
         // Custom theme preview update with auto-save
         let autoSaveTimeout = null;
+        // Auto-contrast helper functions
+        function getColorLuminance(hexColor) {
+            let hex = hexColor.replace('#', '');
+            if (hex.length === 3) {
+                hex = hex[0] + hex[0] + hex[1] + hex[1] + hex[2] + hex[2];
+            }
+            const r = parseInt(hex.substr(0, 2), 16) / 255;
+            const g = parseInt(hex.substr(2, 2), 16) / 255;
+            const b = parseInt(hex.substr(4, 2), 16) / 255;
+            return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+        }
+
+        function getContrastingTextColor(bgColor) {
+            const luminance = getColorLuminance(bgColor);
+            return luminance > 0.5 ? '#1e293b' : '#ffffff';
+        }
+
+        function getSecondaryTextColor(bgColor) {
+            const luminance = getColorLuminance(bgColor);
+            return luminance > 0.5 ? '#64748b' : 'rgba(255, 255, 255, 0.7)';
+        }
+
         function updateCustomThemePreview() {
             // Get all color values
             const primaryColor = document.getElementById('custom-color-primary')?.value || '#667eea';
@@ -7935,6 +7957,15 @@
             // Get animation settings
             const animationSpeed = document.getElementById('custom-animation-speed')?.value || '250';
             const animationStyle = document.getElementById('custom-animation-style')?.value || 'fade';
+
+            // Calculate auto-contrast colors
+            // For body background (gradient or solid)
+            const bodyTextColor = getContrastingTextColor(primaryColor);
+
+            // For tab items (white background for visibility)
+            const tabBgColor = '#ffffff';
+            const tabTextColor = getContrastingTextColor(tabBgColor);
+            const tabSecondaryText = getSecondaryTextColor(tabBgColor);
 
             // Update preview background
             const preview = document.getElementById('custom-theme-preview');
@@ -7959,12 +7990,12 @@
                 }
             }
 
-            // Update font demo and all text elements
+            // Update font demo with auto-contrast
             const fontDemo = document.getElementById('preview-font-demo');
             if (fontDemo) {
                 fontDemo.style.fontFamily = fontFamily;
                 fontDemo.style.fontSize = fontSize + 'px';
-                fontDemo.style.color = textColor;
+                fontDemo.style.color = bodyTextColor; // Auto-contrast against body
             }
 
             // Update all text elements in preview
@@ -7975,21 +8006,30 @@
                 });
             }
 
-            // Update tab title and URL colors and font sizes
+            // Update tab items with WHITE background (like actual popup)
+            const tabItems = preview?.querySelectorAll('[data-preview-tab]');
+            if (tabItems) {
+                tabItems.forEach(el => {
+                    el.style.background = 'rgba(255, 255, 255, 0.95)';
+                    el.style.backdropFilter = 'blur(10px)';
+                });
+            }
+
+            // Update tab title and URL colors with AUTO-CONTRAST
             const tabTitles = preview?.querySelectorAll('.preview-tab-title');
             const tabUrls = preview?.querySelectorAll('.preview-tab-url');
 
             if (tabTitles) {
                 tabTitles.forEach(el => {
-                    el.style.color = textColor;
-                    el.style.fontSize = (parseInt(fontSize) - 1) + 'px'; // Slightly smaller than main font
+                    el.style.color = tabTextColor; // Auto-contrast against white tab background
+                    el.style.fontSize = (parseInt(fontSize) - 1) + 'px';
                 });
             }
 
             if (tabUrls) {
                 tabUrls.forEach(el => {
-                    el.style.color = textColor;
-                    el.style.fontSize = (parseInt(fontSize) - 2) + 'px'; // Even smaller for URLs
+                    el.style.color = tabSecondaryText; // Secondary text color for URLs
+                    el.style.fontSize = (parseInt(fontSize) - 2) + 'px';
                 });
             }
 
