@@ -112,6 +112,7 @@
                 </svg>
                 <p>Search anything with AI</p>
                 <span>Get instant results powered by Perplexity</span>
+                <div class="search-usage-info" id="search-usage-info"></div>
             </div>
             <div class="search-loading" id="search-loading" style="display: none;">
                 <div class="loading-spinner"></div>
@@ -126,9 +127,13 @@
     <div class="header">
         <div class="header-content">
             <div class="logo">
-                <div class="logo-icon-wrapper" title="Tabmangment">
-                    <img src="icons/icon-48.png" alt="App Icon" class="logo-icon" width="28" height="28">
+                <div class="logo-icon-wrapper">
+                    <img src="icons/icon-48.png" alt="Tabmangment" class="logo-icon" width="20" height="20">
                 </div>
+            </div>
+            <div class="subscription-info" id="subscription-info">
+                <div class="plan-name" id="plan-name">Free Plan</div>
+                <div class="billing-date" id="billing-date"></div>
             </div>
             <div class="header-buttons">
                 <button class="header-btn search-btn" id="search-btn" title="Search with AI">
@@ -143,13 +148,6 @@
                         <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"></path>
                     </svg>
                     <span class="btn-text" id="premium-btn-text">Upgrade</span>
-                </button>
-                <button class="header-btn header-menu-btn" id="header-menu-btn" title="More options">
-                    <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <circle cx="12" cy="12" r="1"></circle>
-                        <circle cx="12" cy="5" r="1"></circle>
-                        <circle cx="12" cy="19" r="1"></circle>
-                    </svg>
                 </button>
             </div>
         </div>

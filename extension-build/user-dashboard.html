@@ -11,40 +11,16 @@
     <link rel="dns-prefetch" href="https://www.google.com">
     <link rel="dns-prefetch" href="https://www.gstatic.com">
 
-    <meta http-equiv="Content-Security-Policy" content="
-        default-src 'self';
-        script-src 'self' 'unsafe-inline' 'unsafe-eval'
-            https://cdn.jsdelivr.net
-            https://unpkg.com
-            https://*.supabase.co;
-        style-src 'self' 'unsafe-inline';
-        img-src 'self' data: https: blob:;
-        font-src 'self' data:;
-        connect-src 'self'
-            https://*.supabase.co
-            wss://*.supabase.co
-            https://cdn.jsdelivr.net
-            https://unpkg.com
-            https://api.emailjs.com
-            https://buy.stripe.com
-            https://billing.stripe.com
-            https://js.stripe.com
-            https://*.netlify.app
-            https://tabmangment.com;
-        frame-src 'self'
-            https://buy.stripe.com
-            https://billing.stripe.com
-            https://js.stripe.com;
-        worker-src 'self' blob:;
-        object-src 'none';
-        base-uri 'self';
-        form-action 'self';
-    ">
     <title>Dashboard - TabManagement</title>
     <meta name="description" content="Manage your TabManagement subscription, view analytics, and control your tab management settings.">
 
     <link rel="icon" type="image/png" sizes="32x32" href="/icons/icon-32.png">
     <link rel="icon" type="image/png" sizes="16x16" href="/icons/icon-16.png">
+
+    <!-- Google Fonts for Theme Previews -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600;700&family=Raleway:wght@300;400;500;600;700&family=Ubuntu:wght@300;400;500;700&family=Roboto:wght@300;400;500;700&family=Montserrat:wght@300;400;500;600;700&family=Nunito:wght@300;400;500;600;700&family=Lato:wght@300;400;700&family=Open+Sans:wght@300;400;600;700&family=Playfair+Display:wght@400;500;600;700&family=Merriweather:wght@300;400;700&family=Lora:wght@400;500;600;700&family=Fira+Code:wght@300;400;500;600;700&family=Source+Code+Pro:wght@300;400;500;600;700&family=JetBrains+Mono:wght@300;400;500;600;700&family=Pacifico&family=Righteous&family=Bebas+Neue&family=Permanent+Marker&family=Alfa+Slab+One&display=swap" rel="stylesheet">
 
     <!-- Supabase JavaScript Client -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -274,6 +250,57 @@
             height: 20px;
             flex-shrink: 0;
             transition: all 0.3s ease;
+        }
+
+        /* Sidebar Toggle Button */
+        .sidebar-toggle {
+            width: 100%;
+            padding: 0.75rem;
+            margin-bottom: 1.5rem;
+            background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+            border: none;
+            border-radius: 0.75rem;
+            color: white;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 2px 8px rgba(99, 102, 241, 0.3);
+        }
+
+        .sidebar-toggle:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(99, 102, 241, 0.4);
+        }
+
+        .sidebar-toggle i {
+            width: 20px;
+            height: 20px;
+        }
+
+        /* Collapsed Sidebar State */
+        .sidebar.collapsed {
+            width: 80px;
+            padding: 1rem 0.5rem;
+        }
+
+        .sidebar.collapsed .sidebar-toggle {
+            padding: 0.75rem;
+        }
+
+        .sidebar.collapsed .nav-text {
+            display: none;
+        }
+
+        .sidebar.collapsed .nav-link {
+            justify-content: center;
+            padding: 0.75rem;
+        }
+
+        /* Expand main content when sidebar collapses */
+        .main-container.sidebar-collapsed {
+            grid-template-columns: 80px 1fr;
         }
 
         .nav-link:hover svg, .nav-link:hover i {
@@ -532,6 +559,45 @@
             to {
                 transform: translateX(0);
                 opacity: 1;
+            }
+        }
+
+        /* Animation keyframes for custom theme preview */
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes bounceIn {
+            from {
+                opacity: 0;
+                transform: scale(0.8);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+        @keyframes zoomIn {
+            from {
+                opacity: 0;
+                transform: scale(0.95);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1);
             }
         }
 
@@ -1242,6 +1308,493 @@
             font-size: 1.5rem;
         }
 
+        /* ========== THEMES PAGE STYLES ========== */
+
+        /* Theme Tabs */
+        .theme-tab-btn {
+            padding: 0.75rem 1.5rem;
+            background: transparent;
+            border: none;
+            border-radius: 0.5rem;
+            color: #94a3b8;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 0.9375rem;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .theme-tab-btn:hover {
+            background: rgba(99, 102, 241, 0.1);
+            color: #6366f1;
+        }
+
+        .theme-tab-btn.active {
+            background: linear-gradient(135deg, rgba(99, 102, 241, 0.15), rgba(139, 92, 246, 0.15));
+            color: #6366f1;
+            border-bottom: 2px solid #6366f1;
+        }
+
+        .theme-tab-btn i {
+            width: 18px;
+            height: 18px;
+        }
+
+        .theme-tab-content {
+            display: none;
+        }
+
+        .theme-tab-content.active {
+            display: block;
+        }
+
+        /* Themes Grid */
+        .themes-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 2rem;
+        }
+
+        /* Theme Card */
+        .theme-card {
+            background: #1e293b;
+            border: 1px solid #334155;
+            border-radius: 1rem;
+            overflow: hidden;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            cursor: pointer;
+        }
+
+        .theme-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 12px 24px rgba(0, 0, 0, 0.4);
+            border-color: #6366f1;
+        }
+
+        .theme-preview {
+            height: 200px;
+            padding: 1.25rem;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .theme-preview-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+
+        .theme-preview-logo {
+            width: 32px;
+            height: 32px;
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 0.5rem;
+        }
+
+        .theme-preview-buttons {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .theme-preview-btn {
+            width: 20px;
+            height: 20px;
+            background: rgba(255, 255, 255, 0.25);
+            border-radius: 0.25rem;
+        }
+
+        .theme-preview-stats {
+            display: flex;
+            gap: 0.75rem;
+            margin-bottom: 1rem;
+        }
+
+        .theme-preview-stat {
+            flex: 1;
+            height: 48px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 0.5rem;
+        }
+
+        .theme-preview-tabs {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .theme-preview-tab {
+            height: 32px;
+            background: rgba(255, 255, 255, 0.15);
+            border-radius: 0.5rem;
+        }
+
+        .theme-card-info {
+            padding: 1.5rem;
+        }
+
+        .theme-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.75rem;
+        }
+
+        .theme-card-title {
+            color: #f8fafc;
+            font-size: 1.125rem;
+            font-weight: 600;
+            margin: 0;
+        }
+
+        .theme-badge {
+            padding: 0.25rem 0.75rem;
+            background: linear-gradient(135deg, rgba(99, 102, 241, 0.2), rgba(139, 92, 246, 0.2));
+            color: #6366f1;
+            border-radius: 1rem;
+            font-size: 0.75rem;
+            font-weight: 600;
+            border: 1px solid rgba(99, 102, 241, 0.3);
+        }
+
+        .theme-badge.active-theme {
+            background: linear-gradient(135deg, rgba(16, 185, 129, 0.2), rgba(5, 150, 105, 0.2));
+            color: #10b981;
+            border-color: rgba(16, 185, 129, 0.3);
+        }
+
+        .theme-card-description {
+            color: #94a3b8;
+            font-size: 0.875rem;
+            margin-bottom: 1.25rem;
+            line-height: 1.5;
+        }
+
+        .theme-apply-btn {
+            width: 100%;
+            padding: 0.75rem 1.5rem;
+            background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+            border: none;
+            border-radius: 0.5rem;
+            color: white;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+        }
+
+        .theme-apply-btn:hover {
+            box-shadow: 0 6px 20px rgba(99, 102, 241, 0.5);
+            transform: translateY(-2px);
+        }
+
+        .theme-apply-btn:active {
+            transform: translateY(0);
+        }
+
+        .theme-apply-btn i {
+            width: 18px;
+            height: 18px;
+        }
+
+        /* Fade-in animation for top create button */
+        @keyframes fadeInButton {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .fade-in-button {
+            animation: fadeInButton 0.5s ease-in-out;
+        }
+
+        /* Slide up animation for modals */
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px) scale(0.95);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+
+        /* Range Slider */
+        .range-slider {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 100%;
+            height: 6px;
+            border-radius: 3px;
+            background: #334155;
+            outline: none;
+        }
+
+        .range-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+            cursor: pointer;
+            box-shadow: 0 2px 8px rgba(99, 102, 241, 0.4);
+            transition: all 0.3s;
+        }
+
+        .range-slider::-webkit-slider-thumb:hover {
+            box-shadow: 0 4px 12px rgba(99, 102, 241, 0.6);
+            transform: scale(1.1);
+        }
+
+        .range-slider::-moz-range-thumb {
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+            cursor: pointer;
+            border: none;
+            box-shadow: 0 2px 8px rgba(99, 102, 241, 0.4);
+            transition: all 0.3s;
+        }
+
+        .range-slider::-moz-range-thumb:hover {
+            box-shadow: 0 4px 12px rgba(99, 102, 241, 0.6);
+            transform: scale(1.1);
+        }
+
+        /* Toggle Switch */
+        .toggle-switch {
+            position: relative;
+            display: inline-block;
+            width: 48px;
+            height: 24px;
+        }
+
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .toggle-slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #334155;
+            transition: 0.3s;
+            border-radius: 24px;
+        }
+
+        .toggle-slider:before {
+            position: absolute;
+            content: "";
+            height: 18px;
+            width: 18px;
+            left: 3px;
+            bottom: 3px;
+            background-color: white;
+            transition: 0.3s;
+            border-radius: 50%;
+        }
+
+        .toggle-switch input:checked + .toggle-slider {
+            background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+        }
+
+        .toggle-switch input:checked + .toggle-slider:before {
+            transform: translateX(24px);
+        }
+
+        .toggle-slider:hover {
+            opacity: 0.9;
+        }
+
+        /* Custom Theme Editor Card Position */
+        .card {
+            position: relative;
+        }
+
+        /* Smooth Scrolling */
+        html {
+            scroll-behavior: smooth;
+        }
+
+        /* Smooth Range Slider Styling */
+        input[type="range"] {
+            -webkit-appearance: none;
+            appearance: none;
+            height: 6px;
+            background: linear-gradient(90deg, #334155 0%, #6366f1 0%, #6366f1 50%, #334155 50%);
+            border-radius: 5px;
+            outline: none;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            background: linear-gradient(135deg, #6366f1, #8b5cf6);
+            cursor: pointer;
+            border-radius: 50%;
+            box-shadow: 0 2px 8px rgba(99, 102, 241, 0.4);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        input[type="range"]::-webkit-slider-thumb:hover {
+            transform: scale(1.2);
+            box-shadow: 0 4px 16px rgba(99, 102, 241, 0.6);
+        }
+
+        input[type="range"]::-moz-range-thumb {
+            width: 20px;
+            height: 20px;
+            background: linear-gradient(135deg, #6366f1, #8b5cf6);
+            cursor: pointer;
+            border-radius: 50%;
+            border: none;
+            box-shadow: 0 2px 8px rgba(99, 102, 241, 0.4);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        input[type="range"]::-moz-range-thumb:hover {
+            transform: scale(1.2);
+            box-shadow: 0 4px 16px rgba(99, 102, 241, 0.6);
+        }
+
+        /* Smooth Color Input Styling */
+        input[type="color"]::-webkit-color-swatch {
+            border: none;
+            border-radius: 0.5rem;
+        }
+
+        input[type="color"]::-moz-color-swatch {
+            border: none;
+            border-radius: 0.5rem;
+        }
+
+        /* Fade In Animation for Modal */
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+            to {
+                opacity: 1;
+            }
+        }
+
+        /* Select Dropdown Styling */
+        select {
+            cursor: pointer;
+        }
+
+        select:hover {
+            background: #1e293b !important;
+        }
+
+        /* Range Slider Styling - Professional & Polished */
+        input[type="range"] {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 100%;
+            height: 6px;
+            background: linear-gradient(to right, #6366f1 0%, #6366f1 50%, #334155 50%, #334155 100%);
+            border-radius: 3px;
+            outline: none;
+            transition: all 0.3s ease;
+        }
+
+        input[type="range"]:hover {
+            background: linear-gradient(to right, #8b5cf6 0%, #8b5cf6 50%, #475569 50%, #475569 100%);
+        }
+
+        /* Webkit (Chrome, Safari, Edge) */
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 18px;
+            height: 18px;
+            background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+            border-radius: 50%;
+            cursor: pointer;
+            box-shadow: 0 2px 8px rgba(99, 102, 241, 0.4);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        input[type="range"]::-webkit-slider-thumb:hover {
+            transform: scale(1.2);
+            box-shadow: 0 4px 16px rgba(99, 102, 241, 0.6);
+        }
+
+        input[type="range"]::-webkit-slider-thumb:active {
+            transform: scale(1.1);
+            box-shadow: 0 2px 12px rgba(99, 102, 241, 0.8);
+        }
+
+        /* Firefox */
+        input[type="range"]::-moz-range-thumb {
+            width: 18px;
+            height: 18px;
+            background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+            border: none;
+            border-radius: 50%;
+            cursor: pointer;
+            box-shadow: 0 2px 8px rgba(99, 102, 241, 0.4);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        input[type="range"]::-moz-range-thumb:hover {
+            transform: scale(1.2);
+            box-shadow: 0 4px 16px rgba(99, 102, 241, 0.6);
+        }
+
+        input[type="range"]::-moz-range-thumb:active {
+            transform: scale(1.1);
+            box-shadow: 0 2px 12px rgba(99, 102, 241, 0.8);
+        }
+
+        input[type="range"]::-moz-range-track {
+            height: 6px;
+            background: #334155;
+            border-radius: 3px;
+        }
+
+        /* Microsoft Edge & IE */
+        input[type="range"]::-ms-thumb {
+            width: 18px;
+            height: 18px;
+            background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+            border: none;
+            border-radius: 50%;
+            cursor: pointer;
+            box-shadow: 0 2px 8px rgba(99, 102, 241, 0.4);
+        }
+
+        input[type="range"]::-ms-track {
+            height: 6px;
+            background: #334155;
+            border-radius: 3px;
+            border-color: transparent;
+            color: transparent;
+        }
+
     </style>
 </head>
 <body>
@@ -1267,29 +1820,40 @@
     <div class="main-container">
         <!-- Sidebar -->
         <nav class="sidebar">
+            <!-- Sidebar Toggle Button -->
+            <button class="sidebar-toggle" onclick="toggleSidebar()" title="Toggle Sidebar">
+                <i data-feather="menu"></i>
+            </button>
+
             <ul class="nav-menu">
                 <li class="nav-item">
                     <a href="#" class="nav-link active" data-page="dashboard">
                         <i data-feather="home"></i>
-                        Dashboard
+                        <span class="nav-text">Dashboard</span>
                     </a>
                 </li>
                 <li class="nav-item">
                     <a href="#" class="nav-link" data-page="subscription">
                         <i data-feather="credit-card"></i>
-                        Subscription
+                        <span class="nav-text">Subscription</span>
                     </a>
                 </li>
                 <li class="nav-item">
                     <a href="#" class="nav-link" data-page="analytics">
                         <i data-feather="bar-chart-2"></i>
-                        Analytics
+                        <span class="nav-text">Analytics</span>
                     </a>
                 </li>
                 <li class="nav-item">
                     <a href="#" class="nav-link" data-page="profile">
                         <i data-feather="user"></i>
-                        Profile
+                        <span class="nav-text">Profile</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="#" class="nav-link" data-page="themes">
+                        <i data-feather="droplet"></i>
+                        <span class="nav-text">Themes</span>
                     </a>
                 </li>
             </ul>
@@ -1705,6 +2269,340 @@
                     </div>
                 </div>
             </div>
+
+            <!-- Themes Page -->
+            <div class="page-content" id="themes-page">
+                <div class="page-header">
+                    <h1 class="page-title">🎨 Themes & Customization</h1>
+                    <p class="page-subtitle">Personalize your popup extension with beautiful themes and custom styles</p>
+                </div>
+
+                <!-- Theme Tabs -->
+                <div style="display: flex; gap: 1rem; margin-bottom: 2rem; border-bottom: 1px solid #334155; padding-bottom: 1rem;">
+                    <button class="theme-tab-btn active" data-tab="preset">
+                        <i data-feather="grid"></i>
+                        Preset Themes
+                    </button>
+                    <button class="theme-tab-btn" data-tab="custom">
+                        <i data-feather="edit-3"></i>
+                        Custom Theme
+                        <span class="pro-badge" style="margin-left: 0.5rem; font-size: 0.625rem; padding: 0.125rem 0.375rem;">PRO</span>
+                    </button>
+                </div>
+
+                <!-- Preset Themes Tab -->
+                <div class="theme-tab-content active" id="preset-themes-tab">
+                    <div class="card">
+                        <h2 class="card-title">Choose from Preset Themes</h2>
+                        <p style="color: #94a3b8; margin-bottom: 2rem;">Select a beautifully crafted theme to instantly transform your popup</p>
+
+                        <div class="themes-grid" id="themes-grid">
+                            <!-- Theme cards will be dynamically generated here -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Custom Theme Tab - MODAL-BASED DESIGN -->
+                <div class="theme-tab-content" id="custom-themes-tab">
+                    <div class="card">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+                            <div>
+                                <h2 class="card-title" style="margin: 0;">Custom Themes</h2>
+                                <p style="color: #94a3b8; margin: 0.5rem 0 0 0;">Create and manage your personalized themes</p>
+                            </div>
+                            <!-- Top Create Button (shown when 3+ themes) -->
+                            <button id="top-create-theme-btn" onclick="openCustomThemeStudio()" style="display: none; padding: 0.75rem 1.5rem; background: linear-gradient(135deg, #6366f1, #8b5cf6); border: none; border-radius: 0.75rem; color: white; font-weight: 600; cursor: pointer; font-size: 0.9375rem; transition: all 0.3s; box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3); display: flex; align-items: center; gap: 0.5rem;" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 6px 20px rgba(99, 102, 241, 0.4)';" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 12px rgba(99, 102, 241, 0.3)';">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                    <line x1="12" y1="5" x2="12" y2="19"></line>
+                                    <line x1="5" y1="12" x2="19" y2="12"></line>
+                                </svg>
+                                Create Theme
+                            </button>
+                        </div>
+
+                        <!-- Custom Themes Grid -->
+                        <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1.5rem;" id="custom-themes-grid">
+
+                            <!-- Create New Theme Card -->
+                            <div id="create-theme-card" onclick="openCustomThemeStudio()" style="background: linear-gradient(135deg, #667eea15, #764ba215); border: 2px dashed #6366f1; border-radius: 1rem; padding: 3rem 2rem; cursor: pointer; transition: all 0.3s; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 280px; position: relative; overflow: hidden;" onmouseover="this.style.background='linear-gradient(135deg, #667eea25, #764ba225)'; this.style.transform='translateY(-4px)'; this.style.boxShadow='0 8px 32px rgba(99, 102, 241, 0.3)';" onmouseout="this.style.background='linear-gradient(135deg, #667eea15, #764ba215)'; this.style.transform='translateY(0)'; this.style.boxShadow='none';">
+
+                                <div style="background: linear-gradient(135deg, #6366f1, #8b5cf6); width: 80px; height: 80px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-bottom: 1.5rem; box-shadow: 0 8px 24px rgba(99, 102, 241, 0.4);">
+                                    <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                        <line x1="12" y1="5" x2="12" y2="19"></line>
+                                        <line x1="5" y1="12" x2="19" y2="12"></line>
+                                    </svg>
+                                </div>
+
+                                <h3 style="color: #f8fafc; font-size: 1.25rem; font-weight: 700; margin: 0 0 0.5rem 0;">Create Custom Theme</h3>
+                                <p style="color: #94a3b8; font-size: 0.9375rem; margin: 0; text-align: center;">Design your own unique theme with full customization</p>
+
+                                <div style="position: absolute; top: 1rem; right: 1rem; background: #6366f120; color: #6366f1; padding: 0.375rem 0.75rem; border-radius: 0.5rem; font-size: 0.75rem; font-weight: 700;">
+                                    NEW
+                                </div>
+                            </div>
+
+                            <!-- Saved Custom Themes Will Appear Here -->
+                            <div id="saved-custom-themes-list" style="display: contents;">
+                                <!-- Dynamically populated -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- DELETE CONFIRMATION MODAL -->
+                <div id="delete-theme-modal" onclick="if(event.target.id === 'delete-theme-modal') closeDeleteModal()" style="display: none; position: fixed; inset: 0; background: rgba(0, 0, 0, 0.7); backdrop-filter: blur(8px); z-index: 10000; align-items: center; justify-content: center; animation: fadeIn 0.2s ease;">
+                    <div onclick="event.stopPropagation()" style="background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); border: 1px solid #334155; border-radius: 1.5rem; padding: 2rem; max-width: 480px; width: 90%; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5); animation: slideUp 0.3s ease; position: relative;">
+                        <!-- Header -->
+                        <div style="text-align: center; margin-bottom: 1.5rem;">
+                            <div style="background: linear-gradient(135deg, #ef4444, #dc2626); width: 64px; height: 64px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 1rem; box-shadow: 0 8px 24px rgba(239, 68, 68, 0.3);">
+                                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <polyline points="3 6 5 6 21 6"></polyline>
+                                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                                    <line x1="10" y1="11" x2="10" y2="17"></line>
+                                    <line x1="14" y1="11" x2="14" y2="17"></line>
+                                </svg>
+                            </div>
+                            <h3 style="color: #f8fafc; font-size: 1.5rem; font-weight: 700; margin: 0 0 0.5rem 0;">Delete Custom Theme?</h3>
+                            <p id="delete-theme-name" style="color: #94a3b8; font-size: 0.9375rem; margin: 0;">Are you sure you want to delete this theme?</p>
+                        </div>
+
+                        <!-- Warning Message -->
+                        <div style="background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3); border-radius: 0.75rem; padding: 1rem; margin-bottom: 1.5rem;">
+                            <p style="color: #fca5a5; font-size: 0.875rem; margin: 0; text-align: center;">
+                                ⚠️ This action cannot be undone. The theme will be permanently deleted.
+                            </p>
+                        </div>
+
+                        <!-- Action Buttons -->
+                        <div style="display: flex; gap: 0.75rem;">
+                            <button onclick="closeDeleteModal()" style="flex: 1; padding: 0.875rem 1.5rem; background: #334155; border: 1px solid #475569; border-radius: 0.75rem; color: #f8fafc; font-weight: 600; cursor: pointer; font-size: 0.9375rem; transition: all 0.3s;" onmouseover="this.style.background='#475569'" onmouseout="this.style.background='#334155'">
+                                Cancel
+                            </button>
+                            <button id="confirm-delete-btn" onclick="confirmDeleteTheme()" style="flex: 1; padding: 0.875rem 1.5rem; background: linear-gradient(135deg, #ef4444, #dc2626); border: none; border-radius: 0.75rem; color: white; font-weight: 600; cursor: pointer; font-size: 0.9375rem; transition: all 0.3s; box-shadow: 0 4px 12px rgba(239, 68, 68, 0.4);" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 6px 20px rgba(239, 68, 68, 0.5)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 12px rgba(239, 68, 68, 0.4)'">
+                                Delete Theme
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- FULL-SCREEN THEME STUDIO MODAL -->
+                <div id="custom-theme-studio-modal" style="display: none; position: fixed; inset: 0; background: rgba(0, 0, 0, 0.95); backdrop-filter: blur(10px); z-index: 9999; overflow-y: auto; overflow-x: hidden; scroll-behavior: smooth; animation: fadeIn 0.3s ease;">
+                    <div style="min-height: 100vh; padding: 2rem; max-width: 1400px; width: 100%; margin: 0 auto; box-sizing: border-box;">
+
+                        <!-- Header with Go Back Button -->
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; padding-bottom: 1.5rem; border-bottom: 1px solid #ffffff20;">
+                            <div>
+                                <h1 style="color: #f8fafc; font-size: 2rem; font-weight: 700; margin: 0 0 0.25rem 0; display: flex; align-items: center; gap: 0.75rem;">
+                                    <span style="font-size: 2rem;">🎨</span>
+                                    Custom Theme Studio
+                                </h1>
+                                <p style="color: #94a3b8; margin: 0; font-size: 0.9375rem;">Design your perfect theme with live preview</p>
+                            </div>
+                            <button onclick="closeCustomThemeStudio()" style="padding: 0.75rem 1.5rem; background: #1e293b; border: 2px solid #334155; border-radius: 0.625rem; color: #f8fafc; cursor: pointer; font-weight: 600; font-size: 0.9375rem; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); display: flex; align-items: center; gap: 0.5rem;" onmouseover="this.style.background='#334155'; this.style.transform='translateY(-2px)'" onmouseout="this.style.background='#1e293b'; this.style.transform='translateY(0)'">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <line x1="19" y1="12" x2="5" y2="12"></line>
+                                    <polyline points="12 19 5 12 12 5"></polyline>
+                                </svg>
+                                Go Back
+                            </button>
+                        </div>
+
+                        <!-- Theme Name + Action Buttons -->
+                        <div style="margin-bottom: 2rem; padding: 1.25rem; background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); border: 2px solid #334155; border-radius: 0.875rem; display: flex; gap: 1rem; align-items: center;">
+                            <input type="text" id="custom-theme-name" placeholder="My Awesome Theme" style="flex: 1; padding: 0.875rem 1.25rem; background: #0f172a; border: 2px solid #334155; border-radius: 0.625rem; color: #f8fafc; font-size: 0.9375rem; font-weight: 500; transition: all 0.3s;" onfocus="this.style.borderColor='#6366f1'; this.style.boxShadow='0 0 0 3px rgba(99, 102, 241, 0.1)'" onblur="this.style.borderColor='#334155'; this.style.boxShadow='none'">
+                            <button onclick="saveCustomTheme()" style="padding: 0.875rem 1.5rem; background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%); border: none; border-radius: 0.625rem; color: white; cursor: pointer; font-weight: 600; font-size: 0.9375rem; display: flex; align-items: center; gap: 0.5rem; transition: all 0.3s; white-space: nowrap;" onmouseover="this.style.transform='translateY(-1px)'; this.style.boxShadow='0 4px 12px rgba(99, 102, 241, 0.4)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='none'">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
+                                </svg>
+                                Save
+                            </button>
+                            <button onclick="applyCustomTheme()" style="padding: 0.875rem 1.5rem; background: linear-gradient(135deg, #10b981 0%, #059669 100%); border: none; border-radius: 0.625rem; color: white; cursor: pointer; font-weight: 600; font-size: 0.9375rem; display: flex; align-items: center; gap: 0.5rem; transition: all 0.3s; white-space: nowrap;" onmouseover="this.style.transform='translateY(-1px)'; this.style.boxShadow='0 4px 12px rgba(16, 185, 129, 0.4)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='none'">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <polyline points="20 6 9 17 4 12"></polyline>
+                                </svg>
+                                Apply
+                            </button>
+                            <button onclick="resetCustomTheme()" style="padding: 0.875rem 1.25rem; background: #334155; border: none; border-radius: 0.625rem; color: #f8fafc; cursor: pointer; font-weight: 600; font-size: 0.9375rem; transition: all 0.3s;" onmouseover="this.style.background='#475569'" onmouseout="this.style.background='#334155'">
+                                Reset
+                            </button>
+                        </div>
+
+                        <!-- Two Column Layout: Preview + Controls -->
+                        <div style="display: grid; grid-template-columns: 400px 1fr; gap: 2rem;">
+
+                            <!-- LEFT: Simplified Live Preview -->
+                            <div>
+                                <div style="position: sticky; top: 2rem;">
+                                    <div style="background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); border: 2px solid #334155; border-radius: 1rem; padding: 1.5rem;">
+                                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem;">
+                                            <h3 style="color: #f8fafc; font-size: 1rem; font-weight: 700; margin: 0;">Live Preview</h3>
+                                            <span style="background: linear-gradient(135deg, #10b98115 0%, #10b98125 100%); color: #10b981; padding: 0.375rem 0.75rem; border-radius: 0.5rem; font-size: 0.6875rem; font-weight: 700; display: flex; align-items: center; gap: 0.375rem; border: 1px solid #10b98130;">
+                                                <span style="width: 5px; height: 5px; background: #10b981; border-radius: 50%; animation: pulse 2s ease-in-out infinite;"></span>
+                                                LIVE
+                                            </span>
+                                        </div>
+
+                                        <div id="custom-theme-preview" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 0.875rem; padding: 1.5rem; min-height: 400px; transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);">
+                                            <div style="background: rgba(255, 255, 255, 0.15); backdrop-filter: blur(15px); border-radius: 0.75rem; padding: 1.25rem;">
+                                                <div id="preview-font-demo" data-preview-text style="color: white; font-size: 1.25rem; font-weight: 700; margin-bottom: 1.25rem; padding-bottom: 1rem; border-bottom: 1px solid rgba(255, 255, 255, 0.2);">TabManagement</div>
+
+                                                <div style="display: flex; flex-direction: column; gap: 0.625rem;">
+                                                    <div data-preview-tab data-preview-text style="background: rgba(255, 255, 255, 0.12); padding: 0.875rem; border-radius: 0.625rem;">
+                                                        <div class="preview-tab-title" style="font-weight: 600;">GitHub Dashboard</div>
+                                                        <div class="preview-tab-url" style="opacity: 0.7;">github.com</div>
+                                                    </div>
+                                                    <div data-preview-tab data-preview-text style="background: rgba(255, 255, 255, 0.12); padding: 0.875rem; border-radius: 0.625rem;">
+                                                        <div class="preview-tab-title" style="font-weight: 600;">Figma Design</div>
+                                                        <div class="preview-tab-url" style="opacity: 0.7;">figma.com</div>
+                                                    </div>
+                                                    <div data-preview-tab data-preview-text style="background: rgba(255, 255, 255, 0.12); padding: 0.875rem; border-radius: 0.625rem;">
+                                                        <div class="preview-tab-title" style="font-weight: 600;">Product Hunt</div>
+                                                        <div class="preview-tab-url" style="opacity: 0.7;">producthunt.com</div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- RIGHT: Single Column Controls -->
+                            <div style="display: flex; flex-direction: column; gap: 1.5rem;">
+
+                                <!-- Colors Section -->
+                                <div style="background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); border: 2px solid #334155; border-radius: 0.875rem; padding: 1.5rem;">
+                                    <h3 style="color: #f8fafc; font-size: 1rem; font-weight: 700; margin: 0 0 1.25rem 0; display: flex; align-items: center; gap: 0.5rem;">
+                                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#6366f1" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                            <path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"></path>
+                                        </svg>
+                                        Colors
+                                    </h3>
+
+                                    <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem;">
+                                        <!-- Primary Color -->
+                                        <div>
+                                            <label style="color: #cbd5e1; font-size: 0.8125rem; font-weight: 600; display: block; margin-bottom: 0.5rem;">Primary Color</label>
+                                            <div style="display: flex; gap: 0.5rem; align-items: center;">
+                                                <input type="color" id="custom-color-primary" value="#667eea" oninput="updateCustomThemePreview()" style="width: 45px; height: 45px; border: 2px solid #334155; border-radius: 0.625rem; cursor: pointer; transition: all 0.3s;" onfocus="this.style.borderColor='#6366f1'" onblur="this.style.borderColor='#334155'">
+                                                <input type="text" id="custom-color-primary-text" value="#667eea" oninput="updateCustomThemePreview()" style="flex: 1; padding: 0.625rem 0.75rem; background: #0f172a; border: 2px solid #334155; border-radius: 0.5rem; color: #f8fafc; font-family: monospace; font-size: 0.8125rem; transition: all 0.3s;" onfocus="this.style.borderColor='#6366f1'" onblur="this.style.borderColor='#334155'">
+                                            </div>
+                                        </div>
+
+                                        <!-- Accent Color -->
+                                        <div>
+                                            <label style="color: #cbd5e1; font-size: 0.8125rem; font-weight: 600; display: block; margin-bottom: 0.5rem;">Accent Color</label>
+                                            <div style="display: flex; gap: 0.5rem; align-items: center;">
+                                                <input type="color" id="custom-color-accent" value="#8b5cf6" oninput="updateCustomThemePreview()" style="width: 45px; height: 45px; border: 2px solid #334155; border-radius: 0.625rem; cursor: pointer; transition: all 0.3s;" onfocus="this.style.borderColor='#6366f1'" onblur="this.style.borderColor='#334155'">
+                                                <input type="text" id="custom-color-accent-text" value="#8b5cf6" oninput="updateCustomThemePreview()" style="flex: 1; padding: 0.625rem 0.75rem; background: #0f172a; border: 2px solid #334155; border-radius: 0.5rem; color: #f8fafc; font-family: monospace; font-size: 0.8125rem; transition: all 0.3s;" onfocus="this.style.borderColor='#6366f1'" onblur="this.style.borderColor='#334155'">
+                                            </div>
+                                        </div>
+
+                                        <!-- Text Color -->
+                                        <div>
+                                            <label style="color: #cbd5e1; font-size: 0.8125rem; font-weight: 600; display: block; margin-bottom: 0.5rem;">Text Color</label>
+                                            <div style="display: flex; gap: 0.5rem; align-items: center;">
+                                                <input type="color" id="custom-color-text" value="#ffffff" oninput="updateCustomThemePreview()" style="width: 45px; height: 45px; border: 2px solid #334155; border-radius: 0.625rem; cursor: pointer; transition: all 0.3s;" onfocus="this.style.borderColor='#6366f1'" onblur="this.style.borderColor='#334155'">
+                                                <input type="text" id="custom-color-text-input" value="#ffffff" oninput="updateCustomThemePreview()" style="flex: 1; padding: 0.625rem 0.75rem; background: #0f172a; border: 2px solid #334155; border-radius: 0.5rem; color: #f8fafc; font-family: monospace; font-size: 0.8125rem; transition: all 0.3s;" onfocus="this.style.borderColor='#6366f1'" onblur="this.style.borderColor='#334155'">
+                                            </div>
+                                        </div>
+
+                                        <!-- Secondary Color (Conditional) -->
+                                        <div id="secondary-color-container" style="display: none;">
+                                            <label style="color: #cbd5e1; font-size: 0.8125rem; font-weight: 600; display: block; margin-bottom: 0.5rem;">Secondary (Gradient)</label>
+                                            <div style="display: flex; gap: 0.5rem; align-items: center;">
+                                                <input type="color" id="custom-color-secondary" value="#764ba2" oninput="updateCustomThemePreview()" style="width: 45px; height: 45px; border: 2px solid #334155; border-radius: 0.625rem; cursor: pointer; transition: all 0.3s;" onfocus="this.style.borderColor='#6366f1'" onblur="this.style.borderColor='#334155'">
+                                                <input type="text" id="custom-color-secondary-text" value="#764ba2" oninput="updateCustomThemePreview()" style="flex: 1; padding: 0.625rem 0.75rem; background: #0f172a; border: 2px solid #334155; border-radius: 0.5rem; color: #f8fafc; font-family: monospace; font-size: 0.8125rem; transition: all 0.3s;" onfocus="this.style.borderColor='#6366f1'" onblur="this.style.borderColor='#334155'">
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Typography Section -->
+                                <div style="background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); border: 2px solid #334155; border-radius: 0.875rem; padding: 1.5rem;">
+                                    <h3 style="color: #f8fafc; font-size: 1rem; font-weight: 700; margin: 0 0 1.25rem 0; display: flex; align-items: center; gap: 0.5rem;">
+                                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#6366f1" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                            <polyline points="4 7 4 4 20 4 20 7"></polyline>
+                                            <line x1="9" y1="20" x2="15" y2="20"></line>
+                                            <line x1="12" y1="4" x2="12" y2="20"></line>
+                                        </svg>
+                                        Typography
+                                    </h3>
+                                    <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 1rem;">
+                                        <div>
+                                            <label style="color: #cbd5e1; font-size: 0.8125rem; font-weight: 600; display: block; margin-bottom: 0.5rem;">Font Family</label>
+                                            <select id="custom-font-family" onchange="updateCustomThemePreview()" style="width: 100%; padding: 0.625rem 0.75rem; background: #0f172a; border: 2px solid #334155; border-radius: 0.5rem; color: #f8fafc; font-size: 0.8125rem; cursor: pointer; transition: all 0.3s;" onfocus="this.style.borderColor='#6366f1'" onblur="this.style.borderColor='#334155'">
+                                                <optgroup label="System & Popular">
+                                                    <option value="-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif">System Default</option>
+                                                    <option value="'Inter', sans-serif">Inter</option>
+                                                    <option value="'Roboto', sans-serif">Roboto</option>
+                                                    <option value="'Poppins', sans-serif">Poppins</option>
+                                                    <option value="'Montserrat', sans-serif">Montserrat</option>
+                                                    <option value="'Open Sans', sans-serif">Open Sans</option>
+                                                    <option value="'Lato', sans-serif">Lato</option>
+                                                </optgroup>
+                                                <optgroup label="Creative & Modern">
+                                                    <option value="'Righteous', sans-serif">Righteous</option>
+                                                    <option value="'Pacifico', cursive">Pacifico</option>
+                                                    <option value="'Bebas Neue', sans-serif">Bebas Neue</option>
+                                                    <option value="'Permanent Marker', cursive">Permanent Marker</option>
+                                                    <option value="'Alfa Slab One', cursive">Alfa Slab One</option>
+                                                </optgroup>
+                                                <optgroup label="Elegant & Serif">
+                                                    <option value="'Playfair Display', serif">Playfair Display</option>
+                                                    <option value="'Merriweather', serif">Merriweather</option>
+                                                    <option value="'Lora', serif">Lora</option>
+                                                </optgroup>
+                                                <optgroup label="Tech & Monospace">
+                                                    <option value="'Fira Code', monospace">Fira Code</option>
+                                                    <option value="'Source Code Pro', monospace">Source Code Pro</option>
+                                                    <option value="'JetBrains Mono', monospace">JetBrains Mono</option>
+                                                </optgroup>
+                                            </select>
+                                        </div>
+                                        <div>
+                                            <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+                                                <label style="color: #cbd5e1; font-size: 0.8125rem; font-weight: 600;">Font Size</label>
+                                                <span id="font-size-value" style="color: #6366f1; font-weight: 700; font-family: monospace; font-size: 0.8125rem;">14px</span>
+                                            </div>
+                                            <input type="range" id="custom-font-size" min="11" max="16" value="14" oninput="updateCustomThemePreview()" style="width: 100%; cursor: pointer;">
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Background Section -->
+                                <div style="background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); border: 2px solid #334155; border-radius: 0.875rem; padding: 1.5rem;">
+                                    <h3 style="color: #f8fafc; font-size: 1rem; font-weight: 700; margin: 0 0 1.25rem 0; display: flex; align-items: center; gap: 0.5rem;">
+                                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#6366f1" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                                        </svg>
+                                        Background
+                                    </h3>
+                                    <div style="display: flex; flex-direction: column; gap: 1rem;">
+                                        <div>
+                                            <label style="color: #cbd5e1; font-size: 0.8125rem; font-weight: 600; display: block; margin-bottom: 0.5rem;">Background Style</label>
+                                            <select id="custom-bg-type" onchange="toggleSecondaryColor(); updateCustomThemePreview();" style="width: 100%; padding: 0.625rem 0.75rem; background: #0f172a; border: 2px solid #334155; border-radius: 0.5rem; color: #f8fafc; font-size: 0.8125rem; cursor: pointer; transition: all 0.3s;" onfocus="this.style.borderColor='#6366f1'" onblur="this.style.borderColor='#334155'">
+                                                <option value="solid">Solid Color</option>
+                                                <option value="gradient" selected>Gradient</option>
+                                                <option value="radial">Radial Gradient</option>
+                                                <option value="pattern">Pattern</option>
+                                            </select>
+                                        </div>
+                                        <div id="gradient-options" style="padding: 0.75rem; background: rgba(99, 102, 241, 0.05); border: 1px solid rgba(99, 102, 241, 0.2); border-radius: 0.5rem;">
+                                            <label style="display: flex; align-items: center; gap: 0.625rem; cursor: pointer;">
+                                                <input type="checkbox" id="enable-gradient" checked onchange="toggleSecondaryColor(); updateCustomThemePreview();" style="width: 16px; height: 16px; cursor: pointer; accent-color: #6366f1;">
+                                                <span style="color: #cbd5e1; font-size: 0.8125rem; font-weight: 600;">Enable Secondary Color</span>
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+                </div>
+
+
+            </div>
         </main>
     </div>
 
@@ -1871,6 +2769,418 @@
         const supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
         // ============================================
+        // SUPABASE STORAGE FUNCTIONS (Replaces localStorage)
+        // ============================================
+
+        // Cache for current user ID
+        let currentUserId = null;
+
+        // Get current user ID
+        async function getCurrentUserId() {
+            if (currentUserId) return currentUserId;
+
+            const { data: { user } } = await supabaseClient.auth.getUser();
+            if (user) {
+                currentUserId = user.id;
+                return user.id;
+            }
+            return null;
+        }
+
+        // USER PREFERENCES
+        async function getUserPreferences() {
+            const userId = await getCurrentUserId();
+            if (!userId) return null;
+
+            const { data, error } = await supabaseClient
+                .from('user_preferences')
+                .select('*')
+                .eq('user_id', userId)
+                .single();
+
+            if (error && error.code === 'PGRST116') {
+                // No preferences found, create default
+                return await createDefaultPreferences(userId);
+            }
+
+            return data;
+        }
+
+        async function createDefaultPreferences(userId) {
+            const defaults = {
+                user_id: userId,
+                sidebar_collapsed: false,
+                settings: {},
+                active_theme: 'lightMinimal',
+                theme_config: {},
+                extension_id: null
+            };
+
+            const { data, error } = await supabaseClient
+                .from('user_preferences')
+                .insert(defaults)
+                .select()
+                .single();
+
+            return data;
+        }
+
+        async function updateUserPreferences(updates) {
+            const userId = await getCurrentUserId();
+            if (!userId) return false;
+
+            const { error } = await supabaseClient
+                .from('user_preferences')
+                .upsert({
+                    user_id: userId,
+                    ...updates
+                });
+
+            return !error;
+        }
+
+        // Specific preference updates
+        async function saveSidebarState(collapsed) {
+            return await updateUserPreferences({ sidebar_collapsed: collapsed });
+        }
+
+        async function saveUserSettings(settings) {
+            return await updateUserPreferences({ settings });
+        }
+
+        async function saveActiveTheme(themeName, themeConfig = null) {
+            const updates = { active_theme: themeName };
+            if (themeConfig) {
+                updates.theme_config = themeConfig;
+            }
+            return await updateUserPreferences(updates);
+        }
+
+        async function saveExtensionId(extensionId) {
+            return await updateUserPreferences({ extension_id: extensionId });
+        }
+
+        // DEVICE TRACKING
+        async function registerDevice(deviceId, fingerprint, browserInfo = {}) {
+            const userId = await getCurrentUserId();
+            if (!userId) return null;
+
+            const { data, error } = await supabaseClient
+                .from('user_devices')
+                .upsert({
+                    user_id: userId,
+                    device_id: deviceId,
+                    device_fingerprint: fingerprint,
+                    browser_info: browserInfo,
+                    last_seen: new Date().toISOString()
+                }, {
+                    onConflict: 'device_id'
+                })
+                .select()
+                .single();
+
+            return data;
+        }
+
+        async function updateDeviceLastSeen(deviceId) {
+            const { error } = await supabaseClient
+                .from('user_devices')
+                .update({ last_seen: new Date().toISOString() })
+                .eq('device_id', deviceId);
+
+            return !error;
+        }
+
+        async function getUserDevices() {
+            const userId = await getCurrentUserId();
+            if (!userId) return [];
+
+            const { data, error } = await supabaseClient
+                .from('user_devices')
+                .select('*')
+                .eq('user_id', userId)
+                .order('last_seen', { ascending: false });
+
+            return data || [];
+        }
+
+        // CUSTOM THEMES
+        async function saveCustomTheme(name, themeData) {
+            const userId = await getCurrentUserId();
+            if (!userId) return false;
+
+            const { error } = await supabaseClient
+                .from('custom_themes')
+                .insert({
+                    user_id: userId,
+                    name,
+                    theme_data: themeData
+                });
+
+            return !error;
+        }
+
+        async function getCustomThemes() {
+            const userId = await getCurrentUserId();
+            if (!userId) return [];
+
+            const { data, error } = await supabaseClient
+                .from('custom_themes')
+                .select('*')
+                .eq('user_id', userId)
+                .order('created_at', { ascending: false });
+
+            return data || [];
+        }
+
+        async function deleteCustomTheme(themeId) {
+            const { error } = await supabaseClient
+                .from('custom_themes')
+                .delete()
+                .eq('id', themeId);
+
+            return !error;
+        }
+
+        // THEME DRAFTS
+        async function saveThemeDraft(draftData) {
+            const userId = await getCurrentUserId();
+            if (!userId) return false;
+
+            const { error } = await supabaseClient
+                .from('theme_drafts')
+                .upsert({
+                    user_id: userId,
+                    draft_data: draftData,
+                    last_saved: new Date().toISOString()
+                });
+
+            return !error;
+        }
+
+        async function getThemeDraft() {
+            const userId = await getCurrentUserId();
+            if (!userId) return null;
+
+            const { data, error } = await supabaseClient
+                .from('theme_drafts')
+                .select('*')
+                .eq('user_id', userId)
+                .single();
+
+            return data;
+        }
+
+        // TAB ANALYTICS
+        async function recordTabEvent(deviceId, eventType, count = 1) {
+            const userId = await getCurrentUserId();
+            if (!userId) return false;
+
+            // Get device UUID from device_id string
+            const { data: deviceData } = await supabaseClient
+                .from('user_devices')
+                .select('id')
+                .eq('device_id', deviceId)
+                .single();
+
+            if (!deviceData) return false;
+
+            // Call the stored procedure
+            const { error } = await supabaseClient
+                .rpc('record_tab_event', {
+                    p_user_id: userId,
+                    p_device_id: deviceData.id,
+                    p_event_type: eventType,
+                    p_count: count
+                });
+
+            return !error;
+        }
+
+        async function getTabAnalytics(startDate, endDate) {
+            const userId = await getCurrentUserId();
+            if (!userId) return [];
+
+            let query = supabaseClient
+                .from('tab_analytics')
+                .select('*')
+                .eq('user_id', userId)
+                .order('date', { ascending: false });
+
+            if (startDate) {
+                query = query.gte('date', startDate);
+            }
+            if (endDate) {
+                query = query.lte('date', endDate);
+            }
+
+            const { data, error } = await query;
+            return data || [];
+        }
+
+        // USER ACTIVITY LOG
+        async function logActivity(activityType, metadata = {}) {
+            const userId = await getCurrentUserId();
+            if (!userId) return false;
+
+            const { error } = await supabaseClient
+                .from('user_activity')
+                .insert({
+                    user_id: userId,
+                    activity_type: activityType,
+                    metadata
+                });
+
+            return !error;
+        }
+
+        // SUBSCRIPTION MANAGEMENT
+        async function checkSubscriptionStatus() {
+            const userId = await getCurrentUserId();
+            if (!userId) return null;
+
+            const { data, error } = await supabaseClient
+                .from('users_auth')
+                .select('is_pro, subscription_status, current_period_end, stripe_subscription_id')
+                .eq('id', userId)
+                .single();
+
+            if (error) return null;
+
+            // Check if subscription is expired
+            if (data.current_period_end && new Date(data.current_period_end) < new Date()) {
+                // Subscription period ended, check if we should auto-suspend
+                if (data.subscription_status === 'past_due' || data.subscription_status === 'unpaid') {
+                    await autoSuspendSubscription(userId);
+                    data.is_pro = false;
+                    data.subscription_status = 'suspended';
+                }
+            }
+
+            return data;
+        }
+
+        async function autoSuspendSubscription(userId) {
+            // Update user to free plan
+            const { error: userError } = await supabaseClient
+                .from('users_auth')
+                .update({
+                    is_pro: false,
+                    subscription_status: 'suspended'
+                })
+                .eq('id', userId);
+
+            // Log the suspension
+            const { error: historyError } = await supabaseClient
+                .from('subscription_history')
+                .insert({
+                    user_id: userId,
+                    action: 'auto_suspended',
+                    from_plan: 'pro',
+                    to_plan: 'free',
+                    reason: 'Payment failed - subscription expired'
+                });
+
+            return !userError && !historyError;
+        }
+
+        async function getSubscriptionHistory() {
+            const userId = await getCurrentUserId();
+            if (!userId) return [];
+
+            const { data, error } = await supabaseClient
+                .from('subscription_history')
+                .select('*')
+                .eq('user_id', userId)
+                .order('created_at', { ascending: false });
+
+            return data || [];
+        }
+
+        // USER DATA UPDATES
+        async function updateUserData(updates) {
+            const userId = await getCurrentUserId();
+            if (!userId) return false;
+
+            const { error } = await supabaseClient
+                .from('users_auth')
+                .update(updates)
+                .eq('id', userId);
+
+            return !error;
+        }
+
+        async function updateNameWithCooldown(newName) {
+            const userId = await getCurrentUserId();
+            if (!userId) return { success: false, error: 'Not authenticated' };
+
+            // Check cooldown
+            const { data: userData } = await supabaseClient
+                .from('users_auth')
+                .select('name_update_cooldown')
+                .eq('id', userId)
+                .single();
+
+            if (userData?.name_update_cooldown) {
+                const cooldownEnd = new Date(userData.name_update_cooldown);
+                if (new Date() < cooldownEnd) {
+                    return {
+                        success: false,
+                        error: 'Name update on cooldown',
+                        cooldownEnd: cooldownEnd
+                    };
+                }
+            }
+
+            // Update name and set new cooldown (24 hours)
+            const newCooldownEnd = new Date(Date.now() + (24 * 60 * 60 * 1000));
+
+            const { error } = await supabaseClient
+                .from('users_auth')
+                .update({
+                    name: newName,
+                    name_update_cooldown: newCooldownEnd.toISOString()
+                })
+                .eq('id', userId);
+
+            if (error) {
+                return { success: false, error: error.message };
+            }
+
+            return { success: true, cooldownEnd: newCooldownEnd };
+        }
+
+        // ============================================
+        // SIDEBAR TOGGLE FUNCTIONALITY
+        // ============================================
+
+        async function toggleSidebar() {
+            const sidebar = document.querySelector('.sidebar');
+            const mainContainer = document.querySelector('.main-container');
+
+            sidebar.classList.toggle('collapsed');
+            mainContainer.classList.toggle('sidebar-collapsed');
+
+            // Re-initialize feather icons after DOM change
+            if (typeof feather !== 'undefined') {
+                feather.replace();
+            }
+
+            // Save preference to Supabase
+            const isCollapsed = sidebar.classList.contains('collapsed');
+            await saveSidebarState(isCollapsed);
+        }
+
+        // Restore sidebar state on page load
+        async function restoreSidebarState() {
+            const prefs = await getUserPreferences();
+            if (prefs && prefs.sidebar_collapsed) {
+                document.querySelector('.sidebar')?.classList.add('collapsed');
+                document.querySelector('.main-container')?.classList.add('sidebar-collapsed');
+            }
+        }
+
+        // ============================================
         // DEVICE FINGERPRINTING & ANTI-SHARING SYSTEM
         // ============================================
 
@@ -1942,16 +3252,50 @@
             return hashHex;
         }
 
-        // Get or create device ID
+        // Get or create device ID (uses Supabase)
         async function getDeviceId() {
-            let deviceId = localStorage.getItem('tabmangment_device_id');
+            // Try to get device ID from sessionStorage first (for this browser session)
+            let deviceId = sessionStorage.getItem('tabmangment_device_id');
 
             if (!deviceId) {
-                // Generate new device ID combining fingerprint + timestamp
+                // Generate fingerprint
                 const fingerprint = await generateDeviceFingerprint();
-                const timestamp = Date.now();
-                deviceId = `${fingerprint.substring(0, 16)}-${timestamp}`;
-                localStorage.setItem('tabmangment_device_id', deviceId);
+
+                // Check if this fingerprint exists in Supabase
+                const userId = await getCurrentUserId();
+                if (userId) {
+                    const { data: devices } = await supabaseClient
+                        .from('user_devices')
+                        .select('device_id')
+                        .eq('user_id', userId)
+                        .eq('device_fingerprint', fingerprint)
+                        .single();
+
+                    if (devices) {
+                        // Found existing device
+                        deviceId = devices.device_id;
+                        await updateDeviceLastSeen(deviceId);
+                    } else {
+                        // Create new device ID
+                        const timestamp = Date.now();
+                        deviceId = `${fingerprint.substring(0, 16)}-${timestamp}`;
+
+                        // Register in Supabase
+                        const browserInfo = getDeviceMetadata();
+                        await registerDevice(deviceId, fingerprint, browserInfo);
+                    }
+
+                    // Cache in sessionStorage for this browser session
+                    sessionStorage.setItem('tabmangment_device_id', deviceId);
+                } else {
+                    // Not authenticated, create temporary device ID
+                    const timestamp = Date.now();
+                    deviceId = `temp-${fingerprint.substring(0, 16)}-${timestamp}`;
+                    sessionStorage.setItem('tabmangment_device_id', deviceId);
+                }
+            } else {
+                // Update last seen for existing device
+                await updateDeviceLastSeen(deviceId);
             }
 
             return deviceId;
@@ -2084,63 +3428,69 @@
             try {
                 const metadata = getDeviceMetadata();
 
-                // Get current device list from Supabase
-                const { data: userData, error: fetchError } = await supabaseClient
+                // Get current device count from Supabase
+                const { data: devices, error: fetchError } = await supabaseClient
                     .from('user_devices')
-                    .select('devices')
+                    .select('*')
                     .eq('user_id', userId)
-                    .maybeSingle();
+                    .order('last_seen', { ascending: true });
 
-                let devices = [];
-
-                if (!fetchError && userData && userData.devices) {
-                    devices = userData.devices;
+                if (fetchError) {
+                    throw fetchError;
                 }
 
-                // Check if device already exists
-                const existingDeviceIndex = devices.findIndex(d => d.device_id === deviceId);
+                const deviceList = devices || [];
 
-                if (existingDeviceIndex >= 0) {
+                // Check if device already exists
+                const existingDevice = deviceList.find(d => d.device_id === deviceId);
+
+                if (existingDevice) {
                     // Update existing device
-                    devices[existingDeviceIndex] = {
-                        ...devices[existingDeviceIndex],
-                        ...metadata,
-                        lastSeen: new Date().toISOString()
-                    };
+                    const { error: updateError } = await supabaseClient
+                        .from('user_devices')
+                        .update({
+                            browser_info: metadata,
+                            last_seen: new Date().toISOString()
+                        })
+                        .eq('id', existingDevice.id);
+
+                    if (updateError) throw updateError;
                 } else {
                     // Check device limit
                     const maxDevices = isPro ? DEVICE_CONFIG.MAX_DEVICES_PRO : DEVICE_CONFIG.MAX_DEVICES_FREE;
 
-                    if (devices.length >= maxDevices) {
-                        // Remove oldest device
-                        devices.sort((a, b) => new Date(a.lastSeen) - new Date(b.lastSeen));
-                        devices.shift();
+                    if (deviceList.length >= maxDevices) {
+                        // Remove oldest device (first in sorted list)
+                        const oldestDevice = deviceList[0];
+                        const { error: deleteError } = await supabaseClient
+                            .from('user_devices')
+                            .delete()
+                            .eq('id', oldestDevice.id);
+
+                        if (deleteError) throw deleteError;
                     }
 
                     // Add new device
-                    devices.push({
-                        device_id: deviceId,
-                        ...metadata,
-                        registeredAt: new Date().toISOString()
-                    });
+                    const { error: insertError } = await supabaseClient
+                        .from('user_devices')
+                        .insert({
+                            user_id: userId,
+                            device_id: deviceId,
+                            device_fingerprint: deviceId,
+                            browser_info: metadata,
+                            last_seen: new Date().toISOString()
+                        });
+
+                    if (insertError) throw insertError;
                 }
 
-                // Save to Supabase
-                const { error: upsertError } = await supabaseClient
+                // Get updated count
+                const { count } = await supabaseClient
                     .from('user_devices')
-                    .upsert({
-                        user_id: userId,
-                        devices: devices,
-                        updated_at: new Date().toISOString()
-                    }, {
-                        onConflict: 'user_id'
-                    });
+                    .select('*', { count: 'exact', head: true })
+                    .eq('user_id', userId);
 
-                if (upsertError) {
-                    throw upsertError;
-                }
-
-                return { success: true, deviceCount: devices.length, maxDevices: isPro ? DEVICE_CONFIG.MAX_DEVICES_PRO : DEVICE_CONFIG.MAX_DEVICES_FREE };
+                return { success: true, deviceCount: count || deviceList.length, maxDevices: isPro ? DEVICE_CONFIG.MAX_DEVICES_PRO : DEVICE_CONFIG.MAX_DEVICES_FREE };
 
             } catch (error) {
                 return { success: false, error: error.message };
@@ -2150,18 +3500,21 @@
         // Verify device is authorized
         async function verifyDevice(userId, deviceId, isPro) {
             try {
-                const { data: userData, error } = await supabaseClient
+                const { data: devices, error, count } = await supabaseClient
                     .from('user_devices')
-                    .select('devices')
-                    .eq('user_id', userId)
-                    .maybeSingle();
+                    .select('*', { count: 'exact' })
+                    .eq('user_id', userId);
 
-                if (error || !userData || !userData.devices) {
+                if (error) {
+                    // On error, allow access (fail open for better UX)
+                    return { authorized: true, error: error.message };
+                }
+
+                if (!devices || devices.length === 0) {
                     // No devices registered yet, allow first device
                     return { authorized: true, isNew: true };
                 }
 
-                const devices = userData.devices;
                 const deviceExists = devices.some(d => d.device_id === deviceId);
 
                 if (!deviceExists) {
@@ -2187,19 +3540,26 @@
 
         // Show device limit warning
         function showDeviceLimitWarning(deviceCount, maxDevices, isPro) {
+            // Set flag that device limit was hit
+            window._deviceLimitReached = true;
+            sessionStorage.setItem('device_limit_hit', 'true');
+
             const modal = document.createElement('div');
+            modal.id = 'device-limit-modal-protected';
+            modal.setAttribute('data-protected', 'true');
             modal.style.cssText = `
                 position: fixed;
                 top: 0;
                 left: 0;
                 right: 0;
                 bottom: 0;
-                background: rgba(15, 23, 42, 0.95);
-                z-index: 10000;
+                background: rgba(15, 23, 42, 0.98);
+                z-index: 999999;
                 display: flex;
                 align-items: center;
                 justify-content: center;
                 animation: fadeIn 0.3s ease-out;
+                pointer-events: all !important;
             `;
 
             modal.innerHTML = `
@@ -2222,7 +3582,7 @@
 
                     <div style="display: flex; gap: 0.75rem; flex-direction: column;">
                         ${!isPro ? `
-                            <button onclick="window.location.href='/pricing'" style="padding: 0.875rem 1.5rem; background: linear-gradient(135deg, #14b8a6, #0d9488); color: white; border: none; border-radius: 0.75rem; font-weight: 600; cursor: pointer; font-size: 0.9375rem;">
+                            <button onclick="upgradeFromDeviceLimit()" style="padding: 0.875rem 1.5rem; background: linear-gradient(135deg, #14b8a6, #0d9488); color: white; border: none; border-radius: 0.75rem; font-weight: 600; cursor: pointer; font-size: 0.9375rem;">
                                 Upgrade to Pro (${DEVICE_CONFIG.MAX_DEVICES_PRO} devices)
                             </button>
                         ` : ''}
@@ -2238,6 +3598,96 @@
             `;
 
             document.body.appendChild(modal);
+
+            // ANTI-BYPASS PROTECTION: Monitor for modal deletion and block page access
+            const protectionInterval = setInterval(() => {
+                // Check if modal still exists
+                const existingModal = document.getElementById('device-limit-modal-protected');
+
+                if (!existingModal && window._deviceLimitReached) {
+                    // Modal was deleted! Re-create it immediately
+                    // Device limit bypass attempt detected
+
+                    // Blur/hide entire page content
+                    document.body.style.filter = 'blur(20px)';
+                    document.body.style.pointerEvents = 'none';
+                    document.body.style.userSelect = 'none';
+
+                    // Re-show modal
+                    showDeviceLimitWarning(deviceCount, maxDevices, isPro);
+                }
+
+                // Also hide all main content while modal is shown
+                if (existingModal) {
+                    const dashboard = document.querySelector('.dashboard-container');
+                    if (dashboard) {
+                        dashboard.style.display = 'none';
+                    }
+                }
+            }, 100); // Check every 100ms
+
+            // Store interval ID for potential cleanup
+            window._deviceLimitProtectionInterval = protectionInterval;
+
+            // Block all keyboard shortcuts that might help bypass
+            const blockKeyboard = (e) => {
+                if (window._deviceLimitReached) {
+                    // Block F12, Ctrl+Shift+I, Ctrl+Shift+C, Ctrl+Shift+J (dev tools)
+                    if (e.keyCode === 123 || // F12
+                        (e.ctrlKey && e.shiftKey && (e.keyCode === 73 || e.keyCode === 67 || e.keyCode === 74)) ||
+                        (e.metaKey && e.altKey && (e.keyCode === 73 || e.keyCode === 67 || e.keyCode === 74))) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        return false;
+                    }
+                }
+            };
+
+            document.addEventListener('keydown', blockKeyboard, { capture: true });
+
+            // Block right-click context menu
+            const blockContextMenu = (e) => {
+                if (window._deviceLimitReached) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    return false;
+                }
+            };
+
+            document.addEventListener('contextmenu', blockContextMenu, { capture: true });
+        }
+
+        // Handle upgrade from device limit modal
+        function upgradeFromDeviceLimit() {
+            // Clear device limit flags
+            window._deviceLimitReached = false;
+            sessionStorage.removeItem('device_limit_hit');
+
+            // Clear protection interval
+            if (window._deviceLimitProtectionInterval) {
+                clearInterval(window._deviceLimitProtectionInterval);
+                window._deviceLimitProtectionInterval = null;
+            }
+
+            // Remove modal
+            const modal = document.getElementById('device-limit-modal-protected');
+            if (modal) {
+                modal.remove();
+            }
+
+            // Reset page styles
+            document.body.style.filter = '';
+            document.body.style.pointerEvents = '';
+            document.body.style.userSelect = '';
+
+            // Show dashboard
+            const dashboard = document.querySelector('.dashboard-container');
+            if (dashboard) {
+                dashboard.style.display = '';
+            }
+
+            // Navigate to subscription page
+            showPage('subscription');
         }
 
         // Handle device logout
@@ -2267,16 +3717,16 @@
                 }
 
                 // Fetch devices from Supabase
-                const { data, error } = await supabaseClient
+                const { data: devices, error } = await supabaseClient
                     .from('user_devices')
-                    .select('devices')
+                    .select('*')
                     .eq('user_id', userId)
-                    .maybeSingle();
+                    .order('last_seen', { ascending: false });
 
                 const container = document.getElementById('devices-list-container');
                 if (!container) return;
 
-                if (error || !data || !data.devices || data.devices.length === 0) {
+                if (error || !devices || devices.length === 0) {
                     container.innerHTML = `
                         <div style="text-align: center; padding: 2rem; color: #64748b;">
                             <div style="width: 60px; height: 60px; background: rgba(100, 116, 139, 0.1); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 1rem; font-size: 1.5rem;">
@@ -2287,22 +3737,21 @@
                     `;
                     return;
                 }
-
-                const devices = data.devices;
                 const currentDeviceId = await getDeviceId();
 
                 // Render devices list
                 let html = '';
                 devices.forEach((device, index) => {
                     const isCurrentDevice = device.device_id === currentDeviceId;
-                    const lastSeen = device.lastSeen ? new Date(device.lastSeen) : new Date(device.registeredAt);
+                    const lastSeen = device.last_seen ? new Date(device.last_seen) : new Date(device.created_at);
                     const timeAgo = formatTimeAgo(lastSeen);
 
-                    // Use enhanced device metadata for better display
-                    const deviceType = device.deviceType || 'Unknown';
-                    const deviceName = device.deviceName || `${device.browser || 'Browser'} on ${device.os || 'Unknown'}`;
-                    const fullDescription = device.fullDescription || deviceName;
-                    const timezone = device.timezone || 'Unknown timezone';
+                    // Extract metadata from browser_info JSONB
+                    const browserInfo = device.browser_info || {};
+                    const deviceType = browserInfo.deviceType || 'Unknown';
+                    const deviceName = browserInfo.deviceName || `${browserInfo.browser || 'Browser'} on ${browserInfo.os || 'Unknown'}`;
+                    const fullDescription = browserInfo.fullDescription || deviceName;
+                    const timezone = browserInfo.timezone || 'Unknown timezone';
 
                     // Device icon based on device type (enhanced detection)
                     let deviceIcon = '💻'; // Default laptop
@@ -2390,30 +3839,13 @@
             }
 
             try {
-                const userId = userData.id || userData.email;
-
-                // Fetch current devices
-                const { data, error: fetchError } = await supabaseClient
+                // Delete the device directly
+                const { error: deleteError } = await supabaseClient
                     .from('user_devices')
-                    .select('devices')
-                    .eq('user_id', userId)
-                    .maybeSingle();
+                    .delete()
+                    .eq('device_id', deviceId);
 
-                if (fetchError) throw fetchError;
-
-                // Remove the device
-                const updatedDevices = data.devices.filter(d => d.device_id !== deviceId);
-
-                // Update Supabase
-                const { error: updateError } = await supabaseClient
-                    .from('user_devices')
-                    .update({
-                        devices: updatedDevices,
-                        updated_at: new Date().toISOString()
-                    })
-                    .eq('user_id', userId);
-
-                if (updateError) throw updateError;
+                if (deleteError) throw deleteError;
 
                 // Show success and reload
                 showNotification('Device removed successfully', 'success');
@@ -2546,22 +3978,16 @@
             // API endpoint not implemented yet, using hardcoded value
             STRIPE_PRICE_ID = 'price_1Rzw2LLJKLfllJJD6HPKEDHK'; // LIVE Stripe Price ID
 
-            // Check authentication (with retry for OAuth redirects)
+            // Check authentication (with SINGLE retry for OAuth redirects)
             authToken = localStorage.getItem('tabmangment_token');
             let storedUserData = localStorage.getItem('tabmangment_user');
             let userEmail = null;
 
-            // If no data yet, wait a bit longer (OAuth redirect timing issue)
-            // Retry up to 3 times with increasing delays to handle OAuth persistence
+            // If no data yet, wait ONCE (reduced from 3 retries)
             if (!authToken || !storedUserData) {
-                for (let i = 0; i < 3; i++) {
-                    await new Promise(resolve => setTimeout(resolve, 200 * (i + 1))); // 200ms, 400ms, 600ms
-                    authToken = localStorage.getItem('tabmangment_token');
-                    storedUserData = localStorage.getItem('tabmangment_user');
-                    if (authToken && storedUserData) {
-                        break;
-                    }
-                }
+                await new Promise(resolve => setTimeout(resolve, 300)); // Single 300ms wait
+                authToken = localStorage.getItem('tabmangment_token');
+                storedUserData = localStorage.getItem('tabmangment_user');
             }
 
             if (storedUserData) {
@@ -2599,24 +4025,58 @@
                 const justLoggedOut = sessionStorage.getItem('user_logged_out');
 
                 // REDIRECT LOOP PREVENTION: Check if we just came from auth page
+                const justAuthenticated = sessionStorage.getItem('just_authenticated');
+                const authTimestamp = sessionStorage.getItem('auth_timestamp');
                 const lastRedirectTime = sessionStorage.getItem('auth_last_redirect_time');
                 const now = Date.now();
+                const timeSinceAuth = authTimestamp ? (now - parseInt(authTimestamp)) : 999999;
                 const timeSinceRedirect = lastRedirectTime ? (now - parseInt(lastRedirectTime)) : 999999;
 
-                // If we were redirected from auth less than 3 seconds ago, DON'T redirect back
-                // This prevents infinite loops
-                if (timeSinceRedirect < 3000) {
-                    console.warn('Recently redirected from auth - not redirecting back to prevent loop');
-                    console.warn('User needs to manually login or clear localStorage');
-                    return;
-                }
+                // If we JUST authenticated (< 5 seconds) but localStorage is empty,
+                // it's a timing/cache issue - wait and retry instead of redirecting
+                if (justAuthenticated === 'true' && timeSinceAuth < 5000) {
+                    // Just authenticated but localStorage not ready - waiting...
+                    // Wait 200ms and try again (reduced for faster loading)
+                    await new Promise(resolve => setTimeout(resolve, 200));
+                    authToken = localStorage.getItem('tabmangment_token');
+                    storedUserData = localStorage.getItem('tabmangment_user');
 
-                if (!justLoggedOut) {
+                    if (authToken && storedUserData) {
+                        // Auth data loaded after waiting
+                        // Clear the flag and continue initialization
+                        sessionStorage.removeItem('just_authenticated');
+                        const parsedData = JSON.parse(storedUserData);
+                        userEmail = parsedData.email;
+                        if (parsedData.id) userData.id = parsedData.id;
+                        if (parsedData.avatar) userData.avatarUrl = parsedData.avatar;
+                        if (parsedData.provider) userData.provider = parsedData.provider;
+                        if (parsedData.name) userData.name = parsedData.name;
+                        if (parsedData.deletionScheduledAt) userData.deletionScheduledAt = parsedData.deletionScheduledAt;
+                        // Don't return - continue with initialization below
+                    } else {
+                        // Auth data still not available after waiting - localStorage may be broken
+                        sessionStorage.removeItem('just_authenticated');
+                        return; // Stay on page, show error
+                    }
+                } else if (timeSinceRedirect < 3000) {
+                    // If we were redirected from auth less than 3 seconds ago, DON'T redirect back
+                    // Recently redirected from auth - not redirecting back to prevent loop
+                    // User needs to manually login or clear localStorage
+                    return;
+                } else if (!justLoggedOut) {
                     // Only redirect to login if user didn't intentionally log out
                     // Use replace to prevent back button issues
                     window.location.replace('/new-authentication');
+                    return;
+                } else {
+                    return;
                 }
-                return;
+            }
+
+            // If we reach here with valid auth data, clear the just_authenticated flag
+            if (authToken && userEmail) {
+                sessionStorage.removeItem('just_authenticated');
+                sessionStorage.removeItem('auth_timestamp');
             }
 
             // Auth check passed! Clear any logout flags and redirect counters
@@ -2627,71 +4087,61 @@
             // Load real user data from API
             await loadUserData(userEmail);
 
-            // ============================================
-            // DEVICE VERIFICATION & ANTI-SHARING
-            // ============================================
-
-            // Get or create device ID
-            const deviceId = await getDeviceId();
-
-            // Verify device is authorized
-            const verification = await verifyDevice(userData.id || userEmail, deviceId, userData.isPro);
-
-            if (!verification.authorized) {
-                // Device limit reached - show warning and block access
-                showDeviceLimitWarning(verification.deviceCount, verification.maxDevices, userData.isPro);
-                return; // Stop dashboard initialization
-            }
-
-            // Register/update this device
-            await registerDevice(userData.id || userEmail, deviceId, userData.isPro);
-
-            // ============================================
-
+            // SHOW UI IMMEDIATELY after loading user data
             updateUserDisplay();
             updatePlanDisplay();
-            updateAccountActionButtons(); // Check if account is marked for deletion
+            updateAccountActionButtons();
             initChart();
-            loadUserSettings();
-            loadBillingHistory();
-            loadPaymentMethod();
 
-            // Initialize Smart Dashboard BEFORE waiting for bridge
-            // Smart Dashboard can work independently via content script bridge
-            try {
-                await initSmartDashboard();
-            } catch (error) {
-                // Fallback: try to update name even if Smart Dashboard fails
-                const userNameEl = document.getElementById('user-name-display');
-                if (userNameEl && userData && userData.email) {
-                    const displayName = userData.name || userData.email.split('@')[0];
-                    userNameEl.textContent = displayName;
-                }
-            }
+            // Run non-blocking operations in parallel
+            Promise.all([
+                // Device verification (non-blocking)
+                (async () => {
+                    try {
+                        const deviceId = await getDeviceId();
+                        const verification = await verifyDevice(userData.id || userEmail, deviceId, userData.isPro);
 
-            // Wait for bridge to be ready FIRST before checking payment
-            const isBridgeReady = await waitForBridge(5000);
+                        if (!verification.authorized) {
+                            showDeviceLimitWarning(verification.deviceCount, verification.maxDevices, userData.isPro);
+                        } else {
+                            await registerDevice(userData.id || userEmail, deviceId, userData.isPro);
+                        }
+                    } catch (error) {
+                        console.error('Device verification failed:', error);
+                    }
+                })(),
 
-            if (!isBridgeReady) {
-            } else {
-            }
+                // Load settings and billing in background
+                loadUserSettings(),
+                loadBillingHistory(),
+                loadPaymentMethod(),
 
-            // Check if returning from payment (AFTER bridge is ready)
+                // Initialize Smart Dashboard in background
+                initSmartDashboard().catch(error => {
+                    const userNameEl = document.getElementById('user-name-display');
+                    if (userNameEl && userData && userData.email) {
+                        const displayName = userData.name || userData.email.split('@')[0];
+                        userNameEl.textContent = displayName;
+                    }
+                })
+            ]).catch(err => console.error('Background tasks failed:', err));
+
+            // Check if bridge is ready (don't wait - just check once)
+            const isBridgeReady = window.TABMANGMENT_BRIDGE?.ready || bridgeReady;
+
+            // Check if returning from payment (non-blocking)
             const urlParams = new URLSearchParams(window.location.search);
             const sessionId = urlParams.get('session_id');
             if (sessionId) {
-                await verifyStripeSession(sessionId, userEmail);
+                verifyStripeSession(sessionId, userEmail).catch(err => console.error('Payment verification failed:', err));
             }
 
-            // CRITICAL: Sync Pro status to extension when dashboard loads
-            // This ensures extension storage is updated with current subscription status
-
-            if (bridgeReady && extensionId && userEmail) {
-
+            // Sync Pro status to extension (non-blocking)
+            if (isBridgeReady && extensionId && userEmail) {
                 const storedToken = localStorage.getItem('tabmangment_token');
 
-                // Send SUBSCRIPTION_UPDATE with current Pro status from database
-                await sendMessageToExtension('SUBSCRIPTION_UPDATE', {
+                // Send SUBSCRIPTION_UPDATE (non-blocking)
+                sendMessageToExtension('SUBSCRIPTION_UPDATE', {
                     isPro: userData.isPro,
                     plan: userData.plan,
                     status: userData.subscriptionStatus || 'active',
@@ -2704,11 +4154,9 @@
                         isPro: userData.isPro,
                         currentPeriodEnd: userData.currentPeriodEnd
                     }
-                }).catch(err => {
-                    console.error('Failed to sync Pro status to extension:', err);
-                });
+                }).catch(err => console.error('Extension sync failed:', err));
 
-                // Also send USER_LOGGED_IN for general sync
+                // Send USER_LOGGED_IN
                 window.postMessage({
                     type: 'USER_LOGGED_IN',
                     userData: {
@@ -3029,15 +4477,6 @@
                 `;
             }
 
-            // Enable Auto-Clean Button (Free & Pro)
-            if (!autoCleanEnabled) {
-                html += `
-                    <button onclick="enableAutoCleanNow()" style="padding: 0.875rem 1.5rem; border-radius: 0.875rem; font-size: 0.9375rem; font-weight: 600; cursor: pointer; transition: all 0.2s; border: none; display: flex; align-items: center; gap: 0.5rem; background: rgba(100, 116, 139, 0.2); color: #e2e8f0; border: 1px solid rgba(255, 255, 255, 0.1);">
-                        <span>⚙️</span>
-                        Enable Auto-Clean
-                    </button>
-                `;
-            }
 
             // Pro Feature: Auto-Close Timer (Pro users only)
             if (isPro && autoCleanEnabled) {
@@ -3167,51 +4606,6 @@
         }
 
         // Action: Enable auto-clean
-        async function enableAutoCleanNow() {
-            try {
-                const btn = event.target.closest('button');
-                btn.disabled = true;
-                btn.innerHTML = '<span>⏳</span> Enabling...';
-
-                // Send request via content script bridge
-                window.postMessage({
-                    type: 'DASHBOARD_ENABLE_AUTO_CLEAN',
-                    source: 'tabmangment-dashboard'
-                }, '*');
-
-                // Listen for response
-                const messageHandler = (event) => {
-                    if (event.data.type === 'EXTENSION_AUTO_CLEAN_RESPONSE' && event.data.source === 'tabmangment-extension') {
-                        window.removeEventListener('message', messageHandler);
-
-                        if (event.data.success) {
-                            alert('✅ Auto-clean enabled! Tabs will be managed automatically.');
-                            smartTabsData.autoCleanEnabled = true;
-                            renderSmartSuggestions();
-                        } else {
-                            alert('❌ Extension not available. Please make sure it is installed and enabled.');
-                        }
-                        btn.disabled = false;
-                        btn.innerHTML = '<span>⚙️</span> Enable Auto-Clean';
-                    }
-                };
-
-                window.addEventListener('message', messageHandler);
-
-                // Timeout after 5 seconds
-                setTimeout(() => {
-                    window.removeEventListener('message', messageHandler);
-                    if (btn.disabled) {
-                        btn.disabled = false;
-                        btn.innerHTML = '<span>⚙️</span> Enable Auto-Clean';
-                        alert('❌ Request timed out. Please try again.');
-                    }
-                }, 5000);
-
-            } catch (error) {
-                alert('❌ An error occurred. Please try again.');
-            }
-        }
 
         // Action: Fix Performance (aggressive clean for lagging devices)
         async function fixPerformanceNow() {
@@ -5597,24 +6991,20 @@
 
 
         // Verify Stripe session immediately on return from payment
+        // DISABLED: Using Stripe webhooks → Supabase instead
         async function verifyStripeSession(sessionId, userEmail) {
+            // Session verification disabled - using Stripe webhooks
+
             try {
+                // Just reload user data from Supabase (which was updated by webhook)
+                await loadUserData(userEmail);
 
-                const response = await fetch(`${API_BASE}/verify-session`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        session_id: sessionId
-                    })
-                });
-
-                if (!response.ok) {
-                    throw new Error('Verification failed');
-                }
-
-                const result = await response.json();
+                // Check if user is now Pro
+                const result = {
+                    success: userData.isPro,
+                    paid: userData.isPro,
+                    isPro: userData.isPro
+                };
 
                 if (result.success && result.paid && result.isPro) {
                     // Payment verified and Pro activated!
@@ -5654,7 +7044,7 @@
                                 isPro: true,
                                 currentPeriodEnd: result.currentPeriodEnd
                             }
-                        }).catch(err => console.error('Extension sync failed:', err));
+                        }).catch(err => { /* Extension sync failed */ });
                     }
 
                     return;
@@ -5670,70 +7060,38 @@
         }
 
         // Poll for subscription updates after payment
+        // DISABLED: Using Supabase + Stripe webhooks instead of polling
         async function startSubscriptionPolling(userEmail) {
-            let pollAttempts = 0;
-            const maxAttempts = 60; // Poll for up to 60 seconds (every 1s)
+            // Subscription polling disabled - using Supabase/Stripe webhooks
 
-
-            const pollInterval = setInterval(async () => {
-                pollAttempts++;
-
+            // Just reload user data after a delay to get updated Pro status from Supabase
+            setTimeout(async () => {
                 try {
-                    const response = await fetch(`${API_BASE}/status?email=${encodeURIComponent(userEmail)}`);
-                    if (response.ok) {
-                        const data = await response.json();
+                    await loadUserData(userEmail);
+                    updatePlanDisplay();
 
-                        // Check if plan is now Pro
-                        if (data.active && data.plan === 'pro') {
-                            clearInterval(pollInterval);
-
-
-                            // Update local data
-                            userData.plan = 'pro';
-                            userData.isPro = true;
-                            userData.subscriptionStatus = 'active';
-
-                            // Save to localStorage
-                            localStorage.setItem('tabmangment_user', JSON.stringify(userData));
-
-                            // Update display
-                            updatePlanDisplay();
-
-                            // Notify extension to refresh plan - WITH USER DATA
-                            if (bridgeReady && extensionId) {
-                                await sendMessageToExtension('SUBSCRIPTION_UPDATE', {
-                                    plan: 'pro',
-                                    isPro: true,
-                                    status: 'active',
-                                    user: {
-                                        email: userEmail,
-                                        plan: 'pro',
-                                        isPro: true
-                                    }
-                                });
-
-                                // DON'T call CHECK_USER_PLAN - storage is source of truth
-                                // The SUBSCRIPTION_UPDATE above already set Pro status in storage
+                    // Notify extension of potential subscription update
+                    if (bridgeReady && extensionId) {
+                        await sendMessageToExtension('SUBSCRIPTION_UPDATE', {
+                            plan: userData.plan || 'free',
+                            isPro: userData.isPro || false,
+                            status: userData.subscriptionStatus || 'inactive',
+                            user: {
+                                email: userEmail,
+                                plan: userData.plan || 'free',
+                                isPro: userData.isPro || false
                             }
+                        });
+                    }
 
-                            // Reload user data from API
-                            await loadUserData(userEmail);
-
-                            // Remove session_id from URL
-                            window.history.replaceState({}, document.title, window.location.pathname);
-                            return;
-                        }
+                    // Remove session_id from URL if present
+                    if (window.location.search.includes('session_id')) {
+                        window.history.replaceState({}, document.title, window.location.pathname);
                     }
                 } catch (error) {
+                    // Error refreshing user data
                 }
-
-                // Stop polling after max attempts
-                if (pollAttempts >= maxAttempts) {
-                    clearInterval(pollInterval);
-                    // Force reload to get fresh data
-                    setTimeout(() => window.location.reload(), 2000);
-                }
-            }, 1000);
+            }, 3000); // Wait 3 seconds for webhook to process
         }
 
         // Close modal on outside click
@@ -5832,6 +7190,1290 @@
         //         updateStats(message.data);
         //     }
         // });
+
+        // ========== THEMES FUNCTIONALITY ==========
+
+        // Preset themes configuration
+        const presetThemes = {
+            // ========== FREE THEMES (10) ==========
+            lightMinimal: {
+                name: 'Light Minimal',
+                primaryColor: '#4A90E2',
+                secondaryColor: '#F2F2F2',
+                backgroundColor: '#FFFFFF',
+                textColor: '#333333',
+                fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
+                fontSize: '14px',
+                gradientDirection: '135deg',
+                animationsEnabled: true,
+                animationStyle: 'fade',
+                animationSpeed: '300ms',
+                isPro: false
+            },
+            darkSlate: {
+                name: 'Dark Slate',
+                primaryColor: '#2C2C2C',
+                secondaryColor: '#3A8DFF',
+                backgroundColor: '#1E1E1E',
+                textColor: '#FFFFFF',
+                fontFamily: "'Roboto', 'Helvetica Neue', Arial, sans-serif",
+                fontSize: '14px',
+                gradientDirection: '135deg',
+                animationsEnabled: true,
+                animationStyle: 'slide',
+                animationSpeed: '300ms',
+                isPro: false
+            },
+            softPastel: {
+                name: 'Soft Pastel',
+                primaryColor: '#A8E6CF',
+                secondaryColor: '#FF8C94',
+                backgroundColor: '#FFF7F0',
+                textColor: '#2D2D2D',
+                fontFamily: "'Poppins', -apple-system, BlinkMacSystemFont, sans-serif",
+                fontSize: '14px',
+                gradientDirection: '135deg',
+                animationsEnabled: true,
+                animationStyle: 'fade',
+                animationSpeed: '300ms',
+                isPro: false
+            },
+            neoClean: {
+                name: 'Neo Clean',
+                primaryColor: '#87CEFA',
+                secondaryColor: '#4A90E2',
+                backgroundColor: '#FAFAFA',
+                textColor: '#1C1C1C',
+                fontFamily: "'Helvetica Neue', Helvetica, Arial, sans-serif",
+                fontSize: '14px',
+                gradientDirection: '135deg',
+                animationsEnabled: true,
+                animationStyle: 'zoom',
+                animationSpeed: '300ms',
+                isPro: false
+            },
+            ecoGreen: {
+                name: 'Eco Green',
+                primaryColor: '#2E7D32',
+                secondaryColor: '#AEEA00',
+                backgroundColor: '#FDF6E3',
+                textColor: '#1B1B1B',
+                fontFamily: "'Lato', 'Helvetica Neue', Arial, sans-serif",
+                fontSize: '14px',
+                gradientDirection: '135deg',
+                animationsEnabled: true,
+                animationStyle: 'fade',
+                animationSpeed: '300ms',
+                isPro: false
+            },
+            softGray: {
+                name: 'Soft Gray',
+                primaryColor: '#D9D9D9',
+                secondaryColor: '#A0A0A0',
+                backgroundColor: '#F7F7F7',
+                textColor: '#1A1A1A',
+                fontFamily: "'Nunito', -apple-system, BlinkMacSystemFont, sans-serif",
+                fontSize: '14px',
+                gradientDirection: '135deg',
+                animationsEnabled: true,
+                animationStyle: 'fade',
+                animationSpeed: '300ms',
+                isPro: false
+            },
+            sunnyDay: {
+                name: 'Sunny Day',
+                primaryColor: '#FFD966',
+                secondaryColor: '#FFB74D',
+                backgroundColor: '#FFF8E7',
+                textColor: '#2B2B2B',
+                fontFamily: "'Open Sans', 'Helvetica Neue', Arial, sans-serif",
+                fontSize: '14px',
+                gradientDirection: '135deg',
+                animationsEnabled: true,
+                animationStyle: 'slide',
+                animationSpeed: '300ms',
+                isPro: false
+            },
+            coolBlue: {
+                name: 'Cool Blue',
+                primaryColor: '#CCE0FF',
+                secondaryColor: '#4A90E2',
+                backgroundColor: '#E6F0FA',
+                textColor: '#1C1C1C',
+                fontFamily: "'Roboto', 'Helvetica Neue', Arial, sans-serif",
+                fontSize: '14px',
+                gradientDirection: '135deg',
+                animationsEnabled: true,
+                animationStyle: 'fade',
+                animationSpeed: '300ms',
+                isPro: false
+            },
+            mutedEarth: {
+                name: 'Muted Earth',
+                primaryColor: '#C4B99A',
+                secondaryColor: '#8C715B',
+                backgroundColor: '#F3EFE0',
+                textColor: '#2B2B2B',
+                fontFamily: "'Lato', 'Helvetica Neue', Arial, sans-serif",
+                fontSize: '14px',
+                gradientDirection: '135deg',
+                animationsEnabled: true,
+                animationStyle: 'fade',
+                animationSpeed: '300ms',
+                isPro: false
+            },
+            gentleLavender: {
+                name: 'Gentle Lavender',
+                primaryColor: '#D3C4FF',
+                secondaryColor: '#A077FF',
+                backgroundColor: '#F6F3FF',
+                textColor: '#1C1C1C',
+                fontFamily: "'Poppins', -apple-system, BlinkMacSystemFont, sans-serif",
+                fontSize: '14px',
+                gradientDirection: '135deg',
+                animationsEnabled: true,
+                animationStyle: 'fade',
+                animationSpeed: '300ms',
+                isPro: false
+            },
+
+            // ========== PRO THEMES (10) ==========
+            oceanicPro: {
+                name: 'Oceanic Pro',
+                primaryColor: '#001F3F',
+                secondaryColor: '#00BFA6',
+                backgroundColor: '#001F3F',
+                textColor: '#FFFFFF',
+                accentColor: '#FF6F61',
+                fontFamily: "'SF Pro Display', -apple-system, BlinkMacSystemFont, sans-serif",
+                fontSize: '14px',
+                gradientDirection: '135deg',
+                animationsEnabled: true,
+                animationStyle: 'fade',
+                animationSpeed: '300ms',
+                isPro: true
+            },
+            sunsetGlowPro: {
+                name: 'Sunset Glow Pro',
+                primaryColor: '#2D004B',
+                secondaryColor: '#FF2D95',
+                backgroundColor: '#2D004B',
+                textColor: '#FAFAFA',
+                accentColor: '#FF9A3C',
+                fontFamily: "'Montserrat', 'Helvetica Neue', Arial, sans-serif",
+                fontSize: '14px',
+                gradientDirection: '45deg',
+                animationsEnabled: true,
+                animationStyle: 'slide',
+                animationSpeed: '300ms',
+                isPro: true
+            },
+            techMetallicPro: {
+                name: 'Tech Metallic Pro',
+                primaryColor: '#2B2B2B',
+                secondaryColor: '#C0C0C0',
+                backgroundColor: '#2B2B2B',
+                textColor: '#FFFFFF',
+                accentColor: '#1E90FF',
+                fontFamily: "'Futura', 'Helvetica Neue', Arial, sans-serif",
+                fontSize: '14px',
+                gradientDirection: '135deg',
+                animationsEnabled: true,
+                animationStyle: 'zoom',
+                animationSpeed: '300ms',
+                isPro: true
+            },
+            auroraPro: {
+                name: 'Aurora Pro',
+                primaryColor: '#0B0033',
+                secondaryColor: '#1B00FF',
+                backgroundColor: '#0B0033',
+                textColor: '#FFFFFF',
+                accentColor: '#00FFE6',
+                fontFamily: "'Helvetica Neue', Helvetica, Arial, sans-serif",
+                fontSize: '14px',
+                gradientDirection: '180deg',
+                animationsEnabled: true,
+                animationStyle: 'fade',
+                animationSpeed: '300ms',
+                isPro: true
+            },
+            vibrantCoralPro: {
+                name: 'Vibrant Coral Pro',
+                primaryColor: '#FF6B6B',
+                secondaryColor: '#FFD93D',
+                backgroundColor: '#FFFAF0',
+                textColor: '#1C1C1C',
+                fontFamily: "'Poppins', -apple-system, BlinkMacSystemFont, sans-serif",
+                fontSize: '14px',
+                gradientDirection: '135deg',
+                animationsEnabled: true,
+                animationStyle: 'slide',
+                animationSpeed: '300ms',
+                isPro: true
+            },
+            galaxyPro: {
+                name: 'Galaxy Pro',
+                primaryColor: '#0A0A0A',
+                secondaryColor: '#8C30FF',
+                backgroundColor: '#0A0A0A',
+                textColor: '#FFFFFF',
+                accentColor: '#3D2C8D',
+                fontFamily: "'Roboto', 'Helvetica Neue', Arial, sans-serif",
+                fontSize: '14px',
+                gradientDirection: '135deg',
+                animationsEnabled: true,
+                animationStyle: 'zoom',
+                animationSpeed: '300ms',
+                isPro: true
+            },
+            cyberNeonPro: {
+                name: 'Cyber Neon Pro',
+                primaryColor: '#00FFFC',
+                secondaryColor: '#FF00FC',
+                backgroundColor: '#0F0F0F',
+                textColor: '#FFFFFF',
+                fontFamily: "'SF Pro Display', -apple-system, BlinkMacSystemFont, sans-serif",
+                fontSize: '14px',
+                gradientDirection: '45deg',
+                animationsEnabled: true,
+                animationStyle: 'slide',
+                animationSpeed: '300ms',
+                isPro: true
+            },
+            goldenHourPro: {
+                name: 'Golden Hour Pro',
+                primaryColor: '#2E1E00',
+                secondaryColor: '#FFD166',
+                backgroundColor: '#2E1E00',
+                textColor: '#FFFFFF',
+                accentColor: '#FFB400',
+                fontFamily: "'Montserrat', 'Helvetica Neue', Arial, sans-serif",
+                fontSize: '14px',
+                gradientDirection: '90deg',
+                animationsEnabled: true,
+                animationStyle: 'fade',
+                animationSpeed: '300ms',
+                isPro: true
+            },
+            iceCrystalPro: {
+                name: 'Ice Crystal Pro',
+                primaryColor: '#E0F7FA',
+                secondaryColor: '#00B0FF',
+                backgroundColor: '#E0F7FA',
+                textColor: '#1C1C1C',
+                accentColor: '#81D4FA',
+                fontFamily: "'Lato', 'Helvetica Neue', Arial, sans-serif",
+                fontSize: '14px',
+                gradientDirection: '135deg',
+                animationsEnabled: true,
+                animationStyle: 'fade',
+                animationSpeed: '300ms',
+                isPro: true
+            },
+            midnightVioletPro: {
+                name: 'Midnight Violet Pro',
+                primaryColor: '#1C0033',
+                secondaryColor: '#AA33FF',
+                backgroundColor: '#1C0033',
+                textColor: '#FFFFFF',
+                accentColor: '#5D00FF',
+                fontFamily: "'Nunito', -apple-system, BlinkMacSystemFont, sans-serif",
+                fontSize: '14px',
+                gradientDirection: 'radial',
+                animationsEnabled: true,
+                animationStyle: 'zoom',
+                animationSpeed: '300ms',
+                isPro: true
+            }
+        };
+
+        // Dynamic Theme Card Generation
+        function renderThemeCards() {
+            const themesGrid = document.getElementById('themes-grid');
+            if (!themesGrid) return;
+
+            themesGrid.innerHTML = ''; // Clear existing cards
+
+            // Get descriptions for themes
+            const themeDescriptions = {
+                lightMinimal: 'Clean and minimal design with modern Inter font',
+                darkSlate: 'Professional dark theme with Roboto typography',
+                softPastel: 'Soft pastel colors for a gentle, calming experience',
+                neoClean: 'Neo-minimalist design with Helvetica Neue',
+                ecoGreen: 'Nature-inspired green theme with Lato font',
+                softGray: 'Elegant gray tones with Nunito typography',
+                sunnyDay: 'Bright and cheerful yellow theme with Open Sans',
+                coolBlue: 'Cool blue tones for a refreshing look',
+                mutedEarth: 'Warm earth tones for a grounded feel',
+                gentleLavender: 'Soft lavender hues with Poppins font',
+                oceanicPro: 'Deep oceanic blue with turquoise accents - Premium',
+                sunsetGlowPro: 'Vibrant coral and orange sunset gradient - Premium',
+                techMetallicPro: 'Futuristic metallic silver design - Premium',
+                auroraPro: 'Mystical aurora borealis colors - Premium',
+                vibrantCoralPro: 'Bold coral pink with turquoise pop - Premium',
+                galaxyPro: 'Deep space-inspired purple galaxy - Premium',
+                cyberNeonPro: 'Neon cyberpunk aesthetic - Premium',
+                goldenHourPro: 'Warm golden hour gradient - Premium',
+                iceCrystalPro: 'Cool icy blue with crystal highlights - Premium',
+                midnightVioletPro: 'Deep midnight violet radial gradient - Premium'
+            };
+
+            // Render each theme card
+            Object.entries(presetThemes).forEach(([themeKey, theme]) => {
+                const card = document.createElement('div');
+                card.className = 'theme-card';
+                card.dataset.theme = themeKey;
+
+                // Determine gradient style based on gradientDirection
+                let gradientStyle;
+                if (theme.gradientDirection === 'radial') {
+                    gradientStyle = `radial-gradient(circle, ${theme.primaryColor} 0%, ${theme.secondaryColor} 100%)`;
+                } else {
+                    gradientStyle = `linear-gradient(${theme.gradientDirection}, ${theme.primaryColor} 0%, ${theme.secondaryColor} 100%)`;
+                }
+
+                card.innerHTML = `
+                    <div class="theme-preview" style="background: ${gradientStyle};">
+                        <div class="theme-preview-header">
+                            <div class="theme-preview-logo"></div>
+                            <div class="theme-preview-buttons">
+                                <div class="theme-preview-btn"></div>
+                                <div class="theme-preview-btn"></div>
+                            </div>
+                        </div>
+                        <div class="theme-preview-stats">
+                            <div class="theme-preview-stat"></div>
+                            <div class="theme-preview-stat"></div>
+                        </div>
+                        <div class="theme-preview-tabs">
+                            <div class="theme-preview-tab"></div>
+                            <div class="theme-preview-tab"></div>
+                        </div>
+                    </div>
+                    <div class="theme-card-info">
+                        <div class="theme-card-header">
+                            <h3 class="theme-card-title">${theme.name}</h3>
+                            ${theme.isPro ? '<span class="theme-badge" style="background: linear-gradient(135deg, rgba(251, 191, 36, 0.2), rgba(245, 158, 11, 0.2)); color: #fbbf24; border-color: rgba(251, 191, 36, 0.3); display: inline-block;">PRO</span>' : ''}
+                            <span class="theme-badge active-theme" style="display: none;">Active</span>
+                        </div>
+                        <p class="theme-card-description">${themeDescriptions[themeKey] || theme.fontFamily.split(',')[0].replace(/['"]/g, '')}</p>
+                        <button class="theme-apply-btn" onclick="handleThemeApplication('${themeKey}')">
+                            <i data-feather="check"></i>
+                            Apply Theme
+                        </button>
+                    </div>
+                `;
+
+                themesGrid.appendChild(card);
+            });
+
+            // Re-initialize feather icons
+            if (typeof feather !== 'undefined') {
+                feather.replace();
+            }
+
+            // Load and mark active theme
+            loadActiveTheme();
+        }
+
+        // Handle theme application with Pro gating
+        function handleThemeApplication(themeName) {
+            const theme = presetThemes[themeName];
+
+            // TESTING MODE: Pro gating disabled for all themes
+            // if (theme.isPro && !userData.isPro) {
+            //     showUpgradeModal(
+            //         'Premium Theme',
+            //         `The "${theme.name}" theme is a premium feature. Upgrade to Pro to unlock all premium themes!`,
+            //         'Unlock Premium Themes'
+            //     );
+            //     return;
+            // }
+
+            // Apply the theme
+            applyTheme(themeName);
+        }
+
+        // Theme tab switching
+        document.querySelectorAll('.theme-tab-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                // TESTING MODE: Pro gating disabled for custom themes
+                // if (this.dataset.tab === 'custom' && !userData.isPro) {
+                //     showCustomThemeProGate();
+                //     return;
+                // }
+
+                // Switch tabs
+                document.querySelectorAll('.theme-tab-btn').forEach(b => b.classList.remove('active'));
+                document.querySelectorAll('.theme-tab-content').forEach(c => c.classList.remove('active'));
+
+                this.classList.add('active');
+                document.getElementById(`${this.dataset.tab}-themes-tab`).classList.add('active');
+            });
+        });
+
+        // Show/Hide Pro gate for custom themes
+        function showCustomThemeProGate() {
+            const proGate = document.getElementById('custom-theme-pro-gate');
+            const editor = document.getElementById('custom-theme-editor');
+            if (proGate && editor) {
+                proGate.style.display = 'flex';
+                editor.style.filter = 'blur(8px)';
+                editor.style.pointerEvents = 'none';
+            }
+        }
+
+        function closeCustomThemeEditor() {
+            // Switch back to preset themes tab
+            document.querySelectorAll('.theme-tab-btn').forEach(b => b.classList.remove('active'));
+            document.querySelectorAll('.theme-tab-content').forEach(c => c.classList.remove('active'));
+
+            document.querySelector('.theme-tab-btn[data-tab="preset"]').classList.add('active');
+            document.getElementById('preset-themes-tab').classList.add('active');
+        }
+
+        // Initialize Pro state for custom themes
+        function initializeThemesPage() {
+            // Render theme cards dynamically
+            renderThemeCards();
+
+            // TESTING MODE: Always show custom theme editor (Pro gating disabled)
+            const proGate = document.getElementById('custom-theme-pro-gate');
+            const editor = document.getElementById('custom-theme-editor');
+            if (proGate && editor) {
+                proGate.style.display = 'none';
+                editor.style.filter = 'none';
+                editor.style.pointerEvents = 'auto';
+            }
+
+            // Initialize theme builder tabs
+            initThemeBuilderTabs();
+
+            // Load saved draft theme if exists (auto-restore)
+            loadCustomThemeDraft();
+
+            // Load and display active theme (also called by renderThemeCards, but safe to call twice)
+            loadActiveTheme();
+
+            // Load saved custom themes
+            loadSavedCustomThemes();
+        }
+
+        // Load custom theme draft from localStorage
+        async function loadCustomThemeDraft() {
+            try {
+                const draftData = await getThemeDraft();
+                if (draftData && draftData.draft_data) {
+                    const draft = draftData.draft_data;
+
+                    // Restore color values with null checks
+                    const primaryInput = document.getElementById('custom-color-primary');
+                    const accentInput = document.getElementById('custom-color-accent');
+                    const textInput = document.getElementById('custom-color-text');
+                    const secondaryInput = document.getElementById('custom-color-secondary');
+
+                    if (draft.primaryColor && primaryInput) primaryInput.value = draft.primaryColor;
+                    if (draft.accentColor && accentInput) accentInput.value = draft.accentColor;
+                    if (draft.textColor && textInput) textInput.value = draft.textColor;
+                    if (draft.secondaryColor && secondaryInput) secondaryInput.value = draft.secondaryColor;
+
+                    // Restore typography values with null checks
+                    const fontFamilySelect = document.getElementById('custom-font-family');
+                    const fontSizeInput = document.getElementById('custom-font-size');
+
+                    if (draft.fontFamily && fontFamilySelect) fontFamilySelect.value = draft.fontFamily;
+                    if (draft.fontSize && fontSizeInput) fontSizeInput.value = parseInt(draft.fontSize);
+
+                    // Restore background settings with null checks
+                    const bgTypeSelect = document.getElementById('custom-bg-type');
+                    const enableGradientCheckbox = document.getElementById('enable-gradient');
+
+                    if (draft.bgType && bgTypeSelect) bgTypeSelect.value = draft.bgType;
+                    if (draft.enableGradient !== undefined && enableGradientCheckbox) enableGradientCheckbox.checked = draft.enableGradient;
+
+                    // Restore animation settings with null checks
+                    const animationStyleSelect = document.getElementById('custom-animation-style');
+                    const animationSpeedInput = document.getElementById('custom-animation-speed');
+
+                    if (draft.animationStyle && animationStyleSelect) animationStyleSelect.value = draft.animationStyle;
+                    if (draft.animationSpeed && animationSpeedInput) animationSpeedInput.value = parseInt(draft.animationSpeed);
+
+                    // Update preview with restored values
+                    toggleSecondaryColor();
+                    updateCustomThemePreview();
+                }
+            } catch (error) {
+                // No custom theme draft found or error loading
+            }
+        }
+
+        // Load active theme and mark it
+        async function loadActiveTheme() {
+            try {
+                const prefs = await getUserPreferences();
+                let themeName = prefs?.active_theme || 'lightMinimal';
+
+                // If stored theme doesn't exist (old theme name), fall back to lightMinimal
+                if (!presetThemes[themeName] && themeName !== 'custom') {
+                    themeName = 'lightMinimal';
+                    await saveActiveTheme(themeName);
+                }
+
+                // Mark the active theme
+                document.querySelectorAll('.theme-card').forEach(card => {
+                    const badge = card.querySelector('.active-theme');
+                    if (card.dataset.theme === themeName) {
+                        badge.style.display = 'block';
+                    } else {
+                        badge.style.display = 'none';
+                    }
+                });
+            } catch (error) {
+                // Error loading active theme
+            }
+        }
+
+        // Send theme to extension
+        function sendThemeToExtension(themeName, themeConfig) {
+            // Get extension ID
+            const storedExtId = localStorage.getItem('detectedExtensionId');
+
+            if (storedExtId && typeof chrome !== 'undefined' && chrome.runtime) {
+                chrome.runtime.sendMessage(storedExtId, {
+                    type: 'THEME_UPDATE',
+                    themeName: themeName,
+                    themeConfig: themeConfig
+                }, (response) => {
+                    if (chrome.runtime.lastError) {
+                        // Extension not available for theme sync
+                    }
+                });
+            }
+        }
+
+        // Apply preset theme
+        function applyTheme(themeName) {
+            const theme = presetThemes[themeName];
+            if (!theme) {
+                // Theme not found
+                return;
+            }
+
+            try {
+                // Save theme to localStorage (for dashboard preview)
+                localStorage.setItem('activeTheme', themeName);
+                localStorage.setItem('themeConfig', JSON.stringify(theme));
+
+                // Send theme to extension via content script bridge
+                window.postMessage({
+                    type: 'DASHBOARD_APPLY_THEME',
+                    source: 'tabmangment-dashboard',
+                    themeName: themeName,
+                    themeConfig: theme
+                }, '*');
+
+                // Update UI to show active theme
+                loadActiveTheme();
+
+                // Show success message
+                showNotification(`${theme.name} theme applied successfully!`, 'success');
+
+                // Theme sent to extension
+            } catch (error) {
+                // Error applying theme
+                showNotification('Failed to apply theme. Please try again.', 'error');
+            }
+        }
+
+        // Custom Theme Studio Modal Functions
+        function openCustomThemeStudio() {
+            const modal = document.getElementById('custom-theme-studio-modal');
+            if (modal) {
+                modal.style.display = 'block';
+                document.body.style.overflow = 'hidden'; // Prevent background scrolling
+
+                // Load any existing draft or reset to defaults
+                loadCustomThemeDraft();
+                updateCustomThemePreview();
+            }
+        }
+
+        function closeCustomThemeStudio() {
+            const modal = document.getElementById('custom-theme-studio-modal');
+            if (modal) {
+                modal.style.display = 'none';
+                document.body.style.overflow = 'auto'; // Restore scrolling
+            }
+        }
+
+        // NEW: Theme Builder Tab Switching
+        function initThemeBuilderTabs() {
+            const tabButtons = document.querySelectorAll('.theme-control-tab');
+            const tabPanels = document.querySelectorAll('.theme-control-panel');
+
+            tabButtons.forEach(button => {
+                button.addEventListener('click', () => {
+                    const tabName = button.dataset.tab;
+
+                    // Update buttons
+                    tabButtons.forEach(btn => {
+                        if (btn.dataset.tab === tabName) {
+                            btn.style.background = '#6366f1';
+                            btn.style.color = 'white';
+                            btn.classList.add('active');
+                        } else {
+                            btn.style.background = 'transparent';
+                            btn.style.color = '#94a3b8';
+                            btn.classList.remove('active');
+                        }
+                    });
+
+                    // Update panels
+                    tabPanels.forEach(panel => {
+                        if (panel.dataset.panel === tabName) {
+                            panel.style.display = 'block';
+                            panel.classList.add('active');
+                        } else {
+                            panel.style.display = 'none';
+                            panel.classList.remove('active');
+                        }
+                    });
+                });
+            });
+        }
+
+        // NEW: Background Type Selection
+        function selectBgType(type) {
+            document.getElementById('custom-bg-type').value = type;
+
+            // Update button styles
+            const buttons = {
+                'gradient': document.getElementById('bg-gradient'),
+                'solid': document.getElementById('bg-solid'),
+                'pattern': document.getElementById('bg-pattern')
+            };
+
+            Object.keys(buttons).forEach(key => {
+                if (key === type) {
+                    buttons[key].style.borderColor = '#6366f1';
+                    buttons[key].style.borderWidth = '3px';
+                    const activeLabel = buttons[key].querySelector('div');
+                    if (activeLabel) activeLabel.style.display = 'block';
+                    else {
+                        const label = document.createElement('div');
+                        label.style.cssText = 'position: absolute; top: 0.5rem; right: 0.5rem; background: white; color: #6366f1; padding: 0.25rem 0.5rem; border-radius: 0.375rem; font-size: 0.625rem; font-weight: 700;';
+                        label.textContent = 'ACTIVE';
+                        buttons[key].appendChild(label);
+                    }
+                } else {
+                    buttons[key].style.borderColor = '#334155';
+                    buttons[key].style.borderWidth = '3px';
+                    const activeLabel = buttons[key].querySelector('div');
+                    if (activeLabel) activeLabel.style.display = 'none';
+                }
+            });
+
+            updateCustomThemePreview();
+        }
+
+        // NEW: Apply Color Preset
+        function applyColorPreset(primary, secondary) {
+            document.getElementById('custom-color-primary').value = primary;
+            document.getElementById('custom-color-primary-text').value = primary;
+            document.getElementById('custom-color-secondary').value = secondary;
+            document.getElementById('custom-color-secondary-text').value = secondary;
+            updateCustomThemePreview();
+
+            // Show feedback
+            showNotification('Color preset applied!', 'success');
+        }
+
+        // Toggle secondary color visibility based on background type
+        function toggleSecondaryColor() {
+            const bgType = document.getElementById('custom-bg-type')?.value;
+            const enableGradient = document.getElementById('enable-gradient')?.checked;
+            const secondaryContainer = document.getElementById('secondary-color-container');
+            const gradientOptions = document.getElementById('gradient-options');
+
+            if (secondaryContainer) {
+                // Show secondary color only if gradient/radial AND checkbox is enabled
+                if ((bgType === 'gradient' || bgType === 'radial') && enableGradient) {
+                    secondaryContainer.style.display = 'block';
+                } else {
+                    secondaryContainer.style.display = 'none';
+                }
+            }
+
+            // Show/hide gradient options based on background type
+            if (gradientOptions) {
+                if (bgType === 'gradient' || bgType === 'radial') {
+                    gradientOptions.style.display = 'block';
+                } else {
+                    gradientOptions.style.display = 'none';
+                }
+            }
+        }
+
+        // Custom theme preview update with auto-save
+        let autoSaveTimeout = null;
+        function updateCustomThemePreview() {
+            // Get all color values
+            const primaryColor = document.getElementById('custom-color-primary')?.value || '#667eea';
+            const accentColor = document.getElementById('custom-color-accent')?.value || '#8b5cf6';
+            const textColor = document.getElementById('custom-color-text')?.value || '#ffffff';
+            const secondaryColor = document.getElementById('custom-color-secondary')?.value || '#764ba2';
+
+            // Get typography values
+            const fontFamily = document.getElementById('custom-font-family')?.value || 'system-ui';
+            const fontSize = document.getElementById('custom-font-size')?.value || '14';
+
+            // Get background settings
+            const bgType = document.getElementById('custom-bg-type')?.value || 'gradient';
+            const enableGradient = document.getElementById('enable-gradient')?.checked ?? true;
+
+            // Get animation settings
+            const animationSpeed = document.getElementById('custom-animation-speed')?.value || '250';
+            const animationStyle = document.getElementById('custom-animation-style')?.value || 'fade';
+
+            // Update preview background
+            const preview = document.getElementById('custom-theme-preview');
+            if (preview) {
+                // Clear all background properties first
+                preview.style.backgroundImage = '';
+                preview.style.backgroundColor = '';
+
+                if (bgType === 'gradient' && enableGradient) {
+                    preview.style.backgroundImage = `linear-gradient(135deg, ${primaryColor} 0%, ${secondaryColor} 100%)`;
+                } else if (bgType === 'radial' && enableGradient) {
+                    preview.style.backgroundImage = `radial-gradient(circle at top left, ${primaryColor} 0%, ${secondaryColor} 100%)`;
+                } else if (bgType === 'solid') {
+                    preview.style.backgroundColor = primaryColor;
+                } else if (bgType === 'pattern') {
+                    preview.style.backgroundColor = primaryColor;
+                    preview.style.backgroundImage = `radial-gradient(circle, rgba(255,255,255,0.1) 1px, transparent 1px)`;
+                    preview.style.backgroundSize = '20px 20px';
+                } else {
+                    // Fallback to primary color
+                    preview.style.backgroundColor = primaryColor;
+                }
+            }
+
+            // Update font demo and all text elements
+            const fontDemo = document.getElementById('preview-font-demo');
+            if (fontDemo) {
+                fontDemo.style.fontFamily = fontFamily;
+                fontDemo.style.fontSize = fontSize + 'px';
+                fontDemo.style.color = textColor;
+            }
+
+            // Update all text elements in preview
+            const previewTexts = preview?.querySelectorAll('[data-preview-text]');
+            if (previewTexts) {
+                previewTexts.forEach(el => {
+                    el.style.fontFamily = fontFamily;
+                });
+            }
+
+            // Update tab title and URL colors and font sizes
+            const tabTitles = preview?.querySelectorAll('.preview-tab-title');
+            const tabUrls = preview?.querySelectorAll('.preview-tab-url');
+
+            if (tabTitles) {
+                tabTitles.forEach(el => {
+                    el.style.color = textColor;
+                    el.style.fontSize = (parseInt(fontSize) - 1) + 'px'; // Slightly smaller than main font
+                });
+            }
+
+            if (tabUrls) {
+                tabUrls.forEach(el => {
+                    el.style.color = textColor;
+                    el.style.fontSize = (parseInt(fontSize) - 2) + 'px'; // Even smaller for URLs
+                });
+            }
+
+            // Update value displays
+            const fontSizeDisplay = document.getElementById('font-size-value');
+            const animSpeedDisplay = document.getElementById('animation-speed-value');
+            if (fontSizeDisplay) fontSizeDisplay.textContent = fontSize + 'px';
+            if (animSpeedDisplay) animSpeedDisplay.textContent = animationSpeed + 'ms';
+
+            // Sync color text inputs with color picker values
+            const primaryTextInput = document.getElementById('custom-color-primary-text');
+            const accentTextInput = document.getElementById('custom-color-accent-text');
+            const textColorInput = document.getElementById('custom-color-text-input');
+            const secondaryTextInput = document.getElementById('custom-color-secondary-text');
+
+            if (primaryTextInput && document.activeElement !== primaryTextInput) {
+                primaryTextInput.value = primaryColor;
+            }
+            if (accentTextInput && document.activeElement !== accentTextInput) {
+                accentTextInput.value = accentColor;
+            }
+            if (textColorInput && document.activeElement !== textColorInput) {
+                textColorInput.value = textColor;
+            }
+            if (secondaryTextInput && document.activeElement !== secondaryTextInput) {
+                secondaryTextInput.value = secondaryColor;
+            }
+
+            // Sync color picker with text input (when user types hex)
+            const primaryColorPicker = document.getElementById('custom-color-primary');
+            const accentColorPicker = document.getElementById('custom-color-accent');
+            const textColorPicker = document.getElementById('custom-color-text');
+            const secondaryColorPicker = document.getElementById('custom-color-secondary');
+
+            if (primaryColorPicker && document.activeElement === primaryTextInput) {
+                primaryColorPicker.value = primaryColor;
+            }
+            if (accentColorPicker && document.activeElement === accentTextInput) {
+                accentColorPicker.value = accentColor;
+            }
+            if (textColorPicker && document.activeElement === textColorInput) {
+                textColorPicker.value = textColor;
+            }
+            if (secondaryColorPicker && document.activeElement === secondaryTextInput) {
+                secondaryColorPicker.value = secondaryColor;
+            }
+
+            // AUTO-SAVE: Save draft theme to localStorage after user stops changing (debounced)
+            clearTimeout(autoSaveTimeout);
+            autoSaveTimeout = setTimeout(() => {
+                const draftTheme = {
+                    primaryColor,
+                    accentColor,
+                    textColor,
+                    secondaryColor,
+                    fontFamily,
+                    fontSize: fontSize + 'px',
+                    bgType,
+                    enableGradient,
+                    animationStyle,
+                    animationSpeed: animationSpeed + 'ms',
+                    lastSaved: new Date().toISOString()
+                };
+                localStorage.setItem('customThemeDraft', JSON.stringify(draftTheme));
+                // Auto-saved custom theme draft
+            }, 1000); // Auto-save after 1 second of no changes
+        }
+
+        // Reset custom theme to defaults
+        function resetCustomTheme() {
+            // Reset colors with null checks
+            const primaryInput = document.getElementById('custom-color-primary');
+            const accentInput = document.getElementById('custom-color-accent');
+            const textInput = document.getElementById('custom-color-text');
+            const secondaryInput = document.getElementById('custom-color-secondary');
+
+            if (primaryInput) primaryInput.value = '#667eea';
+            if (accentInput) accentInput.value = '#8b5cf6';
+            if (textInput) textInput.value = '#ffffff';
+            if (secondaryInput) secondaryInput.value = '#764ba2';
+
+            // Reset typography
+            const fontFamilySelect = document.getElementById('custom-font-family');
+            const fontSizeInput = document.getElementById('custom-font-size');
+
+            if (fontFamilySelect) fontFamilySelect.selectedIndex = 0;
+            if (fontSizeInput) fontSizeInput.value = 14;
+
+            // Reset background
+            const bgTypeSelect = document.getElementById('custom-bg-type');
+            const enableGradientCheckbox = document.getElementById('enable-gradient');
+
+            if (bgTypeSelect) bgTypeSelect.selectedIndex = 0;
+            if (enableGradientCheckbox) enableGradientCheckbox.checked = true;
+
+            // Reset animations
+            const animationStyleSelect = document.getElementById('custom-animation-style');
+            const animationSpeedInput = document.getElementById('custom-animation-speed');
+
+            if (animationStyleSelect) animationStyleSelect.selectedIndex = 0;
+            if (animationSpeedInput) animationSpeedInput.value = 250;
+
+            // Reset theme name
+            const themeNameInput = document.getElementById('custom-theme-name');
+            if (themeNameInput) themeNameInput.value = '';
+
+            toggleSecondaryColor();
+            updateCustomThemePreview();
+        }
+
+        // Save custom theme
+        function saveCustomTheme() {
+            // TESTING MODE: Pro check disabled
+            // if (!userData.isPro) {
+            //     showUpgradeModal('Custom Themes', 'Save unlimited custom themes with full control over appearance.');
+            //     return;
+            // }
+
+            const themeNameInput = document.getElementById('custom-theme-name');
+            let themeName = themeNameInput?.value.trim();
+            if (!themeName) {
+                showNotification('Please enter a theme name.', 'error');
+                return;
+            }
+
+            // Get all inputs with null checks
+            const primaryInput = document.getElementById('custom-color-primary');
+            const accentInput = document.getElementById('custom-color-accent');
+            const textInput = document.getElementById('custom-color-text');
+            const secondaryInput = document.getElementById('custom-color-secondary');
+            const fontFamilySelect = document.getElementById('custom-font-family');
+            const fontSizeInput = document.getElementById('custom-font-size');
+            const bgTypeSelect = document.getElementById('custom-bg-type');
+            const enableGradientCheckbox = document.getElementById('enable-gradient');
+            const animationStyleSelect = document.getElementById('custom-animation-style');
+            const animationSpeedInput = document.getElementById('custom-animation-speed');
+
+            try {
+                // Get existing custom themes
+                const stored = localStorage.getItem('customThemes');
+                const customThemes = stored ? JSON.parse(stored) : [];
+
+                // Handle duplicate names - add numbering
+                const baseThemeName = themeName;
+                let duplicateCount = 0;
+                const existingNames = customThemes.map(t => t.name);
+
+                // Check if name exists
+                while (existingNames.includes(themeName)) {
+                    duplicateCount++;
+                    themeName = `${baseThemeName} ${duplicateCount}`;
+                }
+
+                const customTheme = {
+                    name: themeName,
+                    primaryColor: primaryInput?.value || '#667eea',
+                    accentColor: accentInput?.value || '#8b5cf6',
+                    textColor: textInput?.value || '#ffffff',
+                    secondaryColor: secondaryInput?.value || '#764ba2',
+                    fontFamily: fontFamilySelect?.value || 'system-ui',
+                    fontSize: (fontSizeInput?.value || '14') + 'px',
+                    bgType: bgTypeSelect?.value || 'gradient',
+                    enableGradient: enableGradientCheckbox?.checked ?? true,
+                    animationStyle: animationStyleSelect?.value || 'fade',
+                    animationSpeed: (animationSpeedInput?.value || '250') + 'ms',
+                    isCustom: true,
+                    createdAt: new Date().toISOString()
+                };
+
+                // Add new theme
+                customThemes.push(customTheme);
+
+                // Save to localStorage
+                localStorage.setItem('customThemes', JSON.stringify(customThemes));
+
+                // Show success with actual saved name
+                showNotification(`${themeName} saved successfully!`, 'success');
+
+                // Reset form
+                resetCustomTheme();
+
+                // Refresh saved themes list
+                loadSavedCustomThemes();
+            } catch (error) {
+                // Error saving custom theme
+                showNotification('Failed to save theme. Please try again.', 'error');
+            }
+        }
+
+        // Apply custom theme (from current editor settings)
+        function applyCustomTheme() {
+            // TESTING MODE: Pro check disabled
+            // if (!userData.isPro) {
+            //     showUpgradeModal('Custom Themes', 'Apply custom themes to personalize your extension.');
+            //     return;
+            // }
+
+            // Get all inputs with null checks
+            const primaryInput = document.getElementById('custom-color-primary');
+            const accentInput = document.getElementById('custom-color-accent');
+            const textInput = document.getElementById('custom-color-text');
+            const secondaryInput = document.getElementById('custom-color-secondary');
+            const fontFamilySelect = document.getElementById('custom-font-family');
+            const fontSizeInput = document.getElementById('custom-font-size');
+            const bgTypeSelect = document.getElementById('custom-bg-type');
+            const enableGradientCheckbox = document.getElementById('enable-gradient');
+            const animationStyleSelect = document.getElementById('custom-animation-style');
+            const animationSpeedInput = document.getElementById('custom-animation-speed');
+
+            // Build custom theme object with safe defaults
+            const customTheme = {
+                name: 'Custom',
+                primaryColor: primaryInput?.value || '#667eea',
+                accentColor: accentInput?.value || '#8b5cf6',
+                textColor: textInput?.value || '#ffffff',
+                secondaryColor: secondaryInput?.value || '#764ba2',
+                fontFamily: fontFamilySelect?.value || 'system-ui',
+                fontSize: (fontSizeInput?.value || '14') + 'px',
+                bgType: bgTypeSelect?.value || 'gradient',
+                enableGradient: enableGradientCheckbox?.checked ?? true,
+                animationStyle: animationStyleSelect?.value || 'fade',
+                animationSpeed: (animationSpeedInput?.value || '250') + 'ms',
+                isCustom: true
+            };
+
+            try {
+                // Save as active theme (localStorage for dashboard preview)
+                localStorage.setItem('activeTheme', 'custom');
+                localStorage.setItem('themeConfig', JSON.stringify(customTheme));
+
+                // Send theme to extension via content script bridge
+                window.postMessage({
+                    type: 'DASHBOARD_APPLY_THEME',
+                    source: 'tabmangment-dashboard',
+                    themeName: 'custom',
+                    themeConfig: customTheme
+                }, '*');
+
+                // Update UI
+                loadActiveTheme();
+
+                showNotification('Custom theme applied successfully!', 'success');
+
+                // Custom theme sent to extension
+            } catch (error) {
+                // Error applying custom theme
+                showNotification('Failed to apply theme. Please try again.', 'error');
+            }
+        }
+
+        // Load saved custom themes
+        function loadSavedCustomThemes() {
+            // TESTING MODE: Pro check disabled
+            // if (!userData.isPro) return;
+
+            try {
+                const stored = localStorage.getItem('customThemes');
+                const customThemes = stored ? JSON.parse(stored) : [];
+
+                const container = document.getElementById('saved-custom-themes-list');
+                const createCard = document.getElementById('create-theme-card');
+                const topButton = document.getElementById('top-create-theme-btn');
+
+                // Show/hide create card and top button based on theme count
+                if (customThemes.length >= 3) {
+                    // Hide the create card
+                    if (createCard) createCard.style.display = 'none';
+                    // Show top button with fade-in
+                    if (topButton) {
+                        topButton.style.display = 'block';
+                        topButton.classList.add('fade-in-button');
+                    }
+                } else {
+                    // Show the create card
+                    if (createCard) createCard.style.display = 'flex';
+                    // Hide top button
+                    if (topButton) topButton.style.display = 'none';
+                }
+
+                if (!customThemes.length) {
+                    container.innerHTML = `
+                        <div style="text-align: center; padding: 3rem; color: #64748b; grid-column: 1 / -1;">
+                            <i data-feather="inbox" style="width: 48px; height: 48px; margin-bottom: 1rem; opacity: 0.5;"></i>
+                            <p>No custom themes saved yet</p>
+                            <p style="font-size: 0.875rem; margin-top: 0.5rem;">Create and save your first custom theme above!</p>
+                        </div>
+                    `;
+                    feather.replace();
+                    return;
+                }
+
+                container.innerHTML = customThemes.map((theme, index) => {
+                    // Generate background style based on theme format (handles both old and new formats)
+                    let bgStyle;
+                    if (theme.bgType) {
+                        // New format with bgType
+                        if (theme.bgType === 'gradient' && theme.enableGradient) {
+                            bgStyle = `background: linear-gradient(135deg, ${theme.primaryColor} 0%, ${theme.secondaryColor} 100%);`;
+                        } else if (theme.bgType === 'radial' && theme.enableGradient) {
+                            bgStyle = `background: radial-gradient(circle at top left, ${theme.primaryColor} 0%, ${theme.secondaryColor} 100%);`;
+                        } else if (theme.bgType === 'solid') {
+                            bgStyle = `background: ${theme.primaryColor};`;
+                        } else if (theme.bgType === 'pattern') {
+                            bgStyle = `background: ${theme.primaryColor}; background-image: radial-gradient(circle, rgba(255,255,255,0.1) 1px, transparent 1px); background-size: 20px 20px;`;
+                        } else {
+                            bgStyle = `background: linear-gradient(135deg, ${theme.primaryColor} 0%, ${theme.secondaryColor} 100%);`;
+                        }
+                    } else if (theme.gradientDirection) {
+                        // Old format with gradientDirection (backward compatibility)
+                        bgStyle = `background: linear-gradient(${theme.gradientDirection}, ${theme.primaryColor} 0%, ${theme.secondaryColor} 100%);`;
+                    } else {
+                        // Fallback
+                        bgStyle = `background: linear-gradient(135deg, ${theme.primaryColor} 0%, ${theme.secondaryColor} 100%);`;
+                    }
+
+                    return `
+                    <div class="theme-card">
+                        <div class="theme-preview" style="${bgStyle}">
+                            <div class="theme-preview-header">
+                                <div class="theme-preview-logo"></div>
+                            </div>
+                            <div class="theme-preview-stats">
+                                <div class="theme-preview-stat"></div>
+                                <div class="theme-preview-stat"></div>
+                            </div>
+                        </div>
+                        <div class="theme-card-info">
+                            <div class="theme-card-header">
+                                <h3 class="theme-card-title">${theme.name}</h3>
+                            </div>
+                            <p class="theme-card-description" style="font-family: ${theme.fontFamily}; font-size: ${theme.fontSize};">
+                                Custom theme created ${new Date(theme.createdAt).toLocaleDateString()}
+                            </p>
+                            <div style="display: flex; gap: 0.5rem;">
+                                <button class="theme-apply-btn" onclick="applyStoredCustomTheme(${index})" style="flex: 1;">
+                                    <i data-feather="check"></i>
+                                    Apply
+                                </button>
+                                <button onclick="deleteCustomTheme(${index})" style="padding: 0.75rem; background: #ef4444; border: none; border-radius: 0.5rem; color: white; cursor: pointer; transition: all 0.3s;">
+                                    <i data-feather="trash-2" style="width: 18px; height: 18px;"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                }).join('');
+
+                feather.replace();
+            } catch (error) {
+                // Error loading custom themes
+            }
+        }
+
+        // Apply a stored custom theme
+        function applyStoredCustomTheme(index) {
+            try {
+                const stored = localStorage.getItem('customThemes');
+                const customThemes = stored ? JSON.parse(stored) : [];
+                const theme = customThemes[index];
+
+                if (!theme) {
+                    showNotification('Theme not found.', 'error');
+                    return;
+                }
+
+                // Save as active theme
+                localStorage.setItem('activeTheme', 'custom');
+                localStorage.setItem('themeConfig', JSON.stringify(theme));
+
+                // Send to extension via postMessage (for dashboard-bridge.js)
+                window.postMessage({
+                    type: 'DASHBOARD_APPLY_THEME',
+                    source: 'tabmangment-dashboard',
+                    themeName: 'custom',
+                    themeConfig: theme
+                }, '*');
+
+                // Also try chrome runtime messaging if available
+                sendThemeToExtension('custom', theme);
+
+                // Update UI to show active state
+                loadActiveTheme();
+
+                showNotification(`✓ ${theme.name} applied successfully!`, 'success');
+
+                // Reload the saved themes list to update active badges
+                setTimeout(() => loadSavedCustomThemes(), 500);
+            } catch (error) {
+                console.error('Error applying custom theme:', error);
+                showNotification('Failed to apply theme. Please try again.', 'error');
+            }
+        }
+
+        // Store the index of theme to delete
+        let themeToDeleteIndex = null;
+
+        // Open delete confirmation modal
+        function deleteCustomTheme(index) {
+            try {
+                const stored = localStorage.getItem('customThemes');
+                const customThemes = stored ? JSON.parse(stored) : [];
+                const theme = customThemes[index];
+
+                if (!theme) {
+                    showNotification('Theme not found.', 'error');
+                    return;
+                }
+
+                // Store the index
+                themeToDeleteIndex = index;
+
+                // Update modal with theme name
+                const themeNameElement = document.getElementById('delete-theme-name');
+                if (themeNameElement) {
+                    themeNameElement.textContent = `Are you sure you want to delete "${theme.name}"?`;
+                }
+
+                // Show modal with animation
+                const modal = document.getElementById('delete-theme-modal');
+                if (modal) {
+                    modal.style.display = 'flex';
+                    document.body.style.overflow = 'hidden';
+                }
+            } catch (error) {
+                console.error('Error opening delete modal:', error);
+                showNotification('Failed to open delete confirmation.', 'error');
+            }
+        }
+
+        // Close delete confirmation modal
+        function closeDeleteModal() {
+            const modal = document.getElementById('delete-theme-modal');
+            if (modal) {
+                modal.style.display = 'none';
+                document.body.style.overflow = 'auto';
+            }
+            themeToDeleteIndex = null;
+        }
+
+        // Confirm and delete the theme
+        function confirmDeleteTheme() {
+            if (themeToDeleteIndex === null) return;
+
+            try {
+                const stored = localStorage.getItem('customThemes');
+                const customThemes = stored ? JSON.parse(stored) : [];
+                const themeName = customThemes[themeToDeleteIndex]?.name || 'Theme';
+
+                // Remove the theme
+                customThemes.splice(themeToDeleteIndex, 1);
+
+                // Save updated list
+                localStorage.setItem('customThemes', JSON.stringify(customThemes));
+
+                // Close modal
+                closeDeleteModal();
+
+                // Show success notification
+                showNotification(`✓ ${themeName} deleted successfully!`, 'success');
+
+                // Reload themes list with smooth transition
+                setTimeout(() => {
+                    loadSavedCustomThemes();
+                }, 200);
+
+            } catch (error) {
+                console.error('Error deleting custom theme:', error);
+                showNotification('Failed to delete theme. Please try again.', 'error');
+                closeDeleteModal();
+            }
+        }
+
+        // Initialize when themes page is loaded
+        if (window.location.hash === '#themes') {
+            initializeThemesPage();
+        }
+
+        // Re-initialize when navigating to themes page
+        document.querySelectorAll('.nav-link[data-page="themes"]').forEach(link => {
+            link.addEventListener('click', () => {
+                setTimeout(initializeThemesPage, 100);
+            });
+        });
+
     </script>
 </body>
 </html>

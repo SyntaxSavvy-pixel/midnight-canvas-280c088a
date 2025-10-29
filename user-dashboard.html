@@ -2350,7 +2350,7 @@
                 </div>
 
                 <!-- DELETE CONFIRMATION MODAL -->
-                <div id="delete-theme-modal" onclick="if(event.target.id === 'delete-theme-modal') closeDeleteModal()" style="display: none; position: fixed; inset: 0; background: rgba(0, 0, 0, 0.7); backdrop-filter: blur(8px); z-index: 10000; display: flex; align-items: center; justify-content: center; animation: fadeIn 0.2s ease;">
+                <div id="delete-theme-modal" onclick="if(event.target.id === 'delete-theme-modal') closeDeleteModal()" style="display: none; position: fixed; inset: 0; background: rgba(0, 0, 0, 0.7); backdrop-filter: blur(8px); z-index: 10000; align-items: center; justify-content: center; animation: fadeIn 0.2s ease;">
                     <div onclick="event.stopPropagation()" style="background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); border: 1px solid #334155; border-radius: 1.5rem; padding: 2rem; max-width: 480px; width: 90%; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5); animation: slideUp 0.3s ease; position: relative;">
                         <!-- Header -->
                         <div style="text-align: center; margin-bottom: 1.5rem;">
@@ -3428,63 +3428,69 @@
             try {
                 const metadata = getDeviceMetadata();
 
-                // Get current device list from Supabase
-                const { data: userData, error: fetchError } = await supabaseClient
+                // Get current device count from Supabase
+                const { data: devices, error: fetchError } = await supabaseClient
                     .from('user_devices')
-                    .select('devices')
+                    .select('*')
                     .eq('user_id', userId)
-                    .maybeSingle();
+                    .order('last_seen', { ascending: true });
 
-                let devices = [];
-
-                if (!fetchError && userData && userData.devices) {
-                    devices = userData.devices;
+                if (fetchError) {
+                    throw fetchError;
                 }
 
-                // Check if device already exists
-                const existingDeviceIndex = devices.findIndex(d => d.device_id === deviceId);
+                const deviceList = devices || [];
 
-                if (existingDeviceIndex >= 0) {
+                // Check if device already exists
+                const existingDevice = deviceList.find(d => d.device_id === deviceId);
+
+                if (existingDevice) {
                     // Update existing device
-                    devices[existingDeviceIndex] = {
-                        ...devices[existingDeviceIndex],
-                        ...metadata,
-                        lastSeen: new Date().toISOString()
-                    };
+                    const { error: updateError } = await supabaseClient
+                        .from('user_devices')
+                        .update({
+                            browser_info: metadata,
+                            last_seen: new Date().toISOString()
+                        })
+                        .eq('id', existingDevice.id);
+
+                    if (updateError) throw updateError;
                 } else {
                     // Check device limit
                     const maxDevices = isPro ? DEVICE_CONFIG.MAX_DEVICES_PRO : DEVICE_CONFIG.MAX_DEVICES_FREE;
 
-                    if (devices.length >= maxDevices) {
-                        // Remove oldest device
-                        devices.sort((a, b) => new Date(a.lastSeen) - new Date(b.lastSeen));
-                        devices.shift();
+                    if (deviceList.length >= maxDevices) {
+                        // Remove oldest device (first in sorted list)
+                        const oldestDevice = deviceList[0];
+                        const { error: deleteError } = await supabaseClient
+                            .from('user_devices')
+                            .delete()
+                            .eq('id', oldestDevice.id);
+
+                        if (deleteError) throw deleteError;
                     }
 
                     // Add new device
-                    devices.push({
-                        device_id: deviceId,
-                        ...metadata,
-                        registeredAt: new Date().toISOString()
-                    });
+                    const { error: insertError } = await supabaseClient
+                        .from('user_devices')
+                        .insert({
+                            user_id: userId,
+                            device_id: deviceId,
+                            device_fingerprint: deviceId,
+                            browser_info: metadata,
+                            last_seen: new Date().toISOString()
+                        });
+
+                    if (insertError) throw insertError;
                 }
 
-                // Save to Supabase
-                const { error: upsertError } = await supabaseClient
+                // Get updated count
+                const { count } = await supabaseClient
                     .from('user_devices')
-                    .upsert({
-                        user_id: userId,
-                        devices: devices,
-                        updated_at: new Date().toISOString()
-                    }, {
-                        onConflict: 'user_id'
-                    });
+                    .select('*', { count: 'exact', head: true })
+                    .eq('user_id', userId);
 
-                if (upsertError) {
-                    throw upsertError;
-                }
-
-                return { success: true, deviceCount: devices.length, maxDevices: isPro ? DEVICE_CONFIG.MAX_DEVICES_PRO : DEVICE_CONFIG.MAX_DEVICES_FREE };
+                return { success: true, deviceCount: count || deviceList.length, maxDevices: isPro ? DEVICE_CONFIG.MAX_DEVICES_PRO : DEVICE_CONFIG.MAX_DEVICES_FREE };
 
             } catch (error) {
                 return { success: false, error: error.message };
@@ -3494,18 +3500,21 @@
         // Verify device is authorized
         async function verifyDevice(userId, deviceId, isPro) {
             try {
-                const { data: userData, error } = await supabaseClient
+                const { data: devices, error, count } = await supabaseClient
                     .from('user_devices')
-                    .select('devices')
-                    .eq('user_id', userId)
-                    .maybeSingle();
+                    .select('*', { count: 'exact' })
+                    .eq('user_id', userId);
 
-                if (error || !userData || !userData.devices) {
+                if (error) {
+                    // On error, allow access (fail open for better UX)
+                    return { authorized: true, error: error.message };
+                }
+
+                if (!devices || devices.length === 0) {
                     // No devices registered yet, allow first device
                     return { authorized: true, isNew: true };
                 }
 
-                const devices = userData.devices;
                 const deviceExists = devices.some(d => d.device_id === deviceId);
 
                 if (!deviceExists) {
@@ -3708,16 +3717,16 @@
                 }
 
                 // Fetch devices from Supabase
-                const { data, error } = await supabaseClient
+                const { data: devices, error } = await supabaseClient
                     .from('user_devices')
-                    .select('devices')
+                    .select('*')
                     .eq('user_id', userId)
-                    .maybeSingle();
+                    .order('last_seen', { ascending: false });
 
                 const container = document.getElementById('devices-list-container');
                 if (!container) return;
 
-                if (error || !data || !data.devices || data.devices.length === 0) {
+                if (error || !devices || devices.length === 0) {
                     container.innerHTML = `
                         <div style="text-align: center; padding: 2rem; color: #64748b;">
                             <div style="width: 60px; height: 60px; background: rgba(100, 116, 139, 0.1); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 1rem; font-size: 1.5rem;">
@@ -3728,22 +3737,21 @@
                     `;
                     return;
                 }
-
-                const devices = data.devices;
                 const currentDeviceId = await getDeviceId();
 
                 // Render devices list
                 let html = '';
                 devices.forEach((device, index) => {
                     const isCurrentDevice = device.device_id === currentDeviceId;
-                    const lastSeen = device.lastSeen ? new Date(device.lastSeen) : new Date(device.registeredAt);
+                    const lastSeen = device.last_seen ? new Date(device.last_seen) : new Date(device.created_at);
                     const timeAgo = formatTimeAgo(lastSeen);
 
-                    // Use enhanced device metadata for better display
-                    const deviceType = device.deviceType || 'Unknown';
-                    const deviceName = device.deviceName || `${device.browser || 'Browser'} on ${device.os || 'Unknown'}`;
-                    const fullDescription = device.fullDescription || deviceName;
-                    const timezone = device.timezone || 'Unknown timezone';
+                    // Extract metadata from browser_info JSONB
+                    const browserInfo = device.browser_info || {};
+                    const deviceType = browserInfo.deviceType || 'Unknown';
+                    const deviceName = browserInfo.deviceName || `${browserInfo.browser || 'Browser'} on ${browserInfo.os || 'Unknown'}`;
+                    const fullDescription = browserInfo.fullDescription || deviceName;
+                    const timezone = browserInfo.timezone || 'Unknown timezone';
 
                     // Device icon based on device type (enhanced detection)
                     let deviceIcon = '💻'; // Default laptop
@@ -3831,30 +3839,13 @@
             }
 
             try {
-                const userId = userData.id || userData.email;
-
-                // Fetch current devices
-                const { data, error: fetchError } = await supabaseClient
+                // Delete the device directly
+                const { error: deleteError } = await supabaseClient
                     .from('user_devices')
-                    .select('devices')
-                    .eq('user_id', userId)
-                    .maybeSingle();
+                    .delete()
+                    .eq('device_id', deviceId);
 
-                if (fetchError) throw fetchError;
-
-                // Remove the device
-                const updatedDevices = data.devices.filter(d => d.device_id !== deviceId);
-
-                // Update Supabase
-                const { error: updateError } = await supabaseClient
-                    .from('user_devices')
-                    .update({
-                        devices: updatedDevices,
-                        updated_at: new Date().toISOString()
-                    })
-                    .eq('user_id', userId);
-
-                if (updateError) throw updateError;
+                if (deleteError) throw deleteError;
 
                 // Show success and reload
                 showNotification('Device removed successfully', 'success');
@@ -3987,22 +3978,16 @@
             // API endpoint not implemented yet, using hardcoded value
             STRIPE_PRICE_ID = 'price_1Rzw2LLJKLfllJJD6HPKEDHK'; // LIVE Stripe Price ID
 
-            // Check authentication (with retry for OAuth redirects)
+            // Check authentication (with SINGLE retry for OAuth redirects)
             authToken = localStorage.getItem('tabmangment_token');
             let storedUserData = localStorage.getItem('tabmangment_user');
             let userEmail = null;
 
-            // If no data yet, wait a bit longer (OAuth redirect timing issue)
-            // Retry up to 3 times with increasing delays to handle OAuth persistence
+            // If no data yet, wait ONCE (reduced from 3 retries)
             if (!authToken || !storedUserData) {
-                for (let i = 0; i < 3; i++) {
-                    await new Promise(resolve => setTimeout(resolve, 200 * (i + 1))); // 200ms, 400ms, 600ms
-                    authToken = localStorage.getItem('tabmangment_token');
-                    storedUserData = localStorage.getItem('tabmangment_user');
-                    if (authToken && storedUserData) {
-                        break;
-                    }
-                }
+                await new Promise(resolve => setTimeout(resolve, 300)); // Single 300ms wait
+                authToken = localStorage.getItem('tabmangment_token');
+                storedUserData = localStorage.getItem('tabmangment_user');
             }
 
             if (storedUserData) {
@@ -4051,8 +4036,8 @@
                 // it's a timing/cache issue - wait and retry instead of redirecting
                 if (justAuthenticated === 'true' && timeSinceAuth < 5000) {
                     // Just authenticated but localStorage not ready - waiting...
-                    // Wait 500ms and try again
-                    await new Promise(resolve => setTimeout(resolve, 500));
+                    // Wait 200ms and try again (reduced for faster loading)
+                    await new Promise(resolve => setTimeout(resolve, 200));
                     authToken = localStorage.getItem('tabmangment_token');
                     storedUserData = localStorage.getItem('tabmangment_user');
 
@@ -4102,71 +4087,61 @@
             // Load real user data from API
             await loadUserData(userEmail);
 
-            // ============================================
-            // DEVICE VERIFICATION & ANTI-SHARING
-            // ============================================
-
-            // Get or create device ID
-            const deviceId = await getDeviceId();
-
-            // Verify device is authorized
-            const verification = await verifyDevice(userData.id || userEmail, deviceId, userData.isPro);
-
-            if (!verification.authorized) {
-                // Device limit reached - show warning and block access
-                showDeviceLimitWarning(verification.deviceCount, verification.maxDevices, userData.isPro);
-                return; // Stop dashboard initialization
-            }
-
-            // Register/update this device
-            await registerDevice(userData.id || userEmail, deviceId, userData.isPro);
-
-            // ============================================
-
+            // SHOW UI IMMEDIATELY after loading user data
             updateUserDisplay();
             updatePlanDisplay();
-            updateAccountActionButtons(); // Check if account is marked for deletion
+            updateAccountActionButtons();
             initChart();
-            loadUserSettings();
-            loadBillingHistory();
-            loadPaymentMethod();
 
-            // Initialize Smart Dashboard BEFORE waiting for bridge
-            // Smart Dashboard can work independently via content script bridge
-            try {
-                await initSmartDashboard();
-            } catch (error) {
-                // Fallback: try to update name even if Smart Dashboard fails
-                const userNameEl = document.getElementById('user-name-display');
-                if (userNameEl && userData && userData.email) {
-                    const displayName = userData.name || userData.email.split('@')[0];
-                    userNameEl.textContent = displayName;
-                }
-            }
+            // Run non-blocking operations in parallel
+            Promise.all([
+                // Device verification (non-blocking)
+                (async () => {
+                    try {
+                        const deviceId = await getDeviceId();
+                        const verification = await verifyDevice(userData.id || userEmail, deviceId, userData.isPro);
 
-            // Wait for bridge to be ready FIRST before checking payment
-            const isBridgeReady = await waitForBridge(5000);
+                        if (!verification.authorized) {
+                            showDeviceLimitWarning(verification.deviceCount, verification.maxDevices, userData.isPro);
+                        } else {
+                            await registerDevice(userData.id || userEmail, deviceId, userData.isPro);
+                        }
+                    } catch (error) {
+                        console.error('Device verification failed:', error);
+                    }
+                })(),
 
-            if (!isBridgeReady) {
-            } else {
-            }
+                // Load settings and billing in background
+                loadUserSettings(),
+                loadBillingHistory(),
+                loadPaymentMethod(),
 
-            // Check if returning from payment (AFTER bridge is ready)
+                // Initialize Smart Dashboard in background
+                initSmartDashboard().catch(error => {
+                    const userNameEl = document.getElementById('user-name-display');
+                    if (userNameEl && userData && userData.email) {
+                        const displayName = userData.name || userData.email.split('@')[0];
+                        userNameEl.textContent = displayName;
+                    }
+                })
+            ]).catch(err => console.error('Background tasks failed:', err));
+
+            // Check if bridge is ready (don't wait - just check once)
+            const isBridgeReady = window.TABMANGMENT_BRIDGE?.ready || bridgeReady;
+
+            // Check if returning from payment (non-blocking)
             const urlParams = new URLSearchParams(window.location.search);
             const sessionId = urlParams.get('session_id');
             if (sessionId) {
-                await verifyStripeSession(sessionId, userEmail);
+                verifyStripeSession(sessionId, userEmail).catch(err => console.error('Payment verification failed:', err));
             }
 
-            // CRITICAL: Sync Pro status to extension when dashboard loads
-            // This ensures extension storage is updated with current subscription status
-
-            if (bridgeReady && extensionId && userEmail) {
-
+            // Sync Pro status to extension (non-blocking)
+            if (isBridgeReady && extensionId && userEmail) {
                 const storedToken = localStorage.getItem('tabmangment_token');
 
-                // Send SUBSCRIPTION_UPDATE with current Pro status from database
-                await sendMessageToExtension('SUBSCRIPTION_UPDATE', {
+                // Send SUBSCRIPTION_UPDATE (non-blocking)
+                sendMessageToExtension('SUBSCRIPTION_UPDATE', {
                     isPro: userData.isPro,
                     plan: userData.plan,
                     status: userData.subscriptionStatus || 'active',
@@ -4179,11 +4154,9 @@
                         isPro: userData.isPro,
                         currentPeriodEnd: userData.currentPeriodEnd
                     }
-                }).catch(err => {
-                    // Failed to sync Pro status to extension
-                });
+                }).catch(err => console.error('Extension sync failed:', err));
 
-                // Also send USER_LOGGED_IN for general sync
+                // Send USER_LOGGED_IN
                 window.postMessage({
                     type: 'USER_LOGGED_IN',
                     userData: {

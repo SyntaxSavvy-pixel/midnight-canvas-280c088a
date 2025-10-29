@@ -6,6 +6,14 @@ const CONFIG = {
         CHECK_STATUS: 'https://tabmangment.com/api/status',
         BILLING_PORTAL: 'https://tabmangment.com/api/billing-portal'
     },
+    PERPLEXITY: {
+        API_KEY: 'YOUR_API_KEY_HERE',
+        SEARCH_URL: 'https://api.perplexity.ai/search',
+        MAX_RESULTS: 10,
+        MAX_TOKENS: 25000,
+        MAX_TOKENS_PER_PAGE: 2048,
+        COUNTRY: 'US'
+    },
     WEB: {
         AUTH_URL: 'https://tabmangment.com/new-authentication',
         DASHBOARD_URL: 'https://tabmangment.com/user-dashboard.html'
@@ -96,6 +104,11 @@ class TabmangmentPopup {
 
             this.initializeEmailJS();
             this.setupPaymentListener();
+
+            // Load and apply custom theme (non-blocking, don't break popup if fails)
+            loadAndApplyTheme().catch(err => {
+                console.log('Theme load failed:', err);
+            });
 
             // Load and show cached data IMMEDIATELY (non-blocking)
             this.loadData().then(() => {
@@ -636,6 +649,10 @@ class TabmangmentPopup {
         if (logoutBtn) {
             logoutBtn.addEventListener('click', () => this.handleLogout());
         }
+
+        // Search Panel Event Listeners
+        this.setupSearchPanel();
+
         chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
             if (message.action === 'updateClosingSoonCount') {
                 this.updateClosingSoonCounter(message.count);
@@ -649,6 +666,15 @@ class TabmangmentPopup {
 
         // Listen for storage changes (when user logs in/out from dashboard)
         chrome.storage.onChanged.addListener(async (changes, areaName) => {
+
+            // INSTANT THEME UPDATES - Apply theme immediately when changed
+            if (areaName === 'local' && (changes.themeConfig || changes.activeTheme)) {
+                console.log('🎨 Theme changed, applying instantly...');
+                const { themeConfig } = await chrome.storage.local.get(['themeConfig']);
+                if (themeConfig) {
+                    applyThemeToPopup(themeConfig);
+                }
+            }
 
             if (areaName === 'local' && changes.userEmail) {
                 const newEmail = changes.userEmail.newValue;
@@ -700,6 +726,356 @@ class TabmangmentPopup {
         this.setupContactModal();
         this.setupPremiumModal();
     }
+
+    // Setup Search Panel
+    setupSearchPanel() {
+        const searchBtn = document.getElementById('search-btn');
+        const searchPanel = document.getElementById('search-panel');
+        const searchCloseBtn = document.getElementById('search-close-btn');
+        const searchInput = document.getElementById('search-input');
+        const searchClearBtn = document.getElementById('search-clear-btn');
+
+        // Open search panel
+        if (searchBtn) {
+            searchBtn.addEventListener('click', async () => {
+                if (searchPanel) {
+                    searchPanel.classList.add('active');
+                    searchBtn.classList.add('active');
+                    document.body.classList.add('search-active');
+                    await this.updateSearchUsageDisplay();
+                    setTimeout(() => {
+                        if (searchInput) searchInput.focus();
+                    }, 300);
+                }
+            });
+        }
+
+        // Close search panel
+        if (searchCloseBtn) {
+            searchCloseBtn.addEventListener('click', () => {
+                if (searchPanel) {
+                    searchPanel.classList.remove('active');
+                    if (searchBtn) searchBtn.classList.remove('active');
+                    document.body.classList.remove('search-active');
+                    if (searchInput) searchInput.value = '';
+                    if (searchClearBtn) searchClearBtn.style.display = 'none';
+                    this.clearSearchResults();
+                }
+            });
+        }
+
+        // Search input - only show/hide clear button
+        if (searchInput) {
+            searchInput.addEventListener('input', (e) => {
+                const query = e.target.value;
+
+                // Show/hide clear button
+                if (searchClearBtn) {
+                    searchClearBtn.style.display = query ? 'flex' : 'none';
+                }
+
+                // Clear results if input is empty
+                if (!query.trim()) {
+                    this.clearSearchResults();
+                }
+            });
+
+            // Search ONLY on Enter key press
+            searchInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    const query = e.target.value.trim();
+                    if (query) {
+                        this.performAISearch(query);
+                    }
+                }
+            });
+        }
+
+        // Clear search
+        if (searchClearBtn) {
+            searchClearBtn.addEventListener('click', () => {
+                if (searchInput) {
+                    searchInput.value = '';
+                    searchInput.focus();
+                }
+                searchClearBtn.style.display = 'none';
+                this.clearSearchResults();
+            });
+        }
+    }
+
+    // Clear search results and show empty state
+    clearSearchResults() {
+        const emptyState = document.getElementById('search-empty-state');
+        const loading = document.getElementById('search-loading');
+        const resultsList = document.getElementById('search-results-list');
+        const resultsInfo = document.getElementById('search-results-info');
+
+        if (emptyState) emptyState.style.display = 'flex';
+        if (loading) loading.style.display = 'none';
+        if (resultsList) resultsList.innerHTML = '';
+        if (resultsInfo) resultsInfo.style.display = 'none';
+    }
+
+    // Check and update search usage with 24-hour rolling window
+    async checkSearchUsage() {
+        const stored = await chrome.storage.local.get(['searchTimestamps']);
+        const now = Date.now();
+        const twentyFourHoursAgo = now - (24 * 60 * 60 * 1000);
+
+        // Get existing timestamps and filter out old ones (older than 24 hours)
+        let timestamps = stored.searchTimestamps || [];
+        const originalLength = timestamps.length;
+        timestamps = timestamps.filter(timestamp => timestamp > twentyFourHoursAgo);
+
+        // Only save back if we actually removed expired timestamps
+        if (timestamps.length !== originalLength) {
+            await chrome.storage.local.set({ searchTimestamps: timestamps });
+        }
+
+        const count = timestamps.length;
+        const canSearch = this.isPremium || count < 5;
+
+        return { count, canSearch };
+    }
+
+    // Increment search usage counter
+    async incrementSearchUsage() {
+        const stored = await chrome.storage.local.get(['searchTimestamps']);
+        const now = Date.now();
+
+        // Get existing timestamps
+        let timestamps = stored.searchTimestamps || [];
+
+        // Add new timestamp
+        timestamps.push(now);
+
+        // Save updated timestamps
+        await chrome.storage.local.set({ searchTimestamps: timestamps });
+    }
+
+    // Update search usage display
+    async updateSearchUsageDisplay() {
+        const usageInfo = document.getElementById('search-usage-info');
+        if (!usageInfo) return;
+
+        const { count, canSearch } = await this.checkSearchUsage();
+
+        if (this.isPremium) {
+            usageInfo.innerHTML = '✨ Pro Plan: Unlimited searches';
+            usageInfo.className = 'search-usage-info';
+            usageInfo.style.display = 'block';
+        } else {
+            const remaining = 5 - count;
+            if (remaining > 0) {
+                usageInfo.innerHTML = `${remaining} of 5 free searches remaining (24h)`;
+                usageInfo.className = remaining <= 2 ? 'search-usage-info limited' : 'search-usage-info';
+            } else {
+                usageInfo.innerHTML = '🔒 Search limit reached. Upgrade to Pro for unlimited searches.';
+                usageInfo.className = 'search-usage-info locked';
+            }
+            usageInfo.style.display = 'block';
+        }
+    }
+
+    // Show search limit modal
+    showSearchLimitModal() {
+        // Remove existing modal if any
+        const existingModal = document.getElementById('search-limit-modal');
+        if (existingModal) {
+            existingModal.remove();
+        }
+
+        // Create modal
+        const modal = document.createElement('div');
+        modal.id = 'search-limit-modal';
+        modal.className = 'search-limit-modal';
+
+        modal.innerHTML = `
+            <div class="search-limit-content">
+                <div class="search-limit-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <line x1="15" y1="9" x2="9" y2="15"></line>
+                        <line x1="9" y1="9" x2="15" y2="15"></line>
+                    </svg>
+                </div>
+                <h3 class="search-limit-title">Search Limit Reached</h3>
+                <p class="search-limit-message">
+                    You've used all 5 free searches in the last 24 hours. Upgrade to Pro for unlimited AI searches!
+                </p>
+                <div class="search-limit-actions">
+                    <button class="search-limit-btn search-limit-close" id="search-limit-close">
+                        Close
+                    </button>
+                    <button class="search-limit-btn search-limit-upgrade" id="search-limit-upgrade">
+                        Upgrade to Pro
+                    </button>
+                </div>
+            </div>
+        `;
+
+        document.body.appendChild(modal);
+
+        // Add event listeners
+        const closeBtn = document.getElementById('search-limit-close');
+        const upgradeBtn = document.getElementById('search-limit-upgrade');
+
+        const closeModal = () => {
+            modal.remove();
+        };
+
+        if (closeBtn) {
+            closeBtn.addEventListener('click', closeModal);
+        }
+
+        if (upgradeBtn) {
+            upgradeBtn.addEventListener('click', () => {
+                closeModal();
+                chrome.tabs.create({
+                    url: `${CONFIG.WEB.DASHBOARD_URL}#subscription`,
+                    active: true
+                });
+            });
+        }
+
+        // Close on backdrop click
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) {
+                closeModal();
+            }
+        });
+    }
+
+    // Perform AI search using Perplexity API
+    async performAISearch(query) {
+        // Check search usage limit
+        const { canSearch } = await this.checkSearchUsage();
+
+        if (!canSearch) {
+            this.showSearchLimitModal();
+            await this.updateSearchUsageDisplay();
+            return;
+        }
+
+        const emptyState = document.getElementById('search-empty-state');
+        const loading = document.getElementById('search-loading');
+        const resultsList = document.getElementById('search-results-list');
+        const resultsInfo = document.getElementById('search-results-info');
+        const resultsCount = document.getElementById('search-results-count');
+
+        // Show loading state
+        if (emptyState) emptyState.style.display = 'none';
+        if (loading) loading.style.display = 'flex';
+        if (resultsList) resultsList.innerHTML = '';
+        if (resultsInfo) resultsInfo.style.display = 'none';
+
+        try {
+            const response = await fetch('https://api.perplexity.ai/search', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${CONFIG.PERPLEXITY.API_KEY}`
+                },
+                body: JSON.stringify({
+                    query: query,
+                    max_results: CONFIG.PERPLEXITY.MAX_RESULTS,
+                    max_tokens: CONFIG.PERPLEXITY.MAX_TOKENS,
+                    max_tokens_per_page: CONFIG.PERPLEXITY.MAX_TOKENS_PER_PAGE,
+                    country: CONFIG.PERPLEXITY.COUNTRY
+                })
+            });
+
+            if (!response.ok) {
+                throw new Error(`Search failed: ${response.statusText}`);
+            }
+
+            const data = await response.json();
+
+            // Increment usage counter (search was successful)
+            await this.incrementSearchUsage();
+            await this.updateSearchUsageDisplay();
+
+            // Hide loading
+            if (loading) loading.style.display = 'none';
+
+            if (data.results && data.results.length > 0) {
+                // Show results
+                this.displaySearchResults(data.results);
+
+                // Update results count
+                if (resultsInfo) resultsInfo.style.display = 'block';
+                if (resultsCount) {
+                    resultsCount.textContent = `${data.results.length} results`;
+                }
+            } else {
+                // No results found
+                if (resultsList) {
+                    resultsList.innerHTML = `
+                        <div class="search-empty-state">
+                            <p>No results found</p>
+                            <span>Try a different search term</span>
+                        </div>
+                    `;
+                }
+            }
+        } catch (error) {
+            console.error('Search error:', error);
+
+            // Hide loading
+            if (loading) loading.style.display = 'none';
+
+            // Show error message
+            if (resultsList) {
+                resultsList.innerHTML = `
+                    <div class="search-empty-state">
+                        <p>Search failed</p>
+                        <span>${error.message}</span>
+                    </div>
+                `;
+            }
+        }
+    }
+
+    // Display search results
+    displaySearchResults(results) {
+        const resultsList = document.getElementById('search-results-list');
+        if (!resultsList) return;
+
+        resultsList.innerHTML = '';
+
+        results.forEach(result => {
+            const resultItem = document.createElement('div');
+            resultItem.className = 'search-result-item';
+            resultItem.dataset.url = result.url;
+
+            resultItem.innerHTML = `
+                <div class="search-result-title">${this.escapeHtml(result.title)}</div>
+                <div class="search-result-url">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path>
+                        <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path>
+                    </svg>
+                    ${this.escapeHtml(result.url)}
+                </div>
+            `;
+
+            // Click to open in new tab
+            resultItem.addEventListener('click', () => {
+                chrome.tabs.create({ url: result.url });
+            });
+
+            resultsList.appendChild(resultItem);
+        });
+    }
+
+    // Escape HTML to prevent XSS
+    escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+
     setupControlButtons() {
         const collapseBtn = document.getElementById('collapse-btn');
         if (collapseBtn) {
@@ -1206,6 +1582,7 @@ class TabmangmentPopup {
         }
 
         this.removeAllProBadges();
+        await this.updateSubscriptionHeader();
     }
     async checkSubscriptionExpiry(subscriptionData) {
         try {
@@ -1604,6 +1981,44 @@ class TabmangmentPopup {
         }
         this.updatePremiumButtonText();
         this.updateProBadges();
+        await this.updateSubscriptionHeader();
+    }
+    async updateSubscriptionHeader() {
+        const subscriptionInfo = document.getElementById('subscription-info');
+        const planName = document.getElementById('plan-name');
+        const billingDate = document.getElementById('billing-date');
+
+        if (!subscriptionInfo || !planName || !billingDate) return;
+
+        if (this.isPremium) {
+            planName.textContent = 'Pro Plan';
+            subscriptionInfo.classList.add('pro');
+            subscriptionInfo.classList.remove('free');
+
+            // Get billing date
+            const stored = await chrome.storage.local.get(['nextBillingDate', 'currentPeriodEnd']);
+            const nextBilling = stored.nextBillingDate || stored.currentPeriodEnd;
+
+            if (nextBilling) {
+                const date = new Date(nextBilling);
+                const formattedDate = date.toLocaleDateString('en-US', {
+                    month: 'short',
+                    day: 'numeric',
+                    year: 'numeric'
+                });
+                billingDate.textContent = `Next billing: ${formattedDate}`;
+                billingDate.style.display = 'block';
+            } else {
+                billingDate.textContent = '';
+                billingDate.style.display = 'none';
+            }
+        } else {
+            planName.textContent = 'Free Plan';
+            subscriptionInfo.classList.add('free');
+            subscriptionInfo.classList.remove('pro');
+            billingDate.textContent = '';
+            billingDate.style.display = 'none';
+        }
     }
     updatePremiumButtonText() {
         const premiumBtn = document.getElementById('premium-btn');
@@ -1691,13 +2106,27 @@ class TabmangmentPopup {
     }
     async handleLogout() {
         try {
+            // Close search panel if open
+            const searchPanel = document.getElementById('search-panel');
+            const searchBtn = document.getElementById('search-btn');
+            if (searchPanel) {
+                searchPanel.classList.remove('active');
+            }
+            if (searchBtn) {
+                searchBtn.classList.remove('active');
+            }
+            document.body.classList.remove('search-active');
 
             // Clear all stored data
             await chrome.storage.local.clear();
 
-            // Reset instance variables
+            // Reset ALL instance variables
             this.isPremium = false;
             this.userEmail = null;
+            this.userName = null;
+            this.tabs = [];
+            this.stats = { active: 0, scheduled: 0 };
+            this.totalTabCount = 0;
 
             // Notify simple auth to logout
             if (window.logoutUser) {
@@ -1833,7 +2262,7 @@ class TabmangmentPopup {
         // Check if login screen already exists
         const existingLoginScreen = document.getElementById('login-screen');
         if (existingLoginScreen) {
-            return; // Already showing login screen
+            return;
         }
 
         // Hide the entire extension UI
@@ -1841,97 +2270,224 @@ class TabmangmentPopup {
         const tabsContainer = document.getElementById('tabs-container');
         const tabLimitWarningContainer = document.getElementById('tab-limit-warning');
         const tabLimitWarning = document.querySelector('.tab-limit-warning-content');
+        const statsActionsRow = document.querySelector('.stats-actions-row');
+        const popupMainContent = document.querySelector('.popup-main-content');
 
         if (header) header.style.display = 'none';
         if (tabsContainer) tabsContainer.style.display = 'none';
-        if (tabLimitWarningContainer) tabLimitWarningContainer.style.display = 'none'; // Hide container
-        if (tabLimitWarning) tabLimitWarning.remove(); // Remove warning content
+        if (tabLimitWarningContainer) tabLimitWarningContainer.style.display = 'none';
+        if (tabLimitWarning) tabLimitWarning.remove();
+        if (statsActionsRow) statsActionsRow.style.display = 'none';
+        if (popupMainContent) popupMainContent.style.display = 'none';
+
+        // Check if user data exists in localStorage (coming from dashboard)
+        let autoLogin = false;
+        let userName = null;
+        try {
+            const webUserData = localStorage.getItem('tabmangment_user');
+            const webToken = localStorage.getItem('tabmangment_token');
+            if (webUserData && webToken) {
+                const userData = JSON.parse(webUserData);
+                userName = userData.name || userData.email?.split('@')[0] || 'User';
+                autoLogin = true;
+            }
+        } catch (e) {
+            autoLogin = false;
+        }
 
         // Create login screen
         const loginScreen = document.createElement('div');
         loginScreen.id = 'login-screen';
         loginScreen.style.cssText = `
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            min-height: 400px;
             padding: 40px 20px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
+            background: #f8fafc;
+            color: #1e293b;
             text-align: center;
+            z-index: 10000;
+            animation: fadeIn 0.3s ease;
         `;
 
-        loginScreen.innerHTML = `
-            <div style="margin-bottom: 20px;">
-                <img src="icons/icon-48.png" alt="Tabmangment" width="64" height="64" style="margin-bottom: 16px;">
-                <h2 style="margin: 0 0 8px 0; font-size: 24px; font-weight: 600;">Welcome to Tabmangment</h2>
-                <p style="margin: 0; font-size: 14px; opacity: 0.9;">Manage your tabs like a pro</p>
-            </div>
-
-            <div style="background: rgba(255,255,255,0.1); border-radius: 12px; padding: 24px; margin-bottom: 24px; backdrop-filter: blur(10px);">
-                <p style="margin: 0 0 16px 0; font-size: 14px; line-height: 1.6;">
-                    To use Tabmangment, you need to sign in with your account.
+        if (autoLogin) {
+            // Auto-login screen
+            loginScreen.innerHTML = `
+                <style>
+                    @keyframes fadeIn {
+                        from { opacity: 0; }
+                        to { opacity: 1; }
+                    }
+                    @keyframes pulse {
+                        0%, 100% { transform: scale(1); opacity: 1; }
+                        50% { transform: scale(1.05); opacity: 0.8; }
+                    }
+                    @keyframes spin {
+                        to { transform: rotate(360deg); }
+                    }
+                    .login-logo-wrapper {
+                        width: 80px;
+                        height: 80px;
+                        margin: 0 auto 24px;
+                        background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+                        border-radius: 20px;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        box-shadow: 0 8px 32px rgba(99, 102, 241, 0.3);
+                        animation: pulse 2s infinite;
+                    }
+                    .login-logo-wrapper img {
+                        width: 48px;
+                        height: 48px;
+                    }
+                    .spinner {
+                        width: 40px;
+                        height: 40px;
+                        border: 3px solid #e2e8f0;
+                        border-top-color: #6366f1;
+                        border-radius: 50%;
+                        animation: spin 0.8s linear infinite;
+                        margin: 24px auto;
+                    }
+                </style>
+                <div class="login-logo-wrapper">
+                    <img src="icons/icon-48.png" alt="Tabmangment">
+                </div>
+                <h2 style="margin: 0 0 8px 0; font-size: 22px; font-weight: 700; color: #1e293b;">
+                    Automatically Logging In
+                </h2>
+                <p style="margin: 0 0 16px 0; font-size: 15px; color: #64748b; font-weight: 500;">
+                    Welcome back, ${userName}!
                 </p>
-                <p style="margin: 0; font-size: 13px; opacity: 0.8;">
-                    Don't have an account? You can create one on the login page.
+                <div class="spinner"></div>
+                <p id="countdown-text" style="margin: 8px 0 0 0; font-size: 13px; color: #94a3b8; font-weight: 500;">
+                    Signing you in...
                 </p>
-            </div>
+            `;
 
-            <button id="login-btn" style="
-                background: white;
-                color: #667eea;
-                border: none;
-                padding: 12px 32px;
-                border-radius: 8px;
-                font-size: 16px;
-                font-weight: 600;
-                cursor: pointer;
-                box-shadow: 0 4px 12px rgba(0,0,0,0.2);
-                transition: transform 0.2s, box-shadow 0.2s;
-                margin-bottom: 12px;
-            ">
-                Sign In / Sign Up
-            </button>
+            document.body.appendChild(loginScreen);
 
-            <p style="margin: 16px 0 0 0; font-size: 12px; opacity: 0.7;">
-                Your tabs will sync across all your devices
-            </p>
-        `;
+            // Start countdown
+            let countdown = 3;
+            const countdownEl = document.getElementById('countdown-text');
 
-        document.body.appendChild(loginScreen);
+            const countdownInterval = setInterval(() => {
+                countdown--;
+                if (countdown > 0 && countdownEl) {
+                    countdownEl.textContent = `Signing you in... ${countdown}`;
+                }
+            }, 1000);
 
-        // Add event handlers using proper event listeners (no inline handlers for CSP)
-        // Use setTimeout to ensure DOM is fully ready
-        setTimeout(() => {
-            const loginBtn = document.getElementById('login-btn');
+            // Auto-login after 3 seconds
+            setTimeout(async () => {
+                clearInterval(countdownInterval);
+                const success = await this.checkWebLoginStatus();
+                if (success) {
+                    window.location.reload();
+                }
+            }, 3000);
 
-            if (!loginBtn) {
-                return;
-            }
+        } else {
+            // Manual login screen
+            loginScreen.innerHTML = `
+                <style>
+                    @keyframes fadeIn {
+                        from { opacity: 0; }
+                        to { opacity: 1; }
+                    }
+                    @keyframes slideUp {
+                        from {
+                            opacity: 0;
+                            transform: translateY(20px);
+                        }
+                        to {
+                            opacity: 1;
+                            transform: translateY(0);
+                        }
+                    }
+                    .login-card {
+                        max-width: 360px;
+                        width: 100%;
+                        animation: slideUp 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+                    }
+                    .login-logo-container {
+                        width: 72px;
+                        height: 72px;
+                        margin: 0 auto 20px;
+                        background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+                        border-radius: 18px;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        box-shadow: 0 8px 32px rgba(99, 102, 241, 0.25);
+                    }
+                    .login-logo-container img {
+                        width: 44px;
+                        height: 44px;
+                    }
+                    .login-button {
+                        width: 100%;
+                        background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+                        color: white;
+                        border: none;
+                        padding: 14px 24px;
+                        border-radius: 12px;
+                        font-size: 15px;
+                        font-weight: 600;
+                        cursor: pointer;
+                        box-shadow: 0 4px 16px rgba(99, 102, 241, 0.3);
+                        transition: all 0.2s ease;
+                    }
+                    .login-button:hover {
+                        transform: translateY(-2px);
+                        box-shadow: 0 6px 24px rgba(99, 102, 241, 0.4);
+                    }
+                    .login-button:active {
+                        transform: translateY(0);
+                    }
+                </style>
+                <div class="login-card">
+                    <div class="login-logo-container">
+                        <img src="icons/icon-48.png" alt="Tabmangment">
+                    </div>
+                    <h2 style="margin: 0 0 8px 0; font-size: 24px; font-weight: 700; color: #1e293b;">
+                        Welcome to Tabmangment
+                    </h2>
+                    <p style="margin: 0 0 32px 0; font-size: 14px; color: #64748b; line-height: 1.6;">
+                        Manage your browser tabs efficiently
+                    </p>
+                    <button id="login-btn" class="login-button">
+                        Sign In
+                    </button>
+                    <p style="margin: 20px 0 0 0; font-size: 12px; color: #94a3b8;">
+                        Your tabs will sync across all devices
+                    </p>
+                </div>
+            `;
 
+            document.body.appendChild(loginScreen);
 
-            loginBtn.addEventListener('click', (e) => {
-                e.preventDefault();
-                e.stopPropagation();
-
-                chrome.tabs.create({
-                    url: CONFIG.WEB.AUTH_URL,
-                    active: true
-                });
-            }, { once: false }); // Allow multiple clicks
-
-            loginBtn.addEventListener('mouseover', () => {
-                loginBtn.style.transform = 'translateY(-2px)';
-                loginBtn.style.boxShadow = '0 6px 16px rgba(0,0,0,0.3)';
-            });
-
-            loginBtn.addEventListener('mouseout', () => {
-                loginBtn.style.transform = 'translateY(0)';
-                loginBtn.style.boxShadow = '0 4px 12px rgba(0,0,0,0.2)';
-            });
-
-        }, 100); // End of setTimeout for all button handlers
+            // Add event handlers
+            setTimeout(() => {
+                const loginBtn = document.getElementById('login-btn');
+                if (loginBtn) {
+                    loginBtn.addEventListener('click', (e) => {
+                        e.preventDefault();
+                        chrome.tabs.create({
+                            url: CONFIG.WEB.AUTH_URL,
+                            active: true
+                        });
+                    });
+                }
+            }, 100);
+        }
     }
 
     hideLoginScreen() {
@@ -1945,10 +2501,14 @@ class TabmangmentPopup {
         const header = document.querySelector('.header');
         const tabsContainer = document.getElementById('tabs-container');
         const tabLimitWarningContainer = document.getElementById('tab-limit-warning');
+        const statsActionsRow = document.querySelector('.stats-actions-row');
+        const popupMainContent = document.querySelector('.popup-main-content');
 
         if (header) header.style.display = '';
         if (tabsContainer) tabsContainer.style.display = '';
-        if (tabLimitWarningContainer) tabLimitWarningContainer.style.display = ''; // Show container
+        if (tabLimitWarningContainer) tabLimitWarningContainer.style.display = '';
+        if (statsActionsRow) statsActionsRow.style.display = '';
+        if (popupMainContent) popupMainContent.style.display = '';
     }
 
     renderStats() {
@@ -1957,7 +2517,7 @@ class TabmangmentPopup {
         if (activeEl) {
             activeEl.textContent = this.realTimeTabCount || 0;
             if (!this.isPremium && this.hiddenTabCount > 0) {
-                activeEl.innerHTML = `${this.realTimeTabCount} <span style="color: #f59e0b; font-size: 10px;">(${this.hiddenTabCount} hidden)</span>`;
+                activeEl.innerHTML = `${this.realTimeTabCount} <span class="hidden-count">(${this.hiddenTabCount} hidden)</span>`;
             }
         }
         if (scheduledEl) scheduledEl.textContent = this.stats.scheduled || 0;
@@ -6642,8 +7202,114 @@ async function applyStoredTheme() {
 /**
  * Apply theme configuration to popup elements
  */
+// Calculate luminance of a color to determine if it's light or dark
+function getColorLuminance(hexColor) {
+    // Remove # if present
+    let hex = hexColor.replace('#', '');
+
+    // Handle 3-digit hex codes by expanding them to 6 digits
+    if (hex.length === 3) {
+        hex = hex[0] + hex[0] + hex[1] + hex[1] + hex[2] + hex[2];
+    }
+
+    // Convert to RGB
+    const r = parseInt(hex.substr(0, 2), 16) / 255;
+    const g = parseInt(hex.substr(2, 2), 16) / 255;
+    const b = parseInt(hex.substr(4, 2), 16) / 255;
+
+    // Calculate relative luminance using the standard formula
+    const luminance = 0.2126 * r + 0.7152 * g + 0.0722 * b;
+
+    return luminance;
+}
+
+// Get contrasting text color based on background
+function getContrastingTextColor(backgroundColor) {
+    const luminance = getColorLuminance(backgroundColor);
+
+    // If background is light (luminance > 0.5), use dark text
+    // If background is dark (luminance <= 0.5), use light text
+    return luminance > 0.5 ? '#1e293b' : '#ffffff';
+}
+
+// Get secondary text color (slightly transparent)
+function getSecondaryTextColor(backgroundColor) {
+    const luminance = getColorLuminance(backgroundColor);
+
+    // If background is light, use dark gray
+    // If background is dark, use light gray
+    return luminance > 0.5 ? '#64748b' : '#94a3b8';
+}
+
+// Load and apply custom theme from storage
+async function loadAndApplyTheme() {
+    try {
+        const { activeTheme, themeConfig } = await chrome.storage.local.get(['activeTheme', 'themeConfig']);
+
+        if (themeConfig) {
+            applyThemeToPopup(themeConfig);
+        }
+    } catch (error) {
+        console.log('Error loading theme:', error);
+    }
+}
+
+/**
+ * Apply theme to popup with INTELLIGENT AUTO-CONTRAST
+ *
+ * CRITICAL: All text must be readable against its actual background.
+ * This function calculates text colors based on each element's specific background,
+ * not just the global theme color.
+ *
+ * Auto-contrast calculations:
+ * - Tab items: Text color based on theme.backgroundColor (can be dark/light)
+ * - Stat cards: Text color based on white background (#ffffff)
+ * - General UI: Text color based on body gradient (theme.primaryColor)
+ *
+ * This ensures text is always visible regardless of theme configuration.
+ */
 function applyThemeToPopup(theme) {
     try {
+        // Auto-calculate contrasting text colors based on ACTUAL backgrounds
+        const bgColor = theme.primaryColor || '#667eea';
+
+        // Calculate text colors for TAB ITEMS based on their actual background
+        const tabItemBg = theme.backgroundColor || 'rgba(255, 255, 255, 0.95)';
+
+        // Extract solid color from rgba/rgb if needed
+        let tabItemBgHex;
+        if (tabItemBg.startsWith('rgba') || tabItemBg.startsWith('rgb')) {
+            // For transparent backgrounds, check against body gradient background
+            // Use primary color as reference since tabs appear on gradient background
+            tabItemBgHex = bgColor;
+        } else if (tabItemBg.startsWith('#')) {
+            // Direct hex color
+            tabItemBgHex = tabItemBg;
+        } else {
+            // Fallback
+            tabItemBgHex = bgColor;
+        }
+
+        const tabItemTextColor = getContrastingTextColor(tabItemBgHex);
+        const tabItemSecondaryTextColor = getSecondaryTextColor(tabItemBgHex);
+
+        // Calculate text colors for STAT CARDS (white background)
+        const statCardTextColor = getContrastingTextColor('#ffffff');
+        const statCardSecondaryTextColor = getSecondaryTextColor('#ffffff');
+
+        // Calculate text colors for GENERAL UI based on body background
+        const primaryTextColor = theme.textColor || getContrastingTextColor(bgColor);
+        const secondaryTextColor = getSecondaryTextColor(bgColor);
+
+        // Log for debugging
+        console.log('🎨 Theme Applied with Element-Specific Contrast:', {
+            bodyBackground: bgColor,
+            tabItemBackground: tabItemBgHex,
+            tabItemText: tabItemTextColor,
+            statCardText: statCardTextColor,
+            generalText: primaryTextColor
+        });
+
         // Create style element for theme
         const themeStyle = document.createElement('style');
         themeStyle.id = 'custom-theme-styles';
@@ -6779,28 +7445,71 @@ function applyThemeToPopup(theme) {
                 box-shadow: 0 0 0 2px ${theme.primaryColor}60, 0 4px 16px ${theme.primaryColor}40 !important;
             }
 
-            /* Tab Title and URL Colors - Proper Contrast */
+            /* Tab Title and URL Colors - AUTO CONTRAST BASED ON TAB BACKGROUND */
             .tab-title {
-                color: ${theme.textColor || '#1e293b'} !important;
+                color: ${tabItemTextColor} !important;
                 font-weight: 500;
             }
 
             .tab-url {
-                color: ${theme.textColor || '#64748b'} !important;
-                opacity: 0.7 !important;
+                color: ${tabItemSecondaryTextColor} !important;
+                opacity: 0.8 !important;
             }
 
-            /* Tab Action Buttons */
-            .action-btn {
+            /* Tab Timer Display - Match tab text color */
+            .tab-timer,
+            .timer-countdown {
+                color: ${tabItemTextColor} !important;
+                background: ${theme.primaryColor}15 !important;
+            }
+
+            /* Stats and Labels - AUTO CONTRAST BASED ON STAT CARD BACKGROUND */
+            .stat-value {
+                color: ${statCardTextColor} !important;
+            }
+
+            .stat-label {
+                color: ${statCardSecondaryTextColor} !important;
+            }
+
+            /* Empty State Text - AUTO CONTRAST */
+            .empty-state p,
+            .empty-state h3 {
+                color: ${primaryTextColor} !important;
+            }
+
+            /* Header and Buttons Text - AUTO CONTRAST */
+            .header-title,
+            .control-btn {
+                color: ${primaryTextColor} !important;
+            }
+
+            /* Tab Action Buttons - Inside tab items, must contrast with tab background */
+            .tab-item .action-btn {
                 background: ${theme.primaryColor}15 !important;
                 border: 1px solid ${theme.primaryColor}30 !important;
-                color: ${theme.primaryColor} !important;
+                color: ${tabItemTextColor} !important;
+                transition: all 0.2s ease !important;
+            }
+
+            .tab-item .action-btn:hover:not(.disabled) {
+                background: ${theme.primaryColor}25 !important;
+                border-color: ${theme.primaryColor}60 !important;
+                color: ${tabItemTextColor} !important;
+                transform: scale(1.1) !important;
+            }
+
+            /* General action buttons (outside tabs) */
+            .action-btn {
+                background: rgba(255, 255, 255, 0.12) !important;
+                border: 1px solid rgba(255, 255, 255, 0.15) !important;
+                color: rgba(255, 255, 255, 0.95) !important;
                 transition: all 0.2s ease !important;
             }
 
             .action-btn:hover:not(.disabled) {
-                background: ${theme.primaryColor}25 !important;
-                border-color: ${theme.primaryColor}60 !important;
+                background: rgba(255, 255, 255, 0.2) !important;
+                border-color: rgba(255, 255, 255, 0.3) !important;
                 transform: scale(1.1) !important;
             }
 
@@ -6823,9 +7532,195 @@ function applyThemeToPopup(theme) {
                 opacity: 0.6 !important;
             }
 
-            /* Tabs Container */
+            /* PRO Badge in buttons - ensure visibility */
+            .pro-badge-mini {
+                background: linear-gradient(45deg, #ff6b6b, #ee5a24) !important;
+                color: white !important;
+                font-weight: 600 !important;
+                z-index: 10 !important;
+            }
+
+            /* Tabs Container - Professional Background */
             .tabs-container {
-                /* Container inherits body background through transparency */
+                background: rgba(255, 255, 255, 0.05) !important;
+                backdrop-filter: blur(20px) !important;
+                -webkit-backdrop-filter: blur(20px) !important;
+                border-radius: 12px !important;
+                transition: all 0.3s ease !important;
+            }
+
+            /* Stats Actions Row */
+            .stats-actions-row {
+                background: rgba(255, 255, 255, 0.08) !important;
+                backdrop-filter: blur(10px) !important;
+                transition: all 0.3s ease !important;
+            }
+
+            /* Header */
+            .header {
+                background: rgba(255, 255, 255, 0.1) !important;
+                backdrop-filter: blur(15px) !important;
+                transition: all 0.3s ease !important;
+            }
+
+            .subscription-info {
+                background: rgba(255, 255, 255, 0.95) !important;
+                backdrop-filter: blur(10px) !important;
+                border-radius: 8px !important;
+                padding: 6px 12px !important;
+                transition: all 0.3s ease !important;
+            }
+
+            .plan-name {
+                color: #000000 !important;
+                text-shadow: none !important;
+                font-weight: 700 !important;
+                font-size: 11px !important;
+            }
+
+            .billing-date {
+                color: #666666 !important;
+                text-shadow: none !important;
+                font-weight: 400 !important;
+                font-size: 9px !important;
+                opacity: 0.85 !important;
+                margin-top: 2px !important;
+            }
+
+            .subscription-info.pro .plan-name {
+                background: linear-gradient(135deg, ${theme.primaryColor}, ${theme.secondaryColor}) !important;
+                -webkit-background-clip: text !important;
+                -webkit-text-fill-color: transparent !important;
+                background-clip: text !important;
+            }
+
+            /* Search Panel - Comprehensive Theming */
+            .search-panel {
+                background: linear-gradient(180deg,
+                    rgba(255, 255, 255, 0.12) 0%,
+                    rgba(255, 255, 255, 0.08) 100%) !important;
+                backdrop-filter: blur(20px) !important;
+                -webkit-backdrop-filter: blur(20px) !important;
+                border-right: 2px solid rgba(255, 255, 255, 0.15) !important;
+                transition: all 0.3s ease !important;
+            }
+
+            .search-panel-header {
+                background: rgba(255, 255, 255, 0.1) !important;
+                backdrop-filter: blur(10px) !important;
+                border-bottom: 1px solid rgba(255, 255, 255, 0.12) !important;
+                transition: all 0.3s ease !important;
+            }
+
+            .search-panel-title {
+                color: rgba(255, 255, 255, 0.95) !important;
+            }
+
+            .search-close-btn {
+                background: rgba(255, 255, 255, 0.1) !important;
+                color: rgba(255, 255, 255, 0.9) !important;
+                border: 1px solid rgba(255, 255, 255, 0.15) !important;
+                transition: all 0.2s ease !important;
+            }
+
+            .search-close-btn:hover {
+                background: rgba(255, 255, 255, 0.2) !important;
+                border-color: rgba(255, 255, 255, 0.3) !important;
+                transform: scale(1.05) !important;
+            }
+
+            .search-input-wrapper {
+                background: rgba(255, 255, 255, 0.12) !important;
+                border: 2px solid rgba(255, 255, 255, 0.15) !important;
+                backdrop-filter: blur(10px) !important;
+                transition: all 0.2s ease !important;
+            }
+
+            .search-input-wrapper:focus-within {
+                background: rgba(255, 255, 255, 0.18) !important;
+                border-color: ${theme.primaryColor} !important;
+                box-shadow: 0 0 0 3px ${theme.primaryColor}30 !important;
+            }
+
+            #search-input {
+                background: transparent !important;
+                color: rgba(255, 255, 255, 0.95) !important;
+            }
+
+            #search-input::placeholder {
+                color: rgba(255, 255, 255, 0.5) !important;
+            }
+
+            .search-clear-btn {
+                background: rgba(255, 255, 255, 0.15) !important;
+                color: rgba(255, 255, 255, 0.8) !important;
+                transition: all 0.2s ease !important;
+            }
+
+            .search-clear-btn:hover {
+                background: rgba(255, 255, 255, 0.25) !important;
+                color: rgba(255, 255, 255, 1) !important;
+            }
+
+            .search-results-container {
+                background: transparent !important;
+            }
+
+            .search-empty-state {
+                color: rgba(255, 255, 255, 0.7) !important;
+            }
+
+            .search-empty-state p {
+                color: rgba(255, 255, 255, 0.85) !important;
+            }
+
+            .search-empty-state span {
+                color: rgba(255, 255, 255, 0.6) !important;
+            }
+
+            .search-result-item {
+                background: rgba(255, 255, 255, 0.15) !important;
+                border: 2px solid rgba(255, 255, 255, 0.2) !important;
+                backdrop-filter: blur(10px) !important;
+                transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1) !important;
+            }
+
+            .search-result-item:hover {
+                background: rgba(255, 255, 255, 0.22) !important;
+                border-color: ${theme.primaryColor} !important;
+                box-shadow: 0 4px 16px ${theme.primaryColor}40 !important;
+                transform: translateX(4px) !important;
+            }
+
+            .search-result-title {
+                color: ${theme.primaryColor} !important;
+            }
+
+            .search-result-description {
+                color: rgba(255, 255, 255, 0.8) !important;
+            }
+
+            .search-result-url {
+                color: rgba(255, 255, 255, 0.5) !important;
+            }
+
+            .search-usage-info {
+                background: rgba(255, 255, 255, 0.1) !important;
+                border-color: rgba(255, 255, 255, 0.2) !important;
+                color: rgba(255, 255, 255, 0.85) !important;
+                backdrop-filter: blur(10px) !important;
+            }
+
+            .search-usage-info.limited {
+                background: rgba(245, 158, 11, 0.15) !important;
+                border-color: rgba(245, 158, 11, 0.3) !important;
+                color: #fbbf24 !important;
+            }
+
+            .search-usage-info.locked {
+                background: rgba(239, 68, 68, 0.15) !important;
+                border-color: rgba(239, 68, 68, 0.3) !important;
+                color: #fca5a5 !important;
             }
 
             /* Tab Favicon Container */
@@ -6838,6 +7733,260 @@ function applyThemeToPopup(theme) {
             .tab-header:hover .tab-favicon-container {
                 background: ${theme.primaryColor}20 !important;
                 border-color: ${theme.primaryColor}40 !important;
+            }
+
+            /* Header Buttons - BLACK text and icons for visibility */
+            .header-btn {
+                background: rgba(255, 255, 255, 0.95) !important;
+                color: #000000 !important;
+                border: 1px solid rgba(255, 255, 255, 0.3) !important;
+                backdrop-filter: blur(10px) !important;
+                transition: all 0.2s ease !important;
+            }
+
+            .header-btn .btn-text,
+            .header-btn .btn-icon {
+                color: #000000 !important;
+                fill: none !important;
+                stroke: #000000 !important;
+                stroke-width: 2 !important;
+            }
+
+            .header-btn:hover {
+                background: rgba(255, 255, 255, 1) !important;
+                border-color: ${theme.primaryColor} !important;
+                transform: translateY(-1px) !important;
+            }
+
+            .header-btn:hover .btn-text,
+            .header-btn:hover .btn-icon {
+                color: #000000 !important;
+                stroke: #000000 !important;
+            }
+
+            .header-btn.search-btn:hover,
+            .header-btn.premium-btn:hover {
+                box-shadow: 0 4px 16px ${theme.primaryColor}40 !important;
+            }
+
+            /* Premium button - keep colorful */
+            .header-btn.premium-btn {
+                background: linear-gradient(135deg, ${theme.primaryColor}, ${theme.secondaryColor}) !important;
+                color: #ffffff !important;
+            }
+
+            .header-btn.premium-btn .btn-text {
+                color: #ffffff !important;
+            }
+
+            /* Action Buttons in stats/actions section - BLACK SVGs for visibility */
+            .actions-section .action-btn {
+                background: rgba(255, 255, 255, 0.95) !important;
+                border: 1px solid rgba(255, 255, 255, 0.3) !important;
+                backdrop-filter: blur(10px) !important;
+                color: #000000 !important;
+            }
+
+            .actions-section .action-btn svg {
+                stroke: #000000 !important;
+                fill: none !important;
+                stroke-width: 2 !important;
+            }
+
+            .actions-section .action-btn:hover {
+                background: rgba(255, 255, 255, 1) !important;
+                border-color: ${theme.primaryColor} !important;
+                transform: translateY(-1px) !important;
+            }
+
+            .actions-section .action-btn:hover svg {
+                stroke: #000000 !important;
+            }
+
+            /* General action buttons (fallback) */
+            .action-btn {
+                background: rgba(255, 255, 255, 0.95) !important;
+                border: 1px solid rgba(255, 255, 255, 0.3) !important;
+                backdrop-filter: blur(10px) !important;
+            }
+
+            .action-btn svg {
+                stroke: #000000 !important;
+                fill: none !important;
+                stroke-width: 2 !important;
+            }
+
+            .action-btn:hover {
+                background: rgba(255, 255, 255, 1) !important;
+                border-color: ${theme.primaryColor} !important;
+            }
+
+            /* Stat Cards with proper background */
+            .stat-card {
+                background: rgba(255, 255, 255, 0.95) !important;
+                backdrop-filter: blur(15px) !important;
+                border: 1px solid rgba(255, 255, 255, 0.15) !important;
+                transition: all 0.3s ease !important;
+            }
+
+            .stat-number {
+                background: linear-gradient(135deg, ${theme.primaryColor}, ${theme.secondaryColor}) !important;
+                -webkit-background-clip: text !important;
+                -webkit-text-fill-color: transparent !important;
+                background-clip: text !important;
+                font-weight: 700 !important;
+            }
+
+            .stat-label {
+                color: ${statCardSecondaryTextColor} !important;
+            }
+
+            /* Tab Limit Warning - Solid background with dark text for readability */
+            .tab-limit-warning-content {
+                background: rgba(245, 158, 11, 0.95) !important;
+                border: 2px solid rgba(245, 158, 11, 0.3) !important;
+                backdrop-filter: blur(10px) !important;
+            }
+
+            .tab-limit-warning-content h3,
+            .tab-limit-warning-content strong,
+            .tab-limit-warning-content div {
+                color: #78350f !important;
+            }
+
+            .tab-limit-warning-content p,
+            .tab-limit-warning-content p strong,
+            .tab-limit-warning-content span {
+                color: #92400e !important;
+            }
+
+            /* Success message (green background) */
+            .tab-limit-warning-content[style*="dcfdf4"] {
+                background: rgba(167, 243, 208, 0.95) !important;
+            }
+
+            .tab-limit-warning-content[style*="dcfdf4"] h3,
+            .tab-limit-warning-content[style*="dcfdf4"] strong,
+            .tab-limit-warning-content[style*="dcfdf4"] p {
+                color: #065f46 !important;
+            }
+
+            /* Empty State */
+            .empty-state {
+                color: rgba(255, 255, 255, 0.7) !important;
+            }
+
+            .empty-state h3 {
+                color: rgba(255, 255, 255, 0.9) !important;
+            }
+
+            .empty-state p {
+                color: rgba(255, 255, 255, 0.7) !important;
+            }
+
+            /* Scrollbar Theming */
+            .tabs-container::-webkit-scrollbar-thumb {
+                background: ${theme.primaryColor}60 !important;
+            }
+
+            .tabs-container::-webkit-scrollbar-thumb:hover {
+                background: ${theme.primaryColor}80 !important;
+            }
+
+            .tabs-container::-webkit-scrollbar-track {
+                background: rgba(255, 255, 255, 0.05) !important;
+            }
+
+            /* ========== BOOKMARKS VIEW COMPREHENSIVE THEMING ========== */
+
+            /* Bookmark Header */
+            .bookmark-header {
+                background: linear-gradient(135deg, ${theme.primaryColor} 0%, ${theme.secondaryColor} 100%) !important;
+                backdrop-filter: blur(20px) !important;
+                box-shadow:
+                    0 8px 32px ${theme.primaryColor}40,
+                    0 2px 8px ${theme.primaryColor}20,
+                    inset 0 1px 0 rgba(255, 255, 255, 0.2) !important;
+            }
+
+            /* Bookmark Stats */
+            .bookmark-stats {
+                background: rgba(255, 255, 255, 0.15) !important;
+                backdrop-filter: blur(10px) !important;
+                border: 1px solid rgba(255, 255, 255, 0.2) !important;
+            }
+
+            /* Back to Tabs Button */
+            #back-to-tabs {
+                background: linear-gradient(135deg, rgba(255, 255, 255, 0.25), rgba(255, 255, 255, 0.15)) !important;
+                backdrop-filter: blur(10px) !important;
+                border: 1px solid rgba(255, 255, 255, 0.3) !important;
+            }
+
+            #back-to-tabs:hover {
+                background: linear-gradient(135deg, rgba(255, 255, 255, 0.4), rgba(255, 255, 255, 0.3)) !important;
+            }
+
+            /* Bookmark All Current Button */
+            #bookmark-all-current {
+                background: linear-gradient(135deg, ${theme.primaryColor}, ${theme.secondaryColor}) !important;
+                box-shadow: 0 4px 12px ${theme.primaryColor}40, inset 0 1px 0 rgba(255, 255, 255, 0.2) !important;
+            }
+
+            /* Clear All Bookmarks Button */
+            #clear-all-bookmarks {
+                background: rgba(255, 255, 255, 0.9) !important;
+                backdrop-filter: blur(10px) !important;
+            }
+
+            /* Bookmark Items */
+            .bookmark-item {
+                background: rgba(255, 255, 255, 0.15) !important;
+                backdrop-filter: blur(15px) !important;
+                border: 1px solid rgba(255, 255, 255, 0.2) !important;
+                box-shadow:
+                    0 4px 16px rgba(0, 0, 0, 0.04),
+                    inset 0 1px 0 rgba(255, 255, 255, 0.3) !important;
+            }
+
+            .bookmark-item:hover {
+                background: rgba(255, 255, 255, 0.22) !important;
+                border-color: ${theme.primaryColor}60 !important;
+                box-shadow:
+                    0 12px 32px rgba(0, 0, 0, 0.08),
+                    inset 0 1px 0 rgba(255, 255, 255, 0.4),
+                    0 0 0 1px ${theme.primaryColor}30 !important;
+            }
+
+            /* Bookmark Favicon */
+            .bookmark-favicon {
+                background: linear-gradient(135deg, ${theme.primaryColor}20, ${theme.secondaryColor}20) !important;
+                border: 2px solid ${theme.primaryColor}40 !important;
+                box-shadow: 0 4px 12px ${theme.primaryColor}40, inset 0 1px 0 rgba(255, 255, 255, 0.2) !important;
+            }
+
+            .bookmark-item:hover .bookmark-favicon {
+                box-shadow: 0 6px 16px ${theme.primaryColor}60, inset 0 1px 0 rgba(255, 255, 255, 0.3) !important;
+            }
+
+            /* Bookmark Text */
+            .bookmark-title {
+                color: rgba(255, 255, 255, 0.95) !important;
+            }
+
+            .bookmark-url {
+                color: rgba(255, 255, 255, 0.7) !important;
+            }
+
+            /* Remove Bookmark Button */
+            .remove-bookmark-btn {
+                background: linear-gradient(135deg, #ef4444, #dc2626) !important;
+                box-shadow: 0 4px 12px rgba(239, 68, 68, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.2) !important;
+            }
+
+            .remove-bookmark-btn:hover {
+                background: linear-gradient(135deg, #dc2626, #b91c1c) !important;
+                box-shadow: 0 6px 16px rgba(239, 68, 68, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.3) !important;
             }
         `;
 
