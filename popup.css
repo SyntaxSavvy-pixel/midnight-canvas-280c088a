@@ -72,6 +72,11 @@ body {
     -webkit-overflow-scrolling: touch;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    transition: width 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+body.search-active {
+    width: 720px;
 }
 
 body::-webkit-scrollbar {
@@ -2311,6 +2316,19 @@ body::-webkit-scrollbar-thumb:hover {
 /* ===========================
    SEARCH PANEL STYLES
    =========================== */
+
+.popup-main-content {
+    position: absolute;
+    right: 0;
+    top: 0;
+    width: 400px;
+    min-height: 520px;
+    transition: right 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+body.search-active .popup-main-content {
+    right: 0;
+}
 
 .search-panel {
     position: fixed;

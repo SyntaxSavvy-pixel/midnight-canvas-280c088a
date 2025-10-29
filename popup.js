@@ -728,6 +728,7 @@ class TabmangmentPopup {
                 if (searchPanel) {
                     searchPanel.classList.add('active');
                     searchBtn.classList.add('active');
+                    document.body.classList.add('search-active');
                     setTimeout(() => {
                         if (searchInput) searchInput.focus();
                     }, 300);
@@ -741,6 +742,7 @@ class TabmangmentPopup {
                 if (searchPanel) {
                     searchPanel.classList.remove('active');
                     if (searchBtn) searchBtn.classList.remove('active');
+                    document.body.classList.remove('search-active');
                     if (searchInput) searchInput.value = '';
                     if (searchClearBtn) searchClearBtn.style.display = 'none';
                     this.filterTabs('');
