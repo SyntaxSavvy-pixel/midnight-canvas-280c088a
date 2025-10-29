@@ -1,10 +1,5 @@
-const _cfg = {
-    _b: ['dGFibWFuZ21lbnQubmV0bGlmeS5hcHA='],
-    _p: 'https://',
-    _d: () => atob(_cfg._b[0])
-};
-
-const API_BASE_URL = _cfg._p + _cfg._d();
+// Plain text configuration as required by Chrome Web Store
+const API_BASE_URL = 'https://tabmangment.com';
 
 export const CONFIG = {
     API: {

@@ -1503,6 +1503,22 @@
             height: 18px;
         }
 
+        /* Fade-in animation for top create button */
+        @keyframes fadeInButton {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .fade-in-button {
+            animation: fadeInButton 0.5s ease-in-out;
+        }
+
         /* Range Slider */
         .range-slider {
             -webkit-appearance: none;
@@ -2277,25 +2293,37 @@
                 <!-- Custom Theme Tab - MODAL-BASED DESIGN -->
                 <div class="theme-tab-content" id="custom-themes-tab">
                     <div class="card">
-                        <h2 class="card-title">Custom Themes</h2>
-                        <p style="color: #94a3b8; margin-bottom: 2rem;">Create and manage your personalized themes</p>
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+                            <div>
+                                <h2 class="card-title" style="margin: 0;">Custom Themes</h2>
+                                <p style="color: #94a3b8; margin: 0.5rem 0 0 0;">Create and manage your personalized themes</p>
+                            </div>
+                            <!-- Top Create Button (shown when 3+ themes) -->
+                            <button id="top-create-theme-btn" onclick="openCustomThemeStudio()" style="display: none; padding: 0.75rem 1.5rem; background: linear-gradient(135deg, #6366f1, #8b5cf6); border: none; border-radius: 0.75rem; color: white; font-weight: 600; cursor: pointer; font-size: 0.9375rem; transition: all 0.3s; box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3); display: flex; align-items: center; gap: 0.5rem;" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 6px 20px rgba(99, 102, 241, 0.4)';" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 12px rgba(99, 102, 241, 0.3)';">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                    <line x1="12" y1="5" x2="12" y2="19"></line>
+                                    <line x1="5" y1="12" x2="19" y2="12"></line>
+                                </svg>
+                                Create Theme
+                            </button>
+                        </div>
 
                         <!-- Custom Themes Grid -->
                         <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1.5rem;" id="custom-themes-grid">
-                            
+
                             <!-- Create New Theme Card -->
-                            <div onclick="openCustomThemeStudio()" style="background: linear-gradient(135deg, #667eea15, #764ba215); border: 2px dashed #6366f1; border-radius: 1rem; padding: 3rem 2rem; cursor: pointer; transition: all 0.3s; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 280px; position: relative; overflow: hidden;" onmouseover="this.style.background='linear-gradient(135deg, #667eea25, #764ba225)'; this.style.transform='translateY(-4px)'; this.style.boxShadow='0 8px 32px rgba(99, 102, 241, 0.3)';" onmouseout="this.style.background='linear-gradient(135deg, #667eea15, #764ba215)'; this.style.transform='translateY(0)'; this.style.boxShadow='none';">
-                                
+                            <div id="create-theme-card" onclick="openCustomThemeStudio()" style="background: linear-gradient(135deg, #667eea15, #764ba215); border: 2px dashed #6366f1; border-radius: 1rem; padding: 3rem 2rem; cursor: pointer; transition: all 0.3s; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 280px; position: relative; overflow: hidden;" onmouseover="this.style.background='linear-gradient(135deg, #667eea25, #764ba225)'; this.style.transform='translateY(-4px)'; this.style.boxShadow='0 8px 32px rgba(99, 102, 241, 0.3)';" onmouseout="this.style.background='linear-gradient(135deg, #667eea15, #764ba215)'; this.style.transform='translateY(0)'; this.style.boxShadow='none';">
+
                                 <div style="background: linear-gradient(135deg, #6366f1, #8b5cf6); width: 80px; height: 80px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-bottom: 1.5rem; box-shadow: 0 8px 24px rgba(99, 102, 241, 0.4);">
                                     <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                                         <line x1="12" y1="5" x2="12" y2="19"></line>
                                         <line x1="5" y1="12" x2="19" y2="12"></line>
                                     </svg>
                                 </div>
-                                
+
                                 <h3 style="color: #f8fafc; font-size: 1.25rem; font-weight: 700; margin: 0 0 0.5rem 0;">Create Custom Theme</h3>
                                 <p style="color: #94a3b8; font-size: 0.9375rem; margin: 0; text-align: center;">Design your own unique theme with full customization</p>
-                                
+
                                 <div style="position: absolute; top: 1rem; right: 1rem; background: #6366f120; color: #6366f1; padding: 0.375rem 0.75rem; border-radius: 0.5rem; font-size: 0.75rem; font-weight: 700;">
                                     NEW
                                 </div>
@@ -8060,7 +8088,7 @@
             // }
 
             const themeNameInput = document.getElementById('custom-theme-name');
-            const themeName = themeNameInput?.value.trim();
+            let themeName = themeNameInput?.value.trim();
             if (!themeName) {
                 showNotification('Please enter a theme name.', 'error');
                 return;
@@ -8078,26 +8106,37 @@
             const animationStyleSelect = document.getElementById('custom-animation-style');
             const animationSpeedInput = document.getElementById('custom-animation-speed');
 
-            const customTheme = {
-                name: themeName,
-                primaryColor: primaryInput?.value || '#667eea',
-                accentColor: accentInput?.value || '#8b5cf6',
-                textColor: textInput?.value || '#ffffff',
-                secondaryColor: secondaryInput?.value || '#764ba2',
-                fontFamily: fontFamilySelect?.value || 'system-ui',
-                fontSize: (fontSizeInput?.value || '14') + 'px',
-                bgType: bgTypeSelect?.value || 'gradient',
-                enableGradient: enableGradientCheckbox?.checked ?? true,
-                animationStyle: animationStyleSelect?.value || 'fade',
-                animationSpeed: (animationSpeedInput?.value || '250') + 'ms',
-                isCustom: true,
-                createdAt: new Date().toISOString()
-            };
-
             try {
                 // Get existing custom themes
                 const stored = localStorage.getItem('customThemes');
                 const customThemes = stored ? JSON.parse(stored) : [];
+
+                // Handle duplicate names - add numbering
+                const baseThemeName = themeName;
+                let duplicateCount = 0;
+                const existingNames = customThemes.map(t => t.name);
+
+                // Check if name exists
+                while (existingNames.includes(themeName)) {
+                    duplicateCount++;
+                    themeName = `${baseThemeName} ${duplicateCount}`;
+                }
+
+                const customTheme = {
+                    name: themeName,
+                    primaryColor: primaryInput?.value || '#667eea',
+                    accentColor: accentInput?.value || '#8b5cf6',
+                    textColor: textInput?.value || '#ffffff',
+                    secondaryColor: secondaryInput?.value || '#764ba2',
+                    fontFamily: fontFamilySelect?.value || 'system-ui',
+                    fontSize: (fontSizeInput?.value || '14') + 'px',
+                    bgType: bgTypeSelect?.value || 'gradient',
+                    enableGradient: enableGradientCheckbox?.checked ?? true,
+                    animationStyle: animationStyleSelect?.value || 'fade',
+                    animationSpeed: (animationSpeedInput?.value || '250') + 'ms',
+                    isCustom: true,
+                    createdAt: new Date().toISOString()
+                };
 
                 // Add new theme
                 customThemes.push(customTheme);
@@ -8105,7 +8144,7 @@
                 // Save to localStorage
                 localStorage.setItem('customThemes', JSON.stringify(customThemes));
 
-                // Show success
+                // Show success with actual saved name
                 showNotification(`${themeName} saved successfully!`, 'success');
 
                 // Reset form
@@ -8190,6 +8229,25 @@
                 const customThemes = stored ? JSON.parse(stored) : [];
 
                 const container = document.getElementById('saved-custom-themes-list');
+                const createCard = document.getElementById('create-theme-card');
+                const topButton = document.getElementById('top-create-theme-btn');
+
+                // Show/hide create card and top button based on theme count
+                if (customThemes.length >= 3) {
+                    // Hide the create card
+                    if (createCard) createCard.style.display = 'none';
+                    // Show top button with fade-in
+                    if (topButton) {
+                        topButton.style.display = 'block';
+                        topButton.classList.add('fade-in-button');
+                    }
+                } else {
+                    // Show the create card
+                    if (createCard) createCard.style.display = 'flex';
+                    // Hide top button
+                    if (topButton) topButton.style.display = 'none';
+                }
+
                 if (!customThemes.length) {
                     container.innerHTML = `
                         <div style="text-align: center; padding: 3rem; color: #64748b; grid-column: 1 / -1;">
