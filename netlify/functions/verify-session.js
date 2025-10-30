@@ -122,8 +122,8 @@ exports.handler = async (event, context) => {
                 last_payment_amount: session.amount_total / 100 // Convert from cents to dollars
             };
 
-            console.log('📝 Updating Supabase for:', customerEmail);
-            console.log('📝 Update data:', JSON.stringify(updateData, null, 2));
+            console.log('📝 Updating Supabase for user');
+            console.log('📝 Update status:', updateData.is_pro ? 'Pro activated' : 'Update processed');
 
             const { data: updateResult, error: updateError } = await supabase
                 .from('users_auth')

@@ -202,11 +202,10 @@ async function handleSubscriptionUpdated(subscription) {
 
         if (error) throw error;
 
-        console.log(`✅ Subscription updated for ${customer.email}:`, {
+        console.log(`✅ Subscription updated:`, {
             isPro,
             status: subscription.status,
-            cancel_at_period_end: subscription.cancel_at_period_end,
-            current_period_end: updateData.current_period_end
+            cancel_at_period_end: subscription.cancel_at_period_end
         });
 
         // Create notification for real-time updates
@@ -234,7 +233,7 @@ async function handleSubscriptionDeleted(subscription) {
 
         if (error) throw error;
 
-        console.log(`✅ Subscription ended for ${customer.email} - downgraded to Free`);
+        console.log(`✅ Subscription ended - downgraded to Free`);
 
         // Create notification for real-time updates
         await createSubscriptionNotification(customer.email, 'cancelled', 'free');
