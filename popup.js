@@ -7297,15 +7297,16 @@ function applyThemeToPopup(theme) {
         const statCardTextColor = getContrastingTextColor('#ffffff');
         const statCardSecondaryTextColor = getSecondaryTextColor('#ffffff');
 
-        // Calculate text colors for GENERAL UI based on body background
+        // CRITICAL: Use user's text color choice, NOT auto-calculated contrast
         const primaryTextColor = theme.textColor || getContrastingTextColor(bgColor);
-        const secondaryTextColor = getSecondaryTextColor(bgColor);
+        const secondaryTextColor = theme.textColor ? `${theme.textColor}cc` : getSecondaryTextColor(bgColor); // Add opacity to user's color
 
         // Log for debugging
-        console.log('🎨 Theme Applied with Element-Specific Contrast:', {
+        console.log('🎨 Theme Applied with User Text Color:', {
             bodyBackground: bgColor,
             tabItemBackground: tabItemBgHex,
-            tabItemText: tabItemTextColor,
+            userTextColor: theme.textColor,
+            tabItemText: primaryTextColor, // Now uses user's choice
             statCardText: statCardTextColor,
             generalText: primaryTextColor
         });
@@ -7445,21 +7446,21 @@ function applyThemeToPopup(theme) {
                 box-shadow: 0 0 0 2px ${theme.primaryColor}60, 0 4px 16px ${theme.primaryColor}40 !important;
             }
 
-            /* Tab Title and URL Colors - AUTO CONTRAST BASED ON TAB BACKGROUND */
+            /* Tab Title and URL Colors - USE USER'S TEXT COLOR CHOICE */
             .tab-title {
-                color: ${tabItemTextColor} !important;
+                color: ${primaryTextColor} !important;
                 font-weight: 500;
             }
 
             .tab-url {
-                color: ${tabItemSecondaryTextColor} !important;
-                opacity: 0.8 !important;
+                color: ${secondaryTextColor} !important;
+                opacity: 0.7 !important;
             }
 
             /* Tab Timer Display - Match tab text color */
             .tab-timer,
             .timer-countdown {
-                color: ${tabItemTextColor} !important;
+                color: ${primaryTextColor} !important;
                 background: ${theme.primaryColor}15 !important;
             }
 
