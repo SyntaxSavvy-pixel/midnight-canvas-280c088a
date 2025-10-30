@@ -7266,25 +7266,25 @@
             const existingFavicons = document.querySelectorAll('link[rel*="icon"]');
             existingFavicons.forEach(favicon => favicon.remove());
 
-            // Add the correct favicon with absolute path
+            // Add the correct favicon with relative path to prevent CORS errors
             const favicon32 = document.createElement('link');
             favicon32.rel = 'icon';
             favicon32.type = 'image/png';
             favicon32.sizes = '32x32';
-            favicon32.href = '/icons/icon-32.png';
+            favicon32.href = 'icons/icon-32.png';
             document.head.appendChild(favicon32);
 
             const favicon16 = document.createElement('link');
             favicon16.rel = 'icon';
             favicon16.type = 'image/png';
             favicon16.sizes = '16x16';
-            favicon16.href = '/icons/icon-16.png';
+            favicon16.href = 'icons/icon-16.png';
             document.head.appendChild(favicon16);
 
             const shortcutIcon = document.createElement('link');
             shortcutIcon.rel = 'shortcut icon';
             shortcutIcon.type = 'image/png';
-            shortcutIcon.href = '/icons/icon-32.png';
+            shortcutIcon.href = 'icons/icon-32.png';
             document.head.appendChild(shortcutIcon);
         }
 
@@ -7961,6 +7961,9 @@
             if (modal) {
                 modal.style.display = 'block';
                 document.body.style.overflow = 'hidden'; // Prevent background scrolling
+
+                // Enforce favicon to prevent CORS errors
+                enforceFavicon();
 
                 // Load any existing draft or reset to defaults
                 loadCustomThemeDraft();
