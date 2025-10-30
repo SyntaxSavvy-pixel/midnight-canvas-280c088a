@@ -107,7 +107,7 @@ class TabmangmentPopup {
 
             // Load and apply custom theme (non-blocking, don't break popup if fails)
             loadAndApplyTheme().catch(err => {
-                console.log('Theme load failed:', err);
+                // Theme load failed silently
             });
 
             // Load and show cached data IMMEDIATELY (non-blocking)
@@ -669,7 +669,6 @@ class TabmangmentPopup {
 
             // INSTANT THEME UPDATES - Apply theme immediately when changed
             if (areaName === 'local' && (changes.themeConfig || changes.activeTheme)) {
-                console.log('🎨 Theme changed, applying instantly...');
                 const { themeConfig } = await chrome.storage.local.get(['themeConfig']);
                 if (themeConfig) {
                     applyThemeToPopup(themeConfig);
@@ -7195,7 +7194,7 @@ async function applyStoredTheme() {
         applyThemeToPopup(stored.themeConfig);
 
     } catch (error) {
-        console.log('Error loading theme:', error);
+        // Error loading theme - silently fail
     }
 }
 
@@ -7272,7 +7271,7 @@ async function loadAndApplyTheme() {
             applyThemeToPopup(themeConfig);
         }
     } catch (error) {
-        console.log('Error loading theme:', error);
+        // Error loading theme - silently fail
     }
 }
 
@@ -7332,16 +7331,6 @@ function applyThemeToPopup(theme) {
         // CRITICAL: Use user's text color choice, NOT auto-calculated contrast
         const primaryTextColor = theme.textColor || getContrastingTextColor(bgColor);
         const secondaryTextColor = theme.textColor ? `${theme.textColor}cc` : getSecondaryTextColor(bgColor); // Add opacity to user's color
-
-        // Log for debugging
-        console.log('🎨 Theme Applied with User Text Color:', {
-            bodyBackground: bgColor,
-            tabItemBackground: tabItemBgHex,
-            userTextColor: theme.textColor,
-            tabItemText: primaryTextColor, // Now uses user's choice
-            statCardText: statCardTextColor,
-            generalText: primaryTextColor
-        });
 
         // Create style element for theme
         const themeStyle = document.createElement('style');
@@ -8076,7 +8065,7 @@ function applyThemeToPopup(theme) {
         document.head.appendChild(themeStyle);
 
     } catch (error) {
-        console.log('Error applying theme:', error);
+        // Error applying theme - silently fail
     }
 }
 
