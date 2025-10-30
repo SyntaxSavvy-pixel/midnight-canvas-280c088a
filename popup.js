@@ -7700,15 +7700,17 @@ function applyThemeToPopup(theme) {
             }
 
             .search-empty-state {
-                color: rgba(255, 255, 255, 0.7) !important;
+                color: ${secondaryTextColor} !important;
             }
 
             .search-empty-state p {
-                color: rgba(255, 255, 255, 0.85) !important;
+                color: ${primaryTextColor} !important;
+                font-weight: 600;
             }
 
             .search-empty-state span {
-                color: rgba(255, 255, 255, 0.6) !important;
+                color: ${secondaryTextColor} !important;
+                opacity: 0.85;
             }
 
             .search-result-item {
@@ -7740,20 +7742,20 @@ function applyThemeToPopup(theme) {
             .search-usage-info {
                 background: rgba(255, 255, 255, 0.1) !important;
                 border-color: rgba(255, 255, 255, 0.2) !important;
-                color: rgba(255, 255, 255, 0.85) !important;
+                color: ${primaryTextColor} !important;
                 backdrop-filter: blur(10px) !important;
             }
 
             .search-usage-info.limited {
                 background: rgba(245, 158, 11, 0.15) !important;
                 border-color: rgba(245, 158, 11, 0.3) !important;
-                color: #fbbf24 !important;
+                color: ${primaryTextColor} !important;
             }
 
             .search-usage-info.locked {
                 background: rgba(239, 68, 68, 0.15) !important;
                 border-color: rgba(239, 68, 68, 0.3) !important;
-                color: #fca5a5 !important;
+                color: ${primaryTextColor} !important;
             }
 
             /* Tab Favicon Container */
