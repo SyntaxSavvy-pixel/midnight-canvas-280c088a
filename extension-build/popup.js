@@ -7241,6 +7241,28 @@ function getSecondaryTextColor(backgroundColor) {
     return luminance > 0.5 ? '#64748b' : '#94a3b8';
 }
 
+// Helper function to convert hex to RGB
+function hexToRgb(hex) {
+    // Remove # if present
+    hex = hex.replace('#', '');
+
+    // Handle 3-digit hex
+    if (hex.length === 3) {
+        hex = hex[0] + hex[0] + hex[1] + hex[1] + hex[2] + hex[2];
+    }
+
+    // Parse hex values
+    const r = parseInt(hex.substr(0, 2), 16);
+    const g = parseInt(hex.substr(2, 2), 16);
+    const b = parseInt(hex.substr(4, 2), 16);
+
+    if (isNaN(r) || isNaN(g) || isNaN(b)) {
+        return null;
+    }
+
+    return { r, g, b };
+}
+
 // Load and apply custom theme from storage
 async function loadAndApplyTheme() {
     try {
@@ -7272,9 +7294,19 @@ function applyThemeToPopup(theme) {
     try {
         // Auto-calculate contrasting text colors based on ACTUAL backgrounds
         const bgColor = theme.primaryColor || '#667eea';
+        const accentColor = theme.accentColor || '#8b5cf6';
 
-        // Calculate text colors for TAB ITEMS based on their actual background
-        const tabItemBg = theme.backgroundColor || 'rgba(255, 255, 255, 0.95)';
+        // Calculate light accent background for tabs (if not provided)
+        let tabItemBg = theme.backgroundColor;
+
+        // If no backgroundColor provided, or if it's white, use light accent color
+        if (!tabItemBg || tabItemBg === 'rgba(255, 255, 255, 0.95)' || tabItemBg === '#ffffff') {
+            // Create light accent background: 8% opacity of accent color
+            const accentRgb = hexToRgb(accentColor);
+            tabItemBg = accentRgb
+                ? `rgba(${accentRgb.r}, ${accentRgb.g}, ${accentRgb.b}, 0.08)`
+                : 'rgba(139, 92, 246, 0.08)'; // Fallback
+        }
 
         // Extract solid color from rgba/rgb if needed
         let tabItemBgHex;

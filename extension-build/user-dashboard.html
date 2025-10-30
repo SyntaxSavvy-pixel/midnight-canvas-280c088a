@@ -8074,6 +8074,28 @@
             return luminance > 0.5 ? '#64748b' : 'rgba(255, 255, 255, 0.7)';
         }
 
+        // Helper function to convert hex to RGB
+        function hexToRgb(hex) {
+            // Remove # if present
+            hex = hex.replace('#', '');
+
+            // Handle 3-digit hex
+            if (hex.length === 3) {
+                hex = hex[0] + hex[0] + hex[1] + hex[1] + hex[2] + hex[2];
+            }
+
+            // Parse hex values
+            const r = parseInt(hex.substr(0, 2), 16);
+            const g = parseInt(hex.substr(2, 2), 16);
+            const b = parseInt(hex.substr(4, 2), 16);
+
+            if (isNaN(r) || isNaN(g) || isNaN(b)) {
+                return null;
+            }
+
+            return { r, g, b };
+        }
+
         function updateCustomThemePreview() {
             // Get all color values
             const primaryColor = document.getElementById('custom-color-primary')?.value || '#667eea';
@@ -8132,11 +8154,16 @@
                 });
             }
 
-            // Update tab items with WHITE background (like actual popup)
+            // Update tab items with LIGHT ACCENT background (matches theme smoothly)
+            const accentRgb = hexToRgb(accentColor);
+            const lightTabBackground = accentRgb
+                ? `rgba(${accentRgb.r}, ${accentRgb.g}, ${accentRgb.b}, 0.08)`
+                : 'rgba(139, 92, 246, 0.08)'; // Fallback
+
             const tabItems = preview?.querySelectorAll('[data-preview-tab]');
             if (tabItems) {
                 tabItems.forEach(el => {
-                    el.style.background = 'rgba(255, 255, 255, 0.95)';
+                    el.style.background = lightTabBackground;
                     el.style.backdropFilter = 'blur(10px)';
                     el.style.border = `1px solid ${primaryColor}30`;
                 });
@@ -8375,14 +8402,22 @@
             const bgType = bgTypeSelect?.value || 'gradient';
 
             // Build complete custom theme object with ALL required fields
+            const accentColor = accentInput?.value || '#8b5cf6';
+
+            // Create light accent background: extract RGB from accent color and make it very light and translucent
+            const accentRgb = hexToRgb(accentColor);
+            const lightBackground = accentRgb
+                ? `rgba(${accentRgb.r}, ${accentRgb.g}, ${accentRgb.b}, 0.08)`
+                : 'rgba(139, 92, 246, 0.08)'; // Fallback to light purple
+
             const customTheme = {
                 name: 'Custom',
                 primaryColor: primaryColor,
-                accentColor: accentInput?.value || '#8b5cf6',
+                accentColor: accentColor,
                 textColor: textInput?.value || '#ffffff',
                 secondaryColor: secondaryColor,
-                // Use white background for tab items for better visibility
-                backgroundColor: 'rgba(255, 255, 255, 0.95)',
+                // Use light accent color for tab backgrounds - smooth and matches theme
+                backgroundColor: lightBackground,
                 fontFamily: fontFamilySelect?.value || 'system-ui',
                 fontSize: (fontSizeInput?.value || '14') + 'px',
                 bgType: bgType,
