@@ -390,23 +390,38 @@
                         <div class="privacy-icon">
                             <i data-feather="shield"></i>
                         </div>
-                        <h2>Data Collection</h2>
+                        <h2>Data Collection & Storage</h2>
                     </div>
                     <div class="highlight-box">
-                        <p>This extension does not collect, sell, or share any personal information. Your privacy is our top priority.</p>
+                        <p><strong>We collect and store data necessary to provide our cross-device sync and premium features.</strong> Your privacy is our top priority, and we only collect what's essential for functionality.</p>
                     </div>
-                    <p>We believe in complete transparency. Tabmangment operates entirely on your device with zero external data transmission.</p>
+                    <p><strong>Data We Collect:</strong></p>
+                    <p>• <strong>Account Information:</strong> Email address, name, and profile picture (when you sign in with Google/GitHub OAuth)</p>
+                    <p>• <strong>Subscription Data:</strong> Pro plan status, subscription ID, payment status (managed by Stripe)</p>
+                    <p>• <strong>Device Information:</strong> Device fingerprint (browser type, OS, screen resolution) for device limit enforcement and security</p>
+                    <p>• <strong>Usage Analytics:</strong> Tab count, auto-close statistics, and feature usage to improve our service</p>
+                    <p>• <strong>Settings & Preferences:</strong> Custom themes, timer configurations, and dashboard settings</p>
+                    <p>• <strong>AI Search Queries:</strong> Search terms sent to Perplexity AI when using the AI Search feature</p>
+
+                    <p style="margin-top: 1.5rem;"><strong>How We Store Data:</strong></p>
+                    <p>• <strong>Cloud Storage:</strong> Your account data, settings, and analytics are securely stored in <strong>Supabase</strong> (a cloud database) to enable cross-device synchronization</p>
+                    <p>• <strong>Local Cache:</strong> Some data is cached locally in your browser for faster performance</p>
+                    <p>• <strong>Encryption:</strong> All data transmission uses HTTPS/SSL encryption. Database access is protected with enterprise-grade security</p>
                 </div>
 
                 <div class="privacy-card">
                     <div class="privacy-card-header">
                         <div class="privacy-icon">
-                            <i data-feather="database"></i>
+                            <i data-feather="globe"></i>
                         </div>
-                        <h2>Local Storage</h2>
+                        <h2>Cross-Device Synchronization</h2>
                     </div>
-                    <p>All your settings, preferences, and tab management data are stored locally on your device using Chrome's secure storage API.</p>
-                    <p>This data never leaves your computer and is never transmitted to external servers. You have full control over your information.</p>
+                    <p>Tabmangment offers real-time cross-device synchronization. This means:</p>
+                    <p>• Your settings, themes, and preferences sync across all your devices automatically</p>
+                    <p>• Data is transmitted to our secure Supabase cloud database when changes are made</p>
+                    <p>• Sync happens every 10 seconds and when you focus on the browser</p>
+                    <p>• You can use up to <strong>2 devices on Free plan</strong> and <strong>3 devices on Pro plan</strong></p>
+                    <p>• Device tracking uses non-invasive fingerprinting (no personal data) for device limit enforcement</p>
                 </div>
 
                 <div class="privacy-card">
@@ -414,12 +429,13 @@
                         <div class="privacy-icon">
                             <i data-feather="lock"></i>
                         </div>
-                        <h2>Permissions</h2>
+                        <h2>Browser Permissions</h2>
                     </div>
                     <p>The extension requests the following permissions to provide its functionality:</p>
-                    <p><strong>Tabs:</strong> To manage, organize, and close tabs based on your preferences.</p>
-                    <p><strong>Storage:</strong> To save your settings and timer configurations locally on your device.</p>
-                    <p>These permissions are used solely for the intended purpose of tab management and nothing else.</p>
+                    <p><strong>Tabs:</strong> To manage, organize, and close tabs based on your preferences and timer settings.</p>
+                    <p><strong>Storage:</strong> To cache settings locally for faster performance. Your primary data is stored securely in Supabase cloud for cross-device sync.</p>
+                    <p><strong>Identity (Optional):</strong> For Google/GitHub OAuth sign-in. You can also use email/password if you prefer.</p>
+                    <p>These permissions are used solely for tab management and user authentication. We do not track your browsing history or access any sensitive information beyond what's necessary for the extension to function.</p>
                 </div>
 
                 <div class="privacy-card">
@@ -427,10 +443,23 @@
                         <div class="privacy-icon">
                             <i data-feather="users"></i>
                         </div>
-                        <h2>Third Parties</h2>
+                        <h2>Third-Party Services</h2>
                     </div>
-                    <p>We do not share, sell, or transmit any information to third-party companies, advertisers, or data brokers.</p>
-                    <p>Your browsing habits, tab data, and usage patterns remain completely private and are never accessible to anyone but you.</p>
+                    <div class="highlight-box">
+                        <p><strong>We do NOT sell your data to advertisers or data brokers.</strong> We only use trusted third-party services essential for Tabmangment's functionality.</p>
+                    </div>
+                    <p><strong>Services We Use:</strong></p>
+                    <p>• <strong>Supabase</strong> (Database & Authentication) - Stores your account data, settings, and analytics securely. Industry-leading security with SOC 2 Type II compliance.</p>
+                    <p>• <strong>Stripe</strong> (Payment Processing) - Handles all payment transactions and subscription management. We never store your credit card details - Stripe does this securely with PCI DSS Level 1 certification.</p>
+                    <p>• <strong>Perplexity AI</strong> (AI Search) - Processes your search queries when you use the AI Search feature. Search queries are sent to Perplexity's API for intelligent answers. Free users: 5 searches/day, Pro users: unlimited.</p>
+                    <p>• <strong>Google OAuth / GitHub OAuth</strong> (Sign-In) - When you sign in with Google or GitHub, they provide us with your email, name, and profile picture. We don't receive or store your password.</p>
+                    <p>• <strong>Netlify</strong> (Hosting) - Hosts our dashboard and serverless functions. Does not access user data.</p>
+
+                    <p style="margin-top: 1.5rem;"><strong>What We Never Do:</strong></p>
+                    <p>✗ Sell your data to third parties</p>
+                    <p>✗ Share data with advertisers</p>
+                    <p>✗ Track your browsing outside of tab management</p>
+                    <p>✗ Store your passwords or payment details</p>
                 </div>
 
                 <div class="privacy-card">
@@ -438,10 +467,75 @@
                         <div class="privacy-icon">
                             <i data-feather="user-check"></i>
                         </div>
-                        <h2>User Authentication</h2>
+                        <h2>User Authentication & Security</h2>
                     </div>
-                    <p>If you choose to use premium features, authentication is handled securely through Stripe and Firebase.</p>
-                    <p>We only store the minimal information necessary to verify your subscription status. Payment details are handled entirely by Stripe and never stored by us.</p>
+                    <p><strong>Sign-In Methods:</strong></p>
+                    <p>• <strong>Google OAuth:</strong> Secure sign-in using your Google account. We receive your email, name, and profile picture.</p>
+                    <p>• <strong>GitHub OAuth:</strong> Secure sign-in using your GitHub account. We receive your email, name, and avatar.</p>
+                    <p>• <strong>Email/Password:</strong> Passwords are hashed with bcrypt and never stored in plaintext. We use Supabase Auth for secure password management.</p>
+
+                    <p style="margin-top: 1.5rem;"><strong>Payment & Subscription:</strong></p>
+                    <p>• All payments are processed securely by <strong>Stripe</strong></p>
+                    <p>• We only store: subscription status, customer ID (from Stripe), and subscription expiration date</p>
+                    <p>• Your credit card details are <strong>never</strong> stored by us - Stripe handles all payment information securely</p>
+                    <p>• Webhooks from Stripe automatically update your Pro status in real-time</p>
+
+                    <p style="margin-top: 1.5rem;"><strong>Security Measures:</strong></p>
+                    <p>• All data transmission uses HTTPS/SSL encryption</p>
+                    <p>• Supabase provides Row Level Security (RLS) to protect your data</p>
+                    <p>• Device fingerprints use non-invasive, privacy-friendly techniques</p>
+                    <p>• Session tokens expire automatically for security</p>
+                    <p>• We sanitize all logs to prevent accidental PII exposure</p>
+                </div>
+
+                <div class="privacy-card">
+                    <div class="privacy-card-header">
+                        <div class="privacy-icon">
+                            <i data-feather="clock"></i>
+                        </div>
+                        <h2>Data Retention</h2>
+                    </div>
+                    <p><strong>How Long We Keep Your Data:</strong></p>
+                    <p>• <strong>Active Accounts:</strong> Your data is retained as long as your account is active</p>
+                    <p>• <strong>Deleted Accounts:</strong> When you delete your account, all personal data is permanently removed from our database within 30 days</p>
+                    <p>• <strong>Subscription Data:</strong> Payment records are retained for 7 years for tax and legal compliance (required by law)</p>
+                    <p>• <strong>Analytics:</strong> Aggregated, anonymized analytics data may be retained indefinitely for product improvement</p>
+                    <p>• <strong>Inactive Accounts:</strong> If your account is inactive for 2 years, we may send a reminder email. If no response after 3 years, your account may be archived.</p>
+
+                    <p style="margin-top: 1.5rem;"><strong>Account Deletion:</strong></p>
+                    <p>You can delete your account at any time from the dashboard settings. This will:</p>
+                    <p>• Immediately revoke access to Pro features</p>
+                    <p>• Remove all personal data (email, name, profile picture) within 30 days</p>
+                    <p>• Cancel any active subscriptions (no refunds for remaining period)</p>
+                    <p>• Clear all custom themes, settings, and preferences</p>
+                </div>
+
+                <div class="privacy-card">
+                    <div class="privacy-card-header">
+                        <div class="privacy-icon">
+                            <i data-feather="file-text"></i>
+                        </div>
+                        <h2>Your Rights (GDPR Compliance)</h2>
+                    </div>
+                    <div class="highlight-box">
+                        <p><strong>We respect your rights.</strong> Under GDPR and other privacy laws, you have control over your personal data.</p>
+                    </div>
+                    <p><strong>You Have the Right To:</strong></p>
+                    <p>• <strong>Access Your Data:</strong> Request a copy of all personal data we store about you</p>
+                    <p>• <strong>Rectify Your Data:</strong> Update or correct any inaccurate information in your account settings</p>
+                    <p>• <strong>Delete Your Data:</strong> Request complete deletion of your account and all associated data</p>
+                    <p>• <strong>Export Your Data:</strong> Download your data in a portable, machine-readable format (JSON)</p>
+                    <p>• <strong>Withdraw Consent:</strong> Opt out of analytics or AI features at any time</p>
+                    <p>• <strong>Object to Processing:</strong> Object to how we use your data, and we'll review your request</p>
+                    <p>• <strong>Lodge a Complaint:</strong> File a complaint with your local data protection authority if you believe your rights have been violated</p>
+
+                    <p style="margin-top: 1.5rem;"><strong>How to Exercise Your Rights:</strong></p>
+                    <p>• <strong>Access Settings:</strong> Most data can be viewed/edited directly in your dashboard settings</p>
+                    <p>• <strong>Export Data:</strong> Use the "Export Data" button in dashboard settings to download your data</p>
+                    <p>• <strong>Delete Account:</strong> Use the "Delete Account" button in dashboard settings</p>
+                    <p>• <strong>Contact Support:</strong> For other requests, contact us through the extension's contact feature</p>
+
+                    <p style="margin-top: 1.5rem;"><em>We will respond to all requests within 30 days as required by GDPR.</em></p>
                 </div>
 
                 <div class="privacy-card">
@@ -461,7 +555,7 @@
                 </div>
 
                 <div class="last-updated">
-                    <p>Last updated: october <span id="currentYear">2025</span></p>
+                    <p>Last updated: January <span id="currentYear">2025</span></p>
                 </div>
             </div>
         </div>
