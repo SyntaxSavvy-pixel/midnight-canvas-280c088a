@@ -86,7 +86,7 @@
 
   "web_accessible_resources": [
     {
-      "resources": ["icons/*"],
+      "resources": ["icons/*", "favicon.ico"],
       "matches": ["<all_urls>"]
     }
   ],
