@@ -2624,7 +2624,7 @@
                                                 <span id="font-size-value" style="color: #6366f1; font-weight: 700; font-family: monospace; font-size: 0.8125rem;">14px</span>
                                             </div>
                                             <div style="padding: 0.5rem 0;">
-                                                <input type="range" id="custom-font-size" min="11" max="16" value="14" oninput="updateCustomThemePreview()" style="width: 100%; height: 8px; cursor: pointer; -webkit-appearance: none; appearance: none; background: linear-gradient(to right, #6366f1 0%, #8b5cf6 60%, #334155 60%, #334155 100%); border-radius: 10px; outline: none; transition: all 0.3s ease;">
+                                                <input type="range" id="custom-font-size" min="11" max="16" value="14" oninput="updateCustomThemePreview()" style="width: 100%; height: 8px; cursor: pointer; -webkit-appearance: none; appearance: none; background: #334155; border-radius: 10px; outline: none; transition: background 0.3s ease;">
                                             </div>
                                             <div style="display: flex; justify-content: space-between; margin-top: 0.25rem; color: #64748b; font-size: 0.6875rem; font-weight: 600;">
                                                 <span>11px</span>
@@ -8299,6 +8299,16 @@
             const animSpeedDisplay = document.getElementById('animation-speed-value');
             if (fontSizeDisplay) fontSizeDisplay.textContent = fontSize + 'px';
             if (animSpeedDisplay) animSpeedDisplay.textContent = animationSpeed + 'ms';
+
+            // Update font size slider background dynamically based on value
+            const fontSizeSlider = document.getElementById('custom-font-size');
+            if (fontSizeSlider) {
+                const min = parseInt(fontSizeSlider.min) || 11;
+                const max = parseInt(fontSizeSlider.max) || 16;
+                const value = parseInt(fontSize) || 14;
+                const percentage = ((value - min) / (max - min)) * 100;
+                fontSizeSlider.style.background = `linear-gradient(to right, #6366f1 0%, #8b5cf6 ${percentage}%, #334155 ${percentage}%, #334155 100%)`;
+            }
 
             // Sync color text inputs with color picker values
             const primaryTextInput = document.getElementById('custom-color-primary-text');
