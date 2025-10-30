@@ -19,6 +19,18 @@
     <link rel="icon" type="image/png" sizes="16x16" href="/icons/icon-16.png">
     <link rel="shortcut icon" type="image/png" href="/icons/icon-32.png">
 
+    <!-- Prevent favicon.ico fallback requests -->
+    <script>
+        // Immediately enforce favicon before browser makes fallback requests
+        (function() {
+            const link = document.querySelector('link[rel="shortcut icon"]') ||
+                         document.querySelector('link[rel="icon"]');
+            if (link) {
+                link.href = link.href; // Force browser to use specified favicon
+            }
+        })();
+    </script>
+
     <!-- Google Fonts for Theme Previews -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>

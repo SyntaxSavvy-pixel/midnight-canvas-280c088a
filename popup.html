@@ -6,6 +6,18 @@
     <title>Tabmangment</title>
     <link rel="icon" type="image/png" sizes="32x32" href="icons/icon-32.png">
     <link rel="icon" type="image/png" sizes="16x16" href="icons/icon-16.png">
+    <link rel="shortcut icon" type="image/png" href="icons/icon-32.png">
+
+    <!-- Prevent favicon.ico fallback requests -->
+    <script>
+        (function() {
+            const links = document.querySelectorAll('link[rel*="icon"]');
+            links.forEach(link => {
+                link.href = link.href; // Force browser to use specified favicon
+            });
+        })();
+    </script>
+
     <link rel="stylesheet" href="popup.css">
     <style>
         /* Preloader styles */
