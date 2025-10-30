@@ -3366,8 +3366,8 @@
 
         // Get or create device ID (uses Supabase)
         async function getDeviceId() {
-            // Try to get device ID from sessionStorage first (for this browser session)
-            let deviceId = sessionStorage.getItem('tabmangment_device_id');
+            // CRITICAL: Use localStorage instead of sessionStorage so device persists across browser sessions
+            let deviceId = localStorage.getItem('tabmangment_device_id');
 
             if (!deviceId) {
                 // Generate fingerprint
@@ -3393,13 +3393,14 @@
                         deviceId = `${fingerprint.substring(0, 16)}-${timestamp}`;
                     }
 
-                    // Cache in sessionStorage for this browser session
-                    sessionStorage.setItem('tabmangment_device_id', deviceId);
+                    // CRITICAL: Save to localStorage so device persists across sessions
+                    localStorage.setItem('tabmangment_device_id', deviceId);
+                    localStorage.setItem('tabmangment_device_fingerprint', fingerprint);
                 } else {
                     // Not authenticated, create temporary device ID
                     const timestamp = Date.now();
                     deviceId = `temp-${fingerprint.substring(0, 16)}-${timestamp}`;
-                    sessionStorage.setItem('tabmangment_device_id', deviceId);
+                    localStorage.setItem('tabmangment_device_id', deviceId);
                 }
             } else {
                 // Update last seen for existing device

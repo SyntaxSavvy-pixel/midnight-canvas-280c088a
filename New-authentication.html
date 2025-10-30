@@ -30,7 +30,6 @@
     <link rel="icon" type="image/png" sizes="32x32" href="/icons/icon-32.png">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://unpkg.com/feather-icons"></script>
-    <script src="/session-manager.js"></script>
     <style>
         * {
             margin: 0;
@@ -1694,24 +1693,39 @@ async function handleGithubLogin() {
         } catch (syncError) {
         }
 
-        if (window.sessionManager) {
-            window.sessionManager.saveSession(userData, session.access_token, true);
-        } else {
-            localStorage.setItem('tabmangment_user', JSON.stringify(userData));
-            localStorage.setItem('tabmangment_token', session.access_token);
-            localStorage.setItem('tabmangment_remember', 'true');
-        }
+        // Save session data to localStorage
+        localStorage.setItem('tabmangment_user', JSON.stringify(userData));
+        localStorage.setItem('tabmangment_token', session.access_token);
+        localStorage.setItem('tabmangment_remember', 'true');
+
+        // CRITICAL: Set flags to prevent dashboard from redirecting back
+        sessionStorage.setItem('just_authenticated', 'true');
+        sessionStorage.setItem('auth_timestamp', String(Date.now()));
 
         // Clear redirect loop prevention counters on successful OAuth login
         sessionStorage.removeItem('auth_redirect_count');
         sessionStorage.removeItem('auth_last_redirect_time');
+        sessionStorage.removeItem('user_logged_out');
 
+        // Notify extension about login
         window.postMessage({
             type: 'USER_LOGGED_IN',
             userData: { email: userData.email, name: userData.name, id: userData.id }
         }, '*');
 
-        await new Promise(resolve => setTimeout(resolve, 100));
+        // Wait longer to ensure localStorage is fully written (especially important for OAuth)
+        await new Promise(resolve => setTimeout(resolve, 300));
+
+        // Verify localStorage was actually saved before redirecting
+        const verifyUser = localStorage.getItem('tabmangment_user');
+        const verifyToken = localStorage.getItem('tabmangment_token');
+
+        if (!verifyUser || !verifyToken) {
+            // localStorage write failed, try one more time
+            localStorage.setItem('tabmangment_user', JSON.stringify(userData));
+            localStorage.setItem('tabmangment_token', session.access_token);
+            await new Promise(resolve => setTimeout(resolve, 200));
+        }
 
         window.location.replace('/user-dashboard.html');
     }
