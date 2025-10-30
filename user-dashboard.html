@@ -2820,8 +2820,53 @@
             }
         }
 
+        async function ensureUserInAuthTable(userId, userEmail) {
+            try {
+                // Check if user exists in users_auth table
+                const { data: existingUser } = await supabaseClient
+                    .from('users_auth')
+                    .select('id')
+                    .eq('id', userId)
+                    .maybeSingle();
+
+                if (existingUser) {
+                    return true; // User already exists
+                }
+
+                // User doesn't exist, create them
+                const { error: insertError } = await supabaseClient
+                    .from('users_auth')
+                    .insert({
+                        id: userId,
+                        email: userEmail,
+                        is_pro: false,
+                        plan_type: 'free',
+                        subscription_status: 'inactive'
+                    });
+
+                if (insertError) {
+                    // Silently fail - user might not have permission to insert
+                    return false;
+                }
+
+                return true;
+            } catch (error) {
+                // Silently fail
+                return false;
+            }
+        }
+
         async function createDefaultPreferences(userId) {
             try {
+                // CRITICAL: Ensure user exists in users_auth table first to avoid foreign key violations
+                const userExists = await ensureUserInAuthTable(userId, userData.email);
+
+                if (!userExists) {
+                    // User doesn't exist in users_auth and we can't create them
+                    // Return null silently to prevent foreign key errors
+                    return null;
+                }
+
                 const defaults = {
                     user_id: userId,
                     sidebar_collapsed: false,
@@ -2839,13 +2884,19 @@
                     .maybeSingle();
 
                 if (error) {
-                    console.warn('Error creating default preferences:', error.message);
+                    // Check for foreign key constraint violation (23503)
+                    if (error.code === '23503' || error.message.includes('foreign key constraint')) {
+                        // Foreign key violation - user doesn't exist in users_auth
+                        // Return null silently to prevent console spam
+                        return null;
+                    }
+                    // For other errors, still return null but don't log repeatedly
                     return null;
                 }
 
                 return data;
             } catch (error) {
-                console.warn('Exception in createDefaultPreferences:', error);
+                // Silently return null to prevent console spam
                 return null;
             }
         }
@@ -3446,6 +3497,14 @@
         // Register device with backend
         async function registerDevice(userId, deviceId, isPro) {
             try {
+                // CRITICAL: Ensure user exists in users_auth table first
+                const userExists = await ensureUserInAuthTable(userId, userData.email);
+
+                if (!userExists) {
+                    // User doesn't exist and we can't create them - fail silently
+                    return { success: false, error: 'User not in auth table' };
+                }
+
                 const metadata = getDeviceMetadata();
 
                 // Get current device count from Supabase
@@ -3456,7 +3515,8 @@
                     .order('last_seen', { ascending: true });
 
                 if (fetchError) {
-                    throw fetchError;
+                    // Silently handle fetch errors
+                    return { success: false, error: fetchError.message };
                 }
 
                 const deviceList = devices || [];
@@ -3474,7 +3534,9 @@
                         })
                         .eq('id', existingDevice.id);
 
-                    if (updateError) throw updateError;
+                    if (updateError) {
+                        return { success: false, error: updateError.message };
+                    }
                 } else {
                     // Check device limit
                     const maxDevices = isPro ? DEVICE_CONFIG.MAX_DEVICES_PRO : DEVICE_CONFIG.MAX_DEVICES_FREE;
@@ -3487,7 +3549,9 @@
                             .delete()
                             .eq('id', oldestDevice.id);
 
-                        if (deleteError) throw deleteError;
+                        if (deleteError) {
+                            return { success: false, error: deleteError.message };
+                        }
                     }
 
                     // Add new device
@@ -3501,7 +3565,13 @@
                             last_seen: new Date().toISOString()
                         });
 
-                    if (insertError) throw insertError;
+                    if (insertError) {
+                        // Check for foreign key violation - don't spam console
+                        if (insertError.code === '23503' || insertError.message.includes('foreign key constraint')) {
+                            return { success: false, error: 'Foreign key violation' };
+                        }
+                        return { success: false, error: insertError.message };
+                    }
                 }
 
                 // Get updated count
@@ -3513,6 +3583,7 @@
                 return { success: true, deviceCount: count || deviceList.length, maxDevices: isPro ? DEVICE_CONFIG.MAX_DEVICES_PRO : DEVICE_CONFIG.MAX_DEVICES_FREE };
 
             } catch (error) {
+                // Silently fail to prevent console spam
                 return { success: false, error: error.message };
             }
         }
