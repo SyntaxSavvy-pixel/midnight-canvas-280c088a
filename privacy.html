@@ -555,7 +555,7 @@
                 </div>
 
                 <div class="last-updated">
-                    <p>Last updated: January <span id="currentYear">2025</span></p>
+                    <p>Last updated: January 2025</p>
                 </div>
             </div>
         </div>
@@ -578,9 +578,8 @@
         // Initialize Feather icons
         feather.replace();
 
-        // Update current year
+        // Update copyright year only (privacy policy date is manually updated)
         const currentYear = new Date().getFullYear();
-        document.getElementById('currentYear').textContent = currentYear;
         document.getElementById('footerYear').textContent = currentYear;
 
         // Track page view
