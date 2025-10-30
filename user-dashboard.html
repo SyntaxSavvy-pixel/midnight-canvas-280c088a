@@ -2907,12 +2907,29 @@
             const userId = await getCurrentUserId();
             if (!userId) return false;
 
+            // CRITICAL: Ensure user exists in users_auth table first
+            const userExists = await ensureUserInAuthTable(userId, userData.email);
+
+            if (!userExists) {
+                // User doesn't exist and we can't create them - fail silently
+                return false;
+            }
+
             const { error } = await supabaseClient
                 .from('user_preferences')
                 .upsert({
                     user_id: userId,
                     ...updates
+                }, {
+                    onConflict: 'user_id'
                 });
+
+            if (error) {
+                // Check for foreign key violation - don't spam console
+                if (error.code === '23503' || error.message.includes('foreign key constraint')) {
+                    return false;
+                }
+            }
 
             return !error;
         }
@@ -2966,6 +2983,10 @@
             const userId = await getCurrentUserId();
             if (!userId) return false;
 
+            // CRITICAL: Ensure user exists in users_auth table first
+            const userExists = await ensureUserInAuthTable(userId, userData.email);
+            if (!userExists) return false;
+
             const { error } = await supabaseClient
                 .from('custom_themes')
                 .insert({
@@ -2973,6 +2994,13 @@
                     name,
                     theme_data: themeData
                 });
+
+            if (error) {
+                // Handle foreign key violation silently
+                if (error.code === '23503' || error.message.includes('foreign key constraint')) {
+                    return false;
+                }
+            }
 
             return !error;
         }
@@ -3005,6 +3033,10 @@
                 const userId = await getCurrentUserId();
                 if (!userId) return false;
 
+                // CRITICAL: Ensure user exists in users_auth table first
+                const userExists = await ensureUserInAuthTable(userId, userData.email);
+                if (!userExists) return false;
+
                 const { error } = await supabaseClient
                     .from('theme_drafts')
                     .upsert({
@@ -3014,13 +3046,16 @@
                     }, { onConflict: 'user_id' }); // Specify conflict column
 
                 if (error) {
-                    console.warn('Error saving theme draft:', error.message);
+                    // Handle foreign key violation silently
+                    if (error.code === '23503' || error.message.includes('foreign key constraint')) {
+                        return false;
+                    }
                     return false;
                 }
 
                 return true;
             } catch (error) {
-                console.warn('Exception in saveThemeDraft:', error);
+                // Silently return false
                 return false;
             }
         }
