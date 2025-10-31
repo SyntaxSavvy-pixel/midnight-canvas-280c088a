@@ -1,9 +1,6 @@
 // Cloudflare Pages Function: /api/create-checkout-session
 // Creates a Stripe Checkout session for Pro plan purchase
 
-import Stripe from 'stripe';
-import { createClient } from '@supabase/supabase-js';
-
 // CORS headers
 const corsHeaders = {
     'Access-Control-Allow-Origin': '*',
@@ -25,48 +22,13 @@ export async function onRequestPost(context) {
     try {
         const { request, env } = context;
 
-        // Initialize Stripe and Supabase
-        const stripe = new Stripe(env.STRIPE_SECRET_KEY);
-        const supabase = createClient(
-            env.SUPABASE_URL,
-            env.SUPABASE_SERVICE_ROLE_KEY
-        );
+        // Parse request body
+        const body = await request.json();
+        const { priceId } = body;
 
-        // Get authenticated user from Supabase Auth token
+        // Get auth token
         const authHeader = request.headers.get('authorization');
-        let authenticatedUser = null;
-        let userEmail = null;
-
-        if (authHeader) {
-            const token = authHeader.replace('Bearer ', '');
-
-            // Try Supabase Auth token first
-            try {
-                const { data: { user }, error: authError } = await supabase.auth.getUser(token);
-
-                if (!authError && user) {
-                    userEmail = user.email;
-                    authenticatedUser = {
-                        email: user.email,
-                        name: user.user_metadata?.full_name || user.user_metadata?.name || user.email.split('@')[0]
-                    };
-                }
-            } catch (authError) {
-                // Fallback to legacy token format
-                try {
-                    const tokenData = JSON.parse(atob(token));
-                    if (tokenData.email && tokenData.exp > Math.floor(Date.now() / 1000)) {
-                        userEmail = tokenData.email;
-                        authenticatedUser = { email: userEmail };
-                    }
-                } catch (legacyError) {
-                    console.error('Token decode error:', legacyError);
-                }
-            }
-        }
-
-        if (!authenticatedUser) {
-            console.error('❌ No authenticated user found');
+        if (!authHeader) {
             return new Response(JSON.stringify({
                 error: 'Authentication required. Please log in first.'
             }), {
@@ -75,9 +37,34 @@ export async function onRequestPost(context) {
             });
         }
 
-        // Parse request body
-        const body = await request.json();
-        const { priceId } = body;
+        const token = authHeader.replace('Bearer ', '');
+
+        // Validate user with Supabase
+        let userEmail = null;
+        try {
+            const supabaseResponse = await fetch(`${env.SUPABASE_URL}/auth/v1/user`, {
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'apikey': env.SUPABASE_SERVICE_ROLE_KEY
+                }
+            });
+
+            if (supabaseResponse.ok) {
+                const userData = await supabaseResponse.json();
+                userEmail = userData.email;
+            }
+        } catch (error) {
+            console.error('Supabase auth error:', error);
+        }
+
+        if (!userEmail) {
+            return new Response(JSON.stringify({
+                error: 'Authentication required. Please log in first.'
+            }), {
+                status: 401,
+                headers: corsHeaders
+            });
+        }
 
         if (!priceId) {
             return new Response(JSON.stringify({
@@ -88,44 +75,47 @@ export async function onRequestPost(context) {
             });
         }
 
-        // Get the current domain for success/cancel URLs
+        // Create Stripe Checkout Session using Stripe API
         const origin = request.headers.get('origin') || 'https://tabmangment.com';
 
-        // Create Stripe Checkout Session
-        const session = await stripe.checkout.sessions.create({
-            payment_method_types: ['card'],
-            line_items: [
-                {
-                    price: priceId,
-                    quantity: 1,
-                },
-            ],
-            mode: 'subscription',
-            customer_email: authenticatedUser.email,
-            client_reference_id: authenticatedUser.email,
-            metadata: {
-                userEmail: authenticatedUser.email,
-                userName: authenticatedUser.name,
-                plan: 'pro'
+        const stripeResponse = await fetch('https://api.stripe.com/v1/checkout/sessions', {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${env.STRIPE_SECRET_KEY}`,
+                'Content-Type': 'application/x-www-form-urlencoded'
             },
-            success_url: `${origin}/user-dashboard.html?payment=success&session_id={CHECKOUT_SESSION_ID}`,
-            cancel_url: `${origin}/user-dashboard.html?payment=cancelled`,
-            billing_address_collection: 'auto',
-            tax_id_collection: {
-                enabled: true
-            },
-            automatic_tax: {
-                enabled: true
-            },
-            allow_promotion_codes: true,
-            subscription_data: {
-                metadata: {
-                    userEmail: authenticatedUser.email,
-                    userName: authenticatedUser.name,
-                    plan: 'pro'
-                }
-            }
+            body: new URLSearchParams({
+                'payment_method_types[]': 'card',
+                'line_items[0][price]': priceId,
+                'line_items[0][quantity]': '1',
+                'mode': 'subscription',
+                'customer_email': userEmail,
+                'client_reference_id': userEmail,
+                'metadata[userEmail]': userEmail,
+                'metadata[plan]': 'pro',
+                'success_url': `${origin}/user-dashboard.html?payment=success&session_id={CHECKOUT_SESSION_ID}`,
+                'cancel_url': `${origin}/user-dashboard.html?payment=cancelled`,
+                'billing_address_collection': 'auto',
+                'tax_id_collection[enabled]': 'true',
+                'automatic_tax[enabled]': 'true',
+                'allow_promotion_codes': 'true',
+                'subscription_data[metadata][userEmail]': userEmail,
+                'subscription_data[metadata][plan]': 'pro'
+            })
         });
+
+        if (!stripeResponse.ok) {
+            const errorData = await stripeResponse.text();
+            console.error('Stripe API error:', errorData);
+            return new Response(JSON.stringify({
+                error: 'Failed to create checkout session'
+            }), {
+                status: 500,
+                headers: corsHeaders
+            });
+        }
+
+        const session = await stripeResponse.json();
 
         // Return session data
         return new Response(JSON.stringify({
@@ -141,35 +131,11 @@ export async function onRequestPost(context) {
     } catch (error) {
         console.error('❌ Stripe checkout session creation failed:', error);
 
-        // Handle specific Stripe errors
-        let statusCode = 500;
-        let errorMessage = 'Failed to create checkout session';
-
-        if (error.type === 'StripeCardError') {
-            statusCode = 400;
-            errorMessage = error.message;
-        } else if (error.type === 'StripeRateLimitError') {
-            statusCode = 429;
-            errorMessage = 'Too many requests. Please try again later.';
-        } else if (error.type === 'StripeInvalidRequestError') {
-            statusCode = 400;
-            errorMessage = 'Invalid request parameters.';
-        } else if (error.type === 'StripeAPIError') {
-            statusCode = 500;
-            errorMessage = 'Stripe API error. Please try again.';
-        } else if (error.type === 'StripeConnectionError') {
-            statusCode = 500;
-            errorMessage = 'Network error. Please check your connection.';
-        } else if (error.type === 'StripeAuthenticationError') {
-            statusCode = 500;
-            errorMessage = 'Authentication error.';
-        }
-
         return new Response(JSON.stringify({
-            error: errorMessage,
+            error: 'Failed to create checkout session',
             details: error.message
         }), {
-            status: statusCode,
+            status: 500,
             headers: corsHeaders
         });
     }
