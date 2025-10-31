@@ -4,8 +4,8 @@ const API_BASE_URL = 'https://tabmangment.com';
 export const CONFIG = {
     API: {
         BASE: `${API_BASE_URL}/api`,
-        CREATE_CHECKOUT: `${API_BASE_URL}/api/create-checkout`,
-        CHECK_STATUS: `${API_BASE_URL}/api/check-payment-status`,
+        CREATE_CHECKOUT: `${API_BASE_URL}/api/create-checkout-session`,
+        CHECK_STATUS: `${API_BASE_URL}/api/status`,
         BILLING_PORTAL: `${API_BASE_URL}/api/billing-portal`,
         STRIPE_WEBHOOK: `${API_BASE_URL}/api/stripe-webhook`
     },

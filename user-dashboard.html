@@ -4239,8 +4239,8 @@
             stripeSubscriptionId: null
         };
 
-        // API Configuration - Netlify Functions path
-        const API_BASE = window.location.origin + '/.netlify/functions';
+        // API Configuration - Cloudflare Pages Functions path
+        const API_BASE = window.location.origin + '/api';
         let authToken = null;
         let STRIPE_PRICE_ID = null; // Will be fetched from API
 
@@ -5609,7 +5609,7 @@
                 const authToken = session?.access_token || localStorage.getItem('tabmangment_token');
 
                 // Call create-checkout-session function
-                const response = await fetch('/.netlify/functions/create-checkout-session', {
+                const response = await fetch('/api/create-checkout-session', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -5662,7 +5662,7 @@
                 const authToken = session?.access_token || localStorage.getItem('tabmangment_token');
 
                 // Call billing-portal function to get portal URL
-                const response = await fetch('/.netlify/functions/billing-portal', {
+                const response = await fetch('/api/billing-portal', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
