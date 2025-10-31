@@ -2901,17 +2901,23 @@
         async function ensureUserInAuthTable(userId, userEmail) {
             try {
                 // Check if user exists in users_auth table
-                const { data: existingUser } = await supabaseClient
+                const { data: existingUser, error: selectError } = await supabaseClient
                     .from('users_auth')
                     .select('id')
                     .eq('id', userId)
                     .maybeSingle();
+
+                if (selectError) {
+                    console.error('❌ Error checking if user exists in users_auth:', selectError.message);
+                    return false;
+                }
 
                 if (existingUser) {
                     return true; // User already exists
                 }
 
                 // User doesn't exist, create them
+                console.log(`📝 Creating user in users_auth table: ${userEmail.replace(/(?<=.{2}).(?=.*@)/g, '*')}`); // Partially masked email
                 const { error: insertError } = await supabaseClient
                     .from('users_auth')
                     .insert({
@@ -2923,13 +2929,18 @@
                     });
 
                 if (insertError) {
-                    // Silently fail - user might not have permission to insert
+                    console.error('❌ Failed to create user in users_auth:', {
+                        code: insertError.code,
+                        message: insertError.message,
+                        emailDomain: userEmail.split('@')[1]
+                    });
                     return false;
                 }
 
+                console.log('✅ User created successfully in users_auth');
                 return true;
             } catch (error) {
-                // Silently fail
+                console.error('❌ Exception in ensureUserInAuthTable:', error);
                 return false;
             }
         }
@@ -3611,11 +3622,13 @@
         // Register device with backend
         async function registerDevice(userId, deviceId, isPro) {
             try {
+                console.log(`🔄 Registering device: ${deviceId.substring(0, 16)}...`);
+
                 // CRITICAL: Ensure user exists in users_auth table first
                 const userExists = await ensureUserInAuthTable(userId, userData.email);
 
                 if (!userExists) {
-                    // User doesn't exist and we can't create them - fail silently
+                    console.error('❌ Cannot register device - user not in users_auth table');
                     return { success: false, error: 'User not in auth table' };
                 }
 
@@ -3629,16 +3642,18 @@
                     .order('last_seen', { ascending: true });
 
                 if (fetchError) {
-                    // Silently handle fetch errors
+                    console.error('❌ Failed to fetch devices:', fetchError.message);
                     return { success: false, error: fetchError.message };
                 }
 
                 const deviceList = devices || [];
+                console.log(`📱 Current devices: ${deviceList.length}/${isPro ? DEVICE_CONFIG.MAX_DEVICES_PRO : DEVICE_CONFIG.MAX_DEVICES_FREE}`);
 
                 // Check if device already exists
                 const existingDevice = deviceList.find(d => d.device_id === deviceId);
 
                 if (existingDevice) {
+                    console.log('🔄 Updating existing device');
                     // Update existing device
                     const { error: updateError } = await supabaseClient
                         .from('user_devices')
@@ -3649,13 +3664,16 @@
                         .eq('id', existingDevice.id);
 
                     if (updateError) {
+                        console.error('❌ Failed to update device:', updateError.message);
                         return { success: false, error: updateError.message };
                     }
+                    console.log('✅ Device updated successfully');
                 } else {
                     // Check device limit
                     const maxDevices = isPro ? DEVICE_CONFIG.MAX_DEVICES_PRO : DEVICE_CONFIG.MAX_DEVICES_FREE;
 
                     if (deviceList.length >= maxDevices) {
+                        console.log(`⚠️ Device limit reached, removing oldest device`);
                         // Remove oldest device (first in sorted list)
                         const oldestDevice = deviceList[0];
                         const { error: deleteError } = await supabaseClient
@@ -3664,10 +3682,12 @@
                             .eq('id', oldestDevice.id);
 
                         if (deleteError) {
+                            console.error('❌ Failed to remove oldest device:', deleteError.message);
                             return { success: false, error: deleteError.message };
                         }
                     }
 
+                    console.log('➕ Adding new device');
                     // Add new device
                     const { error: insertError } = await supabaseClient
                         .from('user_devices')
@@ -3680,12 +3700,15 @@
                         });
 
                     if (insertError) {
-                        // Check for foreign key violation - don't spam console
+                        // Check for foreign key violation
                         if (insertError.code === '23503' || insertError.message.includes('foreign key constraint')) {
+                            console.error('❌ Foreign key violation - user may not exist in users_auth table');
                             return { success: false, error: 'Foreign key violation' };
                         }
+                        console.error('❌ Failed to insert device:', insertError.message);
                         return { success: false, error: insertError.message };
                     }
+                    console.log('✅ New device added successfully');
                 }
 
                 // Get updated count
@@ -3694,10 +3717,11 @@
                     .select('*', { count: 'exact', head: true })
                     .eq('user_id', userId);
 
+                console.log(`✅ Device registration complete. Total devices: ${count || deviceList.length}`);
                 return { success: true, deviceCount: count || deviceList.length, maxDevices: isPro ? DEVICE_CONFIG.MAX_DEVICES_PRO : DEVICE_CONFIG.MAX_DEVICES_FREE };
 
             } catch (error) {
-                // Silently fail to prevent console spam
+                console.error('❌ Exception in registerDevice:', error);
                 return { success: false, error: error.message };
             }
         }
@@ -4305,7 +4329,7 @@
                     try {
                         // CRITICAL: Only use userData.id (UUID), never email for foreign key relations
                         if (!userData.id) {
-                            console.error('User ID not available for device verification');
+                            console.error('❌ User ID not available for device verification');
                             return;
                         }
 
@@ -4313,12 +4337,23 @@
                         const verification = await verifyDevice(userData.id, deviceId, userData.isPro);
 
                         if (!verification.authorized) {
+                            console.warn('⚠️ Device limit reached:', verification);
                             showDeviceLimitWarning(verification.deviceCount, verification.maxDevices, userData.isPro);
                         } else {
-                            await registerDevice(userData.id, deviceId, userData.isPro);
+                            const registrationResult = await registerDevice(userData.id, deviceId, userData.isPro);
+
+                            if (registrationResult && registrationResult.success !== false) {
+                                // CRITICAL: Auto-load devices list after successful registration
+                                // This ensures the current device shows up immediately
+                                setTimeout(() => {
+                                    loadUserDevices().catch(err => console.warn('Auto-load devices failed:', err));
+                                }, 500); // Small delay to ensure database write completes
+                            } else {
+                                console.error('❌ Device registration failed:', registrationResult);
+                            }
                         }
                     } catch (error) {
-                        console.error('Device verification failed:', error);
+                        console.error('❌ Device verification failed:', error);
                     }
                 })(),
 
@@ -7325,6 +7360,11 @@
             localStorage.removeItem('userData');
             localStorage.removeItem('authToken');
             localStorage.removeItem('userEmail');
+
+            // CRITICAL: Clear device tracking data so next user starts fresh
+            localStorage.removeItem('tabmangment_device_id');
+            localStorage.removeItem('tabmangment_device_fingerprint');
+            localStorage.removeItem('tabmangment_remember');
 
             // Notify extension about logout via window.postMessage
             window.postMessage({
