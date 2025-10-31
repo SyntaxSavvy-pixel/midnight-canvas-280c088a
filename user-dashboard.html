@@ -1866,6 +1866,131 @@
             border-radius: 10px;
         }
 
+        /* Search Results Styling */
+        .search-results-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            padding: 20px 0;
+        }
+
+        .search-result-item {
+            background: linear-gradient(135deg, rgba(15, 23, 42, 0.95) 0%, rgba(30, 41, 59, 0.95) 100%);
+            border: 1px solid rgba(148, 163, 184, 0.15);
+            border-radius: 12px;
+            padding: 18px 20px;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .search-result-item::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 4px;
+            height: 100%;
+            background: linear-gradient(180deg, #10b981 0%, #059669 100%);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .search-result-item:hover {
+            border-color: rgba(16, 185, 129, 0.4);
+            background: linear-gradient(135deg, rgba(20, 30, 48, 0.98) 0%, rgba(35, 48, 68, 0.98) 100%);
+            transform: translateX(4px);
+            box-shadow: 0 8px 24px rgba(16, 185, 129, 0.15), 0 0 0 1px rgba(16, 185, 129, 0.1);
+        }
+
+        .search-result-item:hover::before {
+            opacity: 1;
+        }
+
+        .search-result-item:active {
+            transform: translateX(2px);
+            transition-duration: 0.1s;
+        }
+
+        .search-result-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: #f1f5f9;
+            margin-bottom: 10px;
+            line-height: 1.4;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+            letter-spacing: -0.01em;
+        }
+
+        .search-result-item:hover .search-result-title {
+            color: #10b981;
+        }
+
+        .search-result-url {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 13px;
+            color: #94a3b8;
+            font-family: 'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas, 'Courier New', monospace;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            padding: 8px 12px;
+            background: rgba(15, 23, 42, 0.6);
+            border-radius: 8px;
+            border: 1px solid rgba(148, 163, 184, 0.08);
+        }
+
+        .search-result-url svg {
+            width: 14px;
+            height: 14px;
+            flex-shrink: 0;
+            opacity: 0.6;
+            stroke: #10b981;
+        }
+
+        .search-result-item:hover .search-result-url {
+            color: #cbd5e1;
+            background: rgba(16, 185, 129, 0.08);
+            border-color: rgba(16, 185, 129, 0.15);
+        }
+
+        .search-result-item:hover .search-result-url svg {
+            opacity: 1;
+            stroke: #10b981;
+        }
+
+        /* Empty state or loading */
+        .search-results-list:empty::after {
+            content: 'No search results to display';
+            display: block;
+            text-align: center;
+            padding: 40px 20px;
+            color: #64748b;
+            font-size: 14px;
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            .search-result-item {
+                padding: 14px 16px;
+            }
+
+            .search-result-title {
+                font-size: 15px;
+            }
+
+            .search-result-url {
+                font-size: 12px;
+                padding: 6px 10px;
+            }
+        }
+
     </style>
 </head>
 <body>
@@ -7481,7 +7606,7 @@
 
         // Preset themes configuration
         const presetThemes = {
-            // ========== FREE THEMES (10) ==========
+            // ========== PRO THEMES - PRESET (10) ==========
             lightMinimal: {
                 name: 'Light Minimal',
                 primaryColor: '#4A90E2',
@@ -7494,7 +7619,7 @@
                 animationsEnabled: true,
                 animationStyle: 'fade',
                 animationSpeed: '300ms',
-                isPro: false
+                isPro: true
             },
             darkSlate: {
                 name: 'Dark Slate',
@@ -7508,7 +7633,7 @@
                 animationsEnabled: true,
                 animationStyle: 'slide',
                 animationSpeed: '300ms',
-                isPro: false
+                isPro: true
             },
             softPastel: {
                 name: 'Soft Pastel',
@@ -7522,7 +7647,7 @@
                 animationsEnabled: true,
                 animationStyle: 'fade',
                 animationSpeed: '300ms',
-                isPro: false
+                isPro: true
             },
             neoClean: {
                 name: 'Neo Clean',
@@ -7536,7 +7661,7 @@
                 animationsEnabled: true,
                 animationStyle: 'zoom',
                 animationSpeed: '300ms',
-                isPro: false
+                isPro: true
             },
             ecoGreen: {
                 name: 'Eco Green',
@@ -7550,7 +7675,7 @@
                 animationsEnabled: true,
                 animationStyle: 'fade',
                 animationSpeed: '300ms',
-                isPro: false
+                isPro: true
             },
             softGray: {
                 name: 'Soft Gray',
@@ -7564,7 +7689,7 @@
                 animationsEnabled: true,
                 animationStyle: 'fade',
                 animationSpeed: '300ms',
-                isPro: false
+                isPro: true
             },
             sunnyDay: {
                 name: 'Sunny Day',
@@ -7578,7 +7703,7 @@
                 animationsEnabled: true,
                 animationStyle: 'slide',
                 animationSpeed: '300ms',
-                isPro: false
+                isPro: true
             },
             coolBlue: {
                 name: 'Cool Blue',
@@ -7592,7 +7717,7 @@
                 animationsEnabled: true,
                 animationStyle: 'fade',
                 animationSpeed: '300ms',
-                isPro: false
+                isPro: true
             },
             mutedEarth: {
                 name: 'Muted Earth',
@@ -7606,7 +7731,7 @@
                 animationsEnabled: true,
                 animationStyle: 'fade',
                 animationSpeed: '300ms',
-                isPro: false
+                isPro: true
             },
             gentleLavender: {
                 name: 'Gentle Lavender',
@@ -7620,10 +7745,10 @@
                 animationsEnabled: true,
                 animationStyle: 'fade',
                 animationSpeed: '300ms',
-                isPro: false
+                isPro: true
             },
 
-            // ========== PRO THEMES (10) ==========
+            // ========== PRO THEMES - PREMIUM (10) ==========
             oceanicPro: {
                 name: 'Oceanic Pro',
                 primaryColor: '#001F3F',
@@ -7867,15 +7992,15 @@
         function handleThemeApplication(themeName) {
             const theme = presetThemes[themeName];
 
-            // TESTING MODE: Pro gating disabled for all themes
-            // if (theme.isPro && !userData.isPro) {
-            //     showUpgradeModal(
-            //         'Premium Theme',
-            //         `The "${theme.name}" theme is a premium feature. Upgrade to Pro to unlock all premium themes!`,
-            //         'Unlock Premium Themes'
-            //     );
-            //     return;
-            // }
+            // PRO FEATURE: Check if theme requires Pro plan
+            if (theme.isPro && !userData.isPro) {
+                showUpgradeModal(
+                    'Premium Theme',
+                    `The "${theme.name}" theme is a premium feature. Upgrade to Pro to unlock all premium themes!`,
+                    'Unlock Premium Themes'
+                );
+                return;
+            }
 
             // Apply the theme
             applyTheme(themeName);
@@ -7884,11 +8009,11 @@
         // Theme tab switching
         document.querySelectorAll('.theme-tab-btn').forEach(btn => {
             btn.addEventListener('click', function() {
-                // TESTING MODE: Pro gating disabled for custom themes
-                // if (this.dataset.tab === 'custom' && !userData.isPro) {
-                //     showCustomThemeProGate();
-                //     return;
-                // }
+                // PRO FEATURE: Check if custom themes tab requires Pro
+                if (this.dataset.tab === 'custom' && !userData.isPro) {
+                    showUpgradeModal('Custom Themes', 'Create and save unlimited custom themes with full control over appearance.');
+                    return;
+                }
 
                 // Switch tabs
                 document.querySelectorAll('.theme-tab-btn').forEach(b => b.classList.remove('active'));
@@ -7924,13 +8049,19 @@
             // Render theme cards dynamically
             renderThemeCards();
 
-            // TESTING MODE: Always show custom theme editor (Pro gating disabled)
+            // PRO GATING: Show/hide custom theme editor based on Pro status
             const proGate = document.getElementById('custom-theme-pro-gate');
             const editor = document.getElementById('custom-theme-editor');
             if (proGate && editor) {
-                proGate.style.display = 'none';
-                editor.style.filter = 'none';
-                editor.style.pointerEvents = 'auto';
+                if (userData.isPro) {
+                    proGate.style.display = 'none';
+                    editor.style.filter = 'none';
+                    editor.style.pointerEvents = 'auto';
+                } else {
+                    proGate.style.display = 'flex';
+                    editor.style.filter = 'blur(8px)';
+                    editor.style.pointerEvents = 'none';
+                }
             }
 
             // Initialize theme builder tabs
@@ -8074,6 +8205,12 @@
 
         // Custom Theme Studio Modal Functions
         function openCustomThemeStudio() {
+            // PRO FEATURE: Verify user has Pro plan
+            if (!userData.isPro) {
+                showUpgradeModal('Custom Theme Studio', 'Create unlimited custom themes with full control over colors, fonts, animations, and more.');
+                return;
+            }
+
             const modal = document.getElementById('custom-theme-studio-modal');
             if (modal) {
                 modal.style.display = 'block';
@@ -8465,11 +8602,11 @@
 
         // Save custom theme
         function saveCustomTheme() {
-            // TESTING MODE: Pro check disabled
-            // if (!userData.isPro) {
-            //     showUpgradeModal('Custom Themes', 'Save unlimited custom themes with full control over appearance.');
-            //     return;
-            // }
+            // PRO FEATURE: Verify user has Pro plan
+            if (!userData.isPro) {
+                showUpgradeModal('Custom Themes', 'Save unlimited custom themes with full control over appearance.');
+                return;
+            }
 
             const themeNameInput = document.getElementById('custom-theme-name');
             let themeName = themeNameInput?.value.trim();
@@ -8544,11 +8681,11 @@
 
         // Apply custom theme (from current editor settings)
         async function applyCustomTheme() {
-            // TESTING MODE: Pro check disabled
-            // if (!userData.isPro) {
-            //     showUpgradeModal('Custom Themes', 'Apply custom themes to personalize your extension.');
-            //     return;
-            // }
+            // PRO FEATURE: Verify user has Pro plan
+            if (!userData.isPro) {
+                showUpgradeModal('Custom Themes', 'Apply custom themes to personalize your extension.');
+                return;
+            }
 
             // Get all inputs with null checks
             const primaryInput = document.getElementById('custom-color-primary');
@@ -8630,8 +8767,8 @@
 
         // Load saved custom themes
         function loadSavedCustomThemes() {
-            // TESTING MODE: Pro check disabled
-            // if (!userData.isPro) return;
+            // PRO FEATURE: Only load custom themes for Pro users
+            if (!userData.isPro) return;
 
             try {
                 const stored = localStorage.getItem('customThemes');
