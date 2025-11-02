@@ -545,6 +545,7 @@
         /* Features Section */
         .features {
             padding: 80px 0;
+            background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
         }
 
         .section-header {
@@ -567,25 +568,153 @@
             margin: 0 auto;
         }
 
-        .features-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-            gap: 2rem;
+        /* Bento Grid Layout */
+        .bento-container {
+            max-width: 1200px;
+            margin: 0 auto;
         }
 
+        .feature-section {
+            margin-bottom: 3rem;
+            opacity: 0;
+            animation: fadeInUp 0.8s ease-out forwards;
+        }
+
+        .feature-section:nth-child(1) { animation-delay: 0.1s; }
+        .feature-section:nth-child(2) { animation-delay: 0.3s; }
+        .feature-section:nth-child(3) { animation-delay: 0.5s; }
+        .feature-section:nth-child(4) { animation-delay: 0.7s; }
+
+        .section-label {
+            font-size: 0.875rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            color: #6366f1;
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .section-label::before {
+            content: '';
+            width: 24px;
+            height: 3px;
+            background: linear-gradient(90deg, #6366f1, #8b5cf6);
+            border-radius: 2px;
+        }
+
+        .bento-grid {
+            display: grid;
+            grid-template-columns: repeat(12, 1fr);
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        /* Feature Card Base */
         .feature-card {
             background: white;
-            padding: 2.5rem;
-            border-radius: 16px;
+            border-radius: 20px;
             border: 1px solid #e2e8f0;
-            transition: all 0.3s ease;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+            padding: 2rem;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .feature-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, #6366f1 0%, #8b5cf6 50%, #a855f7 100%);
+            opacity: 0;
+            transition: opacity 0.3s ease;
         }
 
         .feature-card:hover {
             transform: translateY(-8px);
-            box-shadow: 0 12px 28px rgba(99, 102, 241, 0.15);
-            border-color: #6366f1;
+            box-shadow: 0 20px 40px rgba(99, 102, 241, 0.15);
+            border-color: rgba(99, 102, 241, 0.3);
+        }
+
+        .feature-card:hover::before {
+            opacity: 1;
+        }
+
+        /* Grid Spans */
+        .span-4 { grid-column: span 4; }
+        .span-6 { grid-column: span 6; }
+        .span-8 { grid-column: span 8; }
+        .span-12 { grid-column: span 12; }
+
+        /* Large Feature Card */
+        .feature-card.large {
+            padding: 3rem;
+            min-height: 320px;
+        }
+
+        .feature-card.medium {
+            min-height: 280px;
+        }
+
+        .feature-card.small {
+            min-height: 240px;
+        }
+
+        /* Feature Visual */
+        .feature-visual {
+            width: 100%;
+            height: 140px;
+            background: linear-gradient(135deg, rgba(99, 102, 241, 0.1) 0%, rgba(168, 85, 247, 0.1) 100%);
+            border-radius: 12px;
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .feature-visual::before {
+            content: '';
+            position: absolute;
+            width: 200%;
+            height: 200%;
+            background:
+                repeating-linear-gradient(
+                    45deg,
+                    transparent,
+                    transparent 10px,
+                    rgba(99, 102, 241, 0.03) 10px,
+                    rgba(99, 102, 241, 0.03) 20px
+                );
+            animation: slidePattern 20s linear infinite;
+        }
+
+        @keyframes slidePattern {
+            0% { transform: translate(0, 0); }
+            100% { transform: translate(50px, 50px); }
+        }
+
+        .feature-visual-icon {
+            width: 64px;
+            height: 64px;
+            background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #a855f7 100%);
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            box-shadow: 0 8px 24px rgba(99, 102, 241, 0.4);
+            position: relative;
+            z-index: 1;
         }
 
         .feature-icon {
@@ -599,6 +728,13 @@
             color: white;
             margin-bottom: 1.5rem;
             box-shadow: 0 4px 14px rgba(99, 102, 241, 0.3);
+            flex-shrink: 0;
+        }
+
+        .feature-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
         }
 
         .feature-card h3 {
@@ -606,12 +742,38 @@
             font-weight: 700;
             color: #0f172a;
             margin-bottom: 0.75rem;
+            line-height: 1.3;
+        }
+
+        .feature-card.large h3 {
+            font-size: 1.75rem;
+            margin-bottom: 1rem;
         }
 
         .feature-card p {
             color: #64748b;
             line-height: 1.7;
             font-size: 1rem;
+            flex: 1;
+        }
+
+        .feature-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 1rem;
+            background: rgba(99, 102, 241, 0.1);
+            border-radius: 50px;
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: #6366f1;
+            margin-top: 1rem;
+            align-self: flex-start;
+        }
+
+        .feature-badge svg {
+            width: 16px;
+            height: 16px;
         }
 
         /* Stats Section */
@@ -1073,8 +1235,24 @@
                 align-items: center;
             }
 
-            .features-grid {
-                grid-template-columns: 1fr;
+            /* Bento Grid Responsive */
+            .bento-grid {
+                grid-template-columns: 1fr !important;
+            }
+
+            .span-4, .span-6, .span-8, .span-12 {
+                grid-column: span 1 !important;
+            }
+
+            .feature-card.large,
+            .feature-card.medium,
+            .feature-card.small {
+                min-height: auto;
+                padding: 2rem;
+            }
+
+            .feature-visual {
+                height: 120px;
             }
 
             .pricing-grid {
@@ -1184,101 +1362,181 @@
                 <p class="section-subtitle">Everything you need to manage your tabs and stay focused while browsing</p>
             </div>
 
-            <div class="features-grid">
-                <div class="feature-card">
-                    <div class="feature-icon">
-                        <i data-feather="search"></i>
+            <div class="bento-container">
+                <!-- AI & Intelligence Section -->
+                <div class="feature-section">
+                    <div class="section-label">AI & Intelligence</div>
+                    <div class="bento-grid">
+                        <!-- AI-Powered Search - Large Featured -->
+                        <div class="feature-card large span-8">
+                            <div class="feature-visual">
+                                <div class="feature-visual-icon">
+                                    <i data-feather="search"></i>
+                                </div>
+                            </div>
+                            <div class="feature-content">
+                                <h3>AI-Powered Search</h3>
+                                <p>Get instant answers with Perplexity AI integration. Search anything directly from the extension and receive intelligent, context-aware results without leaving your workflow. Experience the future of browsing with AI at your fingertips.</p>
+                                <div class="feature-badge">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>
+                                    Pro Feature
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Smart Suggestions -->
+                        <div class="feature-card medium span-4">
+                            <div class="feature-icon">
+                                <i data-feather="zap"></i>
+                            </div>
+                            <div class="feature-content">
+                                <h3>Smart Suggestions</h3>
+                                <p>Get intelligent tab recommendations based on your browsing patterns. Our AI analyzes your habits and suggests the most relevant tabs for your current task.</p>
+                                <div class="feature-badge">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>
+                                    Pro Feature
+                                </div>
+                            </div>
+                        </div>
                     </div>
-                    <h3>AI-Powered Search</h3>
-                    <p>Get instant answers with Perplexity AI integration. Search anything directly from the extension and receive intelligent, context-aware results without leaving your workflow.</p>
                 </div>
 
-                <div class="feature-card">
-                    <div class="feature-icon">
-                        <i data-feather="palette"></i>
+                <!-- Customization Section -->
+                <div class="feature-section">
+                    <div class="section-label">Customization & Design</div>
+                    <div class="bento-grid">
+                        <!-- Custom Theme Studio - Large Featured -->
+                        <div class="feature-card large span-12">
+                            <div class="feature-visual">
+                                <div class="feature-visual-icon">
+                                    <i data-feather="palette"></i>
+                                </div>
+                            </div>
+                            <div class="feature-content">
+                                <h3>Custom Theme Studio</h3>
+                                <p>Design your perfect interface with our powerful Theme Studio. Choose custom colors, fonts, and styles to match your aesthetic. Preview changes in real-time and create a truly personalized browsing experience that reflects your unique style and preferences.</p>
+                                <div class="feature-badge">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>
+                                    Pro Feature
+                                </div>
+                            </div>
+                        </div>
                     </div>
-                    <h3>Custom Theme Studio</h3>
-                    <p>Design your perfect interface with our powerful Theme Studio. Choose custom colors, fonts, and styles to match your aesthetic. Preview changes in real-time!</p>
                 </div>
 
-                <div class="feature-card">
-                    <div class="feature-icon">
-                        <i data-feather="zap"></i>
+                <!-- Productivity Tools Section -->
+                <div class="feature-section">
+                    <div class="section-label">Productivity Tools</div>
+                    <div class="bento-grid">
+                        <!-- Smart Timers -->
+                        <div class="feature-card medium span-4">
+                            <div class="feature-icon">
+                                <i data-feather="clock"></i>
+                            </div>
+                            <div class="feature-content">
+                                <h3>Smart Timers</h3>
+                                <p>Set custom closing timers on individual tabs to automatically close them after a set duration. Perfect for time-sensitive tasks and maintaining focus.</p>
+                            </div>
+                        </div>
+
+                        <!-- Tab Organization -->
+                        <div class="feature-card medium span-4">
+                            <div class="feature-icon">
+                                <i data-feather="layout"></i>
+                            </div>
+                            <div class="feature-content">
+                                <h3>Tab Organization</h3>
+                                <p>View and manage all your open tabs in a clean, organized interface. See exactly what you have open at a glance with beautiful visual cards.</p>
+                            </div>
+                        </div>
+
+                        <!-- Real-time Analytics -->
+                        <div class="feature-card medium span-4">
+                            <div class="feature-icon">
+                                <i data-feather="bar-chart-2"></i>
+                            </div>
+                            <div class="feature-content">
+                                <h3>Real-time Analytics</h3>
+                                <p>Track your browsing habits and tab usage patterns with live updates. Beautiful charts and insights help you understand your productivity trends.</p>
+                            </div>
+                        </div>
+
+                        <!-- Quick Bookmarks -->
+                        <div class="feature-card small span-6">
+                            <div class="feature-icon">
+                                <i data-feather="bookmark"></i>
+                            </div>
+                            <div class="feature-content">
+                                <h3>Quick Bookmarks</h3>
+                                <p>Save all your open tabs as bookmarks with one click. Never lose important research or workflow sessions ever again.</p>
+                            </div>
+                        </div>
+
+                        <!-- Collapse Groups -->
+                        <div class="feature-card small span-6">
+                            <div class="feature-icon">
+                                <i data-feather="minimize-2"></i>
+                            </div>
+                            <div class="feature-content">
+                                <h3>Collapse Groups</h3>
+                                <p>Collapse all tab groups instantly to declutter your browser and focus on what matters most to your current task.</p>
+                            </div>
+                        </div>
                     </div>
-                    <h3>Smart Suggestions</h3>
-                    <p>Get intelligent tab recommendations based on your browsing patterns. Our AI analyzes your habits and suggests the most relevant tabs for your current task.</p>
                 </div>
 
-                <div class="feature-card">
-                    <div class="feature-icon">
-                        <i data-feather="clock"></i>
-                    </div>
-                    <h3>Smart Timers</h3>
-                    <p>Set custom closing timers on individual tabs to automatically close them after a set duration. Perfect for time-sensitive tasks and maintaining focus.</p>
-                </div>
+                <!-- Sync & Security Section -->
+                <div class="feature-section">
+                    <div class="section-label">Sync & Security</div>
+                    <div class="bento-grid">
+                        <!-- Device Sync & Security -->
+                        <div class="feature-card medium span-6">
+                            <div class="feature-visual">
+                                <div class="feature-visual-icon">
+                                    <i data-feather="smartphone"></i>
+                                </div>
+                            </div>
+                            <div class="feature-content">
+                                <h3>Device Sync & Security</h3>
+                                <p>Seamless sync across devices with intelligent device tracking. Your preferences and themes automatically remember your devices. Free: 2 devices, Pro: 3 devices.</p>
+                            </div>
+                        </div>
 
-                <div class="feature-card">
-                    <div class="feature-icon">
-                        <i data-feather="smartphone"></i>
-                    </div>
-                    <h3>Device Sync & Security</h3>
-                    <p>Seamless sync across devices with intelligent device tracking. Your preferences and themes automatically remember your devices. Free: 2 devices, Pro: 3 devices.</p>
-                </div>
+                        <!-- Secure Authentication -->
+                        <div class="feature-card medium span-6">
+                            <div class="feature-visual">
+                                <div class="feature-visual-icon">
+                                    <i data-feather="shield"></i>
+                                </div>
+                            </div>
+                            <div class="feature-content">
+                                <h3>Secure Authentication</h3>
+                                <p>Sign in securely with Google or GitHub OAuth. Your data is encrypted and synced safely across all your devices with enterprise-grade security.</p>
+                            </div>
+                        </div>
 
-                <div class="feature-card">
-                    <div class="feature-icon">
-                        <i data-feather="layout"></i>
-                    </div>
-                    <h3>Tab Organization</h3>
-                    <p>View and manage all your open tabs in a clean, organized interface. See exactly what you have open at a glance with beautiful visual cards.</p>
-                </div>
+                        <!-- Cross-Device Sync -->
+                        <div class="feature-card small span-6">
+                            <div class="feature-icon">
+                                <i data-feather="cloud"></i>
+                            </div>
+                            <div class="feature-content">
+                                <h3>Cross-Device Sync</h3>
+                                <p>Sign in once and your tabs, settings, and subscription sync across all devices automatically. Switch between computers seamlessly.</p>
+                            </div>
+                        </div>
 
-                <div class="feature-card">
-                    <div class="feature-icon">
-                        <i data-feather="bar-chart-2"></i>
+                        <!-- Live Dashboard Sync -->
+                        <div class="feature-card small span-6">
+                            <div class="feature-icon">
+                                <i data-feather="refresh-cw"></i>
+                            </div>
+                            <div class="feature-content">
+                                <h3>Live Dashboard Sync</h3>
+                                <p>Changes in the web dashboard instantly reflect in the extension popup and vice versa. Real-time synchronization ensures you're always up to date.</p>
+                            </div>
+                        </div>
                     </div>
-                    <h3>Real-time Analytics</h3>
-                    <p>Track your browsing habits and tab usage patterns with live updates. Beautiful charts and insights help you understand your productivity trends.</p>
-                </div>
-
-                <div class="feature-card">
-                    <div class="feature-icon">
-                        <i data-feather="shield"></i>
-                    </div>
-                    <h3>Secure Authentication</h3>
-                    <p>Sign in securely with Google or GitHub OAuth. Your data is encrypted and synced safely across all your devices with enterprise-grade security.</p>
-                </div>
-
-                <div class="feature-card">
-                    <div class="feature-icon">
-                        <i data-feather="refresh-cw"></i>
-                    </div>
-                    <h3>Live Dashboard Sync</h3>
-                    <p>Changes in the web dashboard instantly reflect in the extension popup and vice versa. Real-time synchronization ensures you're always up to date.</p>
-                </div>
-
-                <div class="feature-card">
-                    <div class="feature-icon">
-                        <i data-feather="cloud"></i>
-                    </div>
-                    <h3>Cross-Device Sync</h3>
-                    <p>Sign in once and your tabs, settings, and subscription sync across all devices automatically. Switch between computers seamlessly.</p>
-                </div>
-
-                <div class="feature-card">
-                    <div class="feature-icon">
-                        <i data-feather="bookmark"></i>
-                    </div>
-                    <h3>Quick Bookmarks</h3>
-                    <p>Save all your open tabs as bookmarks with one click. Never lose important research or workflow sessions ever again.</p>
-                </div>
-
-                <div class="feature-card">
-                    <div class="feature-icon">
-                        <i data-feather="minimize-2"></i>
-                    </div>
-                    <h3>Collapse Groups</h3>
-                    <p>Collapse all tab groups instantly to declutter your browser and focus on what matters most to your current task.</p>
                 </div>
             </div>
         </div>
