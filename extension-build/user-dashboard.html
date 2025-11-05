@@ -4322,6 +4322,21 @@
             const deviceId = pendingDeviceRemoval;
             closeDeviceRemovalModal();
 
+            // Show loading state immediately
+            const container = document.getElementById('devices-list-container');
+            if (container) {
+                container.innerHTML = `
+                    <div style="text-align: center; padding: 2rem; color: #64748b;">
+                        <div class="loading-dots" style="margin: 0 auto;">
+                            <span></span>
+                            <span></span>
+                            <span></span>
+                        </div>
+                        <p style="margin-top: 1rem;">Removing device...</p>
+                    </div>
+                `;
+            }
+
             try {
                 // Delete the device directly
                 const { error: deleteError } = await supabaseClient
@@ -4331,12 +4346,18 @@
 
                 if (deleteError) throw deleteError;
 
-                // Show success and reload
+                // Show success notification
                 showNotification('Device removed successfully', 'success');
-                await loadUserDevices();
+
+                // Force reload the device list with a small delay to ensure database sync
+                setTimeout(async () => {
+                    await loadUserDevices();
+                }, 300);
 
             } catch (error) {
                 showNotification('Failed to remove device: ' + error.message, 'error');
+                // Reload devices even on error to show current state
+                await loadUserDevices();
             }
         }
 
