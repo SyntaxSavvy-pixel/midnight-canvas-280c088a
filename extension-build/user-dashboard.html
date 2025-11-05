@@ -3927,13 +3927,13 @@
 
                 if (!devices || devices.length <= 1) return;
 
-                // Group devices by browser signature
+                // Group devices by browser signature (exclude versions for stability)
                 const deviceGroups = new Map();
 
                 devices.forEach(device => {
-                    // Create unique signature from browser info
+                    // Create unique signature from stable browser info (no versions)
                     const info = device.browser_info || {};
-                    const signature = `${info.browser || ''}_${info.browserVersion || ''}_${info.os || ''}_${info.osVersion || ''}`;
+                    const signature = `${info.browser || ''}_${info.os || ''}_${info.deviceType || ''}`;
 
                     if (!deviceGroups.has(signature)) {
                         deviceGroups.set(signature, []);
@@ -4178,6 +4178,9 @@
             try {
                 const userId = userData.id || userData.email;
                 const isPro = userData.isPro || false;
+
+                // Clean up any duplicates before loading (runs on every refresh)
+                await cleanupDuplicateDevices(userId);
 
                 // Update device limit text
                 const limitText = document.getElementById('device-limit-text');
