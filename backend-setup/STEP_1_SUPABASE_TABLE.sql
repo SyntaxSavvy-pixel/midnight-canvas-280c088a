@@ -23,6 +23,9 @@ ON search_usage(searched_at);
 -- Enable Row Level Security (RLS) for security
 ALTER TABLE search_usage ENABLE ROW LEVEL SECURITY;
 
+-- Drop existing policy if it exists, then recreate
+DROP POLICY IF EXISTS "Service role can manage all search_usage" ON search_usage;
+
 -- Create policy to allow service role to access all rows
 CREATE POLICY "Service role can manage all search_usage"
 ON search_usage
