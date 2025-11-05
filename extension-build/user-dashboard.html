@@ -4481,7 +4481,7 @@
                                 // CRITICAL: Auto-load devices list after successful registration
                                 // This ensures the current device shows up immediately
                                 setTimeout(() => {
-                                    loadUserDevices().catch(err => 
+                                    loadUserDevices().catch(err => {});
                                 }, 500); // Small delay to ensure database write completes
                             } else {
                                 
