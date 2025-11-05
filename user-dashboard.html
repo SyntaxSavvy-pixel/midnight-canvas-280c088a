@@ -4505,7 +4505,7 @@
                         userNameEl.textContent = displayName;
                     }
                 })
-            ]).catch(err => 
+            ]).catch(err => {});
 
             // Check if bridge is ready (don't wait - just check once)
             const isBridgeReady = window.TABMANGMENT_BRIDGE?.ready || bridgeReady;
@@ -4514,7 +4514,7 @@
             const urlParams = new URLSearchParams(window.location.search);
             const sessionId = urlParams.get('session_id');
             if (sessionId) {
-                verifyStripeSession(sessionId, userEmail).catch(err => 
+                verifyStripeSession(sessionId, userEmail).catch(err => {});
             }
 
             // Sync Pro status to extension (non-blocking)
@@ -4535,7 +4535,7 @@
                         isPro: userData.isPro,
                         currentPeriodEnd: userData.currentPeriodEnd
                     }
-                }).catch(err => 
+                }).catch(err => {});
 
                 // Send USER_LOGGED_IN
                 window.postMessage({
