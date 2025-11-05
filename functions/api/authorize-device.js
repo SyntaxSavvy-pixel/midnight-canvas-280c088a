@@ -64,7 +64,7 @@ export async function onRequestPost(context) {
     // STEP 1: Get user's plan type (free or pro)
     // ==============================================================
     const userResponse = await fetch(
-      `${supabaseUrl}/rest/v1/users?email=eq.${encodeURIComponent(email)}&select=id,isPro,isPremium`,
+      `${supabaseUrl}/rest/v1/users_auth?email=eq.${encodeURIComponent(email)}&select=id,is_pro,plan_type`,
       {
         headers: {
           'apikey': supabaseKey,
@@ -85,6 +85,16 @@ export async function onRequestPost(context) {
     }
 
     const users = await userResponse.json();
+    if (!users || users.length === 0) {
+      return new Response(JSON.stringify({
+        success: false,
+        error: 'User not found'
+      }), {
+        status: 404,
+        headers: corsHeaders
+      });
+    }
+
     const user = users[0];
 
     if (!user) {
