@@ -618,6 +618,21 @@ class TabManager {
                     sendResponse({ success: true });
                     break;
 
+                case 'THEME_UPDATE':
+                case 'DASHBOARD_APPLY_THEME':
+                    // Dashboard: Apply custom theme
+                    try {
+                        const themeData = {
+                            activeTheme: message.themeName || 'custom',
+                            themeConfig: message.themeConfig
+                        };
+                        await chrome.storage.local.set(themeData);
+                        sendResponse({ success: true });
+                    } catch (error) {
+                        sendResponse({ success: false, error: error.message });
+                    }
+                    break;
+
                 case 'UPDATE_USER_NAME':
                     // Update user name in extension storage
                     const currentData = await chrome.storage.local.get(['userName', 'userEmail']);
@@ -849,11 +864,13 @@ class TabManager {
             const now = Date.now();
             const updateData = {
                 isPremium: message.isPro || false,
+                isPro: message.isPro || false,
                 subscriptionActive: message.status === 'active',
                 subscriptionStatus: message.status,
                 planType: message.plan || (message.isPro ? 'pro' : 'free'),
                 lastSyncTime: now,
-                // Set expiry far in future to prevent popup from thinking it's expired
+                // Store billing dates in multiple formats for compatibility
+                currentPeriodEnd: message.currentPeriodEnd, // For popup.js
                 subscriptionExpiry: message.currentPeriodEnd || (now + (365 * 24 * 60 * 60 * 1000)), // 1 year
                 nextBillingDate: message.currentPeriodEnd || (now + (30 * 24 * 60 * 60 * 1000)), // 30 days
                 subscriptionDate: now,
@@ -1290,7 +1307,7 @@ class TabManager {
     handleInstalled(details) {
         if (details.reason === 'install') {
             chrome.tabs.create({
-                url: chrome.runtime.getURL('popup.html'),
+                url: 'https://tabmangment.com',
                 active: true
             });
         }

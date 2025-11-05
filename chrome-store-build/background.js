@@ -618,6 +618,21 @@ class TabManager {
                     sendResponse({ success: true });
                     break;
 
+                case 'THEME_UPDATE':
+                case 'DASHBOARD_APPLY_THEME':
+                    // Dashboard: Apply custom theme
+                    try {
+                        const themeData = {
+                            activeTheme: message.themeName || 'custom',
+                            themeConfig: message.themeConfig
+                        };
+                        await chrome.storage.local.set(themeData);
+                        sendResponse({ success: true });
+                    } catch (error) {
+                        sendResponse({ success: false, error: error.message });
+                    }
+                    break;
+
                 case 'UPDATE_USER_NAME':
                     // Update user name in extension storage
                     const currentData = await chrome.storage.local.get(['userName', 'userEmail']);
@@ -1292,7 +1307,7 @@ class TabManager {
     handleInstalled(details) {
         if (details.reason === 'install') {
             chrome.tabs.create({
-                url: chrome.runtime.getURL('popup.html'),
+                url: 'https://tabmangment.com',
                 active: true
             });
         }

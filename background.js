@@ -1307,7 +1307,7 @@ class TabManager {
     handleInstalled(details) {
         if (details.reason === 'install') {
             chrome.tabs.create({
-                url: chrome.runtime.getURL('popup.html'),
+                url: 'https://tabmangment.com',
                 active: true
             });
         }
