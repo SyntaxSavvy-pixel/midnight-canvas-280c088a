@@ -1709,11 +1709,26 @@ async function handleGithubLogin() {
 
                 if (!syncResponse.ok) {
                     const errorData = await syncResponse.json().catch(() => ({}));
-                    console.warn('User sync failed:', errorData);
+                    console.error('User sync failed:', errorData);
+                    // Don't redirect if sync failed
+                    return;
                 }
+
+                // Wait for and verify successful sync response
+                const syncResult = await syncResponse.json();
+                if (!syncResult.success) {
+                    console.error('User sync returned failure:', syncResult);
+                    return;
+                }
+
+                // CRITICAL: Add small delay to ensure database transaction completes
+                // Prevents race condition where authorize-device runs before user is committed
+                await new Promise(resolve => setTimeout(resolve, 500));
+
             } catch (syncError) {
-                // If sync fails, continue anyway - user might already exist
-                console.warn('User sync error:', syncError);
+                // If sync fails, don't redirect - user won't exist in database
+                console.error('User sync error:', syncError);
+                return;
             }
 
             // Save session data (synchronous, no waiting needed)
