@@ -1048,6 +1048,18 @@ class TabmangmentPopup {
             resultItem.className = 'search-result-item';
             resultItem.dataset.url = result.url;
 
+            // Extract domain from URL for display
+            let displayText = '';
+            try {
+                const urlObj = new URL(result.url);
+                displayText = urlObj.hostname.replace('www.', ''); // Show clean domain
+            } catch (e) {
+                displayText = result.url; // Fallback to full URL if parsing fails
+            }
+
+            // Use description/snippet if available, otherwise use domain
+            const description = result.snippet || result.description || displayText;
+
             resultItem.innerHTML = `
                 <div class="search-result-title">${this.escapeHtml(result.title)}</div>
                 <div class="search-result-url">
@@ -1055,7 +1067,7 @@ class TabmangmentPopup {
                         <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path>
                         <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path>
                     </svg>
-                    ${this.escapeHtml(result.url)}
+                    ${this.escapeHtml(description)}
                 </div>
             `;
 
@@ -7702,31 +7714,9 @@ function applyThemeToPopup(theme) {
                 opacity: 0.85;
             }
 
-            .search-result-item {
-                background: rgba(255, 255, 255, 0.15) !important;
-                border: 2px solid rgba(255, 255, 255, 0.2) !important;
-                backdrop-filter: blur(10px) !important;
-                transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1) !important;
-            }
-
-            .search-result-item:hover {
-                background: rgba(255, 255, 255, 0.22) !important;
-                border-color: ${theme.primaryColor} !important;
-                box-shadow: 0 4px 16px ${theme.primaryColor}40 !important;
-                transform: translateX(4px) !important;
-            }
-
-            .search-result-title {
-                color: ${theme.primaryColor} !important;
-            }
-
-            .search-result-description {
-                color: rgba(255, 255, 255, 0.8) !important;
-            }
-
-            .search-result-url {
-                color: rgba(255, 255, 255, 0.5) !important;
-            }
+            /* REMOVED: Theme-based search result styling to preserve fixed color scheme */
+            /* Search results now use fixed colors from popup.css that are NEVER affected by themes */
+            /* This ensures consistent appearance regardless of dashboard theme selection */
 
             .search-usage-info {
                 background: rgba(255, 255, 255, 0.1) !important;
