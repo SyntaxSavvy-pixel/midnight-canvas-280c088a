@@ -820,21 +820,16 @@ class TabmangmentPopup {
     async checkSearchUsage() {
         try {
             // Get user email for server-side tracking
-            const storage = await chrome.storage.local.get(['userEmail', 'isPremium', 'isPro']);
+            const storage = await chrome.storage.local.get(['userEmail']);
             const userEmail = storage.userEmail;
 
-            // If premium, unlimited searches
-            if (this.isPremium || storage.isPremium || storage.isPro) {
-                return { count: 0, canSearch: true };
-            }
-
-            // If no email (not logged in), use local fallback with strict limit
+            // If no email (not logged in), BLOCK searches completely
             if (!userEmail) {
-                console.warn('[Search] No user email - using local fallback');
-                return await this.checkSearchUsageLocal();
+                console.warn('[Search] No user email - search disabled (login required)');
+                return { count: 5, canSearch: false };
             }
 
-            // Fetch search usage from backend API (Supabase-backed)
+            // ALWAYS fetch from backend API - NO LOCAL FALLBACK for logged-in users
             const response = await fetch(CONFIG.API.CHECK_SEARCH_USAGE, {
                 method: 'POST',
                 headers: {
@@ -844,21 +839,24 @@ class TabmangmentPopup {
             });
 
             if (!response.ok) {
-                console.error('[Search] API error, falling back to local');
-                return await this.checkSearchUsageLocal();
+                console.error('[Search] API error - blocking search for security');
+                return { count: 5, canSearch: false };
             }
 
             const data = await response.json();
-            const count = data.searchCount || 0;
-            const canSearch = count < 5;
 
-            console.log(`[Search] Server check: ${count}/5 searches used`);
-            return { count, canSearch };
+            // CRITICAL: Use backend's canSearch value directly - DO NOT recalculate locally
+            const count = data.searchCount || 0;
+            const canSearch = data.canSearch !== undefined ? data.canSearch : false;
+            const isPro = data.isPro || false;
+
+            console.log(`[Search] Backend enforced: ${count} used, canSearch=${canSearch}, isPro=${isPro}`);
+            return { count, canSearch, isPro };
 
         } catch (error) {
             console.error('[Search] Error checking usage:', error);
-            // Fallback to local storage if API fails
-            return await this.checkSearchUsageLocal();
+            // SECURITY: Block search on API error - prevents local exploitation
+            return { count: 5, canSearch: false };
         }
     }
 
@@ -882,23 +880,20 @@ class TabmangmentPopup {
         return { count, canSearch };
     }
 
-    // Increment search usage counter (SERVER-SIDE SYNCED)
+    // Increment search usage counter (SERVER-SIDE ONLY - NO LOCAL TRACKING)
     async incrementSearchUsage() {
         try {
             // Get user email for server-side tracking
             const storage = await chrome.storage.local.get(['userEmail']);
             const userEmail = storage.userEmail;
 
-            // Always update local fallback
-            await this.incrementSearchUsageLocal();
-
-            // If no email, only local tracking (can be exploited)
+            // If no email, block increment (search should have been blocked already)
             if (!userEmail) {
-                console.warn('[Search] No user email - only local increment');
+                console.error('[Search] No user email - cannot increment (this should not happen)');
                 return;
             }
 
-            // Sync increment to backend API (Supabase-backed)
+            // ALWAYS increment on backend - NEVER use local storage for logged-in users
             const response = await fetch(CONFIG.API.INCREMENT_SEARCH, {
                 method: 'POST',
                 headers: {
@@ -908,16 +903,16 @@ class TabmangmentPopup {
             });
 
             if (!response.ok) {
-                console.error('[Search] Failed to sync increment to server');
-                return;
+                console.error('[Search] Failed to record search on backend');
+                throw new Error('Backend sync failed');
             }
 
             const data = await response.json();
-            console.log(`[Search] Server increment: ${data.searchCount}/5 searches used`);
+            console.log(`[Search] Backend recorded: ${data.searchCount} total, remaining: ${data.remaining}`);
 
         } catch (error) {
-            console.error('[Search] Error incrementing usage:', error);
-            // Local fallback already done above
+            console.error('[Search] CRITICAL: Failed to record search on backend:', error);
+            throw error; // Propagate error so search can be handled properly
         }
     }
 
