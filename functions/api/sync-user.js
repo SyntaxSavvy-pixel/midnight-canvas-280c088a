@@ -83,8 +83,7 @@ export async function onRequestPost(context) {
             name: name || email.split('@')[0],
             is_pro: false,
             plan_type: 'free',
-            subscription_status: 'inactive',
-            provider: provider || 'email'
+            subscription_status: 'inactive'
           })
         }
       );
