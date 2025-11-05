@@ -42,74 +42,9 @@ export async function onRequestPost(context) {
     }
 
     // ==============================================================
-    // STEP 1: Check if user exists in users table
+    // STEP 1: Check if user exists in users_auth table
     // ==============================================================
     const existingUserResponse = await fetch(
-      `${supabaseUrl}/rest/v1/users?email=eq.${encodeURIComponent(email)}&select=id,email`,
-      {
-        headers: {
-          'apikey': supabaseKey,
-          'Authorization': `Bearer ${supabaseKey}`,
-          'Content-Type': 'application/json'
-        }
-      }
-    );
-
-    let userInUsersTable = false;
-    if (existingUserResponse.ok) {
-      const existingUsers = await existingUserResponse.json();
-      if (existingUsers && existingUsers.length > 0) {
-        userInUsersTable = true;
-      }
-    }
-
-    // ==============================================================
-    // STEP 2: Create user in users table if doesn't exist
-    // ==============================================================
-    if (!userInUsersTable) {
-      const insertResponse = await fetch(
-        `${supabaseUrl}/rest/v1/users`,
-        {
-          method: 'POST',
-          headers: {
-            'apikey': supabaseKey,
-            'Authorization': `Bearer ${supabaseKey}`,
-            'Content-Type': 'application/json',
-            'Prefer': 'return=representation'
-          },
-          body: JSON.stringify({
-            id: userId,
-            email: email,
-            name: name || email.split('@')[0],
-            isPro: false,
-            isPremium: false,
-            provider: provider || 'email',
-            created_at: new Date().toISOString()
-          })
-        }
-      );
-
-      if (!insertResponse.ok) {
-        const errorText = await insertResponse.text();
-        // Only fail if it's not a duplicate key error
-        if (!errorText.includes('duplicate key') && !errorText.includes('unique constraint')) {
-          console.error('Failed to create user in users table:', errorText);
-          return new Response(JSON.stringify({
-            success: false,
-            error: 'Failed to create user record',
-            details: errorText
-          }), {
-            status: 500,
-            headers: corsHeaders
-          });
-        }
-      }
-    }
-
-    // ==============================================================
-    // STEP 3: Check if user exists in users_auth table
-    // ==============================================================
-    const existingAuthUserResponse = await fetch(
       `${supabaseUrl}/rest/v1/users_auth?email=eq.${encodeURIComponent(email)}&select=id,email`,
       {
         headers: {
@@ -120,19 +55,19 @@ export async function onRequestPost(context) {
       }
     );
 
-    let userInAuthTable = false;
-    if (existingAuthUserResponse.ok) {
-      const existingAuthUsers = await existingAuthUserResponse.json();
-      if (existingAuthUsers && existingAuthUsers.length > 0) {
-        userInAuthTable = true;
+    let userExists = false;
+    if (existingUserResponse.ok) {
+      const existingUsers = await existingUserResponse.json();
+      if (existingUsers && existingUsers.length > 0) {
+        userExists = true;
       }
     }
 
     // ==============================================================
-    // STEP 4: Create user in users_auth table if doesn't exist
+    // STEP 2: Create user in users_auth table if doesn't exist
     // ==============================================================
-    if (!userInAuthTable) {
-      const insertAuthResponse = await fetch(
+    if (!userExists) {
+      const insertResponse = await fetch(
         `${supabaseUrl}/rest/v1/users_auth`,
         {
           method: 'POST',
@@ -154,18 +89,26 @@ export async function onRequestPost(context) {
         }
       );
 
-      if (!insertAuthResponse.ok) {
-        const errorText = await insertAuthResponse.text();
-        // Only log error if it's not a duplicate - don't fail the request
+      if (!insertResponse.ok) {
+        const errorText = await insertResponse.text();
+        // Only fail if it's not a duplicate key error
         if (!errorText.includes('duplicate key') && !errorText.includes('unique constraint')) {
           console.error('Failed to create user in users_auth table:', errorText);
+          return new Response(JSON.stringify({
+            success: false,
+            error: 'Failed to create user record',
+            details: errorText
+          }), {
+            status: 500,
+            headers: corsHeaders
+          });
         }
       }
     }
 
     return new Response(JSON.stringify({
       success: true,
-      message: 'User synced successfully to both tables',
+      message: 'User synced successfully',
       user: { id: userId, email: email }
     }), {
       status: 200,
