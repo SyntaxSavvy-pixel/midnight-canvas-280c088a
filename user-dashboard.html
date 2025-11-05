@@ -4481,16 +4481,19 @@
                             // Device limit reached or authorization failed
                             if (authResult.limitReached) {
                                 showDeviceLimitWarning(authResult.deviceCount, authResult.maxDevices, userData.isPro);
+                            } else {
+                                // FIX: Show error if authorization failed for other reasons
+                                console.warn('Device authorization failed:', authResult.error || 'Unknown error');
                             }
                         } else {
-                            // Device authorized successfully
-                            // Auto-load devices list after successful authorization
-                            setTimeout(() => {
-                                loadUserDevices().catch(err => {});
-                            }, 500);
+                            // Device authorized successfully - load devices immediately
+                            loadUserDevices().catch(err => {
+                                console.error('Failed to load devices:', err);
+                            });
                         }
                     } catch (error) {
-                        
+                        // FIX: Log authorization errors instead of swallowing them
+                        console.error('Device authorization error:', error);
                     }
                 })(),
 
