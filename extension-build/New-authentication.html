@@ -1687,8 +1687,9 @@ async function handleGithubLogin() {
             };
 
             // FIX: Wait for user sync before redirecting (prevents "User not found" error)
+            // Use Cloudflare Pages function (not Netlify)
             try {
-                await fetch('/.netlify/functions/sync-user', {
+                const syncResponse = await fetch(window.location.origin + '/api/sync-user', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -1701,9 +1702,14 @@ async function handleGithubLogin() {
                         provider: userData.provider
                     })
                 });
+
+                if (!syncResponse.ok) {
+                    const errorData = await syncResponse.json().catch(() => ({}));
+                    console.warn('User sync failed:', errorData);
+                }
             } catch (syncError) {
                 // If sync fails, continue anyway - user might already exist
-                console.warn('User sync warning:', syncError);
+                console.warn('User sync error:', syncError);
             }
 
             // Save session data (synchronous, no waiting needed)
