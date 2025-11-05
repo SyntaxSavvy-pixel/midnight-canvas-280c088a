@@ -55,7 +55,7 @@ export async function onRequestPost(context) {
     // STEP 1: Verify user exists and get user ID
     // ==============================================================
     const userResponse = await fetch(
-      `${supabaseUrl}/rest/v1/users?email=eq.${encodeURIComponent(email)}&select=id`,
+      `${supabaseUrl}/rest/v1/users_auth?email=eq.${encodeURIComponent(email)}&select=id`,
       {
         headers: {
           'apikey': supabaseKey,
