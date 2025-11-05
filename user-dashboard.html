@@ -1373,25 +1373,30 @@
 
         /* Theme Card */
         .theme-card {
-            background: #1e293b;
-            border: 1px solid #334155;
-            border-radius: 1rem;
+            background: linear-gradient(135deg, #1e293b 0%, #1a2332 100%);
+            border: 1px solid rgba(99, 102, 241, 0.1);
+            border-radius: 1.25rem;
             overflow: hidden;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
             cursor: pointer;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+            height: 100%;
+            display: flex;
+            flex-direction: column;
         }
 
         .theme-card:hover {
-            transform: translateY(-4px);
-            box-shadow: 0 12px 24px rgba(0, 0, 0, 0.4);
-            border-color: #6366f1;
+            transform: translateY(-8px) scale(1.02);
+            box-shadow: 0 20px 40px rgba(99, 102, 241, 0.4), 0 0 0 1px rgba(99, 102, 241, 0.3);
+            border-color: rgba(99, 102, 241, 0.5);
         }
 
         .theme-preview {
-            height: 200px;
-            padding: 1.25rem;
+            height: 220px;
+            padding: 1.5rem;
             position: relative;
             overflow: hidden;
+            border-radius: 1.25rem 1.25rem 0 0;
         }
 
         .theme-preview-header {
@@ -1446,7 +1451,10 @@
         }
 
         .theme-card-info {
-            padding: 1.5rem;
+            padding: 1.75rem 1.5rem 1.5rem;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
         }
 
         .theme-card-header {
@@ -1481,35 +1489,42 @@
 
         .theme-card-description {
             color: #94a3b8;
-            font-size: 0.875rem;
-            margin-bottom: 1.25rem;
-            line-height: 1.5;
+            font-size: 0.8125rem;
+            margin-bottom: 1.5rem;
+            line-height: 1.7;
+            letter-spacing: 0.01em;
+            font-weight: 400;
         }
 
         .theme-apply-btn {
             width: 100%;
-            padding: 0.75rem 1.5rem;
+            margin-top: auto;
+            padding: 0.875rem 1.5rem;
             background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
             border: none;
-            border-radius: 0.5rem;
+            border-radius: 0.75rem;
             color: white;
             font-weight: 600;
+            font-size: 0.9375rem;
             cursor: pointer;
-            transition: all 0.3s;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             display: flex;
             align-items: center;
             justify-content: center;
             gap: 0.5rem;
-            box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+            box-shadow: 0 4px 16px rgba(99, 102, 241, 0.35);
+            letter-spacing: 0.01em;
         }
 
         .theme-apply-btn:hover {
-            box-shadow: 0 6px 20px rgba(99, 102, 241, 0.5);
+            box-shadow: 0 8px 24px rgba(99, 102, 241, 0.6);
             transform: translateY(-2px);
+            background: linear-gradient(135deg, #7c7ff5 0%, #9d6df8 100%);
         }
 
         .theme-apply-btn:active {
             transform: translateY(0);
+            box-shadow: 0 4px 12px rgba(99, 102, 241, 0.4);
         }
 
         .theme-apply-btn i {
@@ -7903,26 +7918,26 @@
 
             // Get descriptions for themes
             const themeDescriptions = {
-                lightMinimal: 'Clean and minimal design with modern Inter font',
-                darkSlate: 'Professional dark theme with Roboto typography',
-                softPastel: 'Soft pastel colors for a gentle, calming experience',
-                neoClean: 'Neo-minimalist design with Helvetica Neue',
-                ecoGreen: 'Nature-inspired green theme with Lato font',
-                softGray: 'Elegant gray tones with Nunito typography',
-                sunnyDay: 'Bright and cheerful yellow theme with Open Sans',
-                coolBlue: 'Cool blue tones for a refreshing look',
-                mutedEarth: 'Warm earth tones for a grounded feel',
-                gentleLavender: 'Soft lavender hues with Poppins font',
-                oceanicPro: 'Deep oceanic blue with turquoise accents - Premium',
-                sunsetGlowPro: 'Vibrant coral and orange sunset gradient - Premium',
-                techMetallicPro: 'Futuristic metallic silver design - Premium',
-                auroraPro: 'Mystical aurora borealis colors - Premium',
-                vibrantCoralPro: 'Bold coral pink with turquoise pop - Premium',
-                galaxyPro: 'Deep space-inspired purple galaxy - Premium',
-                cyberNeonPro: 'Neon cyberpunk aesthetic - Premium',
-                goldenHourPro: 'Warm golden hour gradient - Premium',
-                iceCrystalPro: 'Cool icy blue with crystal highlights - Premium',
-                midnightVioletPro: 'Deep midnight violet radial gradient - Premium'
+                lightMinimal: 'Inter • Blue Sky & Pearl White • Clean minimal aesthetics',
+                darkSlate: 'Roboto • Charcoal & Azure Blue • Professional dark mode',
+                softPastel: 'Poppins • Mint Green & Coral Pink • Gentle calming palette',
+                neoClean: 'Helvetica Neue • Sky Blue & Soft Gray • Neo-minimalist design',
+                ecoGreen: 'Lato • Forest Green & Lime • Nature-inspired eco theme',
+                softGray: 'Nunito • Dove Gray & Platinum • Elegant neutral tones',
+                sunnyDay: 'Open Sans • Golden Yellow & Amber • Bright cheerful vibes',
+                coolBlue: 'Roboto • Ice Blue & Ocean • Refreshing cool palette',
+                mutedEarth: 'Lato • Tan & Chestnut • Warm grounded earth tones',
+                gentleLavender: 'Poppins • Lavender & Purple Mist • Soft dreamy hues',
+                oceanicPro: 'Inter • Deep Navy & Turquoise • Oceanic premium gradient',
+                sunsetGlowPro: 'Poppins • Coral & Orange Blaze • Vibrant sunset premium',
+                techMetallicPro: 'Roboto • Silver & Steel • Futuristic metallic premium',
+                auroraPro: 'Inter • Mystic Violet & Cyan • Aurora borealis premium',
+                vibrantCoralPro: 'Poppins • Coral Pink & Aqua • Bold vibrant premium',
+                galaxyPro: 'Inter • Deep Purple & Cosmic Blue • Space galaxy premium',
+                cyberNeonPro: 'Roboto • Neon Pink & Electric Blue • Cyberpunk premium',
+                goldenHourPro: 'Poppins • Gold & Sunset Orange • Warm golden premium',
+                iceCrystalPro: 'Inter • Icy Blue & Crystal White • Cool crystal premium',
+                midnightVioletPro: 'Poppins • Midnight Violet & Deep Plum • Radial premium'
             };
 
             // Render each theme card

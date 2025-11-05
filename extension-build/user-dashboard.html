@@ -1373,25 +1373,30 @@
 
         /* Theme Card */
         .theme-card {
-            background: #1e293b;
-            border: 1px solid #334155;
-            border-radius: 1rem;
+            background: linear-gradient(135deg, #1e293b 0%, #1a2332 100%);
+            border: 1px solid rgba(99, 102, 241, 0.1);
+            border-radius: 1.25rem;
             overflow: hidden;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
             cursor: pointer;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+            height: 100%;
+            display: flex;
+            flex-direction: column;
         }
 
         .theme-card:hover {
-            transform: translateY(-4px);
-            box-shadow: 0 12px 24px rgba(0, 0, 0, 0.4);
-            border-color: #6366f1;
+            transform: translateY(-8px) scale(1.02);
+            box-shadow: 0 20px 40px rgba(99, 102, 241, 0.4), 0 0 0 1px rgba(99, 102, 241, 0.3);
+            border-color: rgba(99, 102, 241, 0.5);
         }
 
         .theme-preview {
-            height: 200px;
-            padding: 1.25rem;
+            height: 220px;
+            padding: 1.5rem;
             position: relative;
             overflow: hidden;
+            border-radius: 1.25rem 1.25rem 0 0;
         }
 
         .theme-preview-header {
@@ -1446,7 +1451,10 @@
         }
 
         .theme-card-info {
-            padding: 1.5rem;
+            padding: 1.75rem 1.5rem 1.5rem;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
         }
 
         .theme-card-header {
@@ -1481,35 +1489,42 @@
 
         .theme-card-description {
             color: #94a3b8;
-            font-size: 0.875rem;
-            margin-bottom: 1.25rem;
-            line-height: 1.5;
+            font-size: 0.8125rem;
+            margin-bottom: 1.5rem;
+            line-height: 1.7;
+            letter-spacing: 0.01em;
+            font-weight: 400;
         }
 
         .theme-apply-btn {
             width: 100%;
-            padding: 0.75rem 1.5rem;
+            margin-top: auto;
+            padding: 0.875rem 1.5rem;
             background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
             border: none;
-            border-radius: 0.5rem;
+            border-radius: 0.75rem;
             color: white;
             font-weight: 600;
+            font-size: 0.9375rem;
             cursor: pointer;
-            transition: all 0.3s;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             display: flex;
             align-items: center;
             justify-content: center;
             gap: 0.5rem;
-            box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+            box-shadow: 0 4px 16px rgba(99, 102, 241, 0.35);
+            letter-spacing: 0.01em;
         }
 
         .theme-apply-btn:hover {
-            box-shadow: 0 6px 20px rgba(99, 102, 241, 0.5);
+            box-shadow: 0 8px 24px rgba(99, 102, 241, 0.6);
             transform: translateY(-2px);
+            background: linear-gradient(135deg, #7c7ff5 0%, #9d6df8 100%);
         }
 
         .theme-apply-btn:active {
             transform: translateY(0);
+            box-shadow: 0 4px 12px rgba(99, 102, 241, 0.4);
         }
 
         .theme-apply-btn i {
@@ -1864,6 +1879,131 @@
             height: 8px;
             background: linear-gradient(to right, #6366f1 0%, #8b5cf6 60%, #334155 60%, #334155 100%);
             border-radius: 10px;
+        }
+
+        /* Search Results Styling */
+        .search-results-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            padding: 20px 0;
+        }
+
+        .search-result-item {
+            background: linear-gradient(135deg, rgba(15, 23, 42, 0.95) 0%, rgba(30, 41, 59, 0.95) 100%);
+            border: 1px solid rgba(148, 163, 184, 0.15);
+            border-radius: 12px;
+            padding: 18px 20px;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .search-result-item::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 4px;
+            height: 100%;
+            background: linear-gradient(180deg, #10b981 0%, #059669 100%);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .search-result-item:hover {
+            border-color: rgba(16, 185, 129, 0.4);
+            background: linear-gradient(135deg, rgba(20, 30, 48, 0.98) 0%, rgba(35, 48, 68, 0.98) 100%);
+            transform: translateX(4px);
+            box-shadow: 0 8px 24px rgba(16, 185, 129, 0.15), 0 0 0 1px rgba(16, 185, 129, 0.1);
+        }
+
+        .search-result-item:hover::before {
+            opacity: 1;
+        }
+
+        .search-result-item:active {
+            transform: translateX(2px);
+            transition-duration: 0.1s;
+        }
+
+        .search-result-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: #f1f5f9;
+            margin-bottom: 10px;
+            line-height: 1.4;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+            letter-spacing: -0.01em;
+        }
+
+        .search-result-item:hover .search-result-title {
+            color: #10b981;
+        }
+
+        .search-result-url {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 13px;
+            color: #94a3b8;
+            font-family: 'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas, 'Courier New', monospace;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            padding: 8px 12px;
+            background: rgba(15, 23, 42, 0.6);
+            border-radius: 8px;
+            border: 1px solid rgba(148, 163, 184, 0.08);
+        }
+
+        .search-result-url svg {
+            width: 14px;
+            height: 14px;
+            flex-shrink: 0;
+            opacity: 0.6;
+            stroke: #10b981;
+        }
+
+        .search-result-item:hover .search-result-url {
+            color: #cbd5e1;
+            background: rgba(16, 185, 129, 0.08);
+            border-color: rgba(16, 185, 129, 0.15);
+        }
+
+        .search-result-item:hover .search-result-url svg {
+            opacity: 1;
+            stroke: #10b981;
+        }
+
+        /* Empty state or loading */
+        .search-results-list:empty::after {
+            content: 'No search results to display';
+            display: block;
+            text-align: center;
+            padding: 40px 20px;
+            color: #64748b;
+            font-size: 14px;
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            .search-result-item {
+                padding: 14px 16px;
+            }
+
+            .search-result-title {
+                font-size: 15px;
+            }
+
+            .search-result-url {
+                font-size: 12px;
+                padding: 6px 10px;
+            }
         }
 
     </style>
@@ -4109,8 +4249,8 @@
             stripeSubscriptionId: null
         };
 
-        // API Configuration - Netlify Functions path
-        const API_BASE = window.location.origin + '/.netlify/functions';
+        // API Configuration - Cloudflare Pages Functions path
+        const API_BASE = window.location.origin + '/api';
         let authToken = null;
         let STRIPE_PRICE_ID = null; // Will be fetched from API
 
@@ -5479,7 +5619,7 @@
                 const authToken = session?.access_token || localStorage.getItem('tabmangment_token');
 
                 // Call create-checkout-session function
-                const response = await fetch('/.netlify/functions/create-checkout-session', {
+                const response = await fetch('/api/create-checkout-session', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -5532,7 +5672,7 @@
                 const authToken = session?.access_token || localStorage.getItem('tabmangment_token');
 
                 // Call billing-portal function to get portal URL
-                const response = await fetch('/.netlify/functions/billing-portal', {
+                const response = await fetch('/api/billing-portal', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -6357,7 +6497,7 @@
 
                     // Redirect to auth page
                     setTimeout(() => {
-                        window.location.href = '/new-authentication.html';
+                        window.location.href = '/new-authentication';
                     }, 1500);
                     return;
                 }
@@ -7476,7 +7616,7 @@
 
         // Preset themes configuration
         const presetThemes = {
-            // ========== FREE THEMES (10) ==========
+            // ========== FREE THEMES (15) ==========
             lightMinimal: {
                 name: 'Light Minimal',
                 primaryColor: '#4A90E2',
@@ -7618,7 +7758,7 @@
                 isPro: false
             },
 
-            // ========== PRO THEMES (10) ==========
+            // ========== PRO THEMES - PREMIUM (10) ==========
             oceanicPro: {
                 name: 'Oceanic Pro',
                 primaryColor: '#001F3F',
@@ -7778,26 +7918,26 @@
 
             // Get descriptions for themes
             const themeDescriptions = {
-                lightMinimal: 'Clean and minimal design with modern Inter font',
-                darkSlate: 'Professional dark theme with Roboto typography',
-                softPastel: 'Soft pastel colors for a gentle, calming experience',
-                neoClean: 'Neo-minimalist design with Helvetica Neue',
-                ecoGreen: 'Nature-inspired green theme with Lato font',
-                softGray: 'Elegant gray tones with Nunito typography',
-                sunnyDay: 'Bright and cheerful yellow theme with Open Sans',
-                coolBlue: 'Cool blue tones for a refreshing look',
-                mutedEarth: 'Warm earth tones for a grounded feel',
-                gentleLavender: 'Soft lavender hues with Poppins font',
-                oceanicPro: 'Deep oceanic blue with turquoise accents - Premium',
-                sunsetGlowPro: 'Vibrant coral and orange sunset gradient - Premium',
-                techMetallicPro: 'Futuristic metallic silver design - Premium',
-                auroraPro: 'Mystical aurora borealis colors - Premium',
-                vibrantCoralPro: 'Bold coral pink with turquoise pop - Premium',
-                galaxyPro: 'Deep space-inspired purple galaxy - Premium',
-                cyberNeonPro: 'Neon cyberpunk aesthetic - Premium',
-                goldenHourPro: 'Warm golden hour gradient - Premium',
-                iceCrystalPro: 'Cool icy blue with crystal highlights - Premium',
-                midnightVioletPro: 'Deep midnight violet radial gradient - Premium'
+                lightMinimal: 'Inter • Blue Sky & Pearl White • Clean minimal aesthetics',
+                darkSlate: 'Roboto • Charcoal & Azure Blue • Professional dark mode',
+                softPastel: 'Poppins • Mint Green & Coral Pink • Gentle calming palette',
+                neoClean: 'Helvetica Neue • Sky Blue & Soft Gray • Neo-minimalist design',
+                ecoGreen: 'Lato • Forest Green & Lime • Nature-inspired eco theme',
+                softGray: 'Nunito • Dove Gray & Platinum • Elegant neutral tones',
+                sunnyDay: 'Open Sans • Golden Yellow & Amber • Bright cheerful vibes',
+                coolBlue: 'Roboto • Ice Blue & Ocean • Refreshing cool palette',
+                mutedEarth: 'Lato • Tan & Chestnut • Warm grounded earth tones',
+                gentleLavender: 'Poppins • Lavender & Purple Mist • Soft dreamy hues',
+                oceanicPro: 'Inter • Deep Navy & Turquoise • Oceanic premium gradient',
+                sunsetGlowPro: 'Poppins • Coral & Orange Blaze • Vibrant sunset premium',
+                techMetallicPro: 'Roboto • Silver & Steel • Futuristic metallic premium',
+                auroraPro: 'Inter • Mystic Violet & Cyan • Aurora borealis premium',
+                vibrantCoralPro: 'Poppins • Coral Pink & Aqua • Bold vibrant premium',
+                galaxyPro: 'Inter • Deep Purple & Cosmic Blue • Space galaxy premium',
+                cyberNeonPro: 'Roboto • Neon Pink & Electric Blue • Cyberpunk premium',
+                goldenHourPro: 'Poppins • Gold & Sunset Orange • Warm golden premium',
+                iceCrystalPro: 'Inter • Icy Blue & Crystal White • Cool crystal premium',
+                midnightVioletPro: 'Poppins • Midnight Violet & Deep Plum • Radial premium'
             };
 
             // Render each theme card
@@ -7862,15 +8002,15 @@
         function handleThemeApplication(themeName) {
             const theme = presetThemes[themeName];
 
-            // TESTING MODE: Pro gating disabled for all themes
-            // if (theme.isPro && !userData.isPro) {
-            //     showUpgradeModal(
-            //         'Premium Theme',
-            //         `The "${theme.name}" theme is a premium feature. Upgrade to Pro to unlock all premium themes!`,
-            //         'Unlock Premium Themes'
-            //     );
-            //     return;
-            // }
+            // PRO FEATURE: Check if theme requires Pro plan
+            if (theme.isPro && !userData.isPro) {
+                showUpgradeModal(
+                    'Premium Theme',
+                    `The "${theme.name}" theme is a premium feature. Upgrade to Pro to unlock all premium themes!`,
+                    'Unlock Premium Themes'
+                );
+                return;
+            }
 
             // Apply the theme
             applyTheme(themeName);
@@ -7879,11 +8019,11 @@
         // Theme tab switching
         document.querySelectorAll('.theme-tab-btn').forEach(btn => {
             btn.addEventListener('click', function() {
-                // TESTING MODE: Pro gating disabled for custom themes
-                // if (this.dataset.tab === 'custom' && !userData.isPro) {
-                //     showCustomThemeProGate();
-                //     return;
-                // }
+                // PRO FEATURE: Check if custom themes tab requires Pro
+                if (this.dataset.tab === 'custom' && !userData.isPro) {
+                    showCustomThemeUpgradeModal();
+                    return;
+                }
 
                 // Switch tabs
                 document.querySelectorAll('.theme-tab-btn').forEach(b => b.classList.remove('active'));
@@ -7893,6 +8033,124 @@
                 document.getElementById(`${this.dataset.tab}-themes-tab`).classList.add('active');
             });
         });
+
+        // Show Custom Theme Upgrade Modal (navigates to subscription page)
+        function showCustomThemeUpgradeModal() {
+            // Create modal overlay
+            const modal = document.createElement('div');
+            modal.id = 'custom-theme-upgrade-modal';
+            modal.style.cssText = `
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background: rgba(0, 0, 0, 0.75);
+                backdrop-filter: blur(10px);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                z-index: 10000;
+                animation: fadeIn 0.3s ease;
+            `;
+
+            // Create modal content
+            const modalContent = document.createElement('div');
+            modalContent.style.cssText = `
+                background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+                border: 2px solid rgba(99, 102, 241, 0.3);
+                border-radius: 1.5rem;
+                padding: 2.5rem;
+                max-width: 500px;
+                width: 90%;
+                box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+                animation: slideUp 0.3s ease;
+            `;
+
+            modalContent.innerHTML = `
+                <div style="text-align: center;">
+                    <div style="width: 80px; height: 80px; background: linear-gradient(135deg, #6366f1, #8b5cf6); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 1.5rem; box-shadow: 0 8px 24px rgba(99, 102, 241, 0.4);">
+                        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M12 2L2 7l10 5 10-5-10-5z"></path>
+                            <path d="M2 17l10 5 10-5"></path>
+                            <path d="M2 12l10 5 10-5"></path>
+                        </svg>
+                    </div>
+
+                    <h2 style="color: #f8fafc; font-size: 1.75rem; font-weight: 700; margin-bottom: 1rem; letter-spacing: -0.02em;">
+                        Custom Themes
+                        <span style="background: linear-gradient(135deg, #6366f1, #8b5cf6); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin-left: 0.5rem;">Pro Feature</span>
+                    </h2>
+
+                    <p style="color: #cbd5e1; font-size: 1.05rem; line-height: 1.6; margin-bottom: 2rem;">
+                        Create unlimited custom themes with full control over colors, fonts, animations, and more. Personalize your dashboard exactly how you want it!
+                    </p>
+
+                    <div style="background: rgba(99, 102, 241, 0.1); border: 1px solid rgba(99, 102, 241, 0.2); border-radius: 0.875rem; padding: 1.25rem; margin-bottom: 2rem; text-align: left;">
+                        <div style="color: #f8fafc; font-weight: 600; margin-bottom: 0.75rem; display: flex; align-items: center; gap: 0.5rem;">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#6366f1" stroke-width="2">
+                                <polyline points="20 6 9 17 4 12"></polyline>
+                            </svg>
+                            Pro Features Include:
+                        </div>
+                        <ul style="color: #cbd5e1; font-size: 0.95rem; margin: 0; padding-left: 1.5rem; line-height: 1.8;">
+                            <li>Unlimited custom themes</li>
+                            <li>Full color customization</li>
+                            <li>Advanced typography controls</li>
+                            <li>Animation effects</li>
+                            <li>Save & switch between themes</li>
+                        </ul>
+                    </div>
+
+                    <div style="display: flex; gap: 0.75rem; flex-direction: column;">
+                        <button onclick="navigateToSubscription()" style="width: 100%; padding: 1rem 2rem; background: linear-gradient(135deg, #6366f1, #8b5cf6); color: white; border: none; border-radius: 0.875rem; font-size: 1.05rem; font-weight: 600; cursor: pointer; transition: all 0.3s; box-shadow: 0 4px 14px rgba(99, 102, 241, 0.4);" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 8px 24px rgba(99, 102, 241, 0.5)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 14px rgba(99, 102, 241, 0.4)'">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: middle; margin-right: 0.5rem;">
+                                <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+                                <polyline points="15 3 21 3 21 9"></polyline>
+                                <line x1="10" y1="14" x2="21" y2="3"></line>
+                            </svg>
+                            Upgrade to Pro
+                        </button>
+
+                        <button onclick="closeCustomThemeUpgradeModal()" style="width: 100%; padding: 0.875rem 2rem; background: transparent; color: #94a3b8; border: 1px solid rgba(148, 163, 184, 0.2); border-radius: 0.875rem; font-size: 1rem; font-weight: 600; cursor: pointer; transition: all 0.3s;" onmouseover="this.style.borderColor='rgba(148, 163, 184, 0.4)'; this.style.color='#cbd5e1'" onmouseout="this.style.borderColor='rgba(148, 163, 184, 0.2)'; this.style.color='#94a3b8'">
+                            Maybe Later
+                        </button>
+                    </div>
+                </div>
+            `;
+
+            modal.appendChild(modalContent);
+            document.body.appendChild(modal);
+
+            // Add click outside to close
+            modal.addEventListener('click', (e) => {
+                if (e.target === modal) {
+                    closeCustomThemeUpgradeModal();
+                }
+            });
+        }
+
+        // Close Custom Theme Upgrade Modal
+        function closeCustomThemeUpgradeModal() {
+            const modal = document.getElementById('custom-theme-upgrade-modal');
+            if (modal) {
+                modal.style.animation = 'fadeOut 0.2s ease';
+                setTimeout(() => modal.remove(), 200);
+            }
+        }
+
+        // Navigate to Subscription Section
+        function navigateToSubscription() {
+            closeCustomThemeUpgradeModal();
+            showPage('subscription');
+            // Scroll to subscription section
+            setTimeout(() => {
+                const subscriptionSection = document.querySelector('#subscription-content');
+                if (subscriptionSection) {
+                    subscriptionSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }
+            }, 100);
+        }
 
         // Show/Hide Pro gate for custom themes
         function showCustomThemeProGate() {
@@ -7919,13 +8177,19 @@
             // Render theme cards dynamically
             renderThemeCards();
 
-            // TESTING MODE: Always show custom theme editor (Pro gating disabled)
+            // PRO GATING: Show/hide custom theme editor based on Pro status
             const proGate = document.getElementById('custom-theme-pro-gate');
             const editor = document.getElementById('custom-theme-editor');
             if (proGate && editor) {
-                proGate.style.display = 'none';
-                editor.style.filter = 'none';
-                editor.style.pointerEvents = 'auto';
+                if (userData.isPro) {
+                    proGate.style.display = 'none';
+                    editor.style.filter = 'none';
+                    editor.style.pointerEvents = 'auto';
+                } else {
+                    proGate.style.display = 'flex';
+                    editor.style.filter = 'blur(8px)';
+                    editor.style.pointerEvents = 'none';
+                }
             }
 
             // Initialize theme builder tabs
@@ -8069,6 +8333,12 @@
 
         // Custom Theme Studio Modal Functions
         function openCustomThemeStudio() {
+            // PRO FEATURE: Verify user has Pro plan
+            if (!userData.isPro) {
+                showCustomThemeUpgradeModal();
+                return;
+            }
+
             const modal = document.getElementById('custom-theme-studio-modal');
             if (modal) {
                 modal.style.display = 'block';
@@ -8460,11 +8730,11 @@
 
         // Save custom theme
         function saveCustomTheme() {
-            // TESTING MODE: Pro check disabled
-            // if (!userData.isPro) {
-            //     showUpgradeModal('Custom Themes', 'Save unlimited custom themes with full control over appearance.');
-            //     return;
-            // }
+            // PRO FEATURE: Verify user has Pro plan
+            if (!userData.isPro) {
+                showUpgradeModal('Custom Themes', 'Save unlimited custom themes with full control over appearance.');
+                return;
+            }
 
             const themeNameInput = document.getElementById('custom-theme-name');
             let themeName = themeNameInput?.value.trim();
@@ -8539,11 +8809,11 @@
 
         // Apply custom theme (from current editor settings)
         async function applyCustomTheme() {
-            // TESTING MODE: Pro check disabled
-            // if (!userData.isPro) {
-            //     showUpgradeModal('Custom Themes', 'Apply custom themes to personalize your extension.');
-            //     return;
-            // }
+            // PRO FEATURE: Verify user has Pro plan
+            if (!userData.isPro) {
+                showUpgradeModal('Custom Themes', 'Apply custom themes to personalize your extension.');
+                return;
+            }
 
             // Get all inputs with null checks
             const primaryInput = document.getElementById('custom-color-primary');
@@ -8625,8 +8895,8 @@
 
         // Load saved custom themes
         function loadSavedCustomThemes() {
-            // TESTING MODE: Pro check disabled
-            // if (!userData.isPro) return;
+            // PRO FEATURE: Only load custom themes for Pro users
+            if (!userData.isPro) return;
 
             try {
                 const stored = localStorage.getItem('customThemes');
