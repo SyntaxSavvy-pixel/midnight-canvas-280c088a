@@ -4344,20 +4344,52 @@
                     .delete()
                     .eq('device_id', deviceId);
 
-                if (deleteError) throw deleteError;
+                if (deleteError) {
+                    throw deleteError;
+                }
+
+                // Wait a moment for database to sync
+                await new Promise(resolve => setTimeout(resolve, 500));
 
                 // Show success notification
                 showNotification('Device removed successfully', 'success');
 
-                // Force reload the device list with a small delay to ensure database sync
-                setTimeout(async () => {
-                    await loadUserDevices();
-                }, 300);
+                // Force reload the device list
+                const userId = userData.id || userData.email;
+                const isPro = userData.isPro || false;
+
+                // Re-fetch devices directly
+                const { data: devices, error: fetchError } = await supabaseClient
+                    .from('user_devices')
+                    .select('*')
+                    .eq('user_id', userId)
+                    .order('last_seen', { ascending: false });
+
+                if (fetchError) {
+                    throw fetchError;
+                }
+
+                // Now call loadUserDevices to refresh the UI
+                await loadUserDevices();
 
             } catch (error) {
                 showNotification('Failed to remove device: ' + error.message, 'error');
                 // Reload devices even on error to show current state
-                await loadUserDevices();
+                try {
+                    await loadUserDevices();
+                } catch (reloadError) {
+                    // If reload fails, show error message
+                    if (container) {
+                        container.innerHTML = `
+                            <div style="text-align: center; padding: 2rem; color: #ef4444;">
+                                <p>Failed to reload devices</p>
+                                <button onclick="loadUserDevices()" style="margin-top: 1rem; padding: 0.5rem 1rem; background: #334155; color: #e2e8f0; border: none; border-radius: 0.5rem; cursor: pointer;">
+                                    Retry
+                                </button>
+                            </div>
+                        `;
+                    }
+                }
             }
         }
 
