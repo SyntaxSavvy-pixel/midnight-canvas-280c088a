@@ -1,10 +1,13 @@
-// ================================================
-// STEP 3A: Check Search Usage API Endpoint
-// ================================================
-// File location: /functions/api/check-search-usage.js
-// Endpoint: POST https://tabmangment.com/api/check-search-usage
+// Cloudflare Pages Function: /api/check-search-usage
+// Check user's AI search usage (24-hour rolling window)
+// Uses Supabase REST API (no npm package required)
 
-import { createClient } from '@supabase/supabase-js';
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Methods': 'POST, OPTIONS',
+  'Access-Control-Allow-Headers': 'Content-Type',
+  'Content-Type': 'application/json'
+};
 
 export async function onRequestPost(context) {
   try {
@@ -21,62 +24,81 @@ export async function onRequestPost(context) {
         error: 'Email is required'
       }), {
         status: 400,
-        headers: { 'Content-Type': 'application/json' }
+        headers: corsHeaders
       });
     }
 
-    // Initialize Supabase client
-    const supabase = createClient(
-      env.SUPABASE_URL,
-      env.SUPABASE_SERVICE_ROLE_KEY
+    const supabaseUrl = env.SUPABASE_URL;
+    const supabaseKey = env.SUPABASE_SERVICE_ROLE_KEY;
+
+    if (!supabaseUrl || !supabaseKey) {
+      console.error('Missing Supabase credentials');
+      return new Response(JSON.stringify({
+        success: false,
+        error: 'Server configuration error'
+      }), {
+        status: 500,
+        headers: corsHeaders
+      });
+    }
+
+    // Check if user is Pro/Premium using Supabase REST API
+    const userResponse = await fetch(
+      `${supabaseUrl}/rest/v1/users?email=eq.${encodeURIComponent(email)}&select=isPro,isPremium`,
+      {
+        headers: {
+          'apikey': supabaseKey,
+          'Authorization': `Bearer ${supabaseKey}`,
+          'Content-Type': 'application/json'
+        }
+      }
     );
 
-    // Check if user is Pro/Premium (unlimited searches)
-    const { data: user, error: userError } = await supabase
-      .from('users')
-      .select('isPro, isPremium')
-      .eq('email', email)
-      .single();
+    if (userResponse.ok) {
+      const users = await userResponse.json();
+      const user = users[0];
 
-    // If user is Pro, return unlimited
-    if (user && (user.isPro || user.isPremium)) {
-      return new Response(JSON.stringify({
-        success: true,
-        searchCount: 0,
-        canSearch: true,
-        isPro: true
-      }), {
-        status: 200,
-        headers: {
-          'Content-Type': 'application/json',
-          'Access-Control-Allow-Origin': '*', // Allow extension to call
-          'Access-Control-Allow-Methods': 'POST, OPTIONS',
-          'Access-Control-Allow-Headers': 'Content-Type'
-        }
-      });
+      // If user is Pro, return unlimited
+      if (user && (user.isPro || user.isPremium)) {
+        return new Response(JSON.stringify({
+          success: true,
+          searchCount: 0,
+          canSearch: true,
+          isPro: true
+        }), {
+          status: 200,
+          headers: corsHeaders
+        });
+      }
     }
 
     // Calculate 24 hours ago timestamp
-    const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+    const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
 
-    // Query search_usage table for searches in last 24 hours
-    const { data: searches, error: searchError } = await supabase
-      .from('search_usage')
-      .select('id, searched_at')
-      .eq('user_email', email)
-      .gte('searched_at', twentyFourHoursAgo.toISOString())
-      .order('searched_at', { ascending: false });
+    // Query search_usage table using Supabase REST API
+    const searchResponse = await fetch(
+      `${supabaseUrl}/rest/v1/search_usage?user_email=eq.${encodeURIComponent(email)}&searched_at=gte.${twentyFourHoursAgo}&select=id,searched_at&order=searched_at.desc`,
+      {
+        headers: {
+          'apikey': supabaseKey,
+          'Authorization': `Bearer ${supabaseKey}`,
+          'Content-Type': 'application/json'
+        }
+      }
+    );
 
-    if (searchError) {
-      console.error('Supabase query error:', searchError);
+    if (!searchResponse.ok) {
+      console.error('Supabase query error:', await searchResponse.text());
       return new Response(JSON.stringify({
         success: false,
         error: 'Database error'
       }), {
         status: 500,
-        headers: { 'Content-Type': 'application/json' }
+        headers: corsHeaders
       });
     }
+
+    const searches = await searchResponse.json();
 
     // Calculate search count and eligibility
     const searchCount = searches?.length || 0;
@@ -102,36 +124,25 @@ export async function onRequestPost(context) {
       isPro: false
     }), {
       status: 200,
-      headers: {
-        'Content-Type': 'application/json',
-        'Access-Control-Allow-Origin': '*',
-        'Access-Control-Allow-Methods': 'POST, OPTIONS',
-        'Access-Control-Allow-Headers': 'Content-Type',
-        'Cache-Control': 'no-cache, no-store, must-revalidate' // Don't cache
-      }
+      headers: corsHeaders
     });
 
   } catch (error) {
     console.error('Unexpected error:', error);
     return new Response(JSON.stringify({
       success: false,
-      error: 'Internal server error'
+      error: 'Internal server error',
+      message: error.message
     }), {
       status: 500,
-      headers: { 'Content-Type': 'application/json' }
+      headers: corsHeaders
     });
   }
 }
 
-// Handle OPTIONS for CORS preflight
 export async function onRequestOptions() {
   return new Response(null, {
     status: 204,
-    headers: {
-      'Access-Control-Allow-Origin': '*',
-      'Access-Control-Allow-Methods': 'POST, OPTIONS',
-      'Access-Control-Allow-Headers': 'Content-Type',
-      'Access-Control-Max-Age': '86400'
-    }
+    headers: corsHeaders
   });
 }

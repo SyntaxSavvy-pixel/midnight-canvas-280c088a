@@ -1,10 +1,13 @@
-// ================================================
-// STEP 3B: Increment Search API Endpoint
-// ================================================
-// File location: /functions/api/increment-search.js
-// Endpoint: POST https://tabmangment.com/api/increment-search
+// Cloudflare Pages Function: /api/increment-search
+// Record a new AI search in the database
+// Uses Supabase REST API (no npm package required)
 
-import { createClient } from '@supabase/supabase-js';
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Methods': 'POST, OPTIONS',
+  'Access-Control-Allow-Headers': 'Content-Type',
+  'Content-Type': 'application/json'
+};
 
 export async function onRequestPost(context) {
   try {
@@ -21,73 +24,93 @@ export async function onRequestPost(context) {
         error: 'Email is required'
       }), {
         status: 400,
-        headers: { 'Content-Type': 'application/json' }
+        headers: corsHeaders
       });
     }
 
-    // Initialize Supabase client
-    const supabase = createClient(
-      env.SUPABASE_URL,
-      env.SUPABASE_SERVICE_ROLE_KEY
+    const supabaseUrl = env.SUPABASE_URL;
+    const supabaseKey = env.SUPABASE_SERVICE_ROLE_KEY;
+
+    if (!supabaseUrl || !supabaseKey) {
+      console.error('Missing Supabase credentials');
+      return new Response(JSON.stringify({
+        success: false,
+        error: 'Server configuration error'
+      }), {
+        status: 500,
+        headers: corsHeaders
+      });
+    }
+
+    // Check if user is Pro/Premium using Supabase REST API
+    let isPro = false;
+    const userResponse = await fetch(
+      `${supabaseUrl}/rest/v1/users?email=eq.${encodeURIComponent(email)}&select=isPro,isPremium`,
+      {
+        headers: {
+          'apikey': supabaseKey,
+          'Authorization': `Bearer ${supabaseKey}`,
+          'Content-Type': 'application/json'
+        }
+      }
     );
 
-    // Check if user is Pro/Premium (skip limit for Pro users)
-    const { data: user } = await supabase
-      .from('users')
-      .select('isPro, isPremium')
-      .eq('email', email)
-      .single();
+    if (userResponse.ok) {
+      const users = await userResponse.json();
+      const user = users[0];
+      isPro = user && (user.isPro || user.isPremium);
+    }
 
-    // If Pro, still log the search but don't enforce limit
-    const isPro = user && (user.isPro || user.isPremium);
+    // Insert new search record using Supabase REST API
+    const insertResponse = await fetch(
+      `${supabaseUrl}/rest/v1/search_usage`,
+      {
+        method: 'POST',
+        headers: {
+          'apikey': supabaseKey,
+          'Authorization': `Bearer ${supabaseKey}`,
+          'Content-Type': 'application/json',
+          'Prefer': 'return=minimal'
+        },
+        body: JSON.stringify({
+          user_email: email,
+          searched_at: new Date().toISOString()
+        })
+      }
+    );
 
-    // Insert new search record
-    const { error: insertError } = await supabase
-      .from('search_usage')
-      .insert([{
-        user_email: email,
-        searched_at: new Date().toISOString()
-      }]);
-
-    if (insertError) {
-      console.error('Supabase insert error:', insertError);
+    if (!insertResponse.ok) {
+      console.error('Supabase insert error:', await insertResponse.text());
       return new Response(JSON.stringify({
         success: false,
         error: 'Failed to record search'
       }), {
         status: 500,
-        headers: { 'Content-Type': 'application/json' }
+        headers: corsHeaders
       });
     }
 
     // Get updated search count (last 24 hours)
-    const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+    const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
 
-    const { data: searches, error: countError } = await supabase
-      .from('search_usage')
-      .select('id')
-      .eq('user_email', email)
-      .gte('searched_at', twentyFourHoursAgo.toISOString());
-
-    if (countError) {
-      console.error('Supabase count error:', countError);
-      // Still return success since insert worked
-      return new Response(JSON.stringify({
-        success: true,
-        message: 'Search recorded',
-        searchCount: 1,
-        remaining: isPro ? 999 : 4
-      }), {
-        status: 200,
+    const countResponse = await fetch(
+      `${supabaseUrl}/rest/v1/search_usage?user_email=eq.${encodeURIComponent(email)}&searched_at=gte.${twentyFourHoursAgo}&select=id`,
+      {
         headers: {
-          'Content-Type': 'application/json',
-          'Access-Control-Allow-Origin': '*'
+          'apikey': supabaseKey,
+          'Authorization': `Bearer ${supabaseKey}`,
+          'Content-Type': 'application/json'
         }
-      });
+      }
+    );
+
+    let searchCount = 1;
+    if (countResponse.ok) {
+      const searches = await countResponse.json();
+      searchCount = searches?.length || 1;
     }
 
     // Calculate counts
-    const searchCount = searches?.length || 0;
     const remaining = isPro ? 999 : Math.max(0, 5 - searchCount);
     const limitReached = !isPro && searchCount >= 5;
 
@@ -101,36 +124,25 @@ export async function onRequestPost(context) {
       isPro
     }), {
       status: 200,
-      headers: {
-        'Content-Type': 'application/json',
-        'Access-Control-Allow-Origin': '*',
-        'Access-Control-Allow-Methods': 'POST, OPTIONS',
-        'Access-Control-Allow-Headers': 'Content-Type',
-        'Cache-Control': 'no-cache, no-store, must-revalidate'
-      }
+      headers: corsHeaders
     });
 
   } catch (error) {
     console.error('Unexpected error:', error);
     return new Response(JSON.stringify({
       success: false,
-      error: 'Internal server error'
+      error: 'Internal server error',
+      message: error.message
     }), {
       status: 500,
-      headers: { 'Content-Type': 'application/json' }
+      headers: corsHeaders
     });
   }
 }
 
-// Handle OPTIONS for CORS preflight
 export async function onRequestOptions() {
   return new Response(null, {
     status: 204,
-    headers: {
-      'Access-Control-Allow-Origin': '*',
-      'Access-Control-Allow-Methods': 'POST, OPTIONS',
-      'Access-Control-Allow-Headers': 'Content-Type',
-      'Access-Control-Max-Age': '86400'
-    }
+    headers: corsHeaders
   });
 }
