@@ -108,7 +108,7 @@ export async function onRequestPost(context) {
     }
 
     const userId = user.id;
-    const isPro = user.isPro || user.isPremium;
+    const isPro = user.is_pro || user.plan_type === 'pro';
     const planType = isPro ? 'pro' : 'free';
     const maxDevices = isPro ? DEVICE_LIMITS.PRO : DEVICE_LIMITS.FREE;
 
