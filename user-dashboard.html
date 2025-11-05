@@ -1548,6 +1548,18 @@
             animation: fadeInButton 0.5s ease-in-out;
         }
 
+        /* Device removal modal animation */
+        @keyframes modalSlideIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px) scale(0.95);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+
         /* Slide up animation for modals */
         @keyframes slideUp {
             from {
@@ -2374,6 +2386,45 @@
                                 <span></span>
                             </div>
                             <p style="margin-top: 1rem;">Loading your devices...</p>
+                        </div>
+                    </div>
+
+                    <!-- Device Removal Confirmation Modal -->
+                    <div id="device-removal-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.7); backdrop-filter: blur(8px); z-index: 10000; align-items: center; justify-content: center;">
+                        <div style="background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); border-radius: 1rem; padding: 2rem; max-width: 450px; width: 90%; box-shadow: 0 25px 50px rgba(0, 0, 0, 0.5); border: 1px solid rgba(99, 102, 241, 0.3); animation: modalSlideIn 0.3s ease-out;">
+                            <!-- Warning Icon -->
+                            <div style="text-align: center; margin-bottom: 1.5rem;">
+                                <div style="display: inline-flex; align-items: center; justify-content: center; width: 4rem; height: 4rem; background: rgba(239, 68, 68, 0.15); border: 2px solid rgba(239, 68, 68, 0.4); border-radius: 50%; margin-bottom: 1rem;">
+                                    <svg xmlns="http://www.w3.org/2000/svg" style="width: 2rem; height: 2rem; color: #ef4444;" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                                    </svg>
+                                </div>
+                                <h3 style="color: #f8fafc; font-size: 1.5rem; font-weight: 700; margin: 0 0 0.5rem 0;">Remove Device?</h3>
+                                <p style="color: #94a3b8; font-size: 0.9375rem; margin: 0;">This action cannot be undone.</p>
+                            </div>
+
+                            <!-- Device Info -->
+                            <div id="modal-device-info" style="background: rgba(30, 41, 59, 0.6); border: 1px solid rgba(99, 102, 241, 0.2); border-radius: 0.75rem; padding: 1rem; margin-bottom: 1.5rem;">
+                                <div style="color: #e2e8f0; font-size: 0.875rem; margin-bottom: 0.25rem;" id="modal-device-name"></div>
+                                <div style="color: #94a3b8; font-size: 0.8125rem;" id="modal-device-details"></div>
+                            </div>
+
+                            <!-- Warning Message -->
+                            <div style="background: rgba(239, 68, 68, 0.1); border-left: 3px solid #ef4444; padding: 0.75rem 1rem; border-radius: 0.375rem; margin-bottom: 1.5rem;">
+                                <p style="color: #fca5a5; font-size: 0.875rem; margin: 0;">
+                                    This device will need to be re-authorized on next login.
+                                </p>
+                            </div>
+
+                            <!-- Action Buttons -->
+                            <div style="display: flex; gap: 0.75rem;">
+                                <button onclick="closeDeviceRemovalModal()" style="flex: 1; padding: 0.75rem 1.5rem; background: rgba(100, 116, 139, 0.2); border: 1px solid rgba(148, 163, 184, 0.3); color: #cbd5e1; border-radius: 0.5rem; cursor: pointer; font-size: 0.9375rem; font-weight: 600; transition: all 0.2s;" onmouseover="this.style.background='rgba(100, 116, 139, 0.3)'; this.style.borderColor='rgba(148, 163, 184, 0.5)'" onmouseout="this.style.background='rgba(100, 116, 139, 0.2)'; this.style.borderColor='rgba(148, 163, 184, 0.3)'">
+                                    Cancel
+                                </button>
+                                <button onclick="confirmDeviceRemoval()" style="flex: 1; padding: 0.75rem 1.5rem; background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); border: 1px solid rgba(239, 68, 68, 0.5); color: white; border-radius: 0.5rem; cursor: pointer; font-size: 0.9375rem; font-weight: 600; transition: all 0.2s; box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 6px 20px rgba(239, 68, 68, 0.4)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 12px rgba(239, 68, 68, 0.3)'">
+                                    Remove Device
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -4195,7 +4246,7 @@
                                 </div>
                             </div>
                             ${!isCurrentDevice ? `
-                                <button onclick="removeDevice('${device.device_id}')" style="padding: 0.5rem 0.75rem; background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3); color: #ef4444; border-radius: 0.5rem; cursor: pointer; font-size: 0.875rem; font-weight: 600; transition: all 0.2s;" onmouseover="this.style.background='rgba(239, 68, 68, 0.2)'" onmouseout="this.style.background='rgba(239, 68, 68, 0.1)'">
+                                <button onclick="showDeviceRemovalModal('${device.device_id}', '${deviceName.replace(/'/g, "\\'")}', '${fullDescription.replace(/'/g, "\\'")}', '${timezone}')" style="padding: 0.5rem 0.75rem; background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3); color: #ef4444; border-radius: 0.5rem; cursor: pointer; font-size: 0.875rem; font-weight: 600; transition: all 0.2s;" onmouseover="this.style.background='rgba(239, 68, 68, 0.2)'" onmouseout="this.style.background='rgba(239, 68, 68, 0.1)'">
                                     Remove
                                 </button>
                             ` : ''}
@@ -4235,11 +4286,41 @@
             }
         }
 
-        // Remove a device
-        async function removeDevice(deviceId) {
-            if (!confirm('Remove this device? It will need to be re-authorized on next login.')) {
-                return;
-            }
+        // Device removal modal state
+        let pendingDeviceRemoval = null;
+
+        // Show device removal confirmation modal
+        function showDeviceRemovalModal(deviceId, deviceName, deviceDetails, timezone) {
+            pendingDeviceRemoval = deviceId;
+
+            // Update modal content
+            document.getElementById('modal-device-name').textContent = deviceName;
+            document.getElementById('modal-device-details').textContent = `${deviceDetails} • ${timezone}`;
+
+            // Show modal with flex display
+            const modal = document.getElementById('device-removal-modal');
+            modal.style.display = 'flex';
+
+            // Prevent body scroll
+            document.body.style.overflow = 'hidden';
+        }
+
+        // Close device removal modal
+        function closeDeviceRemovalModal() {
+            const modal = document.getElementById('device-removal-modal');
+            modal.style.display = 'none';
+            pendingDeviceRemoval = null;
+
+            // Re-enable body scroll
+            document.body.style.overflow = '';
+        }
+
+        // Confirm and execute device removal
+        async function confirmDeviceRemoval() {
+            if (!pendingDeviceRemoval) return;
+
+            const deviceId = pendingDeviceRemoval;
+            closeDeviceRemovalModal();
 
             try {
                 // Delete the device directly
@@ -4258,6 +4339,21 @@
                 showNotification('Failed to remove device: ' + error.message, 'error');
             }
         }
+
+        // Close modal when clicking outside
+        document.addEventListener('click', function(event) {
+            const modal = document.getElementById('device-removal-modal');
+            if (modal && event.target === modal) {
+                closeDeviceRemovalModal();
+            }
+        });
+
+        // Close modal on Escape key
+        document.addEventListener('keydown', function(event) {
+            if (event.key === 'Escape') {
+                closeDeviceRemovalModal();
+            }
+        });
 
         // Format time ago
         function formatTimeAgo(date) {
