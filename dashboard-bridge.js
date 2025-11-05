@@ -113,7 +113,7 @@ window.addEventListener('message', async (event) => {
             });
         } catch (error) {
             if (!isExtensionUnavailableError(error)) {
-                console.log('Theme update error:', error);
+                
             }
         }
         return;

@@ -1242,7 +1242,7 @@ function generateInfiniteTabs() {
 
         // If too many redirects in short time, stop and show error
         if (redirectCount >= MAX_REDIRECT_ATTEMPTS) {
-            console.warn('Redirect loop detected - stopping automatic redirects');
+            
             sessionStorage.removeItem('auth_redirect_count');
             sessionStorage.removeItem('auth_last_redirect_time');
             // Let user manually login instead of looping
@@ -1251,7 +1251,7 @@ function generateInfiniteTabs() {
 
         // If redirected recently, wait before checking again
         if (lastRedirectTime && (now - parseInt(lastRedirectTime)) < REDIRECT_COOLDOWN_MS) {
-            console.log('Waiting for redirect cooldown...');
+            
             return;
         }
         // ============================================
@@ -1334,7 +1334,7 @@ function generateInfiniteTabs() {
             if (verifyUser && verifyToken) {
                 window.location.replace('/user-dashboard.html');
             } else {
-                console.error('Failed to save auth data to localStorage');
+                
                 // Try one more time
                 localStorage.setItem('tabmangment_user', JSON.stringify(userData));
                 localStorage.setItem('tabmangment_token', session.access_token);

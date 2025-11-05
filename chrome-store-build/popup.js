@@ -825,7 +825,7 @@ class TabmangmentPopup {
 
             // If no email (not logged in), BLOCK searches completely
             if (!userEmail) {
-                console.warn('[Search] No user email - search disabled (login required)');
+                
                 return { count: 5, canSearch: false };
             }
 
@@ -839,7 +839,7 @@ class TabmangmentPopup {
             });
 
             if (!response.ok) {
-                console.error('[Search] API error - blocking search for security');
+                
                 return { count: 5, canSearch: false };
             }
 
@@ -850,11 +850,11 @@ class TabmangmentPopup {
             const canSearch = data.canSearch !== undefined ? data.canSearch : false;
             const isPro = data.isPro || false;
 
-            console.log(`[Search] Backend enforced: ${count} used, canSearch=${canSearch}, isPro=${isPro}`);
+            
             return { count, canSearch, isPro };
 
         } catch (error) {
-            console.error('[Search] Error checking usage:', error);
+            
             // SECURITY: Block search on API error - prevents local exploitation
             return { count: 5, canSearch: false };
         }
@@ -889,7 +889,7 @@ class TabmangmentPopup {
 
             // If no email, block increment (search should have been blocked already)
             if (!userEmail) {
-                console.error('[Search] No user email - cannot increment (this should not happen)');
+                
                 return;
             }
 
@@ -903,15 +903,15 @@ class TabmangmentPopup {
             });
 
             if (!response.ok) {
-                console.error('[Search] Failed to record search on backend');
+                
                 throw new Error('Backend sync failed');
             }
 
             const data = await response.json();
-            console.log(`[Search] Backend recorded: ${data.searchCount} total, remaining: ${data.remaining}`);
+            
 
         } catch (error) {
-            console.error('[Search] CRITICAL: Failed to record search on backend:', error);
+            
             throw error; // Propagate error so search can be handled properly
         }
     }
@@ -1093,7 +1093,7 @@ class TabmangmentPopup {
                 }
             }
         } catch (error) {
-            console.error('Search error:', error);
+            
 
             // Hide loading
             if (loading) loading.style.display = 'none';
