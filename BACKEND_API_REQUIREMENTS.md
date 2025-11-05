@@ -1,9 +1,14 @@
-# Backend API Requirements for Search Tracking
+# Backend API Implementation Guide - Cloudflare + Supabase
 
-## CRITICAL: Implement these API endpoints on tabmangment.com to prevent search exploit
+## 🔒 CRITICAL: Server-Side Search Tracking Implementation
 
 ### Overview
-The extension now uses server-side tracking for AI search usage to prevent users from exploiting the 5 free searches limit by logging out/in or reinstalling.
+This guide will help you implement server-side search tracking using **Cloudflare Workers/Pages** and **Supabase** to prevent users from exploiting the 5 free searches limit.
+
+### Stack
+- ✅ Cloudflare Workers/Pages Functions
+- ✅ Supabase (PostgreSQL database)
+- ✅ Environment Variables for secrets
 
 ---
 
