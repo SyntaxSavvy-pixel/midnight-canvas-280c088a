@@ -998,7 +998,16 @@
     <script>
 const SUPABASE_URL = 'https://voislxlhfepnllamagxm.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZvaXNseGxoZmVwbmxsYW1hZ3htIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTkwMTI4MDcsImV4cCI6MjA3NDU4ODgwN30.mDdMdGg4JAInS7kXNL6-edvRaQ_mVuMGRjU7rX-hMCM';
-const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+// Supabase client with proper auth config for OAuth
+const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+    auth: {
+        flowType: 'pkce', // PKCE flow for better security and reliability
+        autoRefreshToken: true,
+        persistSession: true,
+        detectSessionInUrl: true // Automatically detect and process OAuth callbacks
+    }
+});
 
 // Initialize feather icons
 document.addEventListener('DOMContentLoaded', () => {
@@ -1585,12 +1594,14 @@ async function handleEmailSignup(e) {
     }
 }
 
+// FIX: OAuth must redirect back to auth page to process callback
 async function handleGoogleLogin() {
     try {
-        const { data, error } = await supabaseClient.auth.signInWithOAuth({
+        const { data, error} = await supabaseClient.auth.signInWithOAuth({
             provider: 'google',
             options: {
-                redirectTo: window.location.origin + '/user-dashboard.html',
+                // CRITICAL: Return to auth page to process OAuth callback
+                redirectTo: window.location.origin + '/new-authentication',
                 queryParams: {
                     access_type: 'offline',
                     prompt: 'consent',
@@ -1604,12 +1615,14 @@ async function handleGoogleLogin() {
     }
 }
 
+// FIX: OAuth must redirect back to auth page to process callback
 async function handleGithubLogin() {
     try {
         const { data, error } = await supabaseClient.auth.signInWithOAuth({
             provider: 'github',
             options: {
-                redirectTo: window.location.origin + '/user-dashboard.html'
+                // CRITICAL: Return to auth page to process OAuth callback
+                redirectTo: window.location.origin + '/new-authentication'
             }
         });
 
@@ -1619,65 +1632,62 @@ async function handleGithubLogin() {
     }
 }
 
-// Check for OAuth callback and handle session
+// FIX: Simplified OAuth callback handler using Supabase auth state listener
 (async function() {
     const urlParams = new URLSearchParams(window.location.search);
     const hashParams = new URLSearchParams(window.location.hash.substring(1));
     const isLogout = urlParams.has('logout');
-    const hasOAuthParams = urlParams.has('code') || urlParams.has('access_token') || urlParams.has('error') ||
-                           hashParams.has('access_token') || hashParams.has('error');
+    const hasOAuthParams = urlParams.has('code') || hashParams.has('access_token') ||
+                           hashParams.has('error') || urlParams.has('error');
 
-    const justLoggedOut = sessionStorage.getItem('user_logged_out');
-
-    if (justLoggedOut || isLogout) {
+    // Handle logout
+    if (isLogout || sessionStorage.getItem('user_logged_out')) {
         sessionStorage.removeItem('user_logged_out');
         await supabaseClient.auth.signOut();
-        if (isLogout) {
-            window.history.replaceState({}, '', '/new-authentication');
-        }
+        window.history.replaceState({}, '', '/new-authentication');
         return;
     }
 
+    // Show loading if processing OAuth callback
     if (hasOAuthParams) {
         const loadingDiv = document.createElement('div');
+        loadingDiv.id = 'oauth-loading';
         loadingDiv.style.cssText = 'position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center; z-index: 9999; background: white; padding: 32px; border-radius: 16px; box-shadow: 0 8px 24px rgba(0,0,0,0.15);';
         loadingDiv.innerHTML = '<div style="font-size: 18px; color: #6366f1; font-weight: 600;">Completing sign in...</div>';
         document.body.appendChild(loadingDiv);
     }
 
-    const { data: { session }, error } = await supabaseClient.auth.getSession();
+    // FIX: Use auth state listener for reliable OAuth handling
+    supabaseClient.auth.onAuthStateChange(async (event, session) => {
+        // Only process SIGNED_IN events (OAuth callback or existing session)
+        if (event === 'SIGNED_IN' && session) {
+            const user = session.user;
 
-    if (error) {
-        return;
-    }
-
-    if (session) {
-        const user = session.user;
-
-        if (user.user_metadata.deletion_scheduled_at) {
-            const deletionTime = new Date(user.user_metadata.deletion_scheduled_at);
-            const now = new Date();
-
-            if (deletionTime <= now) {
-                await supabaseClient.auth.signOut();
-                localStorage.removeItem('tabmangment_user');
-                localStorage.removeItem('tabmangment_token');
-                showNotification('Your account has been deleted. Please contact support if you need assistance.', 'error');
-                return;
+            // Check for scheduled deletion
+            if (user.user_metadata.deletion_scheduled_at) {
+                const deletionTime = new Date(user.user_metadata.deletion_scheduled_at);
+                if (deletionTime <= new Date()) {
+                    await supabaseClient.auth.signOut();
+                    localStorage.removeItem('tabmangment_user');
+                    localStorage.removeItem('tabmangment_token');
+                    showNotification('Your account has been deleted. Please contact support if you need assistance.', 'error');
+                    return;
+                }
             }
-        }
 
-        const userData = {
-            email: user.email,
-            name: user.user_metadata.full_name || user.user_metadata.name || user.user_metadata.preferred_username || user.email.split('@')[0],
-            id: user.id,
-            provider: user.app_metadata.provider || 'email',
-            avatar: user.user_metadata.avatar_url || user.user_metadata.picture,
-            deletionScheduledAt: user.user_metadata.deletion_scheduled_at || null
-        };
+            // Build user data object
+            const userData = {
+                email: user.email,
+                name: user.user_metadata.full_name || user.user_metadata.name ||
+                      user.user_metadata.preferred_username || user.email.split('@')[0],
+                id: user.id,
+                provider: user.app_metadata.provider || 'email',
+                avatar: user.user_metadata.avatar_url || user.user_metadata.picture,
+                deletionScheduledAt: user.user_metadata.deletion_scheduled_at || null
+            };
 
-        try {
-            await fetch('/.netlify/functions/sync-user', {
+            // Sync user with backend (non-blocking)
+            fetch('/.netlify/functions/sync-user', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -1689,44 +1699,33 @@ async function handleGithubLogin() {
                     userId: userData.id,
                     provider: userData.provider
                 })
-            });
-        } catch (syncError) {
-        }
+            }).catch(() => {}); // Ignore sync errors
 
-        // Save session data to localStorage
-        localStorage.setItem('tabmangment_user', JSON.stringify(userData));
-        localStorage.setItem('tabmangment_token', session.access_token);
-        localStorage.setItem('tabmangment_remember', 'true');
-
-        // CRITICAL: Set flags to prevent dashboard from redirecting back
-        sessionStorage.setItem('just_authenticated', 'true');
-        sessionStorage.setItem('auth_timestamp', String(Date.now()));
-
-        // Clear redirect loop prevention counters on successful OAuth login
-        sessionStorage.removeItem('auth_redirect_count');
-        sessionStorage.removeItem('auth_last_redirect_time');
-        sessionStorage.removeItem('user_logged_out');
-
-        // Notify extension about login
-        window.postMessage({
-            type: 'USER_LOGGED_IN',
-            userData: { email: userData.email, name: userData.name, id: userData.id }
-        }, '*');
-
-        // Wait longer to ensure localStorage is fully written (especially important for OAuth)
-        await new Promise(resolve => setTimeout(resolve, 300));
-
-        // Verify localStorage was actually saved before redirecting
-        const verifyUser = localStorage.getItem('tabmangment_user');
-        const verifyToken = localStorage.getItem('tabmangment_token');
-
-        if (!verifyUser || !verifyToken) {
-            // localStorage write failed, try one more time
+            // Save session data (synchronous, no waiting needed)
             localStorage.setItem('tabmangment_user', JSON.stringify(userData));
             localStorage.setItem('tabmangment_token', session.access_token);
-            await new Promise(resolve => setTimeout(resolve, 200));
-        }
+            localStorage.setItem('tabmangment_remember', 'true');
 
+            // Set flags for dashboard to recognize fresh login
+            sessionStorage.setItem('just_authenticated', 'true');
+            sessionStorage.setItem('auth_timestamp', String(Date.now()));
+            sessionStorage.removeItem('user_logged_out');
+
+            // Notify extension
+            window.postMessage({
+                type: 'USER_LOGGED_IN',
+                userData: { email: userData.email, name: userData.name, id: userData.id }
+            }, '*');
+
+            // FIX: No delays needed - redirect immediately
+            window.location.replace('/user-dashboard.html');
+        }
+    });
+
+    // Check if already logged in (for page refresh or direct navigation)
+    const { data: { session } } = await supabaseClient.auth.getSession();
+    if (session && !hasOAuthParams) {
+        // Already authenticated, redirect to dashboard
         window.location.replace('/user-dashboard.html');
     }
 })();
