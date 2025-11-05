@@ -1,18 +1,23 @@
-const _cfg = {
-    _b: ['dGFibWFuZ21lbnQubmV0bGlmeS5hcHA='],
-    _p: 'https://',
-    _d: () => atob(_cfg._b[0])
-};
-
-const API_BASE_URL = _cfg._p + _cfg._d();
+// Plain text configuration as required by Chrome Web Store
+const API_BASE_URL = 'https://tabmangment.com';
 
 export const CONFIG = {
     API: {
         BASE: `${API_BASE_URL}/api`,
-        CREATE_CHECKOUT: `${API_BASE_URL}/api/create-checkout`,
-        CHECK_STATUS: `${API_BASE_URL}/api/check-payment-status`,
+        CREATE_CHECKOUT: `${API_BASE_URL}/api/create-checkout-session`,
+        CHECK_STATUS: `${API_BASE_URL}/api/status`,
         BILLING_PORTAL: `${API_BASE_URL}/api/billing-portal`,
-        STRIPE_WEBHOOK: `${API_BASE_URL}/api/stripe-webhook`
+        STRIPE_WEBHOOK: `${API_BASE_URL}/api/stripe-webhook`,
+        CHECK_SEARCH_USAGE: `${API_BASE_URL}/api/check-search-usage`,
+        INCREMENT_SEARCH: `${API_BASE_URL}/api/increment-search`
+    },
+    PERPLEXITY: {
+        API_KEY: 'YOUR_API_KEY_HERE',
+        SEARCH_URL: 'https://api.perplexity.ai/search',
+        MAX_RESULTS: 10,
+        MAX_TOKENS: 25000,
+        MAX_TOKENS_PER_PAGE: 2048,
+        COUNTRY: 'US'
     },
     EXTENSION: {
         DEFAULT_TAB_LIMIT: 10,
@@ -33,7 +38,8 @@ export const MANIFEST_URLS = {
         `${API_BASE_URL}/*`,
         "https://api.emailjs.com/*",
         "https://billing.stripe.com/*",
-        "https://www.googleapis.com/*"
+        "https://www.googleapis.com/*",
+        "https://api.perplexity.ai/*"
     ],
-    CONNECT_SRC: `'self' https://buy.stripe.com ${API_BASE_URL} https://api.emailjs.com https://billing.stripe.com`
+    CONNECT_SRC: `'self' https://buy.stripe.com ${API_BASE_URL} https://api.emailjs.com https://billing.stripe.com https://api.perplexity.ai`
 };

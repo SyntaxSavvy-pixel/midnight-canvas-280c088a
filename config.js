@@ -7,7 +7,9 @@ export const CONFIG = {
         CREATE_CHECKOUT: `${API_BASE_URL}/api/create-checkout-session`,
         CHECK_STATUS: `${API_BASE_URL}/api/status`,
         BILLING_PORTAL: `${API_BASE_URL}/api/billing-portal`,
-        STRIPE_WEBHOOK: `${API_BASE_URL}/api/stripe-webhook`
+        STRIPE_WEBHOOK: `${API_BASE_URL}/api/stripe-webhook`,
+        CHECK_SEARCH_USAGE: `${API_BASE_URL}/api/check-search-usage`,
+        INCREMENT_SEARCH: `${API_BASE_URL}/api/increment-search`
     },
     PERPLEXITY: {
         API_KEY: 'YOUR_API_KEY_HERE',

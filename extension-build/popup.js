@@ -816,40 +816,119 @@ class TabmangmentPopup {
         if (resultsInfo) resultsInfo.style.display = 'none';
     }
 
-    // Check and update search usage with 24-hour rolling window
+    // Check and update search usage with 24-hour rolling window (SERVER-SIDE TRACKED)
     async checkSearchUsage() {
+        try {
+            // Get user email for server-side tracking
+            const storage = await chrome.storage.local.get(['userEmail', 'isPremium', 'isPro']);
+            const userEmail = storage.userEmail;
+
+            // If premium, unlimited searches
+            if (this.isPremium || storage.isPremium || storage.isPro) {
+                return { count: 0, canSearch: true };
+            }
+
+            // If no email (not logged in), use local fallback with strict limit
+            if (!userEmail) {
+                console.warn('[Search] No user email - using local fallback');
+                return await this.checkSearchUsageLocal();
+            }
+
+            // Fetch search usage from backend API (Supabase-backed)
+            const response = await fetch(CONFIG.API.CHECK_SEARCH_USAGE, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ email: userEmail })
+            });
+
+            if (!response.ok) {
+                console.error('[Search] API error, falling back to local');
+                return await this.checkSearchUsageLocal();
+            }
+
+            const data = await response.json();
+            const count = data.searchCount || 0;
+            const canSearch = count < 5;
+
+            console.log(`[Search] Server check: ${count}/5 searches used`);
+            return { count, canSearch };
+
+        } catch (error) {
+            console.error('[Search] Error checking usage:', error);
+            // Fallback to local storage if API fails
+            return await this.checkSearchUsageLocal();
+        }
+    }
+
+    // Local fallback for search usage (still tracked, but can be exploited)
+    async checkSearchUsageLocal() {
         const stored = await chrome.storage.local.get(['searchTimestamps']);
         const now = Date.now();
         const twentyFourHoursAgo = now - (24 * 60 * 60 * 1000);
 
-        // Get existing timestamps and filter out old ones (older than 24 hours)
         let timestamps = stored.searchTimestamps || [];
         const originalLength = timestamps.length;
         timestamps = timestamps.filter(timestamp => timestamp > twentyFourHoursAgo);
 
-        // Only save back if we actually removed expired timestamps
         if (timestamps.length !== originalLength) {
             await chrome.storage.local.set({ searchTimestamps: timestamps });
         }
 
         const count = timestamps.length;
-        const canSearch = this.isPremium || count < 5;
+        const canSearch = count < 5;
 
         return { count, canSearch };
     }
 
-    // Increment search usage counter
+    // Increment search usage counter (SERVER-SIDE SYNCED)
     async incrementSearchUsage() {
+        try {
+            // Get user email for server-side tracking
+            const storage = await chrome.storage.local.get(['userEmail']);
+            const userEmail = storage.userEmail;
+
+            // Always update local fallback
+            await this.incrementSearchUsageLocal();
+
+            // If no email, only local tracking (can be exploited)
+            if (!userEmail) {
+                console.warn('[Search] No user email - only local increment');
+                return;
+            }
+
+            // Sync increment to backend API (Supabase-backed)
+            const response = await fetch(CONFIG.API.INCREMENT_SEARCH, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ email: userEmail })
+            });
+
+            if (!response.ok) {
+                console.error('[Search] Failed to sync increment to server');
+                return;
+            }
+
+            const data = await response.json();
+            console.log(`[Search] Server increment: ${data.searchCount}/5 searches used`);
+
+        } catch (error) {
+            console.error('[Search] Error incrementing usage:', error);
+            // Local fallback already done above
+        }
+    }
+
+    // Local fallback for incrementing search usage
+    async incrementSearchUsageLocal() {
         const stored = await chrome.storage.local.get(['searchTimestamps']);
         const now = Date.now();
 
-        // Get existing timestamps
         let timestamps = stored.searchTimestamps || [];
-
-        // Add new timestamp
         timestamps.push(now);
 
-        // Save updated timestamps
         await chrome.storage.local.set({ searchTimestamps: timestamps });
     }
 
