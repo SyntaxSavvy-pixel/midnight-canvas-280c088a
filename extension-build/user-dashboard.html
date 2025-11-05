@@ -3229,27 +3229,7 @@
         }
 
         // DEVICE TRACKING
-        async function updateDeviceLastSeen(deviceId) {
-            const { error } = await supabaseClient
-                .from('user_devices')
-                .update({ last_seen: new Date().toISOString() })
-                .eq('device_id', deviceId);
-
-            return !error;
-        }
-
-        async function getUserDevices() {
-            const userId = await getCurrentUserId();
-            if (!userId) return [];
-
-            const { data, error } = await supabaseClient
-                .from('user_devices')
-                .select('*')
-                .eq('user_id', userId)
-                .order('last_seen', { ascending: false });
-
-            return data || [];
-        }
+        // NOTE: updateDeviceLastSeen and getUserDevices removed - backend API handles these now
 
         // CUSTOM THEMES
         async function saveCustomTheme(name, themeData) {
@@ -3637,47 +3617,22 @@
             return hashHex;
         }
 
-        // Get or create device ID (uses Supabase)
+        // Get or create device ID (NEW: No timestamps to prevent duplicates)
         async function getDeviceId() {
-            // CRITICAL: Use localStorage instead of sessionStorage so device persists across browser sessions
+            // CRITICAL: Use localStorage so device persists across browser sessions
             let deviceId = localStorage.getItem('tabmangment_device_id');
+            let fingerprint = localStorage.getItem('tabmangment_device_fingerprint');
 
-            if (!deviceId) {
+            if (!deviceId || !fingerprint) {
                 // Generate fingerprint
-                const fingerprint = await generateDeviceFingerprint();
+                fingerprint = await generateDeviceFingerprint();
 
-                // Check if this fingerprint exists in Supabase
-                const userId = await getCurrentUserId();
-                if (userId) {
-                    const { data: devices } = await supabaseClient
-                        .from('user_devices')
-                        .select('device_id')
-                        .eq('user_id', userId)
-                        .eq('device_fingerprint', fingerprint)
-                        .maybeSingle(); // Changed from .single() to prevent errors
+                // Use fingerprint as device ID (no timestamp = no duplicates)
+                deviceId = fingerprint;
 
-                    if (devices) {
-                        // Found existing device
-                        deviceId = devices.device_id;
-                        await updateDeviceLastSeen(deviceId);
-                    } else {
-                        // Create new device ID (but don't register yet - that happens in verifyDevice flow)
-                        const timestamp = Date.now();
-                        deviceId = `${fingerprint.substring(0, 16)}-${timestamp}`;
-                    }
-
-                    // CRITICAL: Save to localStorage so device persists across sessions
-                    localStorage.setItem('tabmangment_device_id', deviceId);
-                    localStorage.setItem('tabmangment_device_fingerprint', fingerprint);
-                } else {
-                    // Not authenticated, create temporary device ID
-                    const timestamp = Date.now();
-                    deviceId = `temp-${fingerprint.substring(0, 16)}-${timestamp}`;
-                    localStorage.setItem('tabmangment_device_id', deviceId);
-                }
-            } else {
-                // Update last seen for existing device
-                await updateDeviceLastSeen(deviceId);
+                // Save to localStorage
+                localStorage.setItem('tabmangment_device_id', deviceId);
+                localStorage.setItem('tabmangment_device_fingerprint', fingerprint);
             }
 
             return deviceId;
@@ -3805,209 +3760,63 @@
             };
         }
 
-        // Register device with backend
-        async function registerDevice(userId, deviceId, isPro) {
+        // Authorize device with new backend API
+        async function authorizeDevice(email, deviceId, isPro) {
             try {
-                
-
-                // CRITICAL: Ensure user exists in users_auth table first
-                const userExists = await ensureUserInAuthTable(userId, userData.email);
-
-                if (!userExists) {
-                    
-                    return { success: false, error: 'User not in auth table' };
-                }
-
                 const metadata = getDeviceMetadata();
+                const fingerprint = localStorage.getItem('tabmangment_device_fingerprint') || deviceId;
 
-                // Get current device count from Supabase
-                const { data: devices, error: fetchError } = await supabaseClient
-                    .from('user_devices')
-                    .select('*')
-                    .eq('user_id', userId)
-                    .order('last_seen', { ascending: true });
+                // Call new backend API
+                const response = await fetch('https://tabmangment.com/api/authorize-device', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        email: email,
+                        device_id: deviceId,
+                        device_name: metadata.deviceName,
+                        device_fingerprint: fingerprint,
+                        metadata: metadata
+                    })
+                });
 
-                if (fetchError) {
-                    
-                    return { success: false, error: fetchError.message };
+                const data = await response.json();
+
+                if (!response.ok || !data.success) {
+                    // Device limit reached
+                    if (data.error === 'Device limit reached') {
+                        return {
+                            success: false,
+                            authorized: false,
+                            limitReached: true,
+                            error: data.message || data.error,
+                            deviceCount: data.deviceCount,
+                            maxDevices: data.maxDevices,
+                            planType: data.planType
+                        };
+                    }
+
+                    return { success: false, error: data.error || 'Authorization failed' };
                 }
 
-                const deviceList = devices || [];
-                
-
-                // Check if device already exists
-                const existingDevice = deviceList.find(d => d.device_id === deviceId);
-
-                if (existingDevice) {
-                    
-                    // Update existing device
-                    const { error: updateError } = await supabaseClient
-                        .from('user_devices')
-                        .update({
-                            browser_info: metadata,
-                            last_seen: new Date().toISOString()
-                        })
-                        .eq('id', existingDevice.id);
-
-                    if (updateError) {
-                        
-                        return { success: false, error: updateError.message };
-                    }
-                    
-                } else {
-                    // Check device limit
-                    const maxDevices = isPro ? DEVICE_CONFIG.MAX_DEVICES_PRO : DEVICE_CONFIG.MAX_DEVICES_FREE;
-
-                    if (deviceList.length >= maxDevices) {
-                        
-                        // Remove oldest device (first in sorted list)
-                        const oldestDevice = deviceList[0];
-                        const { error: deleteError } = await supabaseClient
-                            .from('user_devices')
-                            .delete()
-                            .eq('id', oldestDevice.id);
-
-                        if (deleteError) {
-                            
-                            return { success: false, error: deleteError.message };
-                        }
-                    }
-
-                    
-                    // Add new device
-                    const { error: insertError } = await supabaseClient
-                        .from('user_devices')
-                        .insert({
-                            user_id: userId,
-                            device_id: deviceId,
-                            device_fingerprint: deviceId,
-                            browser_info: metadata,
-                            last_seen: new Date().toISOString()
-                        });
-
-                    if (insertError) {
-                        // Check for foreign key violation
-                        if (insertError.code === '23503' || insertError.message.includes('foreign key constraint')) {
-                            
-                            return { success: false, error: 'Foreign key violation' };
-                        }
-                        
-                        return { success: false, error: insertError.message };
-                    }
-                    
-                }
-
-                // Get updated count
-                const { count } = await supabaseClient
-                    .from('user_devices')
-                    .select('*', { count: 'exact', head: true })
-                    .eq('user_id', userId);
-
-                
-                return { success: true, deviceCount: count || deviceList.length, maxDevices: isPro ? DEVICE_CONFIG.MAX_DEVICES_PRO : DEVICE_CONFIG.MAX_DEVICES_FREE };
+                return {
+                    success: true,
+                    authorized: data.authorized,
+                    isNew: data.isNew || false,
+                    isExisting: data.isExisting || false,
+                    deviceCount: data.deviceCount,
+                    maxDevices: data.maxDevices
+                };
 
             } catch (error) {
-                
                 return { success: false, error: error.message };
             }
         }
 
-        // Clean up duplicate devices (same browser info)
-        async function cleanupDuplicateDevices(userId) {
-            try {
-                const { data: devices, error: fetchError } = await supabaseClient
-                    .from('user_devices')
-                    .select('*')
-                    .eq('user_id', userId)
-                    .order('last_seen', { ascending: false });
+        // NOTE: cleanupDuplicateDevices removed - duplicates prevented by using fingerprint as device ID (no timestamps)
 
-                if (fetchError) {
-                    return;
-                }
-
-                if (!devices || devices.length <= 1) return;
-
-                // Group devices by browser signature (exclude versions for stability)
-                const deviceGroups = new Map();
-
-                devices.forEach(device => {
-                    // Create unique signature from stable browser info (no versions)
-                    const info = device.browser_info || {};
-                    const signature = `${info.browser || ''}_${info.os || ''}_${info.deviceType || ''}`;
-
-                    if (!deviceGroups.has(signature)) {
-                        deviceGroups.set(signature, []);
-                    }
-                    deviceGroups.get(signature).push(device);
-                });
-
-                // Remove duplicates (keep most recent)
-                let deletedCount = 0;
-                for (const [signature, deviceList] of deviceGroups.entries()) {
-                    if (deviceList.length > 1) {
-                        // Keep first (most recent), delete rest
-                        const toDelete = deviceList.slice(1);
-                        for (const device of toDelete) {
-                            const { error: deleteError } = await supabaseClient
-                                .from('user_devices')
-                                .delete()
-                                .eq('id', device.id);
-
-                            if (!deleteError) {
-                                deletedCount++;
-                            }
-                        }
-                    }
-                }
-
-                if (deletedCount > 0) {
-                    showNotification(`Removed ${deletedCount} duplicate device(s)`, 'success');
-                }
-            } catch (error) {
-                // Fail silently
-            }
-        }
-
-        // Verify device is authorized
-        async function verifyDevice(userId, deviceId, isPro) {
-            try {
-                const { data: devices, error, count } = await supabaseClient
-                    .from('user_devices')
-                    .select('*', { count: 'exact' })
-                    .eq('user_id', userId);
-
-                if (error) {
-                    // On error, allow access (fail open for better UX)
-                    return { authorized: true, error: error.message };
-                }
-
-                if (!devices || devices.length === 0) {
-                    // No devices registered yet, allow first device
-                    return { authorized: true, isNew: true };
-                }
-
-                const deviceExists = devices.some(d => d.device_id === deviceId);
-
-                if (!deviceExists) {
-                    const maxDevices = isPro ? DEVICE_CONFIG.MAX_DEVICES_PRO : DEVICE_CONFIG.MAX_DEVICES_FREE;
-
-                    if (devices.length >= maxDevices) {
-                        return {
-                            authorized: false,
-                            reason: `Device limit reached. ${isPro ? 'Pro' : 'Free'} plan allows ${maxDevices} devices.`,
-                            deviceCount: devices.length,
-                            maxDevices: maxDevices
-                        };
-                    }
-                }
-
-                return { authorized: true, deviceExists };
-
-            } catch (error) {
-                // On error, allow access (fail open for better UX)
-                return { authorized: true, error: error.message };
-            }
-        }
+        // NOTE: verifyDevice removed - replaced by authorizeDevice which calls backend API
 
         // Show device limit warning
         function showDeviceLimitWarning(deviceCount, maxDevices, isPro) {
@@ -4179,9 +3988,6 @@
                 const userId = userData.id || userData.email;
                 const isPro = userData.isPro || false;
 
-                // Clean up any duplicates before loading (runs on every refresh)
-                await cleanupDuplicateDevices(userId);
-
                 // Update device limit text
                 const limitText = document.getElementById('device-limit-text');
                 if (limitText) {
@@ -4335,7 +4141,7 @@
             document.body.style.overflow = '';
         }
 
-        // Confirm and execute device removal
+        // Confirm and execute device removal (uses new backend API)
         async function confirmDeviceRemoval() {
             if (!pendingDeviceRemoval) return;
 
@@ -4360,14 +4166,22 @@
             }
 
             try {
-                // Delete from database
-                const { error: deleteError } = await supabaseClient
-                    .from('user_devices')
-                    .delete()
-                    .eq('device_id', deviceId);
+                // Call new backend API
+                const response = await fetch('https://tabmangment.com/api/remove-device', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        email: userData.email,
+                        device_id: deviceId
+                    })
+                });
 
-                if (deleteError) {
-                    throw new Error(deleteError.message || 'Delete failed');
+                const data = await response.json();
+
+                if (!response.ok || !data.success) {
+                    throw new Error(data.error || 'Failed to remove device');
                 }
 
                 // Success - reload page to show updated list
@@ -4659,27 +4473,21 @@
                             return;
                         }
 
-                        // Clean up any duplicate devices before proceeding
-                        await cleanupDuplicateDevices(userData.id);
-
+                        // Get device ID and authorize with backend
                         const deviceId = await getDeviceId();
-                        const verification = await verifyDevice(userData.id, deviceId, userData.isPro);
+                        const authResult = await authorizeDevice(userData.email, deviceId, userData.isPro);
 
-                        if (!verification.authorized) {
-                            
-                            showDeviceLimitWarning(verification.deviceCount, verification.maxDevices, userData.isPro);
-                        } else {
-                            const registrationResult = await registerDevice(userData.id, deviceId, userData.isPro);
-
-                            if (registrationResult && registrationResult.success !== false) {
-                                // CRITICAL: Auto-load devices list after successful registration
-                                // This ensures the current device shows up immediately
-                                setTimeout(() => {
-                                    loadUserDevices().catch(err => {});
-                                }, 500); // Small delay to ensure database write completes
-                            } else {
-                                
+                        if (!authResult.success || !authResult.authorized) {
+                            // Device limit reached or authorization failed
+                            if (authResult.limitReached) {
+                                showDeviceLimitWarning(authResult.deviceCount, authResult.maxDevices, userData.isPro);
                             }
+                        } else {
+                            // Device authorized successfully
+                            // Auto-load devices list after successful authorization
+                            setTimeout(() => {
+                                loadUserDevices().catch(err => {});
+                            }, 500);
                         }
                     } catch (error) {
                         
