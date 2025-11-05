@@ -1686,20 +1686,25 @@ async function handleGithubLogin() {
                 deletionScheduledAt: user.user_metadata.deletion_scheduled_at || null
             };
 
-            // Sync user with backend (non-blocking)
-            fetch('/.netlify/functions/sync-user', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${session.access_token}`
-                },
-                body: JSON.stringify({
-                    email: userData.email,
-                    name: userData.name,
-                    userId: userData.id,
-                    provider: userData.provider
-                })
-            }).catch(() => {}); // Ignore sync errors
+            // FIX: Wait for user sync before redirecting (prevents "User not found" error)
+            try {
+                await fetch('/.netlify/functions/sync-user', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${session.access_token}`
+                    },
+                    body: JSON.stringify({
+                        email: userData.email,
+                        name: userData.name,
+                        userId: userData.id,
+                        provider: userData.provider
+                    })
+                });
+            } catch (syncError) {
+                // If sync fails, continue anyway - user might already exist
+                console.warn('User sync warning:', syncError);
+            }
 
             // Save session data (synchronous, no waiting needed)
             localStorage.setItem('tabmangment_user', JSON.stringify(userData));
@@ -1717,7 +1722,7 @@ async function handleGithubLogin() {
                 userData: { email: userData.email, name: userData.name, id: userData.id }
             }, '*');
 
-            // FIX: No delays needed - redirect immediately
+            // Redirect to dashboard (user now exists in database)
             window.location.replace('/user-dashboard.html');
         }
     });
