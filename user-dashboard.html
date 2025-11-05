@@ -3861,6 +3861,45 @@
             }
         }
 
+        // Clean up duplicate devices (same fingerprint)
+        async function cleanupDuplicateDevices(userId) {
+            try {
+                const { data: devices } = await supabaseClient
+                    .from('user_devices')
+                    .select('*')
+                    .eq('user_id', userId)
+                    .order('last_seen', { ascending: false });
+
+                if (!devices || devices.length <= 1) return;
+
+                // Group devices by fingerprint
+                const fingerprintMap = new Map();
+                devices.forEach(device => {
+                    const fp = device.device_fingerprint || device.device_id;
+                    if (!fingerprintMap.has(fp)) {
+                        fingerprintMap.set(fp, []);
+                    }
+                    fingerprintMap.get(fp).push(device);
+                });
+
+                // Remove duplicates (keep most recent)
+                for (const [fingerprint, deviceList] of fingerprintMap.entries()) {
+                    if (deviceList.length > 1) {
+                        // Keep the most recent, delete the rest
+                        const toDelete = deviceList.slice(1);
+                        for (const device of toDelete) {
+                            await supabaseClient
+                                .from('user_devices')
+                                .delete()
+                                .eq('id', device.id);
+                        }
+                    }
+                }
+            } catch (error) {
+                // Fail silently
+            }
+        }
+
         // Verify device is authorized
         async function verifyDevice(userId, deviceId, isPro) {
             try {
@@ -4464,9 +4503,12 @@
                     try {
                         // CRITICAL: Only use userData.id (UUID), never email for foreign key relations
                         if (!userData.id) {
-                            
+
                             return;
                         }
+
+                        // Clean up any duplicate devices before proceeding
+                        await cleanupDuplicateDevices(userData.id);
 
                         const deviceId = await getDeviceId();
                         const verification = await verifyDevice(userData.id, deviceId, userData.isPro);
@@ -7496,9 +7538,9 @@
             localStorage.removeItem('authToken');
             localStorage.removeItem('userEmail');
 
-            // CRITICAL: Clear device tracking data so next user starts fresh
-            localStorage.removeItem('tabmangment_device_id');
-            localStorage.removeItem('tabmangment_device_fingerprint');
+            // CRITICAL: Keep device ID persistent across logins (don't clear)
+            // localStorage.removeItem('tabmangment_device_id');
+            // localStorage.removeItem('tabmangment_device_fingerprint');
             localStorage.removeItem('tabmangment_remember');
 
             // Notify extension about logout via window.postMessage
