@@ -3120,6 +3120,11 @@
                     });
 
                 if (insertError) {
+                    // Check if it's a duplicate key error (409 conflict)
+                    if (insertError.code === '23505' || insertError.message?.includes('duplicate') || insertError.message?.includes('unique constraint')) {
+                        // User already exists - this is fine (race condition with sync-user)
+                        return true;
+                    }
                     return false;
                 }
 

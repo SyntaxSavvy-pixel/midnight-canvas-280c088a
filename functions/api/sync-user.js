@@ -42,7 +42,7 @@ export async function onRequestPost(context) {
     }
 
     // ==============================================================
-    // STEP 1: Check if user already exists
+    // STEP 1: Check if user exists in users table
     // ==============================================================
     const existingUserResponse = await fetch(
       `${supabaseUrl}/rest/v1/users?email=eq.${encodeURIComponent(email)}&select=id,email`,
@@ -55,77 +55,118 @@ export async function onRequestPost(context) {
       }
     );
 
+    let userInUsersTable = false;
     if (existingUserResponse.ok) {
       const existingUsers = await existingUserResponse.json();
       if (existingUsers && existingUsers.length > 0) {
-        // User already exists - return success
-        return new Response(JSON.stringify({
-          success: true,
-          message: 'User already exists',
-          user: existingUsers[0]
-        }), {
-          status: 200,
-          headers: corsHeaders
-        });
+        userInUsersTable = true;
       }
     }
 
     // ==============================================================
-    // STEP 2: Create new user
+    // STEP 2: Create user in users table if doesn't exist
     // ==============================================================
-    const insertResponse = await fetch(
-      `${supabaseUrl}/rest/v1/users`,
+    if (!userInUsersTable) {
+      const insertResponse = await fetch(
+        `${supabaseUrl}/rest/v1/users`,
+        {
+          method: 'POST',
+          headers: {
+            'apikey': supabaseKey,
+            'Authorization': `Bearer ${supabaseKey}`,
+            'Content-Type': 'application/json',
+            'Prefer': 'return=representation'
+          },
+          body: JSON.stringify({
+            id: userId,
+            email: email,
+            name: name || email.split('@')[0],
+            isPro: false,
+            isPremium: false,
+            provider: provider || 'email',
+            created_at: new Date().toISOString()
+          })
+        }
+      );
+
+      if (!insertResponse.ok) {
+        const errorText = await insertResponse.text();
+        // Only fail if it's not a duplicate key error
+        if (!errorText.includes('duplicate key') && !errorText.includes('unique constraint')) {
+          console.error('Failed to create user in users table:', errorText);
+          return new Response(JSON.stringify({
+            success: false,
+            error: 'Failed to create user record',
+            details: errorText
+          }), {
+            status: 500,
+            headers: corsHeaders
+          });
+        }
+      }
+    }
+
+    // ==============================================================
+    // STEP 3: Check if user exists in users_auth table
+    // ==============================================================
+    const existingAuthUserResponse = await fetch(
+      `${supabaseUrl}/rest/v1/users_auth?email=eq.${encodeURIComponent(email)}&select=id,email`,
       {
-        method: 'POST',
         headers: {
           'apikey': supabaseKey,
           'Authorization': `Bearer ${supabaseKey}`,
-          'Content-Type': 'application/json',
-          'Prefer': 'return=representation'
-        },
-        body: JSON.stringify({
-          id: userId,
-          email: email,
-          name: name || email.split('@')[0],
-          isPro: false,
-          isPremium: false,
-          provider: provider || 'email',
-          created_at: new Date().toISOString()
-        })
+          'Content-Type': 'application/json'
+        }
       }
     );
 
-    if (!insertResponse.ok) {
-      const errorText = await insertResponse.text();
-      console.error('Supabase insert error:', errorText);
-
-      // Check if error is duplicate key (user already exists)
-      if (errorText.includes('duplicate key') || errorText.includes('unique constraint')) {
-        return new Response(JSON.stringify({
-          success: true,
-          message: 'User already exists'
-        }), {
-          status: 200,
-          headers: corsHeaders
-        });
+    let userInAuthTable = false;
+    if (existingAuthUserResponse.ok) {
+      const existingAuthUsers = await existingAuthUserResponse.json();
+      if (existingAuthUsers && existingAuthUsers.length > 0) {
+        userInAuthTable = true;
       }
-
-      return new Response(JSON.stringify({
-        success: false,
-        error: 'Failed to create user record',
-        details: errorText
-      }), {
-        status: 500,
-        headers: corsHeaders
-      });
     }
 
-    const newUser = await insertResponse.json();
+    // ==============================================================
+    // STEP 4: Create user in users_auth table if doesn't exist
+    // ==============================================================
+    if (!userInAuthTable) {
+      const insertAuthResponse = await fetch(
+        `${supabaseUrl}/rest/v1/users_auth`,
+        {
+          method: 'POST',
+          headers: {
+            'apikey': supabaseKey,
+            'Authorization': `Bearer ${supabaseKey}`,
+            'Content-Type': 'application/json',
+            'Prefer': 'return=representation'
+          },
+          body: JSON.stringify({
+            id: userId,
+            email: email,
+            name: name || email.split('@')[0],
+            is_pro: false,
+            plan_type: 'free',
+            subscription_status: 'inactive',
+            provider: provider || 'email'
+          })
+        }
+      );
+
+      if (!insertAuthResponse.ok) {
+        const errorText = await insertAuthResponse.text();
+        // Only log error if it's not a duplicate - don't fail the request
+        if (!errorText.includes('duplicate key') && !errorText.includes('unique constraint')) {
+          console.error('Failed to create user in users_auth table:', errorText);
+        }
+      }
+    }
 
     return new Response(JSON.stringify({
       success: true,
-      message: 'User synced successfully',
-      user: Array.isArray(newUser) ? newUser[0] : newUser
+      message: 'User synced successfully to both tables',
+      user: { id: userId, email: email }
     }), {
       status: 200,
       headers: corsHeaders
