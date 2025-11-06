@@ -2,6 +2,8 @@
 // Syncs new OAuth user to users table (Cloudflare version)
 // Uses Supabase REST API (no npm package required)
 
+import { isAdmin, getAdminPrivileges } from './admin-config.js';
+
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
@@ -67,6 +69,9 @@ export async function onRequestPost(context) {
     // STEP 2: Create user in users_auth table if doesn't exist
     // ==============================================================
     if (!userExists) {
+      // Check if user is admin and grant privileges
+      const adminPrivileges = getAdminPrivileges(email);
+
       const insertResponse = await fetch(
         `${supabaseUrl}/rest/v1/users_auth`,
         {
@@ -81,9 +86,9 @@ export async function onRequestPost(context) {
             id: userId,
             email: email,
             name: name || email.split('@')[0],
-            is_pro: false,
-            plan_type: 'free',
-            subscription_status: 'inactive'
+            is_pro: adminPrivileges.isPro,
+            plan_type: adminPrivileges.planType,
+            subscription_status: adminPrivileges.isAdmin ? 'active' : 'inactive'
           })
         }
       );
@@ -105,10 +110,18 @@ export async function onRequestPost(context) {
       }
     }
 
+    // Get admin status for response
+    const adminPrivileges = getAdminPrivileges(email);
+
     return new Response(JSON.stringify({
       success: true,
       message: 'User synced successfully',
-      user: { id: userId, email: email }
+      user: {
+        id: userId,
+        email: email,
+        isAdmin: adminPrivileges.isAdmin,
+        isPro: adminPrivileges.isPro
+      }
     }), {
       status: 200,
       headers: corsHeaders

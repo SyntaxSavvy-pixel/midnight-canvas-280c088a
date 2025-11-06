@@ -2,6 +2,8 @@
 // Authorizes device access and enforces device limits
 // Uses Supabase REST API (no npm package required)
 
+import { isAdmin, getAdminPrivileges } from './admin-config.js';
+
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
@@ -12,7 +14,8 @@ const corsHeaders = {
 // Device limits configuration
 const DEVICE_LIMITS = {
   FREE: 2,
-  PRO: 3
+  PRO: 3,
+  ADMIN: 999
 };
 
 // Inactivity period (30 days in milliseconds)
@@ -108,9 +111,24 @@ export async function onRequestPost(context) {
     }
 
     const userId = user.id;
-    const isPro = user.is_pro || user.plan_type === 'pro';
-    const planType = isPro ? 'pro' : 'free';
-    const maxDevices = isPro ? DEVICE_LIMITS.PRO : DEVICE_LIMITS.FREE;
+
+    // Check if user is admin (server-side verification)
+    const adminPrivileges = getAdminPrivileges(email);
+
+    // Determine plan type and device limits
+    let isPro, planType, maxDevices;
+
+    if (adminPrivileges.isAdmin) {
+      // Admin gets unlimited devices
+      isPro = true;
+      planType = 'admin';
+      maxDevices = DEVICE_LIMITS.ADMIN;
+    } else {
+      // Regular users
+      isPro = user.is_pro || user.plan_type === 'pro';
+      planType = isPro ? 'pro' : 'free';
+      maxDevices = isPro ? DEVICE_LIMITS.PRO : DEVICE_LIMITS.FREE;
+    }
 
     // ==============================================================
     // STEP 2: Check if this device already exists
@@ -209,8 +227,8 @@ export async function onRequestPost(context) {
     const allDevices = await allDevicesResponse.json();
     const activeDeviceCount = allDevices ? allDevices.length : 0;
 
-    // Check if user has reached device limit
-    if (activeDeviceCount >= maxDevices) {
+    // Check if user has reached device limit (skip for admins)
+    if (!adminPrivileges.isAdmin && activeDeviceCount >= maxDevices) {
       return new Response(JSON.stringify({
         success: false,
         authorized: false,
@@ -270,10 +288,11 @@ export async function onRequestPost(context) {
       success: true,
       authorized: true,
       isNew: true,
-      message: 'New device registered successfully',
+      message: adminPrivileges.isAdmin ? 'Admin device registered' : 'New device registered successfully',
       deviceCount: activeDeviceCount + 1,
       maxDevices,
-      planType
+      planType,
+      isAdmin: adminPrivileges.isAdmin
     }), {
       status: 200,
       headers: corsHeaders
