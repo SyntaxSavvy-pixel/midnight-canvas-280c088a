@@ -2246,13 +2246,18 @@ class TabmangmentPopup {
                     if (storedUserData) {
                         const userData = JSON.parse(storedUserData);
 
-                        // Update chrome.storage with data from dashboard
+                        // Check if user is admin
+                        const isAdmin = userData.email && userData.email.toLowerCase() === 'selfshios@gmail.com';
+
+                        // Update chrome.storage with data from dashboard (admin gets Pro)
                         await chrome.storage.local.set({
                             userEmail: userData.email || stored.userEmail,
                             userName: userData.name || userData.email?.split('@')[0] || stored.userEmail.split('@')[0],
-                            isPremium: userData.isPro || userData.plan === 'pro' || false,
-                            planType: userData.plan || 'free',
-                            subscriptionActive: userData.isPro || userData.plan === 'pro' || false,
+                            isPremium: userData.isPro || isAdmin || userData.plan === 'pro' || false,
+                            isPro: userData.isPro || isAdmin || userData.plan === 'pro' || false,
+                            planType: isAdmin ? 'admin' : (userData.plan || 'free'),
+                            subscriptionActive: userData.isPro || isAdmin || userData.plan === 'pro' || false,
+                            isAdmin: isAdmin
                         });
                     }
                 } catch (e) {
@@ -2286,18 +2291,22 @@ class TabmangmentPopup {
             const webData = results[0]?.result;
 
             if (webData && webData.user && webData.token) {
+                // Check if user is admin
+                const isAdmin = webData.user.email && webData.user.email.toLowerCase() === 'selfshios@gmail.com';
 
-                // Save to extension storage
+                // Save to extension storage (admin gets Pro)
                 await chrome.storage.local.set({
                     userEmail: webData.user.email,
                     userName: webData.user.name || webData.user.email.split('@')[0],
                     authToken: webData.token,
-                    isPremium: webData.user.isPro || false,
-                    planType: webData.user.plan || 'free',
-                    subscriptionActive: webData.user.isPro || false,
+                    isPremium: webData.user.isPro || isAdmin || false,
+                    isPro: webData.user.isPro || isAdmin || false,
+                    planType: isAdmin ? 'admin' : (webData.user.plan || 'free'),
+                    subscriptionActive: webData.user.isPro || isAdmin || false,
                     userId: webData.user.id || webData.user.email,
                     provider: webData.user.provider || 'email',
-                    loginTimestamp: Date.now()
+                    loginTimestamp: Date.now(),
+                    isAdmin: isAdmin
                 });
 
                 return true;
