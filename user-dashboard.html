@@ -5552,7 +5552,20 @@
                 return;
             }
 
-            if (userData.plan === 'pro') {
+            // Admin check (server-side verified, display only)
+            const isAdmin = userData && userData.email && userData.email.toLowerCase() === 'selfshios@gmail.com';
+
+            if (isAdmin) {
+                planBadge.textContent = '👑 Admin';
+                planBadge.className = 'plan-badge admin';
+                planBadge.style.background = 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)';
+                planBadge.style.color = '#ffffff';
+                planBadge.style.fontWeight = '700';
+                planBadge.title = 'Administrator - Unlimited Pro Features';
+                if (planActionBtn) planActionBtn.style.display = 'none';
+                if (freeStatus) freeStatus.style.display = 'none';
+                if (proStatus) proStatus.style.display = 'block';
+            } else if (userData.plan === 'pro') {
                 // Check if subscription is cancelled but still active
                 if (userData.subscriptionStatus === 'cancelling' && userData.currentPeriodEnd) {
                     const endDate = new Date(userData.currentPeriodEnd);
