@@ -5286,41 +5286,51 @@
                         .maybeSingle(); // Changed from .single() to prevent 406 errors
 
                     if (!dbError && dbUser) {
-                        // Use database as source of truth
-                        userData.isPro = dbUser.is_pro || false;
-                        userData.plan = dbUser.is_pro ? 'pro' : 'free';
-                        userData.subscriptionStatus = dbUser.subscription_status || 'inactive';
+                        // Check if user is admin (server verified this in sync-user)
+                        const isAdmin = userData.email && userData.email.toLowerCase() === 'selfshios@gmail.com';
+
+                        // Use database as source of truth (admin status from server or database)
+                        userData.isPro = dbUser.is_pro || isAdmin || false;
+                        userData.plan = (dbUser.is_pro || isAdmin) ? 'pro' : 'free';
+                        userData.subscriptionStatus = isAdmin ? 'active' : (dbUser.subscription_status || 'inactive');
                         userData.currentPeriodEnd = dbUser.current_period_end;
                         userData.stripeCustomerId = dbUser.stripe_customer_id;
                         userData.stripeSubscriptionId = dbUser.stripe_subscription_id;
+                        userData.isAdmin = isAdmin; // Store admin status
                     } else {
                         // Fallback to localStorage if database query fails
+                        const isAdmin = userData.email && userData.email.toLowerCase() === 'selfshios@gmail.com';
                         const storedUserData = localStorage.getItem('tabmangment_user');
                         if (storedUserData) {
                             const stored = JSON.parse(storedUserData);
-                            userData.plan = stored.plan || 'free';
-                            userData.isPro = stored.isPro || false;
+                            userData.plan = (stored.isPro || isAdmin) ? 'pro' : (stored.plan || 'free');
+                            userData.isPro = stored.isPro || isAdmin || false;
                             userData.subscriptionStatus = stored.subscriptionStatus || 'inactive';
                             userData.currentPeriodEnd = stored.currentPeriodEnd;
                             userData.stripeCustomerId = stored.stripeCustomerId;
                             userData.stripeSubscriptionId = stored.stripeSubscriptionId;
+                            userData.isAdmin = isAdmin;
                         } else {
-                            // Default to free plan
-                            userData.plan = 'free';
-                            userData.isPro = false;
-                            userData.subscriptionStatus = 'inactive';
+                            // Default to free plan (unless admin)
+                            userData.plan = isAdmin ? 'pro' : 'free';
+                            userData.isPro = isAdmin;
+                            userData.subscriptionStatus = isAdmin ? 'active' : 'inactive';
+                            userData.isAdmin = isAdmin;
                         }
                     }
                 } catch (dbError) {
                     // If database query fails, fallback to localStorage
+                    const isAdmin = userData.email && userData.email.toLowerCase() === 'selfshios@gmail.com';
                     const storedUserData = localStorage.getItem('tabmangment_user');
                     if (storedUserData) {
                         const stored = JSON.parse(storedUserData);
-                        userData.plan = stored.plan || 'free';
-                        userData.isPro = stored.isPro || false;
+                        userData.plan = (stored.isPro || isAdmin) ? 'pro' : (stored.plan || 'free');
+                        userData.isPro = stored.isPro || isAdmin || false;
+                        userData.isAdmin = isAdmin;
                     } else {
-                        userData.plan = 'free';
-                        userData.isPro = false;
+                        userData.plan = isAdmin ? 'pro' : 'free';
+                        userData.isPro = isAdmin;
+                        userData.isAdmin = isAdmin;
                     }
                 }
 
@@ -5623,6 +5633,13 @@
 
         async function processUpgrade() {
             try {
+                // Check if user is admin (admins don't need to upgrade)
+                const isAdmin = userData && userData.email && userData.email.toLowerCase() === 'selfshios@gmail.com';
+                if (isAdmin) {
+                    alert('You already have unlimited Pro access as an admin!');
+                    return;
+                }
+
                 // Get user email
                 const { data: { user } } = await supabaseClient.auth.getUser();
                 const userEmail = user?.email || userData.email;
