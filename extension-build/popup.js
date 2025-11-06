@@ -2914,7 +2914,60 @@ class TabmangmentPopup {
                     this.handleTabAction(tabId, action);
                 });
             });
+
+            // Adjust action button colors based on tab background
+            this.adjustActionButtonColors(item);
         });
+    }
+
+    adjustActionButtonColors(tabItem) {
+        try {
+            const computedStyle = window.getComputedStyle(tabItem);
+            const bgColor = computedStyle.backgroundColor;
+
+            // Calculate brightness of background
+            const rgb = bgColor.match(/\d+/g);
+            if (!rgb || rgb.length < 3) return;
+
+            const r = parseInt(rgb[0]);
+            const g = parseInt(rgb[1]);
+            const b = parseInt(rgb[2]);
+
+            // Calculate relative luminance (0-1 scale)
+            const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+
+            // If background is dark (luminance < 0.5), use light icons
+            // If background is light (luminance >= 0.5), use dark icons
+            const isDark = luminance < 0.5;
+
+            const actionBtns = tabItem.querySelectorAll('.action-btn');
+            actionBtns.forEach(btn => {
+                const svg = btn.querySelector('svg');
+                if (!svg) return;
+
+                if (isDark) {
+                    // Dark background - use light icons
+                    btn.style.setProperty('background', 'transparent', 'important');
+                    btn.style.setProperty('border', 'none', 'important');
+                    btn.style.setProperty('color', 'rgba(255, 255, 255, 0.95)', 'important');
+                    svg.style.setProperty('stroke', 'rgba(255, 255, 255, 0.95)', 'important');
+
+                    // Apply shadow for depth
+                    btn.style.setProperty('filter', 'drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3))', 'important');
+                } else {
+                    // Light background - use dark icons
+                    btn.style.setProperty('background', 'transparent', 'important');
+                    btn.style.setProperty('border', 'none', 'important');
+                    btn.style.setProperty('color', 'rgba(0, 0, 0, 0.8)', 'important');
+                    svg.style.setProperty('stroke', 'rgba(0, 0, 0, 0.8)', 'important');
+
+                    // Apply shadow for depth
+                    btn.style.setProperty('filter', 'drop-shadow(0 2px 4px rgba(0, 0, 0, 0.15))', 'important');
+                }
+            });
+        } catch (error) {
+            console.error('Error adjusting action button colors:', error);
+        }
     }
     handleFaviconErrors() {
         const faviconImages = document.querySelectorAll('.tab-favicon');

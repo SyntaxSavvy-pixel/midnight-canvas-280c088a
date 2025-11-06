@@ -895,38 +895,23 @@ body::-webkit-scrollbar-thumb:hover {
 .action-btn {
     width: 32px;
     height: 32px;
-    border: 2.5px solid rgba(255, 255, 255, 1);
+    border: none;
     border-radius: var(--border-radius-xs);
-    background: rgba(255, 255, 255, 1);
-    color: var(--slate-700);
+    background: transparent;
+    color: inherit;
     cursor: pointer;
     transition: all var(--transition);
     display: flex;
     align-items: center;
     justify-content: center;
     position: relative;
-    box-shadow:
-        0 0 0 3px rgba(0, 0, 0, 0.25),
-        0 0 0 5px rgba(255, 255, 255, 0.4),
-        0 3px 12px rgba(0, 0, 0, 0.35),
-        0 6px 20px rgba(0, 0, 0, 0.25),
-        0 0 30px rgba(255, 255, 255, 0.3);
     overflow: visible;
     z-index: 10;
-    backdrop-filter: blur(12px) saturate(180%);
 }
 
 .action-btn:hover {
-    border-color: var(--info);
-    color: var(--info);
-    background: rgba(239, 246, 255, 1);
-    transform: translateY(-2px) scale(1.05);
-    box-shadow:
-        0 0 0 3px rgba(59, 130, 246, 0.3),
-        0 0 0 6px rgba(59, 130, 246, 0.15),
-        0 5px 15px rgba(59, 130, 246, 0.4),
-        0 8px 28px rgba(59, 130, 246, 0.25),
-        0 0 40px rgba(59, 130, 246, 0.2);
+    transform: scale(1.15);
+    filter: drop-shadow(0 3px 6px rgba(0, 0, 0, 0.4)) !important;
 }
 
 .action-btn:active {
@@ -1069,11 +1054,9 @@ body::-webkit-scrollbar-thumb:hover {
 }
 
 .action-btn svg {
-    width: 16px;
-    height: 16px;
-    stroke-width: 2.75;
-    filter: drop-shadow(0 2px 3px rgba(0, 0, 0, 0.2))
-            drop-shadow(0 1px 1px rgba(0, 0, 0, 0.15));
+    width: 18px;
+    height: 18px;
+    stroke-width: 2.5;
 }
 
 .pro-badge {
