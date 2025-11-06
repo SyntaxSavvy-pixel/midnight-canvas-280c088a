@@ -3192,12 +3192,26 @@ class TabmangmentPopup {
         container.style.transform = 'translateY(10px)';
         setTimeout(async () => {
             try {
-                const result = await chrome.storage.local.get(['favorites']);
+                const result = await chrome.storage.local.get(['favorites', 'themeConfig']);
                 const bookmarks = result.favorites || [];
+                const theme = result.themeConfig || { primaryColor: '#667eea', secondaryColor: '#764ba2' };
+
+                // Create gradient from theme colors
+                const themeGradient = `linear-gradient(135deg, ${theme.primaryColor} 0%, ${theme.secondaryColor} 100%)`;
+                const themeShadow = `rgba(${parseInt(theme.primaryColor.slice(1, 3), 16)}, ${parseInt(theme.primaryColor.slice(3, 5), 16)}, ${parseInt(theme.primaryColor.slice(5, 7), 16)}, 0.25)`;
+
+                // Create darker version for hover
+                const darkenColor = (hex) => {
+                    const r = Math.max(0, parseInt(hex.slice(1, 3), 16) - 20);
+                    const g = Math.max(0, parseInt(hex.slice(3, 5), 16) - 20);
+                    const b = Math.max(0, parseInt(hex.slice(5, 7), 16) - 20);
+                    return `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`;
+                };
+                const themeGradientDark = `linear-gradient(135deg, ${darkenColor(theme.primaryColor)}, ${darkenColor(theme.secondaryColor)})`;
                 const bookmarksHTML = `
                     <!-- Bookmark Header -->
                     <div class="bookmark-header" style="
-                        background: linear-gradient(135deg, #ff9a56 0%, #ff6b35 100%);
+                        background: ${themeGradient};
                         color: white;
                         padding: 24px 20px;
                         margin: -16px -16px 20px -16px;
@@ -3297,9 +3311,13 @@ class TabmangmentPopup {
                             0 4px 16px rgba(255, 107, 53, 0.08),
                             inset 0 1px 0 rgba(255, 255, 255, 0.8);
                     ">
-                        <button id="bookmark-all-current" style="
+                        <button id="bookmark-all-current"
+                            data-gradient="${themeGradient}"
+                            data-gradient-dark="${themeGradientDark}"
+                            data-shadow="${themeShadow}"
+                            style="
                             flex: 1;
-                            background: linear-gradient(135deg, #ff9a56, #ff6b35);
+                            background: ${themeGradient};
                             color: white;
                             border: none;
                             padding: 12px 16px;
@@ -3310,7 +3328,7 @@ class TabmangmentPopup {
                             transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
                             text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
                             box-shadow:
-                                0 4px 12px rgba(255, 107, 53, 0.3),
+                                0 4px 12px ${themeShadow},
                                 inset 0 1px 0 rgba(255, 255, 255, 0.2);
                             display: flex;
                             align-items: center;
@@ -3413,7 +3431,7 @@ class TabmangmentPopup {
                     top: 0;
                     bottom: 0;
                     width: 4px;
-                    background: linear-gradient(135deg, #ff9a56, #ff6b35);
+                    background: ${themeGradient};
                     border-radius: 0 4px 4px 0;
                     transition: width 0.3s ease;
                 "></div>
@@ -3421,7 +3439,7 @@ class TabmangmentPopup {
                 <div class="bookmark-favicon" style="
                     width: 48px;
                     height: 48px;
-                    background: linear-gradient(135deg, #ff9a56, #ff6b35);
+                    background: ${themeGradient};
                     border-radius: 12px;
                     display: flex;
                     align-items: center;
@@ -3527,15 +3545,19 @@ class TabmangmentPopup {
                 await this.bookmarkAllCurrentTabs();
                 this.renderBookmarksView();
             });
+            const gradientNormal = bookmarkAllBtn.dataset.gradient;
+            const gradientHover = bookmarkAllBtn.dataset.gradientDark;
+            const shadow = bookmarkAllBtn.dataset.shadow;
+
             bookmarkAllBtn.addEventListener('mouseenter', () => {
-                bookmarkAllBtn.style.background = 'linear-gradient(135deg, #ff8a43, #ff5722)';
+                bookmarkAllBtn.style.background = gradientHover;
                 bookmarkAllBtn.style.transform = 'translateY(-2px) scale(1.02)';
-                bookmarkAllBtn.style.boxShadow = '0 8px 20px rgba(255, 107, 53, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.3)';
+                bookmarkAllBtn.style.boxShadow = `0 8px 20px ${shadow}, inset 0 1px 0 rgba(255, 255, 255, 0.3)`;
             });
             bookmarkAllBtn.addEventListener('mouseleave', () => {
-                bookmarkAllBtn.style.background = 'linear-gradient(135deg, #ff9a56, #ff6b35)';
+                bookmarkAllBtn.style.background = gradientNormal;
                 bookmarkAllBtn.style.transform = 'translateY(0) scale(1)';
-                bookmarkAllBtn.style.boxShadow = '0 4px 12px rgba(255, 107, 53, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.2)';
+                bookmarkAllBtn.style.boxShadow = `0 4px 12px ${shadow}, inset 0 1px 0 rgba(255, 255, 255, 0.2)`;
             });
         }
         const clearAllBtn = document.getElementById('clear-all-bookmarks');
