@@ -7642,17 +7642,17 @@ function applyThemeToPopup(theme) {
                 color: ${statCardSecondaryTextColor} !important;
             }
 
-            /* Empty State Text - AUTO CONTRAST */
+            /* Empty State Text - Force dark colors for white background */
             .empty-state p,
             .empty-state h3,
             .empty-title,
             .empty-description {
-                color: ${primaryTextColor} !important;
+                color: #475569 !important;
             }
 
             .empty-icon-svg {
-                color: ${secondaryTextColor} !important;
-                opacity: 0.6;
+                color: #cbd5e1 !important;
+                opacity: 0.8;
             }
 
             /* Header and Buttons Text - AUTO CONTRAST */
@@ -8028,23 +8028,24 @@ function applyThemeToPopup(theme) {
                 color: #065f46 !important;
             }
 
-            /* Empty State */
+            /* Empty State - Force dark colors for white background */
             .empty-state {
-                color: rgba(255, 255, 255, 0.7) !important;
+                color: #475569 !important;
             }
 
             .empty-state h3,
             .empty-title {
-                color: rgba(255, 255, 255, 0.9) !important;
+                color: #475569 !important;
             }
 
             .empty-state p,
             .empty-description {
-                color: rgba(255, 255, 255, 0.7) !important;
+                color: #94a3b8 !important;
             }
 
             .empty-icon-svg {
-                color: rgba(255, 255, 255, 0.5) !important;
+                color: #cbd5e1 !important;
+                opacity: 0.8;
             }
 
             /* Scrollbar Theming */
