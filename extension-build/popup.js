@@ -7655,6 +7655,15 @@ function applyThemeToPopup(theme) {
                 opacity: 0.8;
             }
 
+            /* Bookmark Text - Force dark colors for light background */
+            .bookmark-title {
+                color: #1e293b !important;
+            }
+
+            .bookmark-url {
+                color: #64748b !important;
+            }
+
             /* Header and Buttons Text - AUTO CONTRAST */
             .header-title,
             .control-btn {
@@ -8133,13 +8142,13 @@ function applyThemeToPopup(theme) {
                 box-shadow: 0 6px 16px ${theme.primaryColor}60, inset 0 1px 0 rgba(255, 255, 255, 0.3) !important;
             }
 
-            /* Bookmark Text */
+            /* Bookmark Text - Force dark colors for light background */
             .bookmark-title {
-                color: rgba(255, 255, 255, 0.95) !important;
+                color: #1e293b !important;
             }
 
             .bookmark-url {
-                color: rgba(255, 255, 255, 0.7) !important;
+                color: #64748b !important;
             }
 
             /* Remove Bookmark Button */
