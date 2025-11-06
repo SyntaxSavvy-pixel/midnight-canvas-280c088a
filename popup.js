@@ -2782,7 +2782,18 @@ class TabmangmentPopup {
             }
             if (displayTabs.length === 0) {
                 if (emptyState) emptyState.style.display = 'block';
-                container.innerHTML = '<div class="empty-state"><div class="empty-icon">📋</div><p>No tabs to manage</p></div>';
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <svg class="empty-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                            <line x1="9" y1="9" x2="15" y2="9"></line>
+                            <line x1="9" y1="13" x2="15" y2="13"></line>
+                            <line x1="9" y1="17" x2="13" y2="17"></line>
+                        </svg>
+                        <h3 class="empty-title">No Tabs Open</h3>
+                        <p class="empty-description">Open some tabs to get started with Tabmangment</p>
+                    </div>
+                `;
                 return;
             }
             if (emptyState) emptyState.style.display = 'none';
@@ -2808,9 +2819,14 @@ class TabmangmentPopup {
         } catch (error) {
             container.innerHTML = `
                 <div class="empty-state">
-                    <div class="empty-icon">⚠️</div>
-                    <p>Error loading tabs</p>
-                    <button onclick="location.reload()" style="margin-top: 8px; padding: 8px 16px; border: 1px solid #ccc; border-radius: 4px; background: white; cursor: pointer;">
+                    <svg class="empty-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="color: #ef4444;">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <line x1="12" y1="8" x2="12" y2="12"></line>
+                        <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                    </svg>
+                    <h3 class="empty-title">Error Loading Tabs</h3>
+                    <p class="empty-description">Something went wrong. Please try reloading.</p>
+                    <button onclick="location.reload()" style="margin-top: 16px; padding: 10px 20px; border: 1px solid #e2e8f0; border-radius: 8px; background: #ffffff; color: #475569; font-size: 14px; font-weight: 500; cursor: pointer; transition: all 0.2s;">
                         Reload Extension
                     </button>
                 </div>
@@ -3338,7 +3354,17 @@ class TabmangmentPopup {
                 container.style.opacity = '1';
                 container.style.transform = 'translateY(0)';
             } catch (error) {
-                container.innerHTML = '<div class="empty-state"><div class="empty-icon">⚠️</div><p>Error loading bookmarks</p></div>';
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <svg class="empty-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="color: #ef4444;">
+                            <circle cx="12" cy="12" r="10"></circle>
+                            <line x1="12" y1="8" x2="12" y2="12"></line>
+                            <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                        </svg>
+                        <h3 class="empty-title">Error Loading Bookmarks</h3>
+                        <p class="empty-description">Unable to load your saved bookmarks</p>
+                    </div>
+                `;
                 container.style.opacity = '1';
                 container.style.transform = 'translateY(0)';
             }
@@ -3347,38 +3373,12 @@ class TabmangmentPopup {
     renderBookmarksList(bookmarks) {
         if (bookmarks.length === 0) {
             return `
-                <div class="empty-state" style="
-                    text-align: center;
-                    padding: 60px 20px;
-                    background: linear-gradient(135deg, rgba(255, 255, 255, 0.95), rgba(248, 250, 252, 0.95));
-                    border-radius: 16px;
-                    border: 1px solid rgba(226, 232, 240, 0.6);
-                    backdrop-filter: blur(20px);
-                    box-shadow:
-                        0 8px 32px rgba(0, 0, 0, 0.04),
-                        inset 0 1px 0 rgba(255, 255, 255, 0.8);
-                ">
-                    <div style="
-                        font-size: 56px;
-                        margin-bottom: 20px;
-                        opacity: 0.6;
-                        filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.1));
-                        animation: float 3s ease-in-out infinite;
-                    ">📚</div>
-                    <div style="
-                        font-size: 18px;
-                        font-weight: 600;
-                        margin-bottom: 8px;
-                        color: #334155;
-                        letter-spacing: -0.5px;
-                    ">No Bookmarks Yet</div>
-                    <div style="
-                        font-size: 14px;
-                        color: #64748b;
-                        line-height: 1.5;
-                        max-width: 200px;
-                        margin: 0 auto;
-                    ">Save your favorite tabs to access them quickly later</div>
+                <div class="empty-state">
+                    <svg class="empty-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                        <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16z"></path>
+                    </svg>
+                    <h3 class="empty-title">No Bookmarks Yet</h3>
+                    <p class="empty-description">Save your favorite tabs to access them quickly later</p>
                 </div>
             `;
         }
