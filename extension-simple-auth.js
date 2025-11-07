@@ -140,7 +140,8 @@ class SimpleAuth {
             await chrome.storage.local.set({
                 userEmail: user.email,
                 authToken: token,
-                userName: user.name
+                userName: user.name,
+                userPhoto: user.photoURL || user.picture || user.photo || user.image || user.avatar || null
             });
         }
 

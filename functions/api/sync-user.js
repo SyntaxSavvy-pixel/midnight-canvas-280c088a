@@ -72,6 +72,14 @@ export async function onRequestPost(context) {
       // Check if user is admin and grant privileges
       const adminPrivileges = getAdminPrivileges(email);
 
+      // For admin users, set a far-future billing date (100 years from now)
+      let nextBillingDate = null;
+      if (adminPrivileges.isAdmin) {
+        const farFuture = new Date();
+        farFuture.setFullYear(farFuture.getFullYear() + 100);
+        nextBillingDate = farFuture.toISOString();
+      }
+
       const insertResponse = await fetch(
         `${supabaseUrl}/rest/v1/users_auth`,
         {
@@ -88,7 +96,8 @@ export async function onRequestPost(context) {
             name: name || email.split('@')[0],
             is_pro: adminPrivileges.isPro,
             plan_type: adminPrivileges.planType,
-            subscription_status: adminPrivileges.isAdmin ? 'active' : 'inactive'
+            subscription_status: adminPrivileges.isAdmin ? 'active' : 'inactive',
+            next_billing_date: nextBillingDate
           })
         }
       );

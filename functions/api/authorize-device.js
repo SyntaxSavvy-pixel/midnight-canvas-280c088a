@@ -7,7 +7,7 @@ import { isAdmin, getAdminPrivileges } from './admin-config.js';
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
-  'Access-Control-Allow-Headers': 'Content-Type',
+  'Access-Control-Allow-Headers': 'Content-Type, Authorization',
   'Content-Type': 'application/json'
 };
 
@@ -299,11 +299,13 @@ export async function onRequestPost(context) {
     });
 
   } catch (error) {
-    console.error('Unexpected error:', error);
+    console.error('Unexpected error in authorize-device:', error);
+    console.error('Error stack:', error.stack);
     return new Response(JSON.stringify({
       success: false,
       error: 'Internal server error',
-      message: error.message
+      message: error.message,
+      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
     }), {
       status: 500,
       headers: corsHeaders

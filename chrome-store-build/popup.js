@@ -4,7 +4,9 @@ const CONFIG = {
         BASE: 'https://tabmangment.com/api',
         CREATE_CHECKOUT: 'https://tabmangment.com/api/create-checkout',
         CHECK_STATUS: 'https://tabmangment.com/api/status',
-        BILLING_PORTAL: 'https://tabmangment.com/api/billing-portal'
+        BILLING_PORTAL: 'https://tabmangment.com/api/billing-portal',
+        CHECK_SEARCH_USAGE: 'https://tabmangment.com/api/check-search-usage',
+        INCREMENT_SEARCH: 'https://tabmangment.com/api/increment-search'
     },
     PERPLEXITY: {
         API_KEY: 'YOUR_API_KEY_HERE',
@@ -637,18 +639,13 @@ class TabmangmentPopup {
         this.emailJSReady = true;
     }
     setupEventListeners() {
-        const premiumBtn = document.getElementById('premium-btn');
-        if (premiumBtn) {
-            premiumBtn.addEventListener('click', () => this.handlePremiumButtonClick());
-        }
         const contactBtn = document.getElementById('contact-btn');
         if (contactBtn) {
             contactBtn.addEventListener('click', () => this.showContactModal());
         }
-        const logoutBtn = document.getElementById('logout-btn');
-        if (logoutBtn) {
-            logoutBtn.addEventListener('click', () => this.handleLogout());
-        }
+
+        // Profile menu event listeners
+        this.setupProfileMenu();
 
         // Search Panel Event Listeners
         this.setupSearchPanel();
@@ -724,6 +721,106 @@ class TabmangmentPopup {
         this.setupControlButtons();
         this.setupContactModal();
         this.setupPremiumModal();
+    }
+
+    // Setup Profile Menu
+    setupProfileMenu() {
+        const profileBtn = document.getElementById('profile-btn');
+        const profileMenu = document.getElementById('profile-menu');
+        const viewDashboardBtn = document.getElementById('view-dashboard-btn');
+        const menuLogoutBtn = document.getElementById('menu-logout-btn');
+
+        // Load and display user info in profile menu
+        this.loadProfileInfo();
+
+        // Toggle profile menu
+        if (profileBtn && profileMenu) {
+            profileBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const isVisible = profileMenu.style.display === 'block';
+                profileMenu.style.display = isVisible ? 'none' : 'block';
+            });
+
+            // Close menu when clicking outside
+            document.addEventListener('click', (e) => {
+                if (!profileMenu.contains(e.target) && !profileBtn.contains(e.target)) {
+                    profileMenu.style.display = 'none';
+                }
+            });
+        }
+
+        // View Dashboard button
+        if (viewDashboardBtn) {
+            viewDashboardBtn.addEventListener('click', () => {
+                chrome.tabs.create({ url: CONFIG.WEB.DASHBOARD_URL });
+                if (profileMenu) profileMenu.style.display = 'none';
+            });
+        }
+
+        // Logout button in menu
+        if (menuLogoutBtn) {
+            menuLogoutBtn.addEventListener('click', async () => {
+                await this.handleLogout();
+                if (profileMenu) profileMenu.style.display = 'none';
+            });
+        }
+    }
+
+    // Load user profile information
+    async loadProfileInfo() {
+        try {
+            const result = await chrome.storage.local.get(['userEmail', 'userName', 'userPhoto']);
+            const profileMenuName = document.getElementById('profile-menu-name');
+            const profileMenuEmail = document.getElementById('profile-menu-email');
+            const profileImage = document.getElementById('profile-image');
+            const profileMenuImage = document.getElementById('profile-menu-image');
+
+            if (result.userEmail) {
+                const displayName = result.userName || result.userEmail.split('@')[0];
+
+                if (profileMenuName) profileMenuName.textContent = displayName;
+                if (profileMenuEmail) profileMenuEmail.textContent = result.userEmail;
+
+                // Set profile photo if available
+                if (result.userPhoto) {
+                    if (profileImage) profileImage.src = result.userPhoto;
+                    if (profileMenuImage) profileMenuImage.src = result.userPhoto;
+                }
+            }
+        } catch (error) {
+            console.error('Error loading profile info:', error);
+        }
+    }
+
+    // Handle user logout
+    async handleLogout() {
+        try {
+            // Clear all user data from storage
+            await chrome.storage.local.remove([
+                'userEmail',
+                'userName',
+                'userPhoto',
+                'authToken',
+                'isPremium',
+                'isPro',
+                'planType',
+                'subscriptionStatus',
+                'subscriptionActive'
+            ]);
+
+            // Clear instance variables
+            this.userEmail = null;
+            this.userName = null;
+            this.isPremium = false;
+
+            // Notify background script of logout
+            chrome.runtime.sendMessage({ type: 'USER_LOGGED_OUT' });
+
+            // Show login screen
+            this.showLoginScreen();
+        } catch (error) {
+            console.error('Error during logout:', error);
+        }
     }
 
     // Setup Search Panel
@@ -1668,6 +1765,7 @@ class TabmangmentPopup {
 
         this.removeAllProBadges();
         await this.updateSubscriptionHeader();
+        await this.loadProfileInfo(); // Update profile photo
     }
     async checkSubscriptionExpiry(subscriptionData) {
         try {
@@ -2076,26 +2174,38 @@ class TabmangmentPopup {
         if (!subscriptionInfo || !planName || !billingDate) return;
 
         if (this.isPremium) {
-            planName.textContent = 'Pro Plan';
-            subscriptionInfo.classList.add('pro');
-            subscriptionInfo.classList.remove('free');
+            // Check if user is admin
+            const stored = await chrome.storage.local.get(['isAdmin', 'planType', 'nextBillingDate', 'currentPeriodEnd']);
+            const isAdmin = stored.isAdmin || stored.planType === 'admin';
 
-            // Get billing date
-            const stored = await chrome.storage.local.get(['nextBillingDate', 'currentPeriodEnd']);
-            const nextBilling = stored.nextBillingDate || stored.currentPeriodEnd;
-
-            if (nextBilling) {
-                const date = new Date(nextBilling);
-                const formattedDate = date.toLocaleDateString('en-US', {
-                    month: 'short',
-                    day: 'numeric',
-                    year: 'numeric'
-                });
-                billingDate.textContent = `Next billing: ${formattedDate}`;
+            if (isAdmin) {
+                // Admin users - show admin badge instead of billing date
+                planName.textContent = 'Admin Plan';
+                subscriptionInfo.classList.add('pro');
+                subscriptionInfo.classList.remove('free');
+                billingDate.textContent = 'Unlimited Pro Access';
                 billingDate.style.display = 'block';
             } else {
-                billingDate.textContent = '';
-                billingDate.style.display = 'none';
+                // Regular Pro users - show billing date
+                planName.textContent = 'Pro Plan';
+                subscriptionInfo.classList.add('pro');
+                subscriptionInfo.classList.remove('free');
+
+                const nextBilling = stored.nextBillingDate || stored.currentPeriodEnd;
+
+                if (nextBilling) {
+                    const date = new Date(nextBilling);
+                    const formattedDate = date.toLocaleDateString('en-US', {
+                        month: 'short',
+                        day: 'numeric',
+                        year: 'numeric'
+                    });
+                    billingDate.textContent = `Next billing: ${formattedDate}`;
+                    billingDate.style.display = 'block';
+                } else {
+                    billingDate.textContent = '';
+                    billingDate.style.display = 'none';
+                }
             }
         } else {
             planName.textContent = 'Free Plan';
@@ -2253,6 +2363,7 @@ class TabmangmentPopup {
                         await chrome.storage.local.set({
                             userEmail: userData.email || stored.userEmail,
                             userName: userData.name || userData.email?.split('@')[0] || stored.userEmail.split('@')[0],
+                            userPhoto: userData.photoURL || userData.picture || userData.photo || null,
                             isPremium: userData.isPro || isAdmin || userData.plan === 'pro' || false,
                             isPro: userData.isPro || isAdmin || userData.plan === 'pro' || false,
                             planType: isAdmin ? 'admin' : (userData.plan || 'free'),
@@ -2298,6 +2409,7 @@ class TabmangmentPopup {
                 await chrome.storage.local.set({
                     userEmail: webData.user.email,
                     userName: webData.user.name || webData.user.email.split('@')[0],
+                    userPhoto: webData.user.photoURL || webData.user.picture || webData.user.photo || null,
                     authToken: webData.token,
                     isPremium: webData.user.isPro || isAdmin || false,
                     isPro: webData.user.isPro || isAdmin || false,
@@ -3194,11 +3306,26 @@ class TabmangmentPopup {
             try {
                 const result = await chrome.storage.local.get(['favorites', 'themeConfig']);
                 const bookmarks = result.favorites || [];
-                const theme = result.themeConfig || { primaryColor: '#667eea', secondaryColor: '#764ba2' };
+
+                // Get theme with safe fallback
+                let theme = result.themeConfig || { primaryColor: '#667eea', secondaryColor: '#764ba2' };
+
+                // Ensure theme colors are valid hex codes
+                const isValidHex = (color) => /^#[0-9A-F]{6}$/i.test(color);
+                if (!isValidHex(theme.primaryColor)) theme.primaryColor = '#667eea';
+                if (!isValidHex(theme.secondaryColor)) theme.secondaryColor = '#764ba2';
 
                 // Create gradient from theme colors
                 const themeGradient = `linear-gradient(135deg, ${theme.primaryColor} 0%, ${theme.secondaryColor} 100%)`;
-                const themeShadow = `rgba(${parseInt(theme.primaryColor.slice(1, 3), 16)}, ${parseInt(theme.primaryColor.slice(3, 5), 16)}, ${parseInt(theme.primaryColor.slice(5, 7), 16)}, 0.25)`;
+
+                // Create shadow color safely
+                const hexToRgba = (hex, alpha) => {
+                    const r = parseInt(hex.slice(1, 3), 16);
+                    const g = parseInt(hex.slice(3, 5), 16);
+                    const b = parseInt(hex.slice(5, 7), 16);
+                    return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+                };
+                const themeShadow = hexToRgba(theme.primaryColor, 0.25);
 
                 // Create darker version for hover
                 const darkenColor = (hex) => {
@@ -3365,13 +3492,15 @@ class TabmangmentPopup {
                         </button>
                     </div>
                     <!-- Bookmarks List Container -->
-                    <div id="bookmarks-list" style="position: relative;">${this.renderBookmarksList(bookmarks)}</div>
+                    <div id="bookmarks-list" style="position: relative;">${this.renderBookmarksList(bookmarks, themeGradient)}</div>
                 `;
                 container.innerHTML = bookmarksHTML;
                 this.attachBookmarkListeners();
                 container.style.opacity = '1';
                 container.style.transform = 'translateY(0)';
             } catch (error) {
+                console.error('Error rendering bookmarks:', error);
+                console.error('Error stack:', error.stack);
                 container.innerHTML = `
                     <div class="empty-state">
                         <svg class="empty-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="color: #ef4444;">
@@ -3380,7 +3509,7 @@ class TabmangmentPopup {
                             <line x1="12" y1="16" x2="12.01" y2="16"></line>
                         </svg>
                         <h3 class="empty-title">Error Loading Bookmarks</h3>
-                        <p class="empty-description">Unable to load your saved bookmarks</p>
+                        <p class="empty-description">Unable to load your saved bookmarks. Check console for details.</p>
                     </div>
                 `;
                 container.style.opacity = '1';
@@ -3388,7 +3517,7 @@ class TabmangmentPopup {
             }
         }, 150);
     }
-    renderBookmarksList(bookmarks) {
+    renderBookmarksList(bookmarks, themeGradient = 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)') {
         if (bookmarks.length === 0) {
             return `
                 <div class="empty-state">
@@ -5202,14 +5331,28 @@ class TabmangmentPopup {
         try {
             const now = Date.now();
             const subscriptionType = subscriptionData.subscription_type || 'monthly';
+
+            // Check if user is admin
+            const stored = await chrome.storage.local.get(['isAdmin', 'planType']);
+            const isAdmin = stored.isAdmin || stored.planType === 'admin';
+
             let nextBillingDate = subscriptionData.next_billing_date;
-            if (!nextBillingDate || nextBillingDate <= now) {
+
+            // For admin users, set a far-future date to prevent recalculation
+            if (isAdmin) {
+                // Set billing date to 100 years in the future for admins
+                const farFuture = new Date();
+                farFuture.setFullYear(farFuture.getFullYear() + 100);
+                nextBillingDate = farFuture.getTime();
+            } else if (!nextBillingDate || nextBillingDate <= now) {
+                // For regular users, only recalculate if missing or expired
                 nextBillingDate = this.calculateNextBillingDate(subscriptionType, now);
             }
+
             await chrome.storage.local.set({
                 isPremium: true,
                 subscriptionActive: true,
-                planType: 'pro',
+                planType: isAdmin ? 'admin' : 'pro',
                 subscriptionExpiry: nextBillingDate,
                 nextBillingDate: nextBillingDate,
                 subscriptionType: subscriptionType,

@@ -43,7 +43,7 @@
                     subscriptionActive: user.isPro || user.plan === 'pro' || false,
                     userId: user.id || user.email,
                     provider: user.provider || 'email',
-                    avatar: user.avatar || null,
+                    userPhoto: user.photoURL || user.picture || user.photo || user.image || user.avatar || null,
                     proActivatedAt: user.proActivatedAt || null,
                     deletionScheduledAt: user.deletionScheduledAt || null,
                     syncTimestamp: Date.now()

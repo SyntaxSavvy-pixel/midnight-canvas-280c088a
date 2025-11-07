@@ -572,7 +572,7 @@ class TabManager {
                         subscriptionActive: userData.subscriptionActive || userData.isPro || false,
                         userId: userData.userId || userData.id || userData.userEmail || userData.email,
                         provider: userData.provider || 'email',
-                        avatar: userData.avatar || null,
+                        userPhoto: userData.userPhoto || userData.avatar || userData.photoURL || userData.picture || userData.photo || null,
                         proActivatedAt: userData.proActivatedAt || null,
                         deletionScheduledAt: userData.deletionScheduledAt || null,
                         loginTimestamp: Date.now(),
