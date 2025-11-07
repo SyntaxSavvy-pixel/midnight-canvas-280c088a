@@ -7894,24 +7894,27 @@ function applyThemeToPopup(theme) {
 
             /* Tabs Container - Professional Background */
             .tabs-container {
-                background: rgba(255, 255, 255, 0.05) !important;
+                background: linear-gradient(135deg, ${theme.primaryColor}12 0%, ${theme.secondaryColor}12 100%) !important;
                 backdrop-filter: blur(20px) !important;
                 -webkit-backdrop-filter: blur(20px) !important;
                 border-radius: 12px !important;
+                border: 1px solid ${theme.primaryColor}20 !important;
                 transition: all 0.3s ease !important;
             }
 
             /* Stats Actions Row */
             .stats-actions-row {
-                background: rgba(255, 255, 255, 0.08) !important;
+                background: linear-gradient(135deg, ${theme.primaryColor}18 0%, ${theme.secondaryColor}18 100%) !important;
                 backdrop-filter: blur(10px) !important;
+                border: 1px solid ${theme.primaryColor}25 !important;
                 transition: all 0.3s ease !important;
             }
 
             /* Header */
             .header {
-                background: rgba(255, 255, 255, 0.1) !important;
+                background: linear-gradient(135deg, ${theme.primaryColor}20 0%, ${theme.secondaryColor}20 100%) !important;
                 backdrop-filter: blur(15px) !important;
+                border-bottom: 1px solid ${theme.primaryColor}30 !important;
                 transition: all 0.3s ease !important;
             }
 
@@ -8233,7 +8236,7 @@ function applyThemeToPopup(theme) {
             }
 
             .tabs-container::-webkit-scrollbar-track {
-                background: rgba(255, 255, 255, 0.05) !important;
+                background: ${theme.primaryColor}10 !important;
             }
 
             /* ========== BOOKMARKS VIEW COMPREHENSIVE THEMING ========== */
