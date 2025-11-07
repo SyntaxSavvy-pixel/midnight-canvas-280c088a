@@ -1,16 +1,21 @@
 -- Fix user_devices table and permissions
 -- Run this in your Supabase SQL Editor
 
--- Create user_devices table if it doesn't exist
-CREATE TABLE IF NOT EXISTS public.user_devices (
+-- Drop existing table to recreate with correct constraints
+DROP TABLE IF EXISTS public.user_devices CASCADE;
+
+-- Create user_devices table with correct unique constraint
+CREATE TABLE public.user_devices (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id UUID NOT NULL REFERENCES public.users_auth(id) ON DELETE CASCADE,
-    device_id TEXT NOT NULL UNIQUE,
+    device_id TEXT NOT NULL,
     device_fingerprint TEXT,
     browser_info JSONB DEFAULT '{}',
     last_seen TIMESTAMPTZ DEFAULT NOW(),
     created_at TIMESTAMPTZ DEFAULT NOW(),
-    updated_at TIMESTAMPTZ DEFAULT NOW()
+    updated_at TIMESTAMPTZ DEFAULT NOW(),
+    -- Unique constraint scoped to user: each user can have unique device_ids
+    CONSTRAINT unique_user_device UNIQUE (user_id, device_id)
 );
 
 -- Create indexes if they don't exist

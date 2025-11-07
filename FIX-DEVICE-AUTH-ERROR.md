@@ -5,12 +5,15 @@
 2. **404 Error**: Resource not found error with cache-busting parameter
 
 ## Root Causes
-1. The `user_devices` table likely doesn't exist in your production Supabase database
-2. Profile photo loading issue (the 404 error)
+1. **UNIQUE Constraint Error**: The `user_devices` table has a global UNIQUE constraint on `device_id`, preventing different users from registering devices with the same ID
+2. **Incorrect Schema**: The constraint should be scoped per user `(user_id, device_id)`, not globally unique
+3. Profile photo loading issue (the 404 error)
 
 ## Fix Instructions
 
-### Step 1: Create the user_devices Table in Supabase
+### Step 1: Fix the user_devices Table Schema in Supabase
+
+**⚠️ WARNING**: This will drop and recreate the `user_devices` table, deleting all existing device registrations. Users will need to re-authorize their devices.
 
 1. Go to your Supabase Dashboard: https://supabase.com/dashboard
 2. Select your project
@@ -20,7 +23,9 @@
 6. Click **Run** (or press Ctrl/Cmd + Enter)
 
 The script will:
-- Create the `user_devices` table if it doesn't exist
+- Drop the existing `user_devices` table (removes the incorrect global UNIQUE constraint)
+- Create a new table with the correct composite UNIQUE constraint: `(user_id, device_id)`
+- This allows different users to have devices with the same device_id
 - Set up proper indexes for performance
 - Configure Row Level Security (RLS) policies
 - Grant permissions to the service role
