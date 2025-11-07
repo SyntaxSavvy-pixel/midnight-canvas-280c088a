@@ -242,6 +242,13 @@ class TabManager {
         }
 
         this.tabData.set(tab.id, tabInfo);
+
+        // Auto-set 24h timer for new tabs
+        if (isEmpty && this.emptyTabSettings.enabled) {
+            setTimeout(async () => {
+                await this.setTabTimer(tab.id, 0, this.emptyTabSettings.cleanupInterval, true);
+            }, 100);
+        }
     }
 
     updateTabData(tabId, tab) {
@@ -273,6 +280,10 @@ class TabManager {
                 clearTimeout(existing.emptyTabTimer);
                 updated.emptyTabTimer = null;
             }
+            // Clear the auto-close timer when tab becomes non-empty
+            if (existing.timerActive) {
+                this.clearTabTimer(tabId);
+            }
             updated.isEmpty = false;
             updated.emptyTabCreatedAt = null;
         } else if (!wasEmpty && isNowEmpty) {
@@ -282,6 +293,11 @@ class TabManager {
                 updated.emptyTabTimer = setTimeout(async () => {
                     await this.cleanupEmptyTab(tabId);
                 }, this.emptyTabSettings.cleanupInterval);
+
+                // Auto-set 24h timer for newly empty tabs
+                setTimeout(async () => {
+                    await this.setTabTimer(tabId, 0, this.emptyTabSettings.cleanupInterval, true);
+                }, 100);
             }
         }
 

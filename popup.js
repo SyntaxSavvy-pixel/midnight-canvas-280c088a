@@ -1034,7 +1034,7 @@ class TabmangmentPopup {
         if (this.isPremium) {
             usageInfo.innerHTML = '✨ Pro Plan: Unlimited searches';
             usageInfo.className = 'search-usage-info';
-            usageInfo.style.display = 'block';
+            usageInfo.style.display = 'none';
         } else {
             const remaining = 5 - count;
             if (remaining > 0) {
@@ -2969,18 +2969,19 @@ class TabmangmentPopup {
                     </div>
                     <div class="tab-info">
                         <div class="tab-title" title="${this.sanitizeText(tab.title)}">${isEmptyTab ? '🆕 New Tab (Empty)' : this.sanitizeText(this.truncate(tab.title, 25))}</div>
-                        <div class="tab-url" title="${this.sanitizeUrl(tab.url)}">${isEmptyTab ? 'Will be auto-closed in 24h if unused' : domain}</div>
-                        ${hasTimer ? `<div class="timer-countdown" id="timer-display-${tab.id}" style="
-                            color: #ff6b6b;
-                            font-weight: 700;
-                            font-size: 13px;
-                            margin-top: 2px;
-                            font-family: 'Courier New', monospace;
-                            background: rgba(255, 107, 107, 0.1);
-                            padding: 2px 6px;
-                            border-radius: 4px;
+                        <div class="tab-url" title="${this.sanitizeUrl(tab.url)}">${!isEmptyTab ? domain : ''}</div>
+                        ${hasTimer || isEmptyTab ? `<div class="timer-countdown ${isEmptyTab ? 'empty-tab-timer' : ''}" id="timer-display-${tab.id}" style="
+                            color: ${isEmptyTab ? '#6366f1' : '#ff6b6b'};
+                            font-weight: 600;
+                            font-size: 11px;
+                            margin-top: 4px;
+                            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+                            background: ${isEmptyTab ? 'rgba(99, 102, 241, 0.1)' : 'rgba(255, 107, 107, 0.1)'};
+                            padding: 3px 8px;
+                            border-radius: 6px;
                             display: inline-block;
-                        ">⏰ Loading...</div>` : ''}
+                            letter-spacing: 0.3px;
+                        ">${hasTimer ? '⏰ Loading...' : '🕐 Auto-closes in 24h'}</div>` : ''}
                     </div>
                 </div>
                 <div class="tab-actions">
