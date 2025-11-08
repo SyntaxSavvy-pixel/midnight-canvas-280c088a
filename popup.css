@@ -507,7 +507,165 @@ body::-webkit-scrollbar-thumb:hover {
     color: #b91c1c;
 }
 
-/* Stats and Actions Combined Row */
+/* ========================================
+   QUICK ACTIONS BAR - Modern Clean Design
+   ======================================== */
+
+.quick-actions-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 14px 16px;
+    border-bottom: 1px solid rgba(226, 232, 240, 0.5);
+    background: linear-gradient(to bottom, #ffffff 0%, #fafbfc 100%);
+}
+
+/* Tab Count Card - Minimalist */
+.tab-count-card {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.count-number {
+    font-size: 28px;
+    font-weight: 700;
+    background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    line-height: 1;
+    letter-spacing: -1px;
+}
+
+.count-label {
+    font-size: 11px;
+    color: #64748b;
+    font-weight: 500;
+    letter-spacing: 0.3px;
+}
+
+/* Quick Action Buttons */
+.quick-actions {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+}
+
+.quick-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
+    padding: 8px 10px;
+    border-radius: 10px;
+    border: 1px solid #e2e8f0;
+    background: #ffffff;
+    cursor: pointer;
+    transition: all 0.2s cubic-bezier(0.25, 0.8, 0.25, 1);
+    position: relative;
+    min-width: 64px;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+}
+
+.quick-btn:hover {
+    background: #f8fafc;
+    border-color: #cbd5e1;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
+}
+
+.quick-btn:active {
+    transform: translateY(0);
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+}
+
+.quick-btn .btn-icon {
+    width: 18px;
+    height: 18px;
+    color: #475569;
+    stroke-width: 2;
+}
+
+.quick-btn .btn-label {
+    font-size: 10px;
+    font-weight: 600;
+    color: #64748b;
+    letter-spacing: 0.2px;
+}
+
+.quick-btn:hover .btn-icon {
+    color: #6366f1;
+}
+
+.quick-btn:hover .btn-label {
+    color: #6366f1;
+}
+
+/* PRO Tag */
+.pro-tag {
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    font-size: 7px;
+    font-weight: 700;
+    color: #ffffff;
+    background: linear-gradient(135deg, #f59e0b, #d97706);
+    padding: 2px 4px;
+    border-radius: 4px;
+    letter-spacing: 0.3px;
+    line-height: 1;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.15);
+}
+
+/* Hide PRO badges for premium users */
+body.user-has-premium .pro-tag,
+body.user-has-premium .pro-badge {
+    display: none !important;
+}
+
+/* Pro Feature Button */
+.quick-btn.pro-feature {
+    border-color: rgba(245, 158, 11, 0.2);
+    background: linear-gradient(to bottom, #ffffff, #fffbeb);
+}
+
+.quick-btn.pro-feature:hover {
+    border-color: rgba(245, 158, 11, 0.4);
+    background: #fffbeb;
+}
+
+/* Tab Limit Warning */
+#tab-limit-warning {
+    background: #ffffff !important;
+    margin: 0;
+    padding: 0;
+}
+
+/* Hidden Count Badge */
+.hidden-count {
+    display: inline-block;
+    font-size: 8px;
+    font-weight: 600;
+    color: #f59e0b;
+    background: rgba(245, 158, 11, 0.12);
+    padding: 2px 5px;
+    border-radius: 3px;
+    margin-left: 4px;
+    vertical-align: middle;
+    letter-spacing: 0;
+    text-transform: lowercase;
+}
+
+.count-label .hidden-count {
+    font-size: 8px;
+    padding: 1px 4px;
+    margin-left: 3px;
+}
+
+/* Legacy Support - Keep old class names working */
 .stats-actions-row {
     display: flex;
     justify-content: space-between;
@@ -517,13 +675,6 @@ body::-webkit-scrollbar-thumb:hover {
     border-bottom: 2px solid rgba(226, 232, 240, 0.6);
     background: #ffffff !important;
     margin: 0;
-}
-
-/* Tab Limit Warning */
-#tab-limit-warning {
-    background: #ffffff !important;
-    margin: 0;
-    padding: 0;
 }
 
 .stats-section {
@@ -549,12 +700,6 @@ body::-webkit-scrollbar-thumb:hover {
     min-width: 80px;
 }
 
-.stat-card:hover {
-    background: rgba(99, 102, 241, 0.08);
-    border-color: rgba(99, 102, 241, 0.3);
-    transform: translateY(-1px);
-}
-
 .stat-number {
     font-size: 24px;
     font-weight: 700;
@@ -565,21 +710,6 @@ body::-webkit-scrollbar-thumb:hover {
     margin-bottom: 3px;
     line-height: 1;
     letter-spacing: -0.5px;
-}
-
-.hidden-count {
-    display: inline-block;
-    font-size: 9px;
-    font-weight: 600;
-    color: #f59e0b;
-    background: rgba(245, 158, 11, 0.08);
-    padding: 2px 6px;
-    border-radius: 4px;
-    margin-left: 4px;
-    vertical-align: middle;
-    -webkit-background-clip: unset;
-    -webkit-text-fill-color: #f59e0b;
-    letter-spacing: 0;
 }
 
 .stat-label {
@@ -3150,9 +3280,225 @@ body.search-active .popup-main-content {
 
 @keyframes searchPulse {
     0%, 100% {
-        transform: scale(1);
+        transform: scale(1) translateZ(0);
     }
     50% {
-        transform: scale(1.1);
+        transform: scale(1.1) translateZ(0);
+    }
+}
+
+/* ========================================
+   SMOOTH ANIMATIONS & PERFORMANCE OPTIMIZATIONS
+   ======================================== */
+
+/* Hardware acceleration for all animated elements */
+.search-panel,
+.tab-item,
+.action-btn,
+.header-btn,
+.premium-btn,
+.profile-btn,
+.modal,
+.tab-timer-modal,
+.bookmark-modal,
+body {
+    -webkit-transform: translateZ(0);
+    transform: translateZ(0);
+    -webkit-backface-visibility: hidden;
+    backface-visibility: hidden;
+    -webkit-perspective: 1000px;
+    perspective: 1000px;
+}
+
+/* Optimized search panel transitions - GPU accelerated */
+.search-panel {
+    transition: transform 0.35s cubic-bezier(0.25, 0.8, 0.25, 1),
+                opacity 0.35s cubic-bezier(0.25, 0.8, 0.25, 1),
+                width 0.35s cubic-bezier(0.25, 0.8, 0.25, 1);
+    will-change: transform, opacity, width;
+}
+
+.search-panel.active {
+    will-change: auto;
+}
+
+/* Smooth body width transition */
+body {
+    transition: width 0.35s cubic-bezier(0.25, 0.8, 0.25, 1);
+    will-change: auto;
+}
+
+body.search-active {
+    will-change: width;
+}
+
+/* Optimized tab item transitions */
+.tab-item {
+    transition: transform 0.2s cubic-bezier(0.25, 0.8, 0.25, 1),
+                box-shadow 0.2s cubic-bezier(0.25, 0.8, 0.25, 1),
+                opacity 0.2s cubic-bezier(0.25, 0.8, 0.25, 1),
+                border-color 0.2s cubic-bezier(0.25, 0.8, 0.25, 1);
+}
+
+.tab-item:hover {
+    transform: translateY(-2px) translateZ(0);
+}
+
+/* Smooth button interactions */
+.action-btn,
+.header-btn,
+.control-btn {
+    transition: transform 0.15s cubic-bezier(0.25, 0.8, 0.25, 1),
+                background 0.15s cubic-bezier(0.25, 0.8, 0.25, 1),
+                box-shadow 0.15s cubic-bezier(0.25, 0.8, 0.25, 1),
+                border-color 0.15s cubic-bezier(0.25, 0.8, 0.25, 1);
+}
+
+.action-btn:hover,
+.header-btn:hover,
+.control-btn:hover {
+    transform: translateY(-1px) translateZ(0);
+}
+
+.action-btn:active,
+.header-btn:active,
+.control-btn:active {
+    transform: translateY(0) translateZ(0);
+    transition-duration: 0.08s;
+}
+
+/* Premium button smooth animation */
+.premium-btn {
+    transition: transform 0.2s cubic-bezier(0.25, 0.8, 0.25, 1),
+                box-shadow 0.2s cubic-bezier(0.25, 0.8, 0.25, 1),
+                background 0.2s cubic-bezier(0.25, 0.8, 0.25, 1);
+}
+
+.premium-btn .btn-icon {
+    transition: transform 0.2s cubic-bezier(0.25, 0.8, 0.25, 1),
+                color 0.2s cubic-bezier(0.25, 0.8, 0.25, 1);
+}
+
+/* Profile button smooth scale */
+.profile-btn {
+    transition: transform 0.2s cubic-bezier(0.25, 0.8, 0.25, 1),
+                border-color 0.2s cubic-bezier(0.25, 0.8, 0.25, 1),
+                box-shadow 0.2s cubic-bezier(0.25, 0.8, 0.25, 1);
+}
+
+.profile-btn:hover {
+    transform: scale(1.05) translateZ(0);
+}
+
+.profile-btn:active {
+    transform: scale(0.98) translateZ(0);
+}
+
+/* Smooth modal animations */
+.modal,
+.tab-timer-modal,
+.bookmark-modal {
+    transition: opacity 0.25s cubic-bezier(0.25, 0.8, 0.25, 1),
+                transform 0.25s cubic-bezier(0.25, 0.8, 0.25, 1);
+}
+
+/* Glass morphism performance optimization */
+.search-panel,
+.tab-item,
+.action-btn,
+.header-btn {
+    -webkit-backdrop-filter: blur(10px);
+    backdrop-filter: blur(10px);
+    will-change: transform, opacity;
+}
+
+.search-panel:not(.active),
+.tab-item:not(:hover),
+.action-btn:not(:hover),
+.header-btn:not(:hover) {
+    will-change: auto;
+}
+
+/* Optimize backdrop blur */
+.search-panel {
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
+    backdrop-filter: blur(20px) saturate(180%);
+}
+
+/* Smooth stat card transitions */
+.stat-card {
+    transition: transform 0.2s cubic-bezier(0.25, 0.8, 0.25, 1),
+                box-shadow 0.2s cubic-bezier(0.25, 0.8, 0.25, 1);
+}
+
+.stat-card:hover {
+    transform: translateY(-2px) translateZ(0);
+}
+
+/* Smooth bookmark item transitions */
+.bookmark-item {
+    transition: transform 0.2s cubic-bezier(0.25, 0.8, 0.25, 1),
+                background 0.2s cubic-bezier(0.25, 0.8, 0.25, 1),
+                box-shadow 0.2s cubic-bezier(0.25, 0.8, 0.25, 1),
+                border-color 0.2s cubic-bezier(0.25, 0.8, 0.25, 1);
+}
+
+.bookmark-item:hover {
+    transform: translateY(-1px) translateZ(0);
+}
+
+/* Smooth tab header transitions */
+.tab-header {
+    transition: transform 0.15s cubic-bezier(0.25, 0.8, 0.25, 1);
+}
+
+.tab-header:hover {
+    transform: translateX(2px) translateZ(0);
+}
+
+/* Smooth favicon container transitions */
+.tab-favicon-container {
+    transition: background 0.15s cubic-bezier(0.25, 0.8, 0.25, 1),
+                border-color 0.15s cubic-bezier(0.25, 0.8, 0.25, 1),
+                transform 0.15s cubic-bezier(0.25, 0.8, 0.25, 1);
+}
+
+/* Optimize icon animations */
+.btn-icon {
+    transition: transform 0.2s cubic-bezier(0.25, 0.8, 0.25, 1),
+                color 0.2s cubic-bezier(0.25, 0.8, 0.25, 1);
+}
+
+/* Smooth search close button */
+.search-close-btn {
+    transition: background 0.15s cubic-bezier(0.25, 0.8, 0.25, 1),
+                transform 0.15s cubic-bezier(0.25, 0.8, 0.25, 1);
+}
+
+.search-close-btn:hover {
+    transform: scale(1.05) translateZ(0);
+}
+
+.search-close-btn:active {
+    transform: scale(0.95) translateZ(0);
+    transition-duration: 0.08s;
+}
+
+/* Smooth scrolling optimization */
+.tabs-list,
+.bookmarks-list,
+.search-results-list {
+    -webkit-overflow-scrolling: touch;
+    scroll-behavior: smooth;
+}
+
+/* Reduce motion for users who prefer it */
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
     }
 }

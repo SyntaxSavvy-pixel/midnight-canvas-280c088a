@@ -90,6 +90,10 @@ class TabmangmentPopup {
                         this.userEmail = syncedData.userEmail;
                         this.userName = syncedData.userName;
                         this.isPremium = syncedData.isPremium || syncedData.isPro || false;
+
+                        // Update PRO badge visibility
+                        this.updatePremiumUI();
+
                         // Continue with initialization
                     } else {
                         this.hideLoader();
@@ -831,17 +835,29 @@ class TabmangmentPopup {
         const searchInput = document.getElementById('search-input');
         const searchClearBtn = document.getElementById('search-clear-btn');
 
-        // Open search panel
+        // Toggle search panel (open/close)
         if (searchBtn) {
             searchBtn.addEventListener('click', async () => {
                 if (searchPanel) {
-                    searchPanel.classList.add('active');
-                    searchBtn.classList.add('active');
-                    document.body.classList.add('search-active');
-                    await this.updateSearchUsageDisplay();
-                    setTimeout(() => {
-                        if (searchInput) searchInput.focus();
-                    }, 300);
+                    // Check if already active - toggle behavior
+                    if (searchPanel.classList.contains('active')) {
+                        // Close the search panel
+                        searchPanel.classList.remove('active');
+                        searchBtn.classList.remove('active');
+                        document.body.classList.remove('search-active');
+                        if (searchInput) searchInput.value = '';
+                        if (searchClearBtn) searchClearBtn.style.display = 'none';
+                        this.clearSearchResults();
+                    } else {
+                        // Open the search panel
+                        searchPanel.classList.add('active');
+                        searchBtn.classList.add('active');
+                        document.body.classList.add('search-active');
+                        await this.updateSearchUsageDisplay();
+                        setTimeout(() => {
+                            if (searchInput) searchInput.focus();
+                        }, 300);
+                    }
                 }
             });
         }
@@ -2720,13 +2736,32 @@ class TabmangmentPopup {
     renderStats() {
         const activeEl = document.getElementById('active-tabs');
         const scheduledEl = document.getElementById('scheduled-tabs');
+
         if (activeEl) {
+            // Always show just the number - keep it clean
             activeEl.textContent = this.realTimeTabCount || 0;
-            if (!this.isPremium && this.hiddenTabCount > 0) {
-                activeEl.innerHTML = `${this.realTimeTabCount} <span class="hidden-count">(${this.hiddenTabCount} hidden)</span>`;
+
+            // Show hidden count in the label instead
+            const labelEl = activeEl.nextElementSibling;
+            if (labelEl && labelEl.classList.contains('count-label')) {
+                if (!this.isPremium && this.hiddenTabCount > 0) {
+                    labelEl.innerHTML = `Open Tabs <span class="hidden-count">${this.hiddenTabCount} hidden</span>`;
+                } else {
+                    labelEl.textContent = 'Open Tabs';
+                }
             }
         }
+
         if (scheduledEl) scheduledEl.textContent = this.stats.scheduled || 0;
+    }
+
+    updatePremiumUI() {
+        // Hide PRO badges if user has premium
+        if (this.isPremium) {
+            document.body.classList.add('user-has-premium');
+        } else {
+            document.body.classList.remove('user-has-premium');
+        }
     }
     updateClosingSoonCounter(count) {
         const scheduledEl = document.getElementById('scheduled-tabs');
@@ -5128,6 +5163,9 @@ class TabmangmentPopup {
         await this.updatePlanIndicator();
 
         this.removeAllProBadges();
+
+        // Hide PRO badges for premium users
+        this.updatePremiumUI();
     }
     async updateUIForFreeUser() {
         // Show upgrade buttons
@@ -5162,6 +5200,9 @@ class TabmangmentPopup {
         // Add pro badges back to locked features
         this.removeAllProBadges();
         this.addProBadgesToLockedFeatures();
+
+        // Show PRO badges for free users
+        this.updatePremiumUI();
     }
     async updatePlanIndicator() {
         const planIndicator = document.getElementById('plan-indicator');
@@ -7515,7 +7556,7 @@ async function applyStoredTheme() {
 /**
  * Apply theme configuration to popup elements
  */
-// Calculate luminance of a color to determine if it's light or dark
+// Calculate luminance of a color to determine if it's light or dark (WCAG 2.1 formula)
 function getColorLuminance(hexColor) {
     // Remove # if present
     let hex = hexColor.replace('#', '');
@@ -7525,12 +7566,17 @@ function getColorLuminance(hexColor) {
         hex = hex[0] + hex[0] + hex[1] + hex[1] + hex[2] + hex[2];
     }
 
-    // Convert to RGB
-    const r = parseInt(hex.substr(0, 2), 16) / 255;
-    const g = parseInt(hex.substr(2, 2), 16) / 255;
-    const b = parseInt(hex.substr(4, 2), 16) / 255;
+    // Convert to RGB (0-1 range)
+    let r = parseInt(hex.substr(0, 2), 16) / 255;
+    let g = parseInt(hex.substr(2, 2), 16) / 255;
+    let b = parseInt(hex.substr(4, 2), 16) / 255;
 
-    // Calculate relative luminance using the standard formula
+    // Apply gamma correction (sRGB to linear RGB)
+    r = r <= 0.03928 ? r / 12.92 : Math.pow((r + 0.055) / 1.055, 2.4);
+    g = g <= 0.03928 ? g / 12.92 : Math.pow((g + 0.055) / 1.055, 2.4);
+    b = b <= 0.03928 ? b / 12.92 : Math.pow((b + 0.055) / 1.055, 2.4);
+
+    // Calculate relative luminance using WCAG formula
     const luminance = 0.2126 * r + 0.7152 * g + 0.0722 * b;
 
     return luminance;
@@ -7552,6 +7598,28 @@ function getSecondaryTextColor(backgroundColor) {
     // If background is light, use dark gray
     // If background is dark, use light gray
     return luminance > 0.5 ? '#64748b' : '#94a3b8';
+}
+
+// Calculate WCAG contrast ratio between two colors
+function getContrastRatio(color1, color2) {
+    const lum1 = getColorLuminance(color1);
+    const lum2 = getColorLuminance(color2);
+
+    const lighter = Math.max(lum1, lum2);
+    const darker = Math.min(lum1, lum2);
+
+    return (lighter + 0.05) / (darker + 0.05);
+}
+
+// Check if text color has sufficient contrast with background (WCAG AA: 4.5:1)
+function hasGoodContrast(textColor, backgroundColor, minRatio = 4.5) {
+    try {
+        const ratio = getContrastRatio(textColor, backgroundColor);
+        return ratio >= minRatio;
+    } catch (error) {
+        // If error in calculation, assume bad contrast
+        return false;
+    }
 }
 
 // Helper function to convert hex to RGB
@@ -7635,14 +7703,35 @@ function applyThemeToPopup(theme) {
             tabItemBgHex = bgColor;
         }
 
-        const tabItemTextColor = getContrastingTextColor(tabItemBgHex);
-        const tabItemSecondaryTextColor = getSecondaryTextColor(tabItemBgHex);
+        // Calculate auto-contrast text colors for tab items
+        const autoTabItemTextColor = getContrastingTextColor(tabItemBgHex);
+        const autoTabItemSecondaryTextColor = getSecondaryTextColor(tabItemBgHex);
+
+        // CRITICAL: Validate user's text color against tab background
+        // If user provided a text color, check if it has sufficient contrast with tab background
+        let tabItemTextColor;
+        let tabItemSecondaryTextColor;
+
+        if (theme.textColor && hasGoodContrast(theme.textColor, tabItemBgHex)) {
+            // User's color has good contrast - use it for tabs
+            tabItemTextColor = theme.textColor;
+            tabItemSecondaryTextColor = `${theme.textColor}cc`; // Add opacity
+        } else {
+            // User's color has poor contrast or not provided - use auto-calculated
+            tabItemTextColor = autoTabItemTextColor;
+            tabItemSecondaryTextColor = autoTabItemSecondaryTextColor;
+
+            // Log warning if user's color was rejected
+            if (theme.textColor) {
+                console.warn(`Theme text color ${theme.textColor} has insufficient contrast with tab background ${tabItemBgHex}. Using auto-calculated color ${tabItemTextColor} instead.`);
+            }
+        }
 
         // Calculate text colors for STAT CARDS (white background)
         const statCardTextColor = getContrastingTextColor('#ffffff');
         const statCardSecondaryTextColor = getSecondaryTextColor('#ffffff');
 
-        // CRITICAL: Use user's text color choice, NOT auto-calculated contrast
+        // General UI text colors (for elements on gradient background)
         const primaryTextColor = theme.textColor || getContrastingTextColor(bgColor);
         const secondaryTextColor = theme.textColor ? `${theme.textColor}cc` : getSecondaryTextColor(bgColor); // Add opacity to user's color
 
@@ -7781,21 +7870,21 @@ function applyThemeToPopup(theme) {
                 box-shadow: 0 0 0 2px ${theme.primaryColor}60, 0 4px 16px ${theme.primaryColor}40 !important;
             }
 
-            /* Tab Title and URL Colors - USE USER'S TEXT COLOR CHOICE */
+            /* Tab Title and URL Colors - VALIDATED CONTRAST-SAFE COLORS */
             .tab-title {
-                color: ${primaryTextColor} !important;
+                color: ${tabItemTextColor} !important;
                 font-weight: 500;
             }
 
             .tab-url {
-                color: ${secondaryTextColor} !important;
+                color: ${tabItemSecondaryTextColor} !important;
                 opacity: 0.7 !important;
             }
 
-            /* Tab Timer Display - Match tab text color */
+            /* Tab Timer Display - Match validated tab text color */
             .tab-timer,
             .timer-countdown {
-                color: ${primaryTextColor} !important;
+                color: ${tabItemTextColor} !important;
                 background: ${theme.primaryColor}15 !important;
             }
 

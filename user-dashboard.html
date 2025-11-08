@@ -8081,7 +8081,7 @@
         }
 
         // Handle theme application with Pro gating
-        function handleThemeApplication(themeName) {
+        async function handleThemeApplication(themeName) {
             const theme = presetThemes[themeName];
 
             // PRO FEATURE: Check if theme requires Pro plan
@@ -8095,7 +8095,7 @@
             }
 
             // Apply the theme
-            applyTheme(themeName);
+            await applyTheme(themeName);
         }
 
         // Theme tab switching
@@ -8380,7 +8380,7 @@
         }
 
         // Apply preset theme
-        function applyTheme(themeName) {
+        async function applyTheme(themeName) {
             const theme = presetThemes[themeName];
             if (!theme) {
                 // Theme not found
@@ -8392,6 +8392,9 @@
                 localStorage.setItem('activeTheme', themeName);
                 localStorage.setItem('themeConfig', JSON.stringify(theme));
 
+                // Save theme to database for persistence
+                await saveActiveTheme(themeName, theme);
+
                 // Send theme to extension via content script bridge
                 window.postMessage({
                     type: 'DASHBOARD_APPLY_THEME',
@@ -8401,7 +8404,7 @@
                 }, '*');
 
                 // Update UI to show active theme
-                loadActiveTheme();
+                await loadActiveTheme();
 
                 // Show success message
                 showNotification(`${theme.name} theme applied successfully!`, 'success');
@@ -9079,7 +9082,7 @@
         }
 
         // Apply a stored custom theme
-        function applyStoredCustomTheme(index) {
+        async function applyStoredCustomTheme(index) {
             try {
                 const stored = localStorage.getItem('customThemes');
                 const customThemes = stored ? JSON.parse(stored) : [];
@@ -9094,6 +9097,9 @@
                 localStorage.setItem('activeTheme', 'custom');
                 localStorage.setItem('themeConfig', JSON.stringify(theme));
 
+                // Save to database for persistence
+                await saveActiveTheme('custom', theme);
+
                 // Send to extension via postMessage (for dashboard-bridge.js)
                 window.postMessage({
                     type: 'DASHBOARD_APPLY_THEME',
@@ -9106,14 +9112,14 @@
                 sendThemeToExtension('custom', theme);
 
                 // Update UI to show active state
-                loadActiveTheme();
+                await loadActiveTheme();
 
                 showNotification(`✓ ${theme.name} applied successfully!`, 'success');
 
                 // Reload the saved themes list to update active badges
                 setTimeout(() => loadSavedCustomThemes(), 500);
             } catch (error) {
-                
+
                 showNotification('Failed to apply theme. Please try again.', 'error');
             }
         }

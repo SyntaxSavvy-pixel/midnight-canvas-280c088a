@@ -179,38 +179,38 @@
             </div>
         </div>
 
-        <!-- Stats and Actions Combined Row -->
-        <div class="stats-actions-row">
-            <div class="stats-section">
-                <div class="stat-card">
-                    <div class="stat-number" id="active-tabs">0</div>
-                    <div class="stat-label">Open</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-number" id="scheduled-tabs">0</div>
-                    <div class="stat-label">Closed Soon</div>
-                </div>
+        <!-- Quick Actions Bar -->
+        <div class="quick-actions-bar">
+            <!-- Tab Count -->
+            <div class="tab-count-card">
+                <div class="count-number" id="active-tabs">0</div>
+                <div class="count-label">Open Tabs</div>
             </div>
-            <div class="actions-section">
-                <button class="action-btn pro-feature" id="collapse-btn" title="Collapse All Tabs">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+
+            <!-- Action Buttons -->
+            <div class="quick-actions">
+                <button class="quick-btn pro-feature" id="collapse-btn" title="Collapse All Tabs">
+                    <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <path d="M5 12h14"></path>
                         <path d="M12 5l7 7-7 7"></path>
                         <path d="M5 5l7 7-7 7" opacity="0.6"></path>
                     </svg>
-                    <span class="pro-badge">PRO</span>
+                    <span class="btn-label">Collapse</span>
+                    <span class="pro-tag">PRO</span>
                 </button>
-                <button class="action-btn pro-feature" id="bookmark-all-btn" title="Bookmark All Tabs">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <button class="quick-btn pro-feature" id="bookmark-all-btn" title="Bookmark All Tabs">
+                    <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16z"></path>
                     </svg>
-                    <span class="pro-badge">PRO</span>
+                    <span class="btn-label">Bookmark</span>
+                    <span class="pro-tag">PRO</span>
                 </button>
-                <button class="action-btn" id="contact-btn" title="Contact Support">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <button class="quick-btn" id="contact-btn" title="Contact Support">
+                    <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
                         <polyline points="22,6 12,13 2,6"></polyline>
                     </svg>
+                    <span class="btn-label">Support</span>
                 </button>
             </div>
         </div>
