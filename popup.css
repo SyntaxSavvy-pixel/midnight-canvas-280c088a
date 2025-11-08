@@ -2720,10 +2720,63 @@ body.user-has-premium .pro-badge {
    SEARCH PANEL STYLES
    =========================== */
 
-/* Main content sizing when search is active */
+/*
+ * CLEAN SEARCH UI - When search is active, minimize main content
+ * Focus on search results for professional, uncluttered experience
+ */
 body.search-active .popup-main-content {
     width: 400px;
     flex-shrink: 0;
+}
+
+/* Hide main content sections when search has results - keep UI clean */
+body.search-active.has-search-results .tabs-container,
+body.search-active.has-search-results .quick-actions-bar,
+body.search-active.has-search-results .subscription-plan {
+    display: none !important;
+}
+
+/* Keep header visible but minimal */
+body.search-active.has-search-results .header {
+    border-bottom: none !important;
+}
+
+/* Show clean focused message when search results are displayed */
+.search-focus-message {
+    display: none;
+    text-align: center;
+    padding: 80px 40px;
+    flex: 1;
+    align-items: center;
+    justify-content: center;
+}
+
+body.search-active.has-search-results .search-focus-message {
+    display: flex;
+    flex-direction: column;
+}
+
+.search-focus-message svg {
+    width: 72px;
+    height: 72px;
+    margin: 0 auto 24px;
+    opacity: 0.2;
+}
+
+.search-focus-message h3 {
+    font-size: 20px;
+    font-weight: 700;
+    margin: 0 0 12px 0;
+    opacity: 0.7;
+    letter-spacing: -0.02em;
+}
+
+.search-focus-message p {
+    font-size: 14px;
+    opacity: 0.5;
+    line-height: 1.7;
+    max-width: 280px;
+    margin: 0 auto;
 }
 
 /*

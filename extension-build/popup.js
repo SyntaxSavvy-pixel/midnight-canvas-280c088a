@@ -908,6 +908,9 @@ class TabmangmentPopup {
         const resultsList = document.getElementById('search-results-list');
         const resultsInfo = document.getElementById('search-results-info');
 
+        // Remove class from body to restore normal UI (show tabs, stats, etc.)
+        document.body.classList.remove('has-search-results');
+
         if (emptyState) emptyState.style.display = 'flex';
         if (loading) loading.style.display = 'none';
         if (resultsList) resultsList.innerHTML = '';
@@ -1214,6 +1217,9 @@ class TabmangmentPopup {
         if (!resultsList) return;
 
         resultsList.innerHTML = '';
+
+        // Add class to body to trigger clean UI (hide main content, show focused message)
+        document.body.classList.add('has-search-results');
 
         results.forEach(result => {
             const resultItem = document.createElement('div');
