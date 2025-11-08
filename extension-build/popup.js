@@ -4619,24 +4619,48 @@ class TabmangmentPopup {
                 return { isActive: true, plan: 'pro', subscriptionId: stored.subscriptionId };
             }
 
-            // SECOND: Check localStorage for Pro status (set by dashboard)
+            // SECOND: Check localStorage for Pro status (set by dashboard) and fetch real billing date
             try {
                 const storedUserData = localStorage.getItem('tabmangment_user');
                 if (storedUserData) {
                     const userData = JSON.parse(storedUserData);
 
                     if (userData.isPro === true || userData.plan === 'pro') {
-                        // IMMEDIATE PRO ACTIVATION from dashboard data
+                        // Fetch REAL billing date from API
+                        let billingData = {};
+                        try {
+                            const backendUrl = await this.getBackendUrl();
+                            if (backendUrl) {
+                                const response = await fetch(`${backendUrl}/api/get-subscription`, {
+                                    method: 'POST',
+                                    headers: {
+                                        'Content-Type': 'application/json'
+                                    },
+                                    body: JSON.stringify({ email: userEmail }),
+                                    timeout: 5000
+                                });
+
+                                if (response.ok) {
+                                    billingData = await response.json();
+                                }
+                            }
+                        } catch (apiError) {
+                            // API failed, will use userData fallback
+                        }
+
+                        // IMMEDIATE PRO ACTIVATION with REAL billing date
                         await chrome.storage.local.set({
                             isPremium: true,
                             subscriptionActive: true,
                             planType: 'pro',
                             activatedAt: new Date().toISOString(),
-                            nextBillingDate: Date.now() + (30 * 24 * 60 * 60 * 1000),
+                            nextBillingDate: billingData.nextBillingDate || userData.currentPeriodEnd,
+                            currentPeriodEnd: billingData.currentPeriodEnd || userData.currentPeriodEnd,
                             subscriptionId: userData.subscriptionId || ('dash_' + Date.now()),
                             paymentConfirmed: true,
-                            subscriptionStatus: 'active',
-                            userEmail: userEmail
+                            subscriptionStatus: billingData.subscriptionStatus || 'active',
+                            userEmail: userEmail,
+                            isAdmin: billingData.isAdmin || false
                         });
 
                         // Immediate UI update
@@ -4648,7 +4672,8 @@ class TabmangmentPopup {
                         return {
                             isActive: true,
                             plan: 'pro',
-                            subscriptionId: userData.subscriptionId
+                            subscriptionId: userData.subscriptionId,
+                            currentPeriodEnd: billingData.currentPeriodEnd
                         };
                     }
                 }
@@ -4695,34 +4720,65 @@ class TabmangmentPopup {
         }
     }
 
-    // Simple subscription check
+    // Simple subscription check with real billing date sync
     async checkSubscriptionStatusBackground() {
         try {
             // Get cached premium status first
             const cached = await chrome.storage.local.get(['isPremium', 'planType', 'subscriptionActive']);
 
-            // If user has email, check with API in background
+            // If user has email, fetch REAL billing data from API
             if (this.userEmail) {
-                const status = await this.checkSubscriptionStatus(this.userEmail);
+                try {
+                    const backendUrl = await this.getBackendUrl();
+                    if (backendUrl) {
+                        const response = await fetch(`${backendUrl}/api/get-subscription`, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify({ email: this.userEmail }),
+                            timeout: 8000
+                        });
 
-                if (status.isActive && status.plan === 'pro') {
-                    const nextBillingDate = new Date(status.currentPeriodEnd).getTime();
-                    await chrome.storage.local.set({
-                        isPremium: true,
-                        subscriptionActive: true,
-                        planType: 'pro',
-                        subscriptionType: 'monthly',
-                        nextBillingDate: nextBillingDate,
-                        subscriptionExpiry: nextBillingDate,
-                        currentPeriodEnd: nextBillingDate,
-                        subscriptionId: status.subscriptionId
-                    });
-                    this.isPremium = true;
+                        if (response.ok) {
+                            const data = await response.json();
 
-                    // Update UI with Pro features
-                    this.removeAllProBadges();
-                    this.updateUIForProUser();
-                    this.renderSubscriptionPlan();
+                            if (data.success && data.isPro) {
+                                // Update with REAL billing date from Stripe/Database
+                                await chrome.storage.local.set({
+                                    isPremium: true,
+                                    subscriptionActive: true,
+                                    planType: data.subscriptionType || 'pro',
+                                    subscriptionStatus: data.subscriptionStatus,
+                                    nextBillingDate: data.nextBillingDate,
+                                    currentPeriodEnd: data.currentPeriodEnd,
+                                    stripeCustomerId: data.stripeCustomerId,
+                                    stripeSubscriptionId: data.stripeSubscriptionId,
+                                    isAdmin: data.isAdmin || false,
+                                    lastBillingSync: new Date().toISOString()
+                                });
+                                this.isPremium = true;
+
+                                // Update UI with Pro features
+                                this.removeAllProBadges();
+                                this.updateUIForProUser();
+                                this.renderSubscriptionPlan();
+                            } else if (data.success && !data.isPro) {
+                                // User no longer has Pro
+                                await chrome.storage.local.set({
+                                    isPremium: false,
+                                    subscriptionActive: false,
+                                    planType: 'free',
+                                    subscriptionStatus: 'inactive',
+                                    nextBillingDate: null,
+                                    currentPeriodEnd: null
+                                });
+                                this.isPremium = false;
+                            }
+                        }
+                    }
+                } catch (apiError) {
+                    // API failed, use cached data
                 }
             }
 
@@ -5007,7 +5063,8 @@ class TabmangmentPopup {
                     subscriptionActive: true,
                     planType: 'pro',
                     subscriptionStatus: userData?.subscriptionStatus || 'active',
-                    currentPeriodEnd: userData?.currentPeriodEnd || (Date.now() + (30 * 24 * 60 * 60 * 1000)),
+                    currentPeriodEnd: userData?.currentPeriodEnd || null,
+                    nextBillingDate: userData?.nextBillingDate || userData?.currentPeriodEnd || null,
                     stripeCustomerId: userData?.stripeCustomerId,
                     stripeSubscriptionId: userData?.stripeSubscriptionId,
                     lastStatusCheck: new Date().toISOString()
