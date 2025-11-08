@@ -8080,101 +8080,11 @@ function applyThemeToPopup(theme) {
                 background-clip: text !important;
             }
 
-            /* Search Panel - Comprehensive Theming */
-            .search-panel {
-                background: linear-gradient(180deg,
-                    rgba(255, 255, 255, 0.12) 0%,
-                    rgba(255, 255, 255, 0.08) 100%) !important;
-                backdrop-filter: blur(20px) !important;
-                -webkit-backdrop-filter: blur(20px) !important;
-                border-right: 2px solid rgba(255, 255, 255, 0.15) !important;
-                transition: all 0.3s ease !important;
-            }
-
-            .search-panel-header {
-                background: rgba(255, 255, 255, 0.1) !important;
-                backdrop-filter: blur(10px) !important;
-                border-bottom: 1px solid rgba(255, 255, 255, 0.12) !important;
-                transition: all 0.3s ease !important;
-            }
-
-            .search-panel-title {
-                color: rgba(255, 255, 255, 0.95) !important;
-            }
-
-            .search-input-wrapper {
-                background: rgba(255, 255, 255, 0.12) !important;
-                border: 2px solid rgba(255, 255, 255, 0.15) !important;
-                backdrop-filter: blur(10px) !important;
-                transition: all 0.2s ease !important;
-            }
-
-            .search-input-wrapper:focus-within {
-                background: rgba(255, 255, 255, 0.18) !important;
-                border-color: ${theme.primaryColor} !important;
-                box-shadow: 0 0 0 3px ${theme.primaryColor}30 !important;
-            }
-
-            #search-input {
-                background: transparent !important;
-                color: rgba(255, 255, 255, 0.95) !important;
-            }
-
-            #search-input::placeholder {
-                color: rgba(255, 255, 255, 0.5) !important;
-            }
-
-            .search-clear-btn {
-                background: rgba(255, 255, 255, 0.15) !important;
-                color: rgba(255, 255, 255, 0.8) !important;
-                transition: all 0.2s ease !important;
-            }
-
-            .search-clear-btn:hover {
-                background: rgba(255, 255, 255, 0.25) !important;
-                color: rgba(255, 255, 255, 1) !important;
-            }
-
-            .search-results-container {
-                background: transparent !important;
-            }
-
-            .search-empty-state {
-                color: ${secondaryTextColor} !important;
-            }
-
-            .search-empty-state p {
-                color: ${primaryTextColor} !important;
-                font-weight: 600;
-            }
-
-            .search-empty-state span {
-                color: ${secondaryTextColor} !important;
-                opacity: 0.85;
-            }
-
-            /* REMOVED: Theme-based search result styling to preserve fixed color scheme */
-            /* Search results now use fixed colors from popup.css that are NEVER affected by themes */
-            /* This ensures consistent appearance regardless of dashboard theme selection */
-
-            .search-usage-info {
-                background: rgba(255, 255, 255, 0.1) !important;
-                border-color: rgba(255, 255, 255, 0.2) !important;
-                color: ${primaryTextColor} !important;
-                backdrop-filter: blur(10px) !important;
-            }
-
-            .search-usage-info.limited {
-                background: rgba(245, 158, 11, 0.15) !important;
-                border-color: rgba(245, 158, 11, 0.3) !important;
-                color: ${primaryTextColor} !important;
-            }
-
-            .search-usage-info.locked {
-                background: rgba(239, 68, 68, 0.15) !important;
-                border-color: rgba(239, 68, 68, 0.3) !important;
-                color: ${primaryTextColor} !important;
-            }
+            /*
+             * Search Panel - FIXED PROFESSIONAL DESIGN
+             * NOT affected by themes for maximum visibility and consistency
+             * Uses dark glass design with high contrast that works on all backgrounds
+             */
 
             /* Tab Favicon Container */
             .tab-favicon-container {
