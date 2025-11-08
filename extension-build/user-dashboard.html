@@ -8057,7 +8057,7 @@
                     <div class="theme-card-info">
                         <div class="theme-card-header">
                             <h3 class="theme-card-title">${theme.name}</h3>
-                            ${theme.isPro ? '<span class="theme-badge" style="background: linear-gradient(135deg, rgba(251, 191, 36, 0.2), rgba(245, 158, 11, 0.2)); color: #fbbf24; border-color: rgba(251, 191, 36, 0.3); display: inline-block;">PRO</span>' : ''}
+                            ${theme.isPro && !userData.isPro ? '<span class="theme-badge" style="background: linear-gradient(135deg, rgba(251, 191, 36, 0.2), rgba(245, 158, 11, 0.2)); color: #fbbf24; border-color: rgba(251, 191, 36, 0.3); display: inline-block;">PRO</span>' : ''}
                             <span class="theme-badge active-theme" style="display: none;">Active</span>
                         </div>
                         <p class="theme-card-description">${themeDescriptions[themeKey] || theme.fontFamily.split(',')[0].replace(/['"]/g, '')}</p>
