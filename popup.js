@@ -831,7 +831,6 @@ class TabmangmentPopup {
     setupSearchPanel() {
         const searchBtn = document.getElementById('search-btn');
         const searchPanel = document.getElementById('search-panel');
-        const searchCloseBtn = document.getElementById('search-close-btn');
         const searchInput = document.getElementById('search-input');
         const searchClearBtn = document.getElementById('search-clear-btn');
 
@@ -858,20 +857,6 @@ class TabmangmentPopup {
                             if (searchInput) searchInput.focus();
                         }, 300);
                     }
-                }
-            });
-        }
-
-        // Close search panel
-        if (searchCloseBtn) {
-            searchCloseBtn.addEventListener('click', () => {
-                if (searchPanel) {
-                    searchPanel.classList.remove('active');
-                    if (searchBtn) searchBtn.classList.remove('active');
-                    document.body.classList.remove('search-active');
-                    if (searchInput) searchInput.value = '';
-                    if (searchClearBtn) searchClearBtn.style.display = 'none';
-                    this.clearSearchResults();
                 }
             });
         }
@@ -8058,19 +8043,6 @@ function applyThemeToPopup(theme) {
 
             .search-panel-title {
                 color: rgba(255, 255, 255, 0.95) !important;
-            }
-
-            .search-close-btn {
-                background: rgba(255, 255, 255, 0.1) !important;
-                color: rgba(255, 255, 255, 0.9) !important;
-                border: 1px solid rgba(255, 255, 255, 0.15) !important;
-                transition: all 0.2s ease !important;
-            }
-
-            .search-close-btn:hover {
-                background: rgba(255, 255, 255, 0.2) !important;
-                border-color: rgba(255, 255, 255, 0.3) !important;
-                transform: scale(1.05) !important;
             }
 
             .search-input-wrapper {

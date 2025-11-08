@@ -2783,31 +2783,6 @@ body.search-active .popup-main-content {
     height: 16px;
 }
 
-.search-close-btn {
-    width: 28px;
-    height: 28px;
-    border-radius: 8px;
-    background: rgba(100, 116, 139, 0.08);
-    border: none;
-    color: var(--slate-600);
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: all 0.2s ease;
-}
-
-.search-close-btn:hover {
-    background: rgba(239, 68, 68, 0.1);
-    color: #ef4444;
-    transform: scale(1.1) rotate(90deg);
-}
-
-.search-close-btn svg {
-    width: 16px;
-    height: 16px;
-}
-
 .search-input-wrapper {
     position: relative;
     padding: 12px 16px;
@@ -3467,21 +3442,6 @@ body.search-active {
 .btn-icon {
     transition: transform 0.2s cubic-bezier(0.25, 0.8, 0.25, 1),
                 color 0.2s cubic-bezier(0.25, 0.8, 0.25, 1);
-}
-
-/* Smooth search close button */
-.search-close-btn {
-    transition: background 0.15s cubic-bezier(0.25, 0.8, 0.25, 1),
-                transform 0.15s cubic-bezier(0.25, 0.8, 0.25, 1);
-}
-
-.search-close-btn:hover {
-    transform: scale(1.05) translateZ(0);
-}
-
-.search-close-btn:active {
-    transform: scale(0.95) translateZ(0);
-    transition-duration: 0.08s;
 }
 
 /* Smooth scrolling optimization */
