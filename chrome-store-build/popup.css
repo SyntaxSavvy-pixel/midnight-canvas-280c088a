@@ -64,7 +64,8 @@ body {
     min-height: 520px;
     max-height: 640px;
     font-family: var(--font-family);
-    background: #ffffff !important;
+    /* NO background on body - each section has its own */
+    background: none !important;
     color: var(--slate-800);
     overflow-x: hidden;
     overflow-y: auto;
@@ -82,7 +83,22 @@ body.search-active {
     width: 720px;
     display: flex;
     flex-direction: row;
-    align-items: flex-start;
+    align-items: stretch; /* Stretch to fill height - no gaps */
+    gap: 0; /* Remove any gap */
+}
+
+/* Main Content Wrapper - Has its own background, separate from search panel */
+.popup-main-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 520px;
+    max-height: 640px;
+    overflow-y: auto;
+    overflow-x: hidden;
+    /* This section gets theme background from JavaScript */
+    background: #ffffff;
+    position: relative;
 }
 
 body::-webkit-scrollbar {
@@ -2701,18 +2717,7 @@ body.user-has-premium .pro-badge {
    SEARCH PANEL STYLES
    =========================== */
 
-.popup-main-content {
-    width: 100%;
-    min-height: 100vh;
-    flex-shrink: 0;
-    transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
-    background: #ffffff !important;
-    margin: 0;
-    padding: 0;
-    display: flex;
-    flex-direction: column;
-}
-
+/* Main content sizing when search is active */
 body.search-active .popup-main-content {
     width: 400px;
     flex-shrink: 0;

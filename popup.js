@@ -7790,10 +7790,10 @@ function applyThemeToPopup(theme) {
         // Build CSS based on theme config
         let css = '';
 
-        // Background gradient for BOTH body and loader
+        // Background gradient for main content and loader (NOT body - each section has its own)
         if (theme.bgType === 'gradient' || !theme.bgType) {
             css += `
-                body {
+                .popup-main-content {
                     background: linear-gradient(${theme.gradientDirection || '135deg'}, ${theme.primaryColor} 0%, ${theme.secondaryColor} 100%) !important;
                 }
                 #app-loader {
@@ -7802,7 +7802,7 @@ function applyThemeToPopup(theme) {
             `;
         } else if (theme.bgType === 'solid') {
             css += `
-                body {
+                .popup-main-content {
                     background: ${theme.primaryColor} !important;
                 }
                 #app-loader {
@@ -7811,7 +7811,7 @@ function applyThemeToPopup(theme) {
             `;
         } else if (theme.bgType === 'pattern') {
             css += `
-                body {
+                .popup-main-content {
                     background: linear-gradient(${theme.gradientDirection || '135deg'}, ${theme.primaryColor} 0%, ${theme.secondaryColor} 100%) !important;
                     background-image: radial-gradient(circle, rgba(255,255,255,0.1) 1px, transparent 1px) !important;
                     background-size: 20px 20px !important;
