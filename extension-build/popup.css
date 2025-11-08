@@ -99,6 +99,9 @@ body.search-active {
     /* This section gets theme background from JavaScript */
     background: #ffffff;
     position: relative;
+    /* Ensure no gaps or margins */
+    margin: 0 !important;
+    padding: 0 !important;
 }
 
 body::-webkit-scrollbar {
@@ -2732,7 +2735,9 @@ body.search-active .popup-main-content {
     position: absolute;
     left: -320px;
     top: 0;
+    bottom: 0; /* Ensure it covers full height */
     width: 0;
+    min-height: 100vh; /* Cover entire viewport height */
     height: 100%;
     /* Professional dark glass background - works on ALL themes */
     background: linear-gradient(180deg,
@@ -2751,6 +2756,9 @@ body.search-active .popup-main-content {
     flex-shrink: 0;
     overflow: hidden;
     opacity: 0;
+    /* Remove any padding/margin that could cause gaps */
+    margin: 0 !important;
+    padding: 0 !important;
 }
 
 .search-panel.active {
@@ -2758,6 +2766,8 @@ body.search-active .popup-main-content {
     width: 320px;
     opacity: 1;
     position: relative;
+    /* Ensure no gaps when active */
+    margin: 0 !important;
 }
 
 @keyframes slideInLeft {
