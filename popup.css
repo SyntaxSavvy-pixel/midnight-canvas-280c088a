@@ -2096,19 +2096,7 @@ body.user-has-premium .pro-badge {
     }
 }
 
-.tab-item.bookmarked {
-    background: linear-gradient(135deg, #fef3c7, #fbbf24) !important;
-    border-color: #f59e0b !important;
-}
-
-.tab-item.bookmarked::before {
-    background: linear-gradient(90deg, #f59e0b, #fbbf24) !important;
-}
-
-.tab-item.bookmarked .tab-favicon-container {
-    border-color: #f59e0b !important;
-    background: rgba(251, 191, 36, 0.1) !important;
-}
+/* Bookmarked tab styling removed - tabs are hidden from main container when bookmarked */
 
 .tabs-container {
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);

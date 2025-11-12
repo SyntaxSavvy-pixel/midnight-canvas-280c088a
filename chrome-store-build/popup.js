@@ -3123,7 +3123,7 @@ class TabmangmentPopup {
             ? this.favorites.some(fav => fav.url === tab.url)
             : false;
         return `
-            <div class="tab-item ${isActive ? 'active' : ''} ${isBookmarked ? 'bookmarked' : ''} ${isEmptyTab ? 'empty-tab' : ''}" data-tab-id="${tab.id}">
+            <div class="tab-item ${isActive ? 'active' : ''} ${isEmptyTab ? 'empty-tab' : ''}" data-tab-id="${tab.id}">
                 <div class="tab-header">
                     <div class="tab-favicon-container">
                         <img src="${this.sanitizeUrl(tab.favIconUrl) || 'icons/icon-16.png'}"
