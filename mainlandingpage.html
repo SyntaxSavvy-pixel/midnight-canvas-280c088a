@@ -946,6 +946,100 @@
             flex-shrink: 0;
         }
 
+        /* Plan Toggle */
+        .plan-toggle-container {
+            max-width: 600px;
+            margin: 0 auto 3rem;
+            background: #f1f5f9;
+            padding: 0.5rem;
+            border-radius: 12px;
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 0.5rem;
+        }
+
+        .plan-toggle-btn {
+            padding: 1rem;
+            background: transparent;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            color: #64748b;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .plan-toggle-btn:hover {
+            color: #0f172a;
+        }
+
+        .plan-toggle-btn.active {
+            background: white;
+            color: #6366f1;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .plan-toggle-btn.active.yearly {
+            color: #10b981;
+        }
+
+        .plan-toggle-btn.active.lifetime {
+            color: #f59e0b;
+        }
+
+        .plan-toggle-btn .badge {
+            position: absolute;
+            top: 4px;
+            right: 8px;
+            font-size: 0.625rem;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+
+        .plan-toggle-btn .badge.save {
+            background: #10b981;
+            color: white;
+        }
+
+        .plan-toggle-btn .badge.best {
+            background: #f59e0b;
+            color: white;
+        }
+
+        .pricing-wrapper {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .plan-content {
+            display: none;
+        }
+
+        .plan-content.active {
+            display: block;
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .pricing-card.single {
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
         /* Footer */
         footer {
             background: #0f172a;
@@ -1178,7 +1272,18 @@
             }
 
             .pricing-grid {
+                grid-template-columns: 1fr !important;
+            }
+
+            .plan-toggle-container {
                 grid-template-columns: 1fr;
+                gap: 0.5rem;
+            }
+
+            .plan-toggle-btn .badge {
+                position: static;
+                display: inline-block;
+                margin-left: 0.5rem;
             }
 
             .footer-content {
@@ -1472,67 +1577,96 @@
                 <p class="section-subtitle">Choose the plan that works best for you</p>
             </div>
 
-            <div class="pricing-grid" style="grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); max-width: 1200px;">
-                <div class="pricing-card">
-                    <div class="plan-name">Free</div>
-                    <div class="plan-price">$0<span class="period">/forever</span></div>
-                    <p class="plan-description">Perfect for getting started</p>
-                    <ul class="plan-features">
-                        <li><i data-feather="check" class="check"></i> 5 AI searches per day</li>
-                        <li><i data-feather="check" class="check"></i> Basic themes</li>
-                        <li><i data-feather="check" class="check"></i> 2 device sync</li>
-                        <li><i data-feather="check" class="check"></i> Tab organization</li>
-                        <li><i data-feather="check" class="check"></i> Basic analytics</li>
-                        <li><i data-feather="check" class="check"></i> Smart timers</li>
-                    </ul>
-                    <a href="/new-authentication" class="btn btn-primary" style="width: 100%; justify-content: center;">Get Started Free</a>
-                </div>
+            <!-- Plan Toggle Buttons -->
+            <div class="plan-toggle-container">
+                <button class="plan-toggle-btn active monthly" onclick="switchPricingPlan('monthly')">
+                    Monthly
+                </button>
+                <button class="plan-toggle-btn yearly" onclick="switchPricingPlan('yearly')">
+                    Yearly
+                    <span class="badge save">Save 15%</span>
+                </button>
+                <button class="plan-toggle-btn lifetime" onclick="switchPricingPlan('lifetime')">
+                    Lifetime
+                    <span class="badge best">Best</span>
+                </button>
+            </div>
 
-                <div class="pricing-card featured">
-                    <div class="popular-badge">Popular</div>
-                    <div class="plan-name">Pro Monthly</div>
-                    <div class="plan-price">$1.87<span class="period">/month</span></div>
-                    <p class="plan-description">For power users who need more</p>
-                    <ul class="plan-features">
-                        <li><i data-feather="check" class="check"></i> Unlimited AI searches</li>
-                        <li><i data-feather="check" class="check"></i> Custom Theme Studio</li>
-                        <li><i data-feather="check" class="check"></i> Smart Suggestions AI</li>
-                        <li><i data-feather="check" class="check"></i> Unlimited tabs</li>
-                        <li><i data-feather="check" class="check"></i> Custom timers</li>
-                        <li><i data-feather="check" class="check"></i> Advanced analytics</li>
-                        <li><i data-feather="check" class="check"></i> 3 device sync</li>
-                        <li><i data-feather="check" class="check"></i> Priority support</li>
-                    </ul>
-                    <a href="/new-authentication?plan=pro_monthly" class="btn btn-primary" style="width: 100%; justify-content: center;">Get Pro Monthly</a>
-                </div>
+            <!-- Pricing Content -->
+            <div class="pricing-wrapper">
+                <!-- Free Plan (Always Visible) -->
+                <div class="pricing-grid" style="grid-template-columns: 1fr 1fr; gap: 2rem; max-width: 900px; margin: 0 auto;">
+                    <div class="pricing-card">
+                        <div class="plan-name">Free</div>
+                        <div class="plan-price">$0<span class="period">/forever</span></div>
+                        <p class="plan-description">Perfect for getting started</p>
+                        <ul class="plan-features">
+                            <li><i data-feather="check" class="check"></i> 5 AI searches per day</li>
+                            <li><i data-feather="check" class="check"></i> Basic themes</li>
+                            <li><i data-feather="check" class="check"></i> 2 device sync</li>
+                            <li><i data-feather="check" class="check"></i> Tab organization</li>
+                            <li><i data-feather="check" class="check"></i> Basic analytics</li>
+                            <li><i data-feather="check" class="check"></i> Smart timers</li>
+                        </ul>
+                        <a href="/new-authentication" class="btn btn-primary" style="width: 100%; justify-content: center;">Get Started Free</a>
+                    </div>
 
-                <div class="pricing-card">
-                    <div class="plan-name">Pro Yearly</div>
-                    <div class="plan-price">$18.99<span class="period">/year</span></div>
-                    <p class="plan-description">Best value for committed users</p>
-                    <ul class="plan-features">
-                        <li><i data-feather="check" class="check"></i> All Pro features</li>
-                        <li><i data-feather="check" class="check"></i> Save 15% vs monthly</li>
-                        <li><i data-feather="check" class="check"></i> Annual billing</li>
-                        <li><i data-feather="check" class="check"></i> Cancel anytime</li>
-                        <li><i data-feather="check" class="check"></i> Priority support</li>
-                    </ul>
-                    <a href="/new-authentication?plan=pro_yearly" class="btn btn-primary" style="width: 100%; justify-content: center;">Get Pro Yearly</a>
-                </div>
+                    <!-- Pro Monthly Plan -->
+                    <div class="plan-content active" id="plan-monthly">
+                        <div class="pricing-card featured">
+                            <div class="popular-badge">Popular</div>
+                            <div class="plan-name">Pro Monthly</div>
+                            <div class="plan-price">$1.87<span class="period">/month</span></div>
+                            <p class="plan-description">For power users who need more</p>
+                            <ul class="plan-features">
+                                <li><i data-feather="check" class="check"></i> Unlimited AI searches</li>
+                                <li><i data-feather="check" class="check"></i> Custom Theme Studio</li>
+                                <li><i data-feather="check" class="check"></i> Smart Suggestions AI</li>
+                                <li><i data-feather="check" class="check"></i> Unlimited tabs</li>
+                                <li><i data-feather="check" class="check"></i> Custom timers</li>
+                                <li><i data-feather="check" class="check"></i> Advanced analytics</li>
+                                <li><i data-feather="check" class="check"></i> 3 device sync</li>
+                                <li><i data-feather="check" class="check"></i> Priority support</li>
+                            </ul>
+                            <a href="/new-authentication?plan=pro_monthly" class="btn btn-primary" style="width: 100%; justify-content: center;">Get Pro Monthly</a>
+                        </div>
+                    </div>
 
-                <div class="pricing-card" style="border-color: #f59e0b; background: linear-gradient(135deg, rgba(245, 158, 11, 0.03) 0%, rgba(217, 119, 6, 0.03) 100%); box-shadow: 0 8px 24px rgba(245, 158, 11, 0.15);">
-                    <div class="popular-badge" style="background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);">Best Value</div>
-                    <div class="plan-name">Pro Lifetime</div>
-                    <div class="plan-price">$39.99<span class="period"> one-time</span></div>
-                    <p class="plan-description">Pay once, own forever</p>
-                    <ul class="plan-features">
-                        <li><i data-feather="check" class="check"></i> All Pro features</li>
-                        <li><i data-feather="check" class="check"></i> Lifetime access</li>
-                        <li><i data-feather="check" class="check"></i> No recurring fees</li>
-                        <li><i data-feather="check" class="check"></i> One-time payment</li>
-                        <li><i data-feather="check" class="check"></i> Permanent ownership</li>
-                    </ul>
-                    <a href="/new-authentication?plan=pro_lifetime" class="btn btn-primary" style="width: 100%; justify-content: center; background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);">Get Lifetime Access</a>
+                    <!-- Pro Yearly Plan -->
+                    <div class="plan-content" id="plan-yearly">
+                        <div class="pricing-card" style="border-color: #10b981; background: linear-gradient(135deg, rgba(16, 185, 129, 0.03) 0%, rgba(5, 150, 105, 0.03) 100%); box-shadow: 0 8px 24px rgba(16, 185, 129, 0.15);">
+                            <div class="popular-badge" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%);">Save 15%</div>
+                            <div class="plan-name">Pro Yearly</div>
+                            <div class="plan-price">$18.99<span class="period">/year</span></div>
+                            <p class="plan-description">Best value for committed users</p>
+                            <ul class="plan-features">
+                                <li><i data-feather="check" class="check"></i> All Pro features</li>
+                                <li><i data-feather="check" class="check"></i> Save 15% vs monthly</li>
+                                <li><i data-feather="check" class="check"></i> Annual billing</li>
+                                <li><i data-feather="check" class="check"></i> Cancel anytime</li>
+                                <li><i data-feather="check" class="check"></i> Priority support</li>
+                            </ul>
+                            <a href="/new-authentication?plan=pro_yearly" class="btn btn-primary" style="width: 100%; justify-content: center; background: linear-gradient(135deg, #10b981 0%, #059669 100%);">Get Pro Yearly</a>
+                        </div>
+                    </div>
+
+                    <!-- Pro Lifetime Plan -->
+                    <div class="plan-content" id="plan-lifetime">
+                        <div class="pricing-card" style="border-color: #f59e0b; background: linear-gradient(135deg, rgba(245, 158, 11, 0.03) 0%, rgba(217, 119, 6, 0.03) 100%); box-shadow: 0 8px 24px rgba(245, 158, 11, 0.15);">
+                            <div class="popular-badge" style="background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);">Best Value</div>
+                            <div class="plan-name">Pro Lifetime</div>
+                            <div class="plan-price">$39.99<span class="period"> one-time</span></div>
+                            <p class="plan-description">Pay once, own forever</p>
+                            <ul class="plan-features">
+                                <li><i data-feather="check" class="check"></i> All Pro features</li>
+                                <li><i data-feather="check" class="check"></i> Lifetime access</li>
+                                <li><i data-feather="check" class="check"></i> No recurring fees</li>
+                                <li><i data-feather="check" class="check"></i> One-time payment</li>
+                                <li><i data-feather="check" class="check"></i> Permanent ownership</li>
+                            </ul>
+                            <a href="/new-authentication?plan=pro_lifetime" class="btn btn-primary" style="width: 100%; justify-content: center; background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);">Get Lifetime Access</a>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -1666,6 +1800,37 @@
                 if (window.va) window.va('track', 'Plan Click', { plan: planType });
             });
         });
+
+        // Switch pricing plan
+        function switchPricingPlan(planType) {
+            // Update toggle buttons
+            const buttons = document.querySelectorAll('.plan-toggle-btn');
+            buttons.forEach(btn => {
+                btn.classList.remove('active');
+                if (btn.classList.contains(planType)) {
+                    btn.classList.add('active');
+                }
+            });
+
+            // Show/hide plan content
+            const plans = document.querySelectorAll('.plan-content');
+            plans.forEach(plan => {
+                plan.classList.remove('active');
+            });
+
+            const selectedPlan = document.getElementById(`plan-${planType}`);
+            if (selectedPlan) {
+                selectedPlan.classList.add('active');
+            }
+
+            // Re-initialize feather icons
+            if (typeof feather !== 'undefined') {
+                feather.replace();
+            }
+
+            // Track plan selection
+            if (window.va) window.va('track', 'Pricing Plan Switched', { plan: planType });
+        }
     </script>
 
     <!-- Removed: Vercel analytics script (not used, causing MIME type error) -->
