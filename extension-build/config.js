@@ -12,8 +12,9 @@ export const CONFIG = {
         INCREMENT_SEARCH: `${API_BASE_URL}/api/increment-search`
     },
     PERPLEXITY: {
-        API_KEY: 'YOUR_API_KEY_HERE',
-        SEARCH_URL: 'https://api.perplexity.ai/search',
+        // API_KEY removed - now stored securely as environment variable on Cloudflare
+        // Client calls https://tabmangment.com/api/perplexity-search instead
+        SEARCH_URL: 'https://tabmangment.com/api/perplexity-search',
         MAX_RESULTS: 10,
         MAX_TOKENS: 25000,
         MAX_TOKENS_PER_PAGE: 2048,

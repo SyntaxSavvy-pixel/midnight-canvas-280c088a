@@ -1232,23 +1232,36 @@ class TabmangmentPopup {
                 searchParams._t = Date.now();
             }
 
-            const response = await fetch('https://api.perplexity.ai/search', {
+            // Get user email for secure API call
+            const { userEmail } = await chrome.storage.local.get(['userEmail']);
+
+            // Call secure backend endpoint (API key is server-side only)
+            const response = await fetch('https://tabmangment.com/api/perplexity-search', {
                 method: 'POST',
                 headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${CONFIG.PERPLEXITY.API_KEY}`
+                    'Content-Type': 'application/json'
                 },
-                body: JSON.stringify(searchParams)
+                body: JSON.stringify({
+                    query: query,
+                    userEmail: userEmail || 'anonymous'
+                })
             });
 
             if (!response.ok) {
-                throw new Error(`Search failed: ${response.statusText}`);
+                const errorData = await response.json().catch(() => ({}));
+                if (errorData.limitReached) {
+                    this.showSearchLimitModal();
+                    await this.updateSearchUsageDisplay();
+                    if (loading) loading.style.display = 'none';
+                    return;
+                }
+                throw new Error(errorData.error || `Search failed: ${response.statusText}`);
             }
 
-            const data = await response.json();
+            const responseData = await response.json();
+            const data = responseData.data;
 
-            // Increment usage counter (search was successful)
-            await this.incrementSearchUsage();
+            // Update search usage display (already incremented on backend)
             await this.updateSearchUsageDisplay();
 
             // Hide loading
