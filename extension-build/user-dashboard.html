@@ -2174,94 +2174,129 @@
             <div class="page-content" id="subscription-page">
                 <div class="page-header">
                     <h1 class="page-title">Subscription Management</h1>
-                    <p class="page-subtitle">Upgrade your plan to unlock premium features.</p>
+                    <p class="page-subtitle">Choose the plan that works best for you.</p>
                 </div>
 
-                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.5rem;">
-                    <!-- Free Plan -->
-                    <div class="card">
-                        <div class="card-header">
-                            <h3 class="card-title">Free Plan</h3>
-                            <div class="plan-badge free" id="free-status">Current</div>
+                <!-- Current Plan Status (if Pro) -->
+                <div id="current-plan-status" style="display: none; margin-bottom: 2rem;">
+                    <div class="card" style="background: linear-gradient(135deg, rgba(16, 185, 129, 0.15) 0%, rgba(5, 150, 105, 0.15) 100%); border: 1px solid rgba(16, 185, 129, 0.3);">
+                        <div style="display: flex; align-items: center; justify-content: space-between; gap: 1rem;">
+                            <div style="display: flex; align-items: center; gap: 1rem;">
+                                <div style="width: 48px; height: 48px; background: rgba(16, 185, 129, 0.2); border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 24px;">✓</div>
+                                <div>
+                                    <div style="font-size: 1.125rem; font-weight: 600; color: #f8fafc;">Pro Plan Active</div>
+                                    <div style="color: #94a3b8; font-size: 0.875rem;">You have full access to all premium features</div>
+                                </div>
+                            </div>
+                            <button class="card-action secondary" onclick="openBillingPortal()" style="white-space: nowrap;">
+                                Manage Subscription
+                            </button>
                         </div>
-                        <div style="text-align: center; margin: 1rem 0;">
-                            <div style="font-size: 2.5rem; font-weight: 700; color: #f8fafc;">$0</div>
-                            <div style="color: #94a3b8;">forever</div>
-                        </div>
-                        <ul class="plan-features">
-                            <li><i data-feather="check" class="check"></i> Up to 10 managed tabs</li>
-                            <li><i data-feather="check" class="check"></i> Basic auto-close timers</li>
-                            <li><i data-feather="check" class="check"></i> Tab organization</li>
-                            <li><i data-feather="x" class="x"></i> Advanced analytics</li>
-                            <li><i data-feather="x" class="x"></i> Custom themes</li>
-                            <li><i data-feather="x" class="x"></i> Priority support</li>
-                        </ul>
                     </div>
+                </div>
 
-                    <!-- Pro Plan Monthly -->
-                    <div class="card subscription-card">
-                        <div class="card-header">
-                            <h3 class="card-title" style="color: #f8fafc;">Pro Monthly</h3>
-                            <div class="plan-badge pro" id="pro-monthly-status" style="display: none;">Current</div>
-                        </div>
-                        <div style="text-align: center; margin: 1rem 0;">
-                            <div style="font-size: 2.5rem; font-weight: 700; color: #f8fafc;">$1.87</div>
-                            <div style="color: rgba(255, 255, 255, 0.8);">per month</div>
-                        </div>
-                        <ul class="plan-features">
-                            <li><i data-feather="check" class="check"></i> Unlimited managed tabs</li>
-                            <li><i data-feather="check" class="check"></i> Advanced timer features</li>
-                            <li><i data-feather="check" class="check"></i> Detailed analytics</li>
-                            <li><i data-feather="check" class="check"></i> Custom themes</li>
-                            <li><i data-feather="check" class="check"></i> Priority support</li>
-                            <li><i data-feather="check" class="check"></i> Data export</li>
-                        </ul>
-                        <button class="card-action" id="plan-action-monthly-btn" onclick="upgradeToProMonthly()" style="width: 100%; margin-top: 1rem;">
-                            Upgrade Monthly
+                <!-- Plan Selector Card -->
+                <div class="card" style="max-width: 800px; margin: 0 auto;">
+                    <!-- Plan Toggle Buttons -->
+                    <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.75rem; margin-bottom: 2rem; background: rgba(15, 23, 42, 0.6); padding: 0.5rem; border-radius: 12px;">
+                        <button class="plan-toggle-btn active" data-plan="monthly" onclick="switchPlan('monthly')" style="padding: 0.875rem; background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%); border: none; border-radius: 8px; color: white; font-weight: 600; font-size: 0.9375rem; cursor: pointer; transition: all 0.3s;">
+                            Monthly
+                        </button>
+                        <button class="plan-toggle-btn" data-plan="yearly" onclick="switchPlan('yearly')" style="padding: 0.875rem; background: transparent; border: none; border-radius: 8px; color: #94a3b8; font-weight: 600; font-size: 0.9375rem; cursor: pointer; transition: all 0.3s; position: relative;">
+                            Yearly
+                            <span style="position: absolute; top: -8px; right: 8px; background: #10b981; color: white; font-size: 0.625rem; padding: 0.125rem 0.375rem; border-radius: 4px; font-weight: 700;">SAVE 15%</span>
+                        </button>
+                        <button class="plan-toggle-btn" data-plan="lifetime" onclick="switchPlan('lifetime')" style="padding: 0.875rem; background: transparent; border: none; border-radius: 8px; color: #94a3b8; font-weight: 600; font-size: 0.9375rem; cursor: pointer; transition: all 0.3s; position: relative;">
+                            Lifetime
+                            <span style="position: absolute; top: -8px; right: 8px; background: #f59e0b; color: white; font-size: 0.625rem; padding: 0.125rem 0.375rem; border-radius: 4px; font-weight: 700;">BEST</span>
                         </button>
                     </div>
 
-                    <!-- Pro Plan Yearly -->
-                    <div class="card subscription-card">
-                        <div class="card-header">
-                            <h3 class="card-title" style="color: #f8fafc;">Pro Yearly</h3>
-                            <div class="plan-badge pro" id="pro-yearly-status" style="display: none;">Current</div>
+                    <!-- Plan Details (Dynamic) -->
+                    <div id="plan-details-container">
+                        <!-- Monthly Plan -->
+                        <div id="plan-monthly" class="plan-details active">
+                            <div style="text-align: center; margin-bottom: 2rem;">
+                                <div style="display: inline-block; background: rgba(99, 102, 241, 0.1); padding: 0.5rem 1.25rem; border-radius: 2rem; margin-bottom: 1rem;">
+                                    <span style="color: #818cf8; font-size: 0.875rem; font-weight: 600;">PRO MONTHLY</span>
+                                </div>
+                                <div style="font-size: 3.5rem; font-weight: 800; color: #f8fafc; line-height: 1; margin-bottom: 0.5rem;">
+                                    $1.87
+                                </div>
+                                <div style="color: #94a3b8; font-size: 1.125rem;">per month</div>
+                            </div>
+
+                            <ul class="plan-features" style="margin-bottom: 2rem;">
+                                <li><i data-feather="check" class="check"></i> Unlimited managed tabs</li>
+                                <li><i data-feather="check" class="check"></i> Advanced auto-close timers</li>
+                                <li><i data-feather="check" class="check"></i> Detailed analytics & insights</li>
+                                <li><i data-feather="check" class="check"></i> Custom themes & appearance</li>
+                                <li><i data-feather="check" class="check"></i> Priority customer support</li>
+                                <li><i data-feather="check" class="check"></i> Data export capabilities</li>
+                            </ul>
+
+                            <button class="card-action" onclick="upgradeToProMonthly()" style="width: 100%; padding: 1.125rem; font-size: 1.0625rem; font-weight: 600;">
+                                Upgrade to Pro Monthly
+                            </button>
                         </div>
-                        <div style="text-align: center; margin: 1rem 0;">
-                            <div style="font-size: 2.5rem; font-weight: 700; color: #f8fafc;">$18.99</div>
-                            <div style="color: rgba(255, 255, 255, 0.8);">per year <span style="font-size: 0.875rem; color: #10b981;">(Save 15%)</span></div>
+
+                        <!-- Yearly Plan -->
+                        <div id="plan-yearly" class="plan-details" style="display: none;">
+                            <div style="text-align: center; margin-bottom: 2rem;">
+                                <div style="display: inline-block; background: rgba(16, 185, 129, 0.1); padding: 0.5rem 1.25rem; border-radius: 2rem; margin-bottom: 1rem;">
+                                    <span style="color: #10b981; font-size: 0.875rem; font-weight: 600;">PRO YEARLY • SAVE 15%</span>
+                                </div>
+                                <div style="font-size: 3.5rem; font-weight: 800; color: #f8fafc; line-height: 1; margin-bottom: 0.5rem;">
+                                    $18.99
+                                </div>
+                                <div style="color: #94a3b8; font-size: 1.125rem;">per year</div>
+                                <div style="color: #10b981; font-size: 0.875rem; margin-top: 0.5rem; font-weight: 600;">Save $3.45 compared to monthly</div>
+                            </div>
+
+                            <ul class="plan-features" style="margin-bottom: 2rem;">
+                                <li><i data-feather="check" class="check"></i> All Pro features included</li>
+                                <li><i data-feather="check" class="check"></i> Annual billing - one payment per year</li>
+                                <li><i data-feather="check" class="check"></i> Best value for long-term users</li>
+                                <li><i data-feather="check" class="check"></i> Cancel anytime, no commitments</li>
+                            </ul>
+
+                            <button class="card-action" onclick="upgradeToProYearly()" style="width: 100%; padding: 1.125rem; font-size: 1.0625rem; font-weight: 600; background: linear-gradient(135deg, #10b981 0%, #059669 100%);">
+                                Upgrade to Pro Yearly
+                            </button>
                         </div>
-                        <ul class="plan-features">
-                            <li><i data-feather="check" class="check"></i> All Pro features</li>
-                            <li><i data-feather="check" class="check"></i> Annual billing</li>
-                            <li><i data-feather="check" class="check"></i> Best value for long-term</li>
-                            <li><i data-feather="check" class="check"></i> Cancel anytime</li>
-                        </ul>
-                        <button class="card-action" id="plan-action-yearly-btn" onclick="upgradeToProYearly()" style="width: 100%; margin-top: 1rem;">
-                            Upgrade Yearly
-                        </button>
+
+                        <!-- Lifetime Plan -->
+                        <div id="plan-lifetime" class="plan-details" style="display: none;">
+                            <div style="text-align: center; margin-bottom: 2rem;">
+                                <div style="display: inline-block; background: rgba(245, 158, 11, 0.1); padding: 0.5rem 1.25rem; border-radius: 2rem; margin-bottom: 1rem;">
+                                    <span style="color: #f59e0b; font-size: 0.875rem; font-weight: 600;">PRO LIFETIME • BEST VALUE</span>
+                                </div>
+                                <div style="font-size: 3.5rem; font-weight: 800; color: #f8fafc; line-height: 1; margin-bottom: 0.5rem;">
+                                    $39.99
+                                </div>
+                                <div style="color: #94a3b8; font-size: 1.125rem;">one-time payment</div>
+                                <div style="color: #f59e0b; font-size: 0.875rem; margin-top: 0.5rem; font-weight: 600;">Pay once, own forever</div>
+                            </div>
+
+                            <ul class="plan-features" style="margin-bottom: 2rem;">
+                                <li><i data-feather="check" class="check"></i> All Pro features forever</li>
+                                <li><i data-feather="check" class="check"></i> Lifetime access - no recurring fees</li>
+                                <li><i data-feather="check" class="check"></i> One-time payment, permanent ownership</li>
+                                <li><i data-feather="check" class="check"></i> Perfect for power users</li>
+                            </ul>
+
+                            <button class="card-action" onclick="upgradeToProLifetime()" style="width: 100%; padding: 1.125rem; font-size: 1.0625rem; font-weight: 600; background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);">
+                                Get Lifetime Access
+                            </button>
+                        </div>
                     </div>
 
-                    <!-- Pro Plan Lifetime -->
-                    <div class="card subscription-card" style="border: 2px solid #10b981;">
-                        <div class="card-header">
-                            <h3 class="card-title" style="color: #f8fafc;">Pro Lifetime</h3>
-                            <div class="plan-badge pro" id="pro-lifetime-status" style="display: none;">Current</div>
-                            <div style="background: #10b981; color: white; padding: 0.25rem 0.75rem; border-radius: 1rem; font-size: 0.75rem; font-weight: 600; margin-top: 0.5rem;">BEST VALUE</div>
+                    <!-- Money-back guarantee -->
+                    <div style="text-align: center; margin-top: 2rem; padding-top: 2rem; border-top: 1px solid rgba(255, 255, 255, 0.1);">
+                        <div style="color: #94a3b8; font-size: 0.875rem;">
+                            <span style="color: #10b981; margin-right: 0.5rem;">✓</span>
+                            Secure payment via Stripe • Cancel anytime • Instant activation
                         </div>
-                        <div style="text-align: center; margin: 1rem 0;">
-                            <div style="font-size: 2.5rem; font-weight: 700; color: #f8fafc;">$39.99</div>
-                            <div style="color: rgba(255, 255, 255, 0.8);">one-time payment</div>
-                        </div>
-                        <ul class="plan-features">
-                            <li><i data-feather="check" class="check"></i> All Pro features</li>
-                            <li><i data-feather="check" class="check"></i> Lifetime access</li>
-                            <li><i data-feather="check" class="check"></i> No recurring fees</li>
-                            <li><i data-feather="check" class="check"></i> Pay once, own forever</li>
-                        </ul>
-                        <button class="card-action" id="plan-action-lifetime-btn" onclick="upgradeToProLifetime()" style="width: 100%; margin-top: 1rem; background: #10b981;">
-                            Get Lifetime Access
-                        </button>
                     </div>
                 </div>
             </div>
@@ -5544,6 +5579,16 @@
 
             // Check and display cooldown timer if active
             checkAndDisplayCooldown();
+
+            // Show/hide Pro plan status banner on subscription page
+            const currentPlanStatus = document.getElementById('current-plan-status');
+            if (currentPlanStatus) {
+                if (userData.isPro || userData.plan === 'pro') {
+                    currentPlanStatus.style.display = 'block';
+                } else {
+                    currentPlanStatus.style.display = 'none';
+                }
+            }
         }
 
         // Check and display cooldown on page load
@@ -5799,6 +5844,40 @@
         async function upgradeToProLifetime() {
             STRIPE_PRICE_ID = STRIPE_PRICE_LIFETIME;
             await processUpgrade();
+        }
+
+        // Switch between plans in the subscription page
+        function switchPlan(planType) {
+            // Update toggle buttons
+            const buttons = document.querySelectorAll('.plan-toggle-btn');
+            buttons.forEach(btn => {
+                if (btn.dataset.plan === planType) {
+                    btn.style.background = 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)';
+                    btn.style.color = 'white';
+                    if (planType === 'yearly') {
+                        btn.style.background = 'linear-gradient(135deg, #10b981 0%, #059669 100%)';
+                    } else if (planType === 'lifetime') {
+                        btn.style.background = 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)';
+                    }
+                } else {
+                    btn.style.background = 'transparent';
+                    btn.style.color = '#94a3b8';
+                }
+            });
+
+            // Show/hide plan details
+            document.querySelectorAll('.plan-details').forEach(plan => {
+                plan.style.display = 'none';
+            });
+            const selectedPlan = document.getElementById(`plan-${planType}`);
+            if (selectedPlan) {
+                selectedPlan.style.display = 'block';
+            }
+
+            // Re-initialize feather icons
+            if (typeof feather !== 'undefined') {
+                feather.replace();
+            }
         }
 
         async function openBillingPortal() {
