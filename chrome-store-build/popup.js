@@ -3561,6 +3561,65 @@ class TabmangmentPopup {
                             ">Your saved tabs collection</div>
                         </div>
                     </div>
+                    <!-- Search and Counter Bar -->
+                    <div style="
+                        background: linear-gradient(135deg, rgba(255, 255, 255, 0.95), rgba(248, 250, 252, 0.95));
+                        backdrop-filter: blur(20px);
+                        border: 1px solid rgba(99, 102, 241, 0.15);
+                        border-radius: 14px;
+                        padding: 16px;
+                        margin-bottom: 12px;
+                        box-shadow:
+                            0 4px 16px rgba(99, 102, 241, 0.08),
+                            inset 0 1px 0 rgba(255, 255, 255, 0.8);
+                    ">
+                        <div style="display: flex; gap: 12px; align-items: center; margin-bottom: 12px;">
+                            <div style="flex: 1; position: relative;">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #64748b; pointer-events: none;">
+                                    <circle cx="11" cy="11" r="8"></circle>
+                                    <path d="m21 21-4.35-4.35"></path>
+                                </svg>
+                                <input
+                                    type="text"
+                                    id="bookmark-search"
+                                    placeholder="Search bookmarks..."
+                                    style="
+                                        width: 100%;
+                                        padding: 10px 12px 10px 38px;
+                                        border: 1px solid rgba(203, 213, 225, 0.6);
+                                        border-radius: 10px;
+                                        font-size: 13px;
+                                        font-weight: 500;
+                                        background: white;
+                                        color: #1e293b;
+                                        transition: all 0.3s ease;
+                                        outline: none;
+                                    "
+                                    onkeyup="window.TabManager.searchBookmarks(this.value)"
+                                    onfocus="this.style.borderColor='rgba(99, 102, 241, 0.5)'; this.style.boxShadow='0 0 0 3px rgba(99, 102, 241, 0.1)'"
+                                    onblur="this.style.borderColor='rgba(203, 213, 225, 0.6)'; this.style.boxShadow='none'"
+                                />
+                            </div>
+                            <div style="
+                                background: linear-gradient(135deg, ${themeGradient});
+                                color: white;
+                                padding: 10px 16px;
+                                border-radius: 10px;
+                                font-size: 13px;
+                                font-weight: 700;
+                                white-space: nowrap;
+                                box-shadow: 0 2px 8px ${themeShadow};
+                                display: flex;
+                                align-items: center;
+                                gap: 6px;
+                            ">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16z"/>
+                                </svg>
+                                <span id="bookmark-count">${bookmarks.length}</span>
+                            </div>
+                        </div>
+                    </div>
                     <!-- Enhanced Actions Bar -->
                     <div class="bookmark-actions" style="
                         background: linear-gradient(135deg, rgba(255, 255, 255, 0.95), rgba(248, 250, 252, 0.95));
@@ -3787,6 +3846,45 @@ class TabmangmentPopup {
             </div>
         `).join('');
     }
+
+    async searchBookmarks(query) {
+        const bookmarkKey = await this.getUserBookmarkKey();
+        const result = await chrome.storage.local.get([bookmarkKey]);
+        const allBookmarks = result[bookmarkKey] || [];
+
+        const searchQuery = query.trim().toLowerCase();
+
+        // Filter bookmarks by title or URL
+        const filteredBookmarks = searchQuery === ''
+            ? allBookmarks
+            : allBookmarks.filter(bookmark => {
+                const title = (bookmark.title || '').toLowerCase();
+                const url = (bookmark.url || '').toLowerCase();
+                return title.includes(searchQuery) || url.includes(searchQuery);
+            });
+
+        // Get theme gradient
+        const theme = await this.themeManager?.getCurrentTheme();
+        const themeGradient = theme?.gradient || 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)';
+
+        // Update the bookmarks list
+        const bookmarksList = document.getElementById('bookmarks-list');
+        if (bookmarksList) {
+            bookmarksList.innerHTML = this.renderBookmarksList(filteredBookmarks, themeGradient);
+            this.attachBookmarkListeners();
+        }
+
+        // Update the counter
+        const bookmarkCount = document.getElementById('bookmark-count');
+        if (bookmarkCount) {
+            if (searchQuery === '') {
+                bookmarkCount.textContent = allBookmarks.length;
+            } else {
+                bookmarkCount.textContent = `${filteredBookmarks.length} of ${allBookmarks.length}`;
+            }
+        }
+    }
+
     attachBookmarkListeners() {
         const bookmarkAllBtn = document.getElementById('bookmark-all-current');
         if (bookmarkAllBtn) {
