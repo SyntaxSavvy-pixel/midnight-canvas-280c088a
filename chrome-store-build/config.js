@@ -1,4 +1,3 @@
-// Plain text configuration as required by Chrome Web Store
 const API_BASE_URL = 'https://tabmangment.com';
 
 export const CONFIG = {
@@ -12,8 +11,6 @@ export const CONFIG = {
         INCREMENT_SEARCH: `${API_BASE_URL}/api/increment-search`
     },
     PERPLEXITY: {
-        // API_KEY removed - now stored securely as environment variable on Cloudflare
-        // Client calls https://tabmangment.com/api/perplexity-search instead
         SEARCH_URL: 'https://tabmangment.com/api/perplexity-search',
         MAX_RESULTS: 10,
         MAX_TOKENS: 25000,

@@ -1,4 +1,3 @@
-// Temporarily removed import to test service worker loading
 const CONFIG = {
     API: {
         BASE: 'https://tabmangment.netlify.app/api',
@@ -29,7 +28,6 @@ class TabManager {
             notificationsEnabled: false
         };
 
-        // Pro activation monitoring disabled for now
         this.emptyTabSettings = {
             enabled: true,
             cleanupInterval: 24 * 60 * 60 * 1000,
@@ -243,7 +241,6 @@ class TabManager {
 
         this.tabData.set(tab.id, tabInfo);
 
-        // Auto-set 24h timer for new tabs
         if (isEmpty && this.emptyTabSettings.enabled) {
             setTimeout(async () => {
                 await this.setTabTimer(tab.id, 0, this.emptyTabSettings.cleanupInterval, true);
@@ -280,7 +277,6 @@ class TabManager {
                 clearTimeout(existing.emptyTabTimer);
                 updated.emptyTabTimer = null;
             }
-            // Clear the auto-close timer when tab becomes non-empty
             if (existing.timerActive) {
                 this.clearTabTimer(tabId);
             }
@@ -294,7 +290,6 @@ class TabManager {
                     await this.cleanupEmptyTab(tabId);
                 }, this.emptyTabSettings.cleanupInterval);
 
-                // Auto-set 24h timer for newly empty tabs
                 setTimeout(async () => {
                     await this.setTabTimer(tabId, 0, this.emptyTabSettings.cleanupInterval, true);
                 }, 100);
@@ -326,7 +321,6 @@ class TabManager {
         this.trackTab(tab);
         this.trackTabOpenAnalytics(tab);
 
-        // Broadcast stats update in real-time
         this.broadcastStatsUpdate();
     }
 
@@ -352,7 +346,6 @@ class TabManager {
 
         this.tabData.delete(tabId);
 
-        // Broadcast stats update in real-time
         this.broadcastStatsUpdate();
     }
 
@@ -460,7 +453,6 @@ class TabManager {
                 return;
             }
 
-            // Check if user is already Pro - don't spam notifications
             const currentStatus = await chrome.storage.local.get(['isPremium', 'proWelcomeShown']);
 
             const shouldShowNotification = !currentStatus.isPremium && !currentStatus.proWelcomeShown;
@@ -474,12 +466,10 @@ class TabManager {
                 },
                 userEmail: email,
                 paymentInitiated: Date.now(),
-                proWelcomeShown: true  // Mark as shown to prevent spam
+                proWelcomeShown: true  
             });
 
             await this.checkAndActivateSubscription(email);
-
-            // Pro notification removed - no spam
 
         } catch (error) {
 
@@ -488,13 +478,10 @@ class TabManager {
 
     async checkAndActivateSubscription(email) {
         try {
-            // Skip check for fallback emails - they're always free plan
             if (email && email.startsWith('fallback_')) {
                 return false;
             }
 
-            // NEW: Check localStorage for plan status (set by dashboard)
-            // This avoids 404 errors from old API endpoints
             let isPro = false;
             let userData = null;
 
@@ -505,13 +492,11 @@ class TabManager {
                     isPro = userData.isPro === true || userData.plan === 'pro';
                 }
             } catch (e) {
-                // localStorage not available in service worker, use chrome.storage
                 const stored = await chrome.storage.local.get(['isPremium', 'isPro', 'planType']);
                 isPro = stored && (stored.isPremium || stored.isPro || stored.planType === 'pro');
             }
 
             if (isPro && userData) {
-                // Update chrome.storage with Pro status
                 await chrome.storage.local.set({
                     isPremium: true,
                     subscriptionActive: true,
@@ -562,17 +547,14 @@ class TabManager {
                     break;
 
                 case 'SUBSCRIPTION_UPDATE':
-                    // Handle subscription update from dashboard
                     await this.handleSubscriptionUpdate(message);
                     sendResponse({ success: true });
                     break;
 
                 case 'USER_DATA_SYNC':
                 case 'USER_LOGGED_IN':
-                    // User data sync from dashboard or login
                     const userData = message.data || message.userData;
 
-                    // Validate email exists
                     if (!userData?.userEmail && !userData?.email) {
                         sendResponse({ success: false, error: 'No email provided' });
                         break;
@@ -598,7 +580,6 @@ class TabManager {
                     try {
                         await chrome.storage.local.set(loginData);
 
-                        // Immediately verify it was saved
                         const verification = await chrome.storage.local.get(null);
 
                         if (verification.userEmail !== loginData.userEmail) {
@@ -611,32 +592,27 @@ class TabManager {
                     break;
 
                 case 'GET_TABS_DATA':
-                    // Smart Dashboard: Get tabs data
                     const tabsData = await this.getSmartTabsData();
                     sendResponse({ success: true, data: tabsData });
                     break;
 
                 case 'CLEAN_INACTIVE_TABS':
-                    // Smart Dashboard: Clean inactive tabs
                     const cleanResult = await this.cleanInactiveTabs();
                     sendResponse({ success: true, ...cleanResult });
                     break;
 
                 case 'ENABLE_AUTO_CLEAN':
-                    // Smart Dashboard: Enable auto-clean
                     await chrome.storage.local.set({ autoCleanEnabled: true });
                     sendResponse({ success: true });
                     break;
 
                 case 'SET_AUTO_CLOSE_TIME':
-                    // Smart Dashboard: Set auto-close time (Pro feature)
                     await chrome.storage.local.set({ autoCloseTime: message.time });
                     sendResponse({ success: true });
                     break;
 
                 case 'THEME_UPDATE':
                 case 'DASHBOARD_APPLY_THEME':
-                    // Dashboard: Apply custom theme
                     try {
                         const themeData = {
                             activeTheme: message.themeName || 'custom',
@@ -650,7 +626,6 @@ class TabManager {
                     break;
 
                 case 'UPDATE_USER_NAME':
-                    // Update user name in extension storage
                     const currentData = await chrome.storage.local.get(['userName', 'userEmail']);
                     await chrome.storage.local.set({
                         userName: message.name,
@@ -660,16 +635,12 @@ class TabManager {
                     break;
 
                 case 'USER_LOGGED_OUT':
-                    // User logged out from web - clear storage
 
-                    // CRITICAL FIX: Only clear storage if this is an explicit logout
-                    // with the confirmed flag, not from tab close/unload
                     if (message.confirmed !== true) {
                         sendResponse({ success: false, reason: 'not_confirmed' });
                         break;
                     }
 
-                    // Safety check: Only clear if message came from a real logout action
                     const currentStorage = await chrome.storage.local.get(['userEmail']);
 
                     await chrome.storage.local.clear();
@@ -759,7 +730,6 @@ class TabManager {
         }
     }
 
-
     async getAllTabData() {
         try {
             const currentTabs = await chrome.tabs.query({});
@@ -833,28 +803,23 @@ class TabManager {
 
     async getRealTimeStats() {
         try {
-            // Get ACTUAL current tabs from browser (not just tracked ones)
             const allBrowserTabs = await chrome.tabs.query({});
 
-            // Filter to only valid tabs (same logic as popup.js)
             const validTabs = allBrowserTabs.filter(tab => this.isValidTab(tab));
 
             const trackedTabs = await this.getAllTabData();
             const storage = await chrome.storage.local.get(['tabsClosedAuto', 'totalTabsOpened', 'tabsClosedToday']);
 
-            // Get auto-closed count (only count today's closures for "Auto-closed Today")
             const today = new Date().toDateString();
             const tabsClosedToday = storage.tabsClosedToday || {};
             const autoClosedToday = tabsClosedToday[today] || 0;
 
-            // Calculate memory saved based on auto-closed tabs
-            // Average tab uses 50-100MB, we'll estimate 75MB per tab
             const totalClosed = storage.tabsClosedAuto || 0;
-            const memorySaved = Math.round(totalClosed * 75); // More accurate estimate: 75MB per tab
+            const memorySaved = Math.round(totalClosed * 75); 
 
             return {
-                totalTabs: validTabs.length, // Valid manageable tabs count (matches popup display)
-                autoClosed: autoClosedToday, // Only today's auto-closed tabs
+                totalTabs: validTabs.length, 
+                autoClosed: autoClosedToday, 
                 memorySaved: memorySaved,
                 activeTabs: validTabs.filter(tab => tab.active).length,
                 scheduledTabs: trackedTabs.filter(tab => tab.timerActive && tab.autoCloseTime).length,
@@ -876,7 +841,6 @@ class TabManager {
 
     async handleSubscriptionUpdate(message) {
         try {
-            // Update subscription data in storage
             const now = Date.now();
             const updateData = {
                 isPremium: message.isPro || false,
@@ -885,10 +849,9 @@ class TabManager {
                 subscriptionStatus: message.status,
                 planType: message.plan || (message.isPro ? 'pro' : 'free'),
                 lastSyncTime: now,
-                // Store billing dates in multiple formats for compatibility
-                currentPeriodEnd: message.currentPeriodEnd, // For popup.js
-                subscriptionExpiry: message.currentPeriodEnd || (now + (365 * 24 * 60 * 60 * 1000)), // 1 year
-                nextBillingDate: message.currentPeriodEnd || (now + (30 * 24 * 60 * 60 * 1000)), // 30 days
+                currentPeriodEnd: message.currentPeriodEnd, 
+                subscriptionExpiry: message.currentPeriodEnd || (now + (365 * 24 * 60 * 60 * 1000)), 
+                nextBillingDate: message.currentPeriodEnd || (now + (30 * 24 * 60 * 60 * 1000)), 
                 subscriptionDate: now,
                 subscriptionType: 'monthly',
                 paymentConfirmed: true
@@ -901,14 +864,8 @@ class TabManager {
 
             await chrome.storage.local.set(updateData);
 
-            // DON'T call CHECK_USER_PLAN here - it would query the API which might not be updated yet
-            // Storage is the source of truth, and we just updated it above
-            // extension-simple-auth will see the updated storage when needed
-
-            // Update extension behavior based on plan
             await this.updateExtensionVisibility();
 
-            // Broadcast stats update back to dashboard
             this.broadcastStatsUpdate();
 
         } catch (error) {
@@ -919,12 +876,10 @@ class TabManager {
         try {
             const stats = await this.getRealTimeStats();
 
-            // Try to send message to dashboard
             chrome.runtime.sendMessage({
                 type: 'STATS_UPDATE',
                 data: stats
             }).catch(() => {
-                // Dashboard might not be open, that's okay
             });
         } catch (error) {
         }
@@ -952,7 +907,6 @@ class TabManager {
             await chrome.tabs.remove(tabId);
             this.tabData.delete(tabId);
 
-            // Track auto-closed tabs
             if (isAutoClose) {
                 await this.trackAutoClosedTab();
             }
@@ -966,14 +920,11 @@ class TabManager {
             const today = new Date().toDateString();
             const storage = await chrome.storage.local.get(['tabsClosedAuto', 'tabsClosedToday']);
 
-            // Increment total auto-closed count
             const totalClosed = (storage.tabsClosedAuto || 0) + 1;
 
-            // Increment today's count
             const tabsClosedToday = storage.tabsClosedToday || {};
             tabsClosedToday[today] = (tabsClosedToday[today] || 0) + 1;
 
-            // Clean up old days (keep only last 7 days)
             const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toDateString();
             for (const day in tabsClosedToday) {
                 if (new Date(day) < new Date(sevenDaysAgo)) {
@@ -986,7 +937,6 @@ class TabManager {
                 tabsClosedToday: tabsClosedToday
             });
 
-            // Broadcast updated stats
             this.broadcastStatsUpdate();
         } catch (error) {
         }
@@ -1037,7 +987,7 @@ class TabManager {
                     if (currentTime >= autoCloseTime) {
                         try {
                             if (!tabInfo.protected) {
-                                await this.closeTab(tabId, true); // true = auto-close
+                                await this.closeTab(tabId, true); 
                             }
                         } catch (error) {
                         }
@@ -1056,7 +1006,7 @@ class TabManager {
                 tabInfo.timer = setTimeout(async () => {
                     try {
                         if (!tabInfo.protected) {
-                            await this.closeTab(tabId, true); // true = auto-close
+                            await this.closeTab(tabId, true); 
                         }
                     } catch (error) {
                     }
@@ -1099,55 +1049,47 @@ class TabManager {
     }
 
     startAutoCloseMonitoring() {
-        // Check every 5 minutes for tabs that need to be auto-closed (Pro feature only)
         setInterval(async () => {
             await this.checkAndCloseInactiveTabs();
-        }, 5 * 60 * 1000); // 5 minutes
+        }, 5 * 60 * 1000); 
     }
 
     async checkAndCloseInactiveTabs() {
         try {
-            // Get Pro status and auto-close time setting
             const storage = await chrome.storage.local.get(['isPro', 'isPremium', 'autoCloseTime']);
             const isPro = storage.isPro || storage.isPremium || false;
-            const autoCloseTime = storage.autoCloseTime || 60; // Default 60 minutes
+            const autoCloseTime = storage.autoCloseTime || 60; 
 
-            // Only run for Pro users
             if (!isPro) {
                 return;
             }
 
             const allTabs = await chrome.tabs.query({});
             const now = Date.now();
-            const autoCloseThreshold = autoCloseTime * 60 * 1000; // Convert minutes to milliseconds
+            const autoCloseThreshold = autoCloseTime * 60 * 1000; 
             const tabsToClose = [];
 
             for (const tab of allTabs) {
-                // Skip active tabs, pinned tabs, and invalid tabs
                 if (tab.active || tab.pinned || !this.isValidTab(tab)) {
                     continue;
                 }
 
-                // Check if we have tracking data for this tab
                 if (this.tabData.has(tab.id)) {
                     const tabInfo = this.tabData.get(tab.id);
                     const lastActive = tabInfo.lastActivated || tabInfo.createdAt;
                     const inactiveTime = now - lastActive;
 
-                    // If tab has been inactive longer than threshold, mark for closure
                     if (inactiveTime > autoCloseThreshold) {
                         tabsToClose.push(tab.id);
                     }
                 }
             }
 
-            // Close tabs and track them
             if (tabsToClose.length > 0) {
                 for (const tabId of tabsToClose) {
-                    await this.closeTab(tabId, true); // true = auto-close
+                    await this.closeTab(tabId, true); 
                 }
 
-                // Update total tabs closed counter
                 const newStorage = await chrome.storage.local.get(['totalTabsClosed']);
                 const newTotal = (newStorage.totalTabsClosed || 0) + tabsToClose.length;
 
@@ -1156,7 +1098,6 @@ class TabManager {
                     totalTabsClosed: newTotal
                 });
 
-                // Broadcast stats update
                 this.broadcastStatsUpdate();
             }
 
@@ -1288,8 +1229,6 @@ class TabManager {
             const title = tab.title || 'Unknown Tab';
             const domain = this.extractDomain(tab.url);
 
-            // Timer notification disabled
-
         } catch (error) {
         }
     }
@@ -1318,7 +1257,6 @@ class TabManager {
         if (!text || text.length <= maxLength) return text;
         return text.substring(0, maxLength - 3) + '...';
     }
-
 
     handleInstalled(details) {
         if (details.reason === 'install') {
@@ -1592,7 +1530,7 @@ class SmartTabAnalytics {
             };
 
             for (const tab of tabs) {
-                if (!tab.url || tab.url.startsWith('chrome://')) {//')) {
+                if (!tab.url || tab.url.startsWith('chrome://')) {
                     continue;
                 }
 
@@ -1796,7 +1734,6 @@ class SmartTabAnalytics {
         }
 
         try {
-            // SmartTab AI notification disabled
 
             this.notificationCooldown.set(recommendation.type, Date.now());
             this.recordNotification('general_notifications');
@@ -1848,7 +1785,7 @@ class SmartTabAnalytics {
             }
 
             for (const tab of tabs) {
-                if (!tab.url || tab.url.startsWith('chrome://')) {//')) {
+                if (!tab.url || tab.url.startsWith('chrome://')) {
                     continue;
                 }
 
@@ -1864,7 +1801,7 @@ class SmartTabAnalytics {
 
             const domainMap = new Map();
             for (const tab of tabs) {
-                if (!tab.url || tab.url.startsWith('chrome://')) {//')) {
+                if (!tab.url || tab.url.startsWith('chrome://')) {
                     continue;
                 }
 
@@ -1977,7 +1914,6 @@ class SmartTabAnalytics {
         const notificationId = `performance_boost_${Date.now()}`;
 
         try {
-            // Performance boost notification disabled
 
             this.performanceMonitor.lastPerformanceBoost = Date.now();
             this.recordNotification('performance_alerts');
@@ -1991,7 +1927,6 @@ class SmartTabAnalytics {
     }
 }
 
-
 SmartTabAnalytics.prototype.executeRecommendation = async function(recommendation) {
     switch (recommendation.action) {
         case 'close_zombie_tabs':
@@ -2002,7 +1937,6 @@ SmartTabAnalytics.prototype.executeRecommendation = async function(recommendatio
                 }
             }
             if (tabManager.shouldShowNotification('general_notifications')) {
-                // Optimization notification disabled
                 tabManager.recordNotification('general_notifications');
             }
             break;
@@ -2083,34 +2017,29 @@ SmartTabAnalytics.prototype.executePerformanceBoost = async function(recommendat
         }
 
         if (tabsClosed === 0 && this.shouldShowNotification('performance_alerts')) {
-            // Performance notification disabled
             this.recordNotification('performance_alerts');
         } else if (tabsClosed > 0 && this.shouldShowNotification('performance_alerts')) {
-            // Performance notification disabled
             this.recordNotification('performance_alerts');
         }
 
     } catch (error) {
 
         if (this.shouldShowNotification('general_notifications')) {
-            // Error notification disabled
             this.recordNotification('general_notifications');
         }
     }
 };
 
-// Smart Dashboard Methods
 TabManager.prototype.getSmartTabsData = async function() {
     try {
         const allTabs = await chrome.tabs.query({});
         const now = Date.now();
-        const inactiveThreshold = 30 * 60 * 1000; // 30 minutes
+        const inactiveThreshold = 30 * 60 * 1000; 
 
         let inactiveTabs = 0;
         let estimatedMemory = 0;
         let heavyTabs = 0;
 
-        // Collect tab data with last accessed time
         const tabsWithAccess = [];
         const inactiveTabsList = [];
 
@@ -2139,7 +2068,6 @@ TabManager.prototype.getSmartTabsData = async function() {
             }
         }
 
-        // Detect performance issues
         const isDeviceLagging = allTabs.length > 20 || inactiveTabs > 10;
         heavyTabs = inactiveTabs > 10 ? inactiveTabs : 0;
 
@@ -2190,7 +2118,7 @@ TabManager.prototype.cleanInactiveTabs = async function() {
     try {
         const allTabs = await chrome.tabs.query({});
         const now = Date.now();
-        const inactiveThreshold = 30 * 60 * 1000; // 30 minutes
+        const inactiveThreshold = 30 * 60 * 1000; 
         const tabsToClose = [];
 
         for (const tab of allTabs) {
@@ -2204,12 +2132,10 @@ TabManager.prototype.cleanInactiveTabs = async function() {
             }
         }
 
-        // Close tabs
         if (tabsToClose.length > 0) {
             await chrome.tabs.remove(tabsToClose);
         }
 
-        // Update stats
         const storage = await chrome.storage.local.get(['totalTabsClosed']);
         const newTotal = (storage.totalTabsClosed || 0) + tabsToClose.length;
 
@@ -2220,7 +2146,7 @@ TabManager.prototype.cleanInactiveTabs = async function() {
 
         return {
             count: tabsToClose.length,
-            memorySaved: tabsToClose.length * 15 // Estimate 15MB per tab
+            memorySaved: tabsToClose.length * 15 
         };
     } catch (error) {
         return { count: 0, memorySaved: 0 };
@@ -2230,7 +2156,6 @@ TabManager.prototype.cleanInactiveTabs = async function() {
 const tabManager = new TabManager();
 const smartAnalytics = new SmartTabAnalytics();
 
-// Monitor storage changes to debug persistence issues
 chrome.storage.onChanged.addListener((changes, areaName) => {
     if (areaName === 'local') {
         if (changes.userEmail) {
@@ -2239,9 +2164,7 @@ chrome.storage.onChanged.addListener((changes, areaName) => {
         if (changes.authToken) {
         }
 
-        // Log if userEmail is being removed
         if (changes.userEmail && !changes.userEmail.newValue) {
-            // Dump all current storage to see what else was removed
             chrome.storage.local.get(null).then(allData => {
             });
         }
