@@ -641,9 +641,31 @@ class TabManager {
                         break;
                     }
 
-                    const currentStorage = await chrome.storage.local.get(['userEmail']);
+                    // Preserve theme settings and bookmarks across logout
+                    const allData = await chrome.storage.local.get(null);
+                    const dataToPreserve = {};
+
+                    // Preserve all bookmarks
+                    Object.keys(allData).forEach(key => {
+                        if (key.startsWith('bookmarks_')) {
+                            dataToPreserve[key] = allData[key];
+                        }
+                    });
+
+                    // Preserve theme settings
+                    if (allData.themeConfig) {
+                        dataToPreserve.themeConfig = allData.themeConfig;
+                    }
+                    if (allData.activeTheme) {
+                        dataToPreserve.activeTheme = allData.activeTheme;
+                    }
 
                     await chrome.storage.local.clear();
+
+                    // Restore preserved data
+                    if (Object.keys(dataToPreserve).length > 0) {
+                        await chrome.storage.local.set(dataToPreserve);
+                    }
 
                     sendResponse({ success: true });
                     break;

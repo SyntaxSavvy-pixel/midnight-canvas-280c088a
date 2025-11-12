@@ -2454,20 +2454,30 @@ class TabmangmentPopup {
             }
             document.body.classList.remove('search-active');
 
-            // Get all user-specific bookmark keys before clearing
+            // Get all user-specific data to preserve before clearing
             const allKeys = await chrome.storage.local.get(null);
             const bookmarkKeys = Object.keys(allKeys).filter(key => key.startsWith('bookmarks_'));
-            const bookmarksToPreserve = {};
+            const dataToPreserve = {};
+
+            // Preserve bookmarks for all users
             for (const key of bookmarkKeys) {
-                bookmarksToPreserve[key] = allKeys[key];
+                dataToPreserve[key] = allKeys[key];
+            }
+
+            // Preserve theme settings across logout
+            if (allKeys.themeConfig) {
+                dataToPreserve.themeConfig = allKeys.themeConfig;
+            }
+            if (allKeys.activeTheme) {
+                dataToPreserve.activeTheme = allKeys.activeTheme;
             }
 
             // Clear all stored data
             await chrome.storage.local.clear();
 
-            // Restore all users' bookmarks (preserve bookmarks for all accounts)
-            if (Object.keys(bookmarksToPreserve).length > 0) {
-                await chrome.storage.local.set(bookmarksToPreserve);
+            // Restore bookmarks and theme settings (preserve across logout)
+            if (Object.keys(dataToPreserve).length > 0) {
+                await chrome.storage.local.set(dataToPreserve);
             }
 
             // Reset ALL instance variables
