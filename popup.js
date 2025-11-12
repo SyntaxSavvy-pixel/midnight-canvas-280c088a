@@ -3262,11 +3262,22 @@ class TabmangmentPopup {
         }
     }
     handleFaviconErrors() {
-        const faviconImages = document.querySelectorAll('.tab-favicon');
+        // Handle all favicon images (tabs, bookmarks, toasts, etc.)
+        const faviconImages = document.querySelectorAll('.tab-favicon, .bookmark-favicon img, img[alt*="Favicon"], img[alt*="favicon"]');
         faviconImages.forEach(img => {
-            img.addEventListener('error', () => {
-                img.src = 'icons/icon-16.png';
-            });
+            // Remove any existing error listeners to avoid duplicates
+            const newImg = img.cloneNode(true);
+            img.parentNode?.replaceChild(newImg, img);
+
+            // Add silent error handler
+            newImg.addEventListener('error', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                newImg.src = 'icons/icon-16.png';
+            }, { once: true });
+
+            // Also prevent the error from propagating to console
+            newImg.onerror = null;
         });
     }
     async handleTabAction(tabId, action) {
@@ -3689,6 +3700,8 @@ class TabmangmentPopup {
                 `;
                 container.innerHTML = bookmarksHTML;
                 this.attachBookmarkListeners();
+                // Handle favicon errors silently
+                setTimeout(() => this.handleFaviconErrors(), 100);
                 container.style.opacity = '1';
                 container.style.transform = 'translateY(0)';
             } catch (error) {
@@ -3781,8 +3794,7 @@ class TabmangmentPopup {
                             object-fit: cover;
                             border-radius: 6px;
                             filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.1));
-                         "
-                         onerror="this.src='icons/icon-16.png'">
+                         ">
                 </div>
                 <!-- Bookmark Info -->
                 <div class="bookmark-info" style="flex: 1; min-width: 0; padding: 2px 0;">
@@ -4219,6 +4231,8 @@ class TabmangmentPopup {
     async animateBookmarkToTab(bookmarkData) {
         const tempBookmark = this.createTempBookmarkElement(bookmarkData);
         document.body.appendChild(tempBookmark);
+        // Handle favicon errors silently
+        setTimeout(() => this.handleFaviconErrors(), 50);
         tempBookmark.style.position = 'fixed';
         tempBookmark.style.right = '20px';
         tempBookmark.style.top = '20px';
@@ -4263,8 +4277,8 @@ class TabmangmentPopup {
                     justify-content: center;
                 ">
                     <img src="${bookmarkData.favIconUrl || 'icons/icon-16.png'}"
-                         style="width: 24px; height: 24px; object-fit: cover; border-radius: 4px;"
-                         onerror="this.src='icons/icon-16.png'">
+                         alt="Favicon"
+                         style="width: 24px; height: 24px; object-fit: cover; border-radius: 4px;">
                 </div>
                 <div style="flex: 1; min-width: 0;">
                     <div style="font-weight: 600; color: #1e293b; font-size: 14px; margin-bottom: 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
