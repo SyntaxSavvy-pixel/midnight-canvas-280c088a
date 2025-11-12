@@ -294,7 +294,7 @@ async function handlePaymentSucceeded(invoice, env) {
 async function handlePaymentFailed(invoice, env) {
     console.log('⚠️ Payment failed for customer:', invoice.customer);
 
-    // If this is a subscription invoice, mark as past_due
+    // If this is a subscription invoice, immediately revoke Pro access
     if (invoice.subscription) {
         try {
             const subResponse = await fetch(`https://api.stripe.com/v1/subscriptions/${invoice.subscription}`, {
@@ -317,12 +317,13 @@ async function handlePaymentFailed(invoice, env) {
                             'Prefer': 'return=minimal'
                         },
                         body: JSON.stringify({
+                            is_pro: false,
                             subscription_status: 'past_due'
                         })
                     });
 
                     if (response.ok) {
-                        console.log('⚠️ Marked subscription as past_due for:', userEmail);
+                        console.log('❌ Pro access revoked due to payment failure for:', userEmail);
                     }
                 }
             }
