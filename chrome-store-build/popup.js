@@ -3598,19 +3598,19 @@ class TabmangmentPopup {
                                 />
                             </div>
                             <div style="
-                                background: linear-gradient(135deg, ${themeGradient});
+                                background: linear-gradient(135deg, #1e293b, #0f172a);
                                 color: white;
                                 padding: 10px 16px;
                                 border-radius: 10px;
                                 font-size: 13px;
                                 font-weight: 700;
                                 white-space: nowrap;
-                                box-shadow: 0 2px 8px ${themeShadow};
+                                box-shadow: 0 2px 8px rgba(15, 23, 42, 0.3);
                                 display: flex;
                                 align-items: center;
                                 gap: 6px;
                             ">
-                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2">
                                     <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16z"/>
                                 </svg>
                                 <span id="bookmark-count">${bookmarks.length}</span>
