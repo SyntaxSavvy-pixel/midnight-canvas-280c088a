@@ -3042,14 +3042,26 @@ class TabmangmentPopup {
         }
         this.isRendering = true;
         try {
+            // Load favorites FIRST before filtering tabs
+            try {
+                const bookmarkKey = await this.getUserBookmarkKey();
+                const result = await chrome.storage.local.get([bookmarkKey]);
+                this.favorites = result[bookmarkKey] || [];
+            } catch (error) {
+                this.favorites = [];
+            }
+
             if (!Array.isArray(this.tabs)) {
                 this.tabs = [];
             }
+
+            // Filter out bookmarked tabs from display
             let displayTabs = [...this.tabs];
             if (this.favorites && Array.isArray(this.favorites)) {
                 const bookmarkedUrls = new Set(this.favorites.map(fav => fav.url));
                 displayTabs = displayTabs.filter(tab => !bookmarkedUrls.has(tab.url));
             }
+
             if (!this.isPremium) {
                 displayTabs = displayTabs.slice(0, this.tabLimit);
             } else {
@@ -3071,13 +3083,6 @@ class TabmangmentPopup {
                 return;
             }
             if (emptyState) emptyState.style.display = 'none';
-            try {
-                const bookmarkKey = await this.getUserBookmarkKey();
-                const result = await chrome.storage.local.get([bookmarkKey]);
-                this.favorites = result[bookmarkKey] || [];
-            } catch (error) {
-                this.favorites = [];
-            }
             const tabsHTML = displayTabs.map((tab, index) => {
                 try {
                     return this.createTabHTML(tab, index);
