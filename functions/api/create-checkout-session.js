@@ -24,7 +24,7 @@ export async function onRequestPost(context) {
 
         // Parse request body
         const body = await request.json();
-        const { priceId } = body;
+        const { priceId, mode } = body;
 
         // Get auth token
         const authHeader = request.headers.get('authorization');
@@ -78,30 +78,44 @@ export async function onRequestPost(context) {
         // Create Stripe Checkout Session using Stripe API
         const origin = request.headers.get('origin') || 'https://tabmangment.com';
 
+        // Determine checkout mode (default to subscription for backward compatibility)
+        const checkoutMode = mode || 'subscription';
+
+        // Build base parameters
+        const params = {
+            'payment_method_types[]': 'card',
+            'line_items[0][price]': priceId,
+            'line_items[0][quantity]': '1',
+            'mode': checkoutMode,
+            'customer_email': userEmail,
+            'client_reference_id': userEmail,
+            'metadata[userEmail]': userEmail,
+            'metadata[plan]': 'pro',
+            'success_url': `${origin}/user-dashboard.html?payment=success&session_id={CHECKOUT_SESSION_ID}`,
+            'cancel_url': `${origin}/user-dashboard.html?payment=cancelled`,
+            'billing_address_collection': 'auto',
+            'tax_id_collection[enabled]': 'true',
+            'automatic_tax[enabled]': 'true',
+            'allow_promotion_codes': 'true'
+        };
+
+        // Add subscription-specific metadata only for subscription mode
+        if (checkoutMode === 'subscription') {
+            params['subscription_data[metadata][userEmail]'] = userEmail;
+            params['subscription_data[metadata][plan]'] = 'pro';
+        } else if (checkoutMode === 'payment') {
+            // For one-time payments, add payment intent metadata
+            params['payment_intent_data[metadata][userEmail]'] = userEmail;
+            params['payment_intent_data[metadata][plan]'] = 'pro_lifetime';
+        }
+
         const stripeResponse = await fetch('https://api.stripe.com/v1/checkout/sessions', {
             method: 'POST',
             headers: {
                 'Authorization': `Bearer ${env.STRIPE_SECRET_KEY}`,
                 'Content-Type': 'application/x-www-form-urlencoded'
             },
-            body: new URLSearchParams({
-                'payment_method_types[]': 'card',
-                'line_items[0][price]': priceId,
-                'line_items[0][quantity]': '1',
-                'mode': 'subscription',
-                'customer_email': userEmail,
-                'client_reference_id': userEmail,
-                'metadata[userEmail]': userEmail,
-                'metadata[plan]': 'pro',
-                'success_url': `${origin}/user-dashboard.html?payment=success&session_id={CHECKOUT_SESSION_ID}`,
-                'cancel_url': `${origin}/user-dashboard.html?payment=cancelled`,
-                'billing_address_collection': 'auto',
-                'tax_id_collection[enabled]': 'true',
-                'automatic_tax[enabled]': 'true',
-                'allow_promotion_codes': 'true',
-                'subscription_data[metadata][userEmail]': userEmail,
-                'subscription_data[metadata][plan]': 'pro'
-            })
+            body: new URLSearchParams(params)
         });
 
         if (!stripeResponse.ok) {

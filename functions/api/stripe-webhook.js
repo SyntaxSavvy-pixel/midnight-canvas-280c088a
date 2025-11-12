@@ -83,7 +83,28 @@ async function handleCheckoutCompleted(session, env) {
     const userEmail = session.customer_email || session.metadata?.userEmail;
     if (!userEmail) return;
 
-    console.log('Checkout completed for:', userEmail);
+    console.log('Checkout completed for:', userEmail, 'Mode:', session.mode);
+
+    // Handle differently based on checkout mode
+    const updateData = {
+        is_pro: true,
+        stripe_customer_id: session.customer
+    };
+
+    if (session.mode === 'subscription') {
+        // Subscription mode (monthly/yearly)
+        updateData.subscription_status = 'active';
+        updateData.stripe_subscription_id = session.subscription;
+        updateData.current_period_end = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
+        console.log('✓ Subscription activated for:', userEmail);
+    } else if (session.mode === 'payment') {
+        // One-time payment mode (lifetime)
+        updateData.subscription_status = 'lifetime';
+        updateData.stripe_subscription_id = null;
+        // Set to far future date for lifetime (e.g., 100 years from now)
+        updateData.current_period_end = new Date(Date.now() + 100 * 365 * 24 * 60 * 60 * 1000).toISOString();
+        console.log('✓ Lifetime plan activated for:', userEmail);
+    }
 
     // Update user in Supabase
     await fetch(`${env.SUPABASE_URL}/rest/v1/users_auth?email=eq.${encodeURIComponent(userEmail)}`, {
@@ -94,13 +115,7 @@ async function handleCheckoutCompleted(session, env) {
             'Content-Type': 'application/json',
             'Prefer': 'return=minimal'
         },
-        body: JSON.stringify({
-            is_pro: true,
-            subscription_status: 'active',
-            stripe_customer_id: session.customer,
-            stripe_subscription_id: session.subscription,
-            current_period_end: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
-        })
+        body: JSON.stringify(updateData)
     });
 }
 

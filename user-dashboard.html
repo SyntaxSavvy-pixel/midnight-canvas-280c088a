@@ -5790,6 +5790,11 @@
                 const { data: { session } } = await supabaseClient.auth.getSession();
                 const authToken = session?.access_token || localStorage.getItem('tabmangment_token');
 
+                // Determine checkout mode based on price ID
+                // Lifetime is one-time payment, Monthly/Yearly are subscriptions
+                const isLifetime = STRIPE_PRICE_ID === STRIPE_PRICE_LIFETIME;
+                const checkoutMode = isLifetime ? 'payment' : 'subscription';
+
                 // Call create-checkout-session function
                 const response = await fetch('/api/create-checkout-session', {
                     method: 'POST',
@@ -5799,12 +5804,15 @@
                     },
                     body: JSON.stringify({
                         email: userEmail,
-                        priceId: STRIPE_PRICE_ID
+                        priceId: STRIPE_PRICE_ID,
+                        mode: checkoutMode
                     })
                 });
 
                 if (!response.ok) {
-                    throw new Error('Failed to create checkout session');
+                    const errorData = await response.json().catch(() => ({}));
+                    console.error('Checkout error:', errorData);
+                    throw new Error(errorData.error || 'Failed to create checkout session');
                 }
 
                 const result = await response.json();
@@ -5817,7 +5825,8 @@
                 }
 
             } catch (error) {
-                alert('Failed to start checkout. Please try again or contact support.');
+                console.error('Checkout failed:', error);
+                alert('Failed to start checkout: ' + (error.message || 'Please try again or contact support.'));
 
                 // Reset button state
                 const upgradeBtn = document.getElementById('plan-action-btn');
