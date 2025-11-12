@@ -3595,9 +3595,6 @@ class TabmangmentPopup {
                                         transition: all 0.3s ease;
                                         outline: none;
                                     "
-                                    onkeyup="window.TabManager.searchBookmarks(this.value)"
-                                    onfocus="this.style.borderColor='rgba(99, 102, 241, 0.5)'; this.style.boxShadow='0 0 0 3px rgba(99, 102, 241, 0.1)'"
-                                    onblur="this.style.borderColor='rgba(203, 213, 225, 0.6)'; this.style.boxShadow='none'"
                                 />
                             </div>
                             <div style="
@@ -3944,6 +3941,22 @@ class TabmangmentPopup {
     }
 
     attachBookmarkListeners() {
+        // Attach search input listeners
+        const searchInput = document.getElementById('bookmark-search');
+        if (searchInput) {
+            searchInput.addEventListener('input', (e) => {
+                this.searchBookmarks(e.target.value);
+            });
+            searchInput.addEventListener('focus', (e) => {
+                e.target.style.borderColor = 'rgba(99, 102, 241, 0.5)';
+                e.target.style.boxShadow = '0 0 0 3px rgba(99, 102, 241, 0.1)';
+            });
+            searchInput.addEventListener('blur', (e) => {
+                e.target.style.borderColor = 'rgba(203, 213, 225, 0.6)';
+                e.target.style.boxShadow = 'none';
+            });
+        }
+
         const bookmarkAllBtn = document.getElementById('bookmark-all-current');
         if (bookmarkAllBtn) {
             bookmarkAllBtn.addEventListener('click', async () => {
