@@ -770,6 +770,19 @@ class TabmangmentPopup {
         }
     }
 
+    // Helper method to get user-specific bookmark storage key
+    async getUserBookmarkKey() {
+        try {
+            const result = await chrome.storage.local.get(['userEmail']);
+            if (result.userEmail) {
+                return `bookmarks_${result.userEmail}`;
+            }
+            return 'bookmarks_guest'; // Fallback for non-logged-in users
+        } catch (error) {
+            return 'bookmarks_guest';
+        }
+    }
+
     // Load user profile information
     async loadProfileInfo() {
         try {
@@ -830,34 +843,75 @@ class TabmangmentPopup {
     // Setup Search Panel
     setupSearchPanel() {
         const searchBtn = document.getElementById('search-btn');
-        const searchPanel = document.getElementById('search-panel');
+        const searchSection = document.getElementById('search-section');
+        const tabsContainer = document.getElementById('tabs-container');
         const searchInput = document.getElementById('search-input');
         const searchClearBtn = document.getElementById('search-clear-btn');
+        const collapseBtn = document.getElementById('collapse-btn');
+        const bookmarkBtn = document.getElementById('bookmark-all-btn');
 
-        // Toggle search panel (open/close)
+        // Function to show tabs view
+        const showTabsView = () => {
+            if (searchSection) searchSection.style.display = 'none';
+            if (tabsContainer) tabsContainer.style.display = 'block';
+            if (searchBtn) searchBtn.classList.remove('active');
+            if (searchInput) searchInput.value = '';
+            if (searchClearBtn) searchClearBtn.style.display = 'none';
+            this.clearSearchResults();
+        };
+
+        // Function to show search view
+        const showSearchView = async () => {
+            if (searchSection) searchSection.style.display = 'block';
+            if (tabsContainer) tabsContainer.style.display = 'none';
+            if (searchBtn) searchBtn.classList.add('active');
+            await this.updateSearchUsageDisplay();
+            setTimeout(() => {
+                if (searchInput) searchInput.focus();
+            }, 100);
+        };
+
+        // Toggle search section (open/close)
         if (searchBtn) {
             searchBtn.addEventListener('click', async () => {
-                if (searchPanel) {
-                    // Check if already active - toggle behavior
-                    if (searchPanel.classList.contains('active')) {
-                        // Close the search panel
-                        searchPanel.classList.remove('active');
-                        searchBtn.classList.remove('active');
-                        document.body.classList.remove('search-active');
-                        if (searchInput) searchInput.value = '';
-                        if (searchClearBtn) searchClearBtn.style.display = 'none';
-                        this.clearSearchResults();
-                    } else {
-                        // Open the search panel
-                        searchPanel.classList.add('active');
-                        searchBtn.classList.add('active');
-                        document.body.classList.add('search-active');
-                        await this.updateSearchUsageDisplay();
-                        setTimeout(() => {
-                            if (searchInput) searchInput.focus();
-                        }, 300);
-                    }
+                // Check if search is currently active
+                const isSearchActive = searchSection && searchSection.style.display !== 'none';
+
+                if (isSearchActive) {
+                    // Go back to tabs view
+                    showTabsView();
+                } else {
+                    // Show search view
+                    await showSearchView();
                 }
+            });
+        }
+
+        // Store references for use in other methods
+        this.showTabsView = showTabsView;
+        this.showSearchView = showSearchView;
+
+        // Search results action buttons
+        const refreshBtn = document.getElementById('search-refresh-btn');
+        const clearResultsBtn = document.getElementById('search-clear-results-btn');
+
+        if (refreshBtn) {
+            refreshBtn.addEventListener('click', () => {
+                const currentQuery = searchInput ? searchInput.value.trim() : '';
+                if (currentQuery) {
+                    // Pass true to indicate this is a refresh - get NEW results
+                    this.performAISearch(currentQuery, true);
+                }
+            });
+        }
+
+        if (clearResultsBtn) {
+            clearResultsBtn.addEventListener('click', () => {
+                if (searchInput) {
+                    searchInput.value = '';
+                    searchInput.focus();
+                }
+                this.clearSearchResults();
             });
         }
 
@@ -907,6 +961,7 @@ class TabmangmentPopup {
         const loading = document.getElementById('search-loading');
         const resultsList = document.getElementById('search-results-list');
         const resultsInfo = document.getElementById('search-results-info');
+        const resultsCount = document.getElementById('search-results-count');
 
         // Remove class from body to restore normal UI (show tabs, stats, etc.)
         document.body.classList.remove('has-search-results');
@@ -914,20 +969,31 @@ class TabmangmentPopup {
         if (emptyState) emptyState.style.display = 'flex';
         if (loading) loading.style.display = 'none';
         if (resultsList) resultsList.innerHTML = '';
+        if (resultsCount) resultsCount.textContent = '0 results';
         if (resultsInfo) resultsInfo.style.display = 'none';
     }
 
     // Check and update search usage with 24-hour rolling window (SERVER-SIDE TRACKED)
     async checkSearchUsage() {
         try {
-            // Get user email for server-side tracking
-            const storage = await chrome.storage.local.get(['userEmail']);
+            // Get user email and admin status
+            const storage = await chrome.storage.local.get(['userEmail', 'isAdmin', 'planType']);
             const userEmail = storage.userEmail;
+            const isAdmin = storage.isAdmin || storage.planType === 'admin';
 
             // If no email (not logged in), BLOCK searches completely
             if (!userEmail) {
-                
-                return { count: 5, canSearch: false };
+                return { count: 5, canSearch: false, isAdmin: false };
+            }
+
+            // ADMIN USERS: Unlimited searches - bypass all limits
+            if (isAdmin) {
+                return { count: 0, canSearch: true, isPro: true, isAdmin: true };
+            }
+
+            // PREMIUM USERS: Unlimited searches
+            if (this.isPremium) {
+                return { count: 0, canSearch: true, isPro: true, isAdmin: false };
             }
 
             // ALWAYS fetch from backend API - NO LOCAL FALLBACK for logged-in users
@@ -940,8 +1006,7 @@ class TabmangmentPopup {
             });
 
             if (!response.ok) {
-                
-                return { count: 5, canSearch: false };
+                return { count: 5, canSearch: false, isAdmin: false };
             }
 
             const data = await response.json();
@@ -951,13 +1016,11 @@ class TabmangmentPopup {
             const canSearch = data.canSearch !== undefined ? data.canSearch : false;
             const isPro = data.isPro || false;
 
-            
-            return { count, canSearch, isPro };
+            return { count, canSearch, isPro, isAdmin: false };
 
         } catch (error) {
-            
             // SECURITY: Block search on API error - prevents local exploitation
-            return { count: 5, canSearch: false };
+            return { count: 5, canSearch: false, isAdmin: false };
         }
     }
 
@@ -1033,9 +1096,14 @@ class TabmangmentPopup {
         const usageInfo = document.getElementById('search-usage-info');
         if (!usageInfo) return;
 
-        const { count, canSearch } = await this.checkSearchUsage();
+        const { count, canSearch, isAdmin } = await this.checkSearchUsage();
 
-        if (this.isPremium) {
+        // Admin users get unlimited searches
+        if (isAdmin) {
+            usageInfo.innerHTML = '👑 Admin: Unlimited searches';
+            usageInfo.className = 'search-usage-info admin';
+            usageInfo.style.display = 'none';
+        } else if (this.isPremium) {
             usageInfo.innerHTML = '✨ Pro Plan: Unlimited searches';
             usageInfo.className = 'search-usage-info';
             usageInfo.style.display = 'none';
@@ -1122,7 +1190,7 @@ class TabmangmentPopup {
     }
 
     // Perform AI search using Perplexity API
-    async performAISearch(query) {
+    async performAISearch(query, isRefresh = false) {
         // Check search usage limit
         const { canSearch } = await this.checkSearchUsage();
 
@@ -1145,19 +1213,32 @@ class TabmangmentPopup {
         if (resultsInfo) resultsInfo.style.display = 'none';
 
         try {
+            // Build search parameters with variation for refresh
+            const searchParams = {
+                query: query,
+                max_results: CONFIG.PERPLEXITY.MAX_RESULTS,
+                max_tokens: CONFIG.PERPLEXITY.MAX_TOKENS,
+                max_tokens_per_page: CONFIG.PERPLEXITY.MAX_TOKENS_PER_PAGE,
+                country: CONFIG.PERPLEXITY.COUNTRY
+            };
+
+            // Add variation parameters for refresh to get different results
+            if (isRefresh) {
+                // Add recency filter to get fresh/recent results
+                const recencyOptions = ['day', 'week', 'month'];
+                searchParams.search_recency_filter = recencyOptions[Math.floor(Math.random() * recencyOptions.length)];
+
+                // Add timestamp to prevent caching
+                searchParams._t = Date.now();
+            }
+
             const response = await fetch('https://api.perplexity.ai/search', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                     'Authorization': `Bearer ${CONFIG.PERPLEXITY.API_KEY}`
                 },
-                body: JSON.stringify({
-                    query: query,
-                    max_results: CONFIG.PERPLEXITY.MAX_RESULTS,
-                    max_tokens: CONFIG.PERPLEXITY.MAX_TOKENS,
-                    max_tokens_per_page: CONFIG.PERPLEXITY.MAX_TOKENS_PER_PAGE,
-                    country: CONFIG.PERPLEXITY.COUNTRY
-                })
+                body: JSON.stringify(searchParams)
             });
 
             if (!response.ok) {
@@ -1214,9 +1295,15 @@ class TabmangmentPopup {
     // Display search results
     displaySearchResults(results) {
         const resultsList = document.getElementById('search-results-list');
+        const emptyState = document.getElementById('search-empty-state');
         if (!resultsList) return;
 
         resultsList.innerHTML = '';
+
+        // Hide empty state when showing results
+        if (emptyState) {
+            emptyState.style.display = 'none';
+        }
 
         // Add class to body to trigger clean UI (hide main content, show focused message)
         document.body.classList.add('has-search-results');
@@ -1279,10 +1366,27 @@ class TabmangmentPopup {
         const bookmarkAllBtn = document.getElementById('bookmark-all-btn');
         if (bookmarkAllBtn) {
             bookmarkAllBtn.addEventListener('click', () => {
-                if (this.isPremium) {
-                    this.showBookmarkMenu();
-                } else {
+                if (!this.isPremium) {
                     this.showPremiumModal();
+                    return;
+                }
+
+                // Check if search is currently active
+                const searchSection = document.getElementById('search-section');
+                const isSearchActive = searchSection && searchSection.style.display !== 'none';
+
+                // If search is active, close it first
+                if (isSearchActive && this.showTabsView) {
+                    this.showTabsView();
+                }
+
+                // Toggle behavior: if already in bookmarks view, go back to tabs
+                if (this.currentView === 'bookmarks') {
+                    this.currentView = 'tabs';
+                    this.render();
+                } else {
+                    // Show bookmarks view
+                    this.showBookmarkMenu();
                 }
             });
         }
@@ -1413,7 +1517,7 @@ class TabmangmentPopup {
         } catch (error) {
         }
     }
-    showContactModal() {
+    async showContactModal() {
         const modal = document.getElementById('contact-modal');
         if (modal) {
             modal.style.display = 'flex';
@@ -1421,6 +1525,23 @@ class TabmangmentPopup {
             if (form) {
                 form.reset();
             }
+
+            // Auto-populate email from logged-in user
+            const emailInput = document.getElementById('contact-email');
+            if (emailInput) {
+                try {
+                    const storage = await chrome.storage.local.get(['userEmail']);
+                    if (storage.userEmail) {
+                        emailInput.value = storage.userEmail;
+                        emailInput.readOnly = true;
+                        emailInput.style.backgroundColor = '#f3f4f6';
+                        emailInput.style.cursor = 'not-allowed';
+                    }
+                } catch (error) {
+                    console.error('Error loading user email:', error);
+                }
+            }
+
             const nameInput = document.getElementById('contact-name');
             if (nameInput) {
                 setTimeout(() => nameInput.focus(), 300);
@@ -2319,8 +2440,21 @@ class TabmangmentPopup {
             }
             document.body.classList.remove('search-active');
 
+            // Get all user-specific bookmark keys before clearing
+            const allKeys = await chrome.storage.local.get(null);
+            const bookmarkKeys = Object.keys(allKeys).filter(key => key.startsWith('bookmarks_'));
+            const bookmarksToPreserve = {};
+            for (const key of bookmarkKeys) {
+                bookmarksToPreserve[key] = allKeys[key];
+            }
+
             // Clear all stored data
             await chrome.storage.local.clear();
+
+            // Restore all users' bookmarks (preserve bookmarks for all accounts)
+            if (Object.keys(bookmarksToPreserve).length > 0) {
+                await chrome.storage.local.set(bookmarksToPreserve);
+            }
 
             // Reset ALL instance variables
             this.isPremium = false;
@@ -2730,7 +2864,9 @@ class TabmangmentPopup {
 
         if (activeEl) {
             // Always show just the number - keep it clean
-            activeEl.textContent = this.realTimeTabCount || 0;
+            // Cap display at 99+ for counts over 100
+            const count = this.realTimeTabCount || 0;
+            activeEl.textContent = count > 100 ? '99+' : count;
 
             // Show hidden count in the label instead
             const labelEl = activeEl.nextElementSibling;
@@ -2936,8 +3072,9 @@ class TabmangmentPopup {
             }
             if (emptyState) emptyState.style.display = 'none';
             try {
-                const result = await chrome.storage.local.get(['favorites']);
-                this.favorites = result.favorites || [];
+                const bookmarkKey = await this.getUserBookmarkKey();
+                const result = await chrome.storage.local.get([bookmarkKey]);
+                this.favorites = result[bookmarkKey] || [];
             } catch (error) {
                 this.favorites = [];
             }
@@ -3331,8 +3468,9 @@ class TabmangmentPopup {
         container.style.transform = 'translateY(10px)';
         setTimeout(async () => {
             try {
-                const result = await chrome.storage.local.get(['favorites', 'themeConfig']);
-                const bookmarks = result.favorites || [];
+                const bookmarkKey = await this.getUserBookmarkKey();
+                const result = await chrome.storage.local.get([bookmarkKey, 'themeConfig']);
+                const bookmarks = result[bookmarkKey] || [];
 
                 // Get theme with safe fallback
                 let theme = result.themeConfig || { primaryColor: '#667eea', secondaryColor: '#764ba2' };
@@ -3398,34 +3536,6 @@ class TabmangmentPopup {
                             background: radial-gradient(circle, rgba(255, 255, 255, 0.08), transparent);
                             border-radius: 50%;
                         "></div>
-                        <!-- Enhanced Back Button -->
-                        <button id="back-to-tabs" style="
-                            position: absolute;
-                            top: 20px;
-                            left: 20px;
-                            background: linear-gradient(135deg, rgba(255, 255, 255, 0.25), rgba(255, 255, 255, 0.15));
-                            border: 1px solid rgba(255, 255, 255, 0.3);
-                            color: white;
-                            width: 40px;
-                            height: 40px;
-                            border-radius: 12px;
-                            cursor: pointer;
-                            font-size: 16px;
-                            font-weight: 600;
-                            display: flex;
-                            align-items: center;
-                            justify-content: center;
-                            transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
-                            backdrop-filter: blur(20px);
-                            box-shadow:
-                                0 4px 16px rgba(0, 0, 0, 0.1),
-                                inset 0 1px 0 rgba(255, 255, 255, 0.3);
-                            z-index: 10;
-                        ">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="transform: translateX(-1px);">
-                                <path d="M19 12H5M12 19l-7-7 7-7"/>
-                            </svg>
-                        </button>
                         <!-- Header Content -->
                         <div style="text-align: center; position: relative; z-index: 5;">
                             <div style="
@@ -3678,23 +3788,6 @@ class TabmangmentPopup {
         `).join('');
     }
     attachBookmarkListeners() {
-        const backBtn = document.getElementById('back-to-tabs');
-        if (backBtn) {
-            backBtn.addEventListener('click', () => {
-                this.currentView = 'tabs';
-                this.render();
-            });
-            backBtn.addEventListener('mouseenter', () => {
-                backBtn.style.background = 'linear-gradient(135deg, rgba(255, 255, 255, 0.4), rgba(255, 255, 255, 0.3))';
-                backBtn.style.transform = 'scale(1.05) translateY(-1px)';
-                backBtn.style.boxShadow = '0 8px 20px rgba(0, 0, 0, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.4)';
-            });
-            backBtn.addEventListener('mouseleave', () => {
-                backBtn.style.background = 'linear-gradient(135deg, rgba(255, 255, 255, 0.25), rgba(255, 255, 255, 0.15))';
-                backBtn.style.transform = 'scale(1) translateY(0)';
-                backBtn.style.boxShadow = '0 4px 16px rgba(0, 0, 0, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.3)';
-            });
-        }
         const bookmarkAllBtn = document.getElementById('bookmark-all-current');
         if (bookmarkAllBtn) {
             bookmarkAllBtn.addEventListener('click', async () => {
@@ -3739,8 +3832,9 @@ class TabmangmentPopup {
         bookmarkItems.forEach((item, index) => {
             item.addEventListener('click', async (e) => {
                 if (e.target.classList.contains('remove-bookmark-btn')) return;
-                const result = await chrome.storage.local.get(['favorites']);
-                const bookmarks = result.favorites || [];
+                const bookmarkKey = await this.getUserBookmarkKey();
+                const result = await chrome.storage.local.get([bookmarkKey]);
+                const bookmarks = result[bookmarkKey] || [];
                 if (bookmarks[index]) {
                     this.openBookmark(bookmarks[index]);
                 }
@@ -3807,8 +3901,9 @@ class TabmangmentPopup {
         try {
             const tabs = await chrome.tabs.query({});
             const validTabs = tabs.filter(tab => this.isValidTab(tab));
-            const result = await chrome.storage.local.get(['favorites']);
-            let favorites = result.favorites || [];
+            const bookmarkKey = await this.getUserBookmarkKey();
+            const result = await chrome.storage.local.get([bookmarkKey]);
+            let favorites = result[bookmarkKey] || [];
             let addedCount = 0;
             for (const tab of validTabs) {
                 const exists = favorites.some(fav => fav.url === tab.url);
@@ -3823,7 +3918,7 @@ class TabmangmentPopup {
                     addedCount++;
                 }
             }
-            await chrome.storage.local.set({ favorites });
+            await chrome.storage.local.set({ [bookmarkKey]: favorites });
             this.favorites = favorites;
             this.showMessage(`Added ${addedCount} new bookmarks!`, 'success');
             setTimeout(() => {
@@ -3835,7 +3930,8 @@ class TabmangmentPopup {
     }
     async clearAllBookmarks() {
         try {
-            await chrome.storage.local.set({ favorites: [] });
+            const bookmarkKey = await this.getUserBookmarkKey();
+            await chrome.storage.local.set({ [bookmarkKey]: [] });
             this.favorites = [];
             this.showMessage('All bookmarks cleared - tabs restored', 'success');
             setTimeout(() => {
@@ -3847,13 +3943,14 @@ class TabmangmentPopup {
     }
     async removeBookmark(index) {
         try {
-            const result = await chrome.storage.local.get(['favorites']);
-            let favorites = result.favorites || [];
+            const bookmarkKey = await this.getUserBookmarkKey();
+            const result = await chrome.storage.local.get([bookmarkKey]);
+            let favorites = result[bookmarkKey] || [];
             if (index >= 0 && index < favorites.length) {
                 const removedBookmark = favorites[index];
                 await this.animateBookmarkToTab(removedBookmark);
                 favorites.splice(index, 1);
-                await chrome.storage.local.set({ favorites });
+                await chrome.storage.local.set({ [bookmarkKey]: favorites });
                 this.favorites = favorites;
                 this.showMessage(`Restored "${this.truncate(removedBookmark.title, 20)}" to tabs`, 'success');
                 setTimeout(() => {
@@ -3882,13 +3979,14 @@ class TabmangmentPopup {
                 this.showError('Tab not found');
                 return;
             }
-            const result = await chrome.storage.local.get(['favorites']);
-            let favorites = result.favorites || [];
+            const bookmarkKey = await this.getUserBookmarkKey();
+            const result = await chrome.storage.local.get([bookmarkKey]);
+            let favorites = result[bookmarkKey] || [];
             const existingIndex = favorites.findIndex(fav => fav.url === tab.url);
             if (existingIndex !== -1) {
                 await this.animateBookmarkToTab(favorites[existingIndex]);
                 favorites.splice(existingIndex, 1);
-                await chrome.storage.local.set({ favorites });
+                await chrome.storage.local.set({ [bookmarkKey]: favorites });
                 this.showMessage(`Restored "${this.truncate(tab.title, 20)}" to tabs`, 'success');
                 this.favorites = favorites;
                 setTimeout(() => {
@@ -3904,7 +4002,7 @@ class TabmangmentPopup {
                 };
                 await this.animateTabToBookmark(tabId, bookmarkData);
                 favorites.push(bookmarkData);
-                await chrome.storage.local.set({ favorites });
+                await chrome.storage.local.set({ [bookmarkKey]: favorites });
                 this.showMessage(`Bookmarked "${this.truncate(tab.title, 20)}"`, 'success');
                 this.favorites = favorites;
                 setTimeout(() => {
@@ -8290,17 +8388,6 @@ function applyThemeToPopup(theme) {
                 background: rgba(255, 255, 255, 0.15) !important;
                 backdrop-filter: blur(10px) !important;
                 border: 1px solid rgba(255, 255, 255, 0.2) !important;
-            }
-
-            /* Back to Tabs Button */
-            #back-to-tabs {
-                background: linear-gradient(135deg, rgba(255, 255, 255, 0.25), rgba(255, 255, 255, 0.15)) !important;
-                backdrop-filter: blur(10px) !important;
-                border: 1px solid rgba(255, 255, 255, 0.3) !important;
-            }
-
-            #back-to-tabs:hover {
-                background: linear-gradient(135deg, rgba(255, 255, 255, 0.4), rgba(255, 255, 255, 0.3)) !important;
             }
 
             /* Bookmark All Current Button */
