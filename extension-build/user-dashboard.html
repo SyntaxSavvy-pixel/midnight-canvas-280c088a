@@ -2177,7 +2177,7 @@
                     <p class="page-subtitle">Upgrade your plan to unlock premium features.</p>
                 </div>
 
-                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 2rem;">
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.5rem;">
                     <!-- Free Plan -->
                     <div class="card">
                         <div class="card-header">
@@ -2186,7 +2186,7 @@
                         </div>
                         <div style="text-align: center; margin: 1rem 0;">
                             <div style="font-size: 2.5rem; font-weight: 700; color: #f8fafc;">$0</div>
-                            <div style="color: #94a3b8;">per month</div>
+                            <div style="color: #94a3b8;">forever</div>
                         </div>
                         <ul class="plan-features">
                             <li><i data-feather="check" class="check"></i> Up to 10 managed tabs</li>
@@ -2198,14 +2198,14 @@
                         </ul>
                     </div>
 
-                    <!-- Pro Plan -->
+                    <!-- Pro Plan Monthly -->
                     <div class="card subscription-card">
                         <div class="card-header">
-                            <h3 class="card-title" style="color: #f8fafc;">Pro Plan</h3>
-                            <div class="plan-badge pro" id="pro-status" style="display: none;">Current</div>
+                            <h3 class="card-title" style="color: #f8fafc;">Pro Monthly</h3>
+                            <div class="plan-badge pro" id="pro-monthly-status" style="display: none;">Current</div>
                         </div>
                         <div style="text-align: center; margin: 1rem 0;">
-                            <div style="font-size: 2.5rem; font-weight: 700; color: #f8fafc;">$4.99</div>
+                            <div style="font-size: 2.5rem; font-weight: 700; color: #f8fafc;">$1.87</div>
                             <div style="color: rgba(255, 255, 255, 0.8);">per month</div>
                         </div>
                         <ul class="plan-features">
@@ -2216,8 +2216,51 @@
                             <li><i data-feather="check" class="check"></i> Priority support</li>
                             <li><i data-feather="check" class="check"></i> Data export</li>
                         </ul>
-                        <button class="card-action" id="plan-action-btn" onclick="toggleSubscription()" style="width: 100%; margin-top: 1rem;">
-                            Upgrade to Pro
+                        <button class="card-action" id="plan-action-monthly-btn" onclick="upgradeToProMonthly()" style="width: 100%; margin-top: 1rem;">
+                            Upgrade Monthly
+                        </button>
+                    </div>
+
+                    <!-- Pro Plan Yearly -->
+                    <div class="card subscription-card">
+                        <div class="card-header">
+                            <h3 class="card-title" style="color: #f8fafc;">Pro Yearly</h3>
+                            <div class="plan-badge pro" id="pro-yearly-status" style="display: none;">Current</div>
+                        </div>
+                        <div style="text-align: center; margin: 1rem 0;">
+                            <div style="font-size: 2.5rem; font-weight: 700; color: #f8fafc;">$18.99</div>
+                            <div style="color: rgba(255, 255, 255, 0.8);">per year <span style="font-size: 0.875rem; color: #10b981;">(Save 15%)</span></div>
+                        </div>
+                        <ul class="plan-features">
+                            <li><i data-feather="check" class="check"></i> All Pro features</li>
+                            <li><i data-feather="check" class="check"></i> Annual billing</li>
+                            <li><i data-feather="check" class="check"></i> Best value for long-term</li>
+                            <li><i data-feather="check" class="check"></i> Cancel anytime</li>
+                        </ul>
+                        <button class="card-action" id="plan-action-yearly-btn" onclick="upgradeToProYearly()" style="width: 100%; margin-top: 1rem;">
+                            Upgrade Yearly
+                        </button>
+                    </div>
+
+                    <!-- Pro Plan Lifetime -->
+                    <div class="card subscription-card" style="border: 2px solid #10b981;">
+                        <div class="card-header">
+                            <h3 class="card-title" style="color: #f8fafc;">Pro Lifetime</h3>
+                            <div class="plan-badge pro" id="pro-lifetime-status" style="display: none;">Current</div>
+                            <div style="background: #10b981; color: white; padding: 0.25rem 0.75rem; border-radius: 1rem; font-size: 0.75rem; font-weight: 600; margin-top: 0.5rem;">BEST VALUE</div>
+                        </div>
+                        <div style="text-align: center; margin: 1rem 0;">
+                            <div style="font-size: 2.5rem; font-weight: 700; color: #f8fafc;">$39.99</div>
+                            <div style="color: rgba(255, 255, 255, 0.8);">one-time payment</div>
+                        </div>
+                        <ul class="plan-features">
+                            <li><i data-feather="check" class="check"></i> All Pro features</li>
+                            <li><i data-feather="check" class="check"></i> Lifetime access</li>
+                            <li><i data-feather="check" class="check"></i> No recurring fees</li>
+                            <li><i data-feather="check" class="check"></i> Pay once, own forever</li>
+                        </ul>
+                        <button class="card-action" id="plan-action-lifetime-btn" onclick="upgradeToProLifetime()" style="width: 100%; margin-top: 1rem; background: #10b981;">
+                            Get Lifetime Access
                         </button>
                     </div>
                 </div>
@@ -2922,7 +2965,7 @@
         <div class="modal-content">
             <button class="modal-close" onclick="closeModal()">&times;</button>
             <h2 style="color: #f8fafc; margin-bottom: 1rem;">Upgrade to Pro</h2>
-            <p style="color: #94a3b8; margin-bottom: 2rem;">Unlock unlimited tab management and advanced features for just $4.99/month.</p>
+            <p style="color: #94a3b8; margin-bottom: 2rem;">Unlock unlimited tab management and advanced features starting at just $1.87/month.</p>
 
             <div style="background: #0f172a; padding: 1.5rem; border-radius: 0.5rem; margin-bottom: 2rem;">
                 <h3 style="color: #f8fafc; margin-bottom: 1rem;">Pro Features Include:</h3>
@@ -4304,7 +4347,11 @@
         // API Configuration - Cloudflare Pages Functions path
         const API_BASE = window.location.origin + '/api';
         let authToken = null;
-        let STRIPE_PRICE_ID = null; // Will be fetched from API
+        // Stripe Price IDs
+        const STRIPE_PRICE_MONTHLY = 'price_1SSSuDLJKLfllJJDX7FiWkR4'; // $1.87/month
+        const STRIPE_PRICE_YEARLY = 'price_1SSSvzLJKLfllJJDtwitkXHh'; // $18.99/year
+        const STRIPE_PRICE_LIFETIME = 'price_1SSSwwLJKLfllJJDlgxqyram'; // $39.99 lifetime
+        let STRIPE_PRICE_ID = STRIPE_PRICE_MONTHLY; // Default to monthly
 
         // Wait for bridge to be ready
         async function waitForBridge(timeout = 10000) {
@@ -4390,9 +4437,7 @@
 
         // Initialize dashboard
         async function initDashboard() {
-            // Stripe config - using default price ID
-            // API endpoint not implemented yet, using hardcoded value
-            STRIPE_PRICE_ID = 'price_1Rzw2LLJKLfllJJD6HPKEDHK'; // LIVE Stripe Price ID
+            // Stripe price IDs are already configured above
 
             // Check authentication (with SINGLE retry for OAuth redirects)
             authToken = localStorage.getItem('tabmangment_token');
@@ -4879,7 +4924,7 @@
                     <div style="display: flex; align-items: flex-start; gap: 0.75rem; padding: 1rem; background: rgba(245, 158, 11, 0.1); border-radius: 0.75rem; border: 1px solid rgba(245, 158, 11, 0.3);">
                         <span style="width: 24px; height: 24px; flex-shrink: 0; margin-top: 0.125rem;">⭐</span>
                         <div style="flex: 1; font-size: 0.9375rem; line-height: 1.6;">
-                            Subscribe to the <strong style="color: #f59e0b; font-weight: 600;">$4.99/month</strong> plan to unlock Auto-Close and premium features!
+                            Subscribe to Pro (starting at <strong style="color: #f59e0b; font-weight: 600;">$1.87/month</strong>) to unlock Auto-Close and premium features!
                         </div>
                     </div>
                 `;
@@ -5221,10 +5266,10 @@
                         <!-- Price -->
                         <div style="text-align: center; margin-bottom: 2rem;">
                             <div style="font-size: 2.5rem; font-weight: 700; color: #f8fafc; margin-bottom: 0.25rem;">
-                                $4.99
+                                Starting at $1.87
                                 <span style="font-size: 1rem; font-weight: 400; color: #94a3b8;">/month</span>
                             </div>
-                            <div style="color: #64748b; font-size: 0.875rem;">Cancel anytime • Instant activation</div>
+                            <div style="color: #64748b; font-size: 0.875rem;">Multiple plans available • Cancel anytime • Instant activation</div>
                         </div>
 
                         <!-- Actions -->
@@ -5736,6 +5781,24 @@
                     upgradeBtn.textContent = 'Upgrade to Pro';
                 }
             }
+        }
+
+        // Upgrade to Pro Monthly
+        async function upgradeToProMonthly() {
+            STRIPE_PRICE_ID = STRIPE_PRICE_MONTHLY;
+            await processUpgrade();
+        }
+
+        // Upgrade to Pro Yearly
+        async function upgradeToProYearly() {
+            STRIPE_PRICE_ID = STRIPE_PRICE_YEARLY;
+            await processUpgrade();
+        }
+
+        // Upgrade to Pro Lifetime
+        async function upgradeToProLifetime() {
+            STRIPE_PRICE_ID = STRIPE_PRICE_LIFETIME;
+            await processUpgrade();
         }
 
         async function openBillingPortal() {

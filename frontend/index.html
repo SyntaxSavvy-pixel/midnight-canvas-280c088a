@@ -369,7 +369,7 @@
         <section id="pricing" class="pricing">
             <div class="container">
                 <h2>Choose Your Plan</h2>
-                <div class="pricing-cards">
+                <div class="pricing-cards" style="grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); max-width: 1200px;">
                     <div class="pricing-card">
                         <div class="plan-name">Free</div>
                         <div class="plan-price">$0</div>
@@ -382,9 +382,9 @@
                         </ul>
                         <a href="#install" class="btn-secondary">Get Started</a>
                     </div>
-                    <div class="pricing-card featured">
-                        <div class="plan-name">Pro</div>
-                        <div class="plan-price">$4.99</div>
+                    <div class="pricing-card">
+                        <div class="plan-name">Pro Monthly</div>
+                        <div class="plan-price">$1.87</div>
                         <div class="plan-period">per month</div>
                         <ul class="plan-features">
                             <li>Unlimited tabs management</li>
@@ -395,6 +395,30 @@
                             <li>Priority support</li>
                         </ul>
                         <a href="#upgrade" class="btn-primary">Upgrade to Pro</a>
+                    </div>
+                    <div class="pricing-card">
+                        <div class="plan-name">Pro Yearly</div>
+                        <div class="plan-price">$18.99</div>
+                        <div class="plan-period">per year</div>
+                        <ul class="plan-features">
+                            <li>Everything in Pro Monthly</li>
+                            <li>Save over 15%</li>
+                            <li>Annual billing</li>
+                            <li>Cancel anytime</li>
+                        </ul>
+                        <a href="#upgrade" class="btn-primary">Upgrade to Pro</a>
+                    </div>
+                    <div class="pricing-card featured">
+                        <div class="plan-name">Pro Lifetime</div>
+                        <div class="plan-price">$39.99</div>
+                        <div class="plan-period">one-time payment</div>
+                        <ul class="plan-features">
+                            <li>Everything in Pro</li>
+                            <li>Lifetime access</li>
+                            <li>No recurring fees</li>
+                            <li>Best value - Pay once, own forever</li>
+                        </ul>
+                        <a href="#upgrade" class="btn-primary">Get Lifetime Access</a>
                     </div>
                 </div>
             </div>
