@@ -3853,26 +3853,71 @@ class TabmangmentPopup {
         const allBookmarks = result[bookmarkKey] || [];
 
         const searchQuery = query.trim().toLowerCase();
+        const bookmarkItems = document.querySelectorAll('.bookmark-item');
 
-        // Filter bookmarks by title or URL
-        const filteredBookmarks = searchQuery === ''
-            ? allBookmarks
-            : allBookmarks.filter(bookmark => {
-                const title = (bookmark.title || '').toLowerCase();
-                const url = (bookmark.url || '').toLowerCase();
-                return title.includes(searchQuery) || url.includes(searchQuery);
-            });
+        let visibleCount = 0;
 
-        // Get theme gradient
-        const theme = await this.themeManager?.getCurrentTheme();
-        const themeGradient = theme?.gradient || 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)';
+        // Show/hide and highlight bookmarks based on search
+        bookmarkItems.forEach((item, index) => {
+            const bookmark = allBookmarks[index];
+            if (!bookmark) return;
 
-        // Update the bookmarks list
-        const bookmarksList = document.getElementById('bookmarks-list');
-        if (bookmarksList) {
-            bookmarksList.innerHTML = this.renderBookmarksList(filteredBookmarks, themeGradient);
-            this.attachBookmarkListeners();
-        }
+            const title = (bookmark.title || '').toLowerCase();
+            const url = (bookmark.url || '').toLowerCase();
+            const domain = this.extractDomain(bookmark.url).toLowerCase();
+
+            // Check if bookmark matches search
+            const matchesSearch = searchQuery === '' ||
+                                title.includes(searchQuery) ||
+                                url.includes(searchQuery) ||
+                                domain.includes(searchQuery);
+
+            if (matchesSearch) {
+                item.style.display = 'flex';
+                visibleCount++;
+
+                // Highlight matching text
+                if (searchQuery !== '') {
+                    const titleEl = item.querySelector('.bookmark-title');
+                    const urlEl = item.querySelector('.bookmark-url');
+
+                    if (titleEl) {
+                        titleEl.innerHTML = this.highlightText(bookmark.title || 'Untitled', searchQuery);
+                    }
+                    if (urlEl) {
+                        const domainText = this.extractDomain(bookmark.url);
+                        const highlightedDomain = this.highlightText(domainText, searchQuery);
+                        urlEl.innerHTML = `
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="opacity: 0.6;">
+                                <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
+                                <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
+                            </svg>
+                            ${highlightedDomain}
+                        `;
+                    }
+                } else {
+                    // Reset to original text when search is cleared
+                    const titleEl = item.querySelector('.bookmark-title');
+                    const urlEl = item.querySelector('.bookmark-url');
+
+                    if (titleEl) {
+                        titleEl.textContent = this.sanitizeText(bookmark.title || 'Untitled');
+                    }
+                    if (urlEl) {
+                        const domainText = this.extractDomain(bookmark.url);
+                        urlEl.innerHTML = `
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="opacity: 0.6;">
+                                <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
+                                <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
+                            </svg>
+                            ${domainText}
+                        `;
+                    }
+                }
+            } else {
+                item.style.display = 'none';
+            }
+        });
 
         // Update the counter
         const bookmarkCount = document.getElementById('bookmark-count');
@@ -3880,9 +3925,22 @@ class TabmangmentPopup {
             if (searchQuery === '') {
                 bookmarkCount.textContent = allBookmarks.length;
             } else {
-                bookmarkCount.textContent = `${filteredBookmarks.length} of ${allBookmarks.length}`;
+                bookmarkCount.textContent = `${visibleCount} of ${allBookmarks.length}`;
             }
         }
+    }
+
+    highlightText(text, query) {
+        if (!query || !text) return this.sanitizeText(text);
+
+        const sanitizedText = this.sanitizeText(text);
+        const regex = new RegExp(`(${this.escapeRegex(query)})`, 'gi');
+
+        return sanitizedText.replace(regex, '<mark style="background: linear-gradient(135deg, #fbbf24, #f59e0b); color: #78350f; padding: 2px 4px; border-radius: 3px; font-weight: 700;">$1</mark>');
+    }
+
+    escapeRegex(string) {
+        return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
     }
 
     attachBookmarkListeners() {
