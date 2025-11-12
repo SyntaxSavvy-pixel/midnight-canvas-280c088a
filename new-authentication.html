@@ -1692,31 +1692,52 @@ async function handleGithubLogin() {
 
             // FIX: Wait for user sync before redirecting (prevents "User not found" error)
             // Use Cloudflare Pages function (not Netlify)
-            try {
-                const syncResponse = await fetch(window.location.origin + '/api/sync-user', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${session.access_token}`
-                    },
-                    body: JSON.stringify({
-                        email: userData.email,
-                        name: userData.name,
-                        userId: userData.id,
-                        provider: userData.provider
-                    })
-                });
+            // Retry logic handles cold starts and transient failures
+            const syncUserWithRetry = async (maxRetries = 3, initialDelay = 500) => {
+                for (let attempt = 1; attempt <= maxRetries; attempt++) {
+                    try {
+                        const syncResponse = await fetch(window.location.origin + '/api/sync-user', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Authorization': `Bearer ${session.access_token}`
+                            },
+                            body: JSON.stringify({
+                                email: userData.email,
+                                name: userData.name,
+                                userId: userData.id,
+                                provider: userData.provider
+                            })
+                        });
 
-                if (!syncResponse.ok) {
-                    const errorData = await syncResponse.json().catch(() => ({}));
-                    console.error('User sync failed:', errorData);
-                    // Don't redirect if sync failed
-                    return;
+                        if (syncResponse.ok) {
+                            const syncResult = await syncResponse.json();
+                            if (syncResult.success) {
+                                return syncResult;
+                            }
+                            console.warn(`Attempt ${attempt}/${maxRetries}: Sync returned failure`, syncResult);
+                        } else {
+                            const errorData = await syncResponse.json().catch(() => ({}));
+                            console.warn(`Attempt ${attempt}/${maxRetries}: Sync failed with status ${syncResponse.status}`, errorData);
+                        }
+                    } catch (error) {
+                        console.warn(`Attempt ${attempt}/${maxRetries}: Sync request error`, error);
+                    }
+
+                    // If not last attempt, wait before retrying with exponential backoff
+                    if (attempt < maxRetries) {
+                        const delay = initialDelay * Math.pow(2, attempt - 1);
+                        await new Promise(resolve => setTimeout(resolve, delay));
+                    }
                 }
 
-                // Wait for and verify successful sync response
-                const syncResult = await syncResponse.json();
-                if (!syncResult.success) {
+                // All attempts failed
+                throw new Error('User sync failed after multiple attempts');
+            };
+
+            try {
+                const syncResult = await syncUserWithRetry();
+                if (!syncResult || !syncResult.success) {
                     console.error('User sync returned failure:', syncResult);
                     return;
                 }

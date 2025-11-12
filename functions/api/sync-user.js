@@ -14,13 +14,17 @@ const corsHeaders = {
 export async function onRequestPost(context) {
   try {
     const { request, env } = context;
+    const startTime = Date.now();
 
     // Parse request body
     const body = await request.json();
     const { email, name, userId, provider } = body;
 
+    console.log(`[sync-user] Processing sync for email: ${email}, provider: ${provider}`);
+
     // Validate input
     if (!email || !userId) {
+      console.error('[sync-user] Validation failed: Missing email or userId');
       return new Response(JSON.stringify({
         success: false,
         error: 'Email and userId are required'
@@ -34,6 +38,10 @@ export async function onRequestPost(context) {
     const supabaseKey = env.SUPABASE_SERVICE_ROLE_KEY;
 
     if (!supabaseUrl || !supabaseKey) {
+      console.error('[sync-user] Configuration error: Missing environment variables', {
+        hasUrl: !!supabaseUrl,
+        hasKey: !!supabaseKey
+      });
       return new Response(JSON.stringify({
         success: false,
         error: 'Server configuration error'
@@ -46,6 +54,7 @@ export async function onRequestPost(context) {
     // ==============================================================
     // STEP 1: Check if user exists in users_auth table
     // ==============================================================
+    console.log(`[sync-user] Checking if user exists: ${email}`);
     const existingUserResponse = await fetch(
       `${supabaseUrl}/rest/v1/users_auth?email=eq.${encodeURIComponent(email)}&select=id,email`,
       {
@@ -62,7 +71,12 @@ export async function onRequestPost(context) {
       const existingUsers = await existingUserResponse.json();
       if (existingUsers && existingUsers.length > 0) {
         userExists = true;
+        console.log(`[sync-user] User already exists: ${email}`);
+      } else {
+        console.log(`[sync-user] User not found, will create: ${email}`);
       }
+    } else {
+      console.error(`[sync-user] Failed to check user existence: ${existingUserResponse.status}`);
     }
 
     // ==============================================================
@@ -71,6 +85,12 @@ export async function onRequestPost(context) {
     if (!userExists) {
       // Check if user is admin and grant privileges
       const adminPrivileges = getAdminPrivileges(email);
+      console.log(`[sync-user] Creating new user with privileges:`, {
+        email,
+        isAdmin: adminPrivileges.isAdmin,
+        isPro: adminPrivileges.isPro,
+        planType: adminPrivileges.planType
+      });
 
       // For admin users, set a far-future billing date (100 years from now)
       let nextBillingDate = null;
@@ -106,7 +126,7 @@ export async function onRequestPost(context) {
         const errorText = await insertResponse.text();
         // Only fail if it's not a duplicate key error
         if (!errorText.includes('duplicate key') && !errorText.includes('unique constraint')) {
-          console.error('Failed to create user in users_auth table:', errorText);
+          console.error('[sync-user] Failed to create user in users_auth table:', errorText);
           return new Response(JSON.stringify({
             success: false,
             error: 'Failed to create user record',
@@ -115,12 +135,19 @@ export async function onRequestPost(context) {
             status: 500,
             headers: corsHeaders
           });
+        } else {
+          console.log(`[sync-user] User already exists (duplicate key), continuing...`);
         }
+      } else {
+        console.log(`[sync-user] Successfully created user: ${email}`);
       }
     }
 
     // Get admin status for response
     const adminPrivileges = getAdminPrivileges(email);
+    const duration = Date.now() - startTime;
+
+    console.log(`[sync-user] Successfully synced user: ${email} (took ${duration}ms)`);
 
     return new Response(JSON.stringify({
       success: true,
