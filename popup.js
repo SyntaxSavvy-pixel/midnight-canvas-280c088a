@@ -3786,7 +3786,7 @@ class TabmangmentPopup {
                     position: relative;
                     transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
                 ">
-                    <img src="${this.getSafeFaviconUrl(bookmark.url)}"
+                    <img src="${this.getSafeFaviconUrl(bookmark.favIconUrl)}"
                          alt="Favicon"
                          style="
                             width: 24px;
@@ -4093,6 +4093,7 @@ class TabmangmentPopup {
                         id: tab.id,
                         title: tab.title,
                         url: tab.url,
+                        favIconUrl: tab.favIconUrl,
                         dateAdded: Date.now()
                     });
                     addedCount++;
@@ -4177,6 +4178,7 @@ class TabmangmentPopup {
                     id: tab.id,
                     title: tab.title,
                     url: tab.url,
+                    favIconUrl: tab.favIconUrl,
                     dateAdded: Date.now()
                 };
                 await this.animateTabToBookmark(tabId, bookmarkData);
@@ -4274,7 +4276,7 @@ class TabmangmentPopup {
                     align-items: center;
                     justify-content: center;
                 ">
-                    <img src="${this.getSafeFaviconUrl(bookmarkData.url)}"
+                    <img src="${this.getSafeFaviconUrl(bookmarkData.favIconUrl)}"
                          alt="Favicon"
                          style="width: 24px; height: 24px; object-fit: cover; border-radius: 4px;">
                 </div>
@@ -6807,10 +6809,10 @@ Thank you!`);
             return 'Unknown';
         }
     }
-    getSafeFaviconUrl(url) {
-        // Always use local icon to avoid CORS errors from external favicon URLs
-        // This prevents "Failed to load resource: net::ERR_BLOCKED_BY_RESPONSE.NotSameOrigin" errors
-        return 'icons/icon-16.png';
+    getSafeFaviconUrl(faviconUrl) {
+        // Return the actual favicon URL if available, otherwise use local icon
+        // Note: Some external favicons may trigger CORS console errors, but they're harmless
+        return faviconUrl || 'icons/icon-16.png';
     }
     async syncWithBrowserTabs(realTabs) {
         const extensionTabIds = new Set(this.tabs.map(tab => tab.id));
