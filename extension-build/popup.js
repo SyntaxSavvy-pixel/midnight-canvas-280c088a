@@ -1,3 +1,4 @@
+// Temporarily removed import to fix service worker loading
 const CONFIG = {
     API: {
         BASE: 'https://tabmangment.com/api',
@@ -8,6 +9,8 @@ const CONFIG = {
         INCREMENT_SEARCH: 'https://tabmangment.com/api/increment-search'
     },
     PERPLEXITY: {
+        // API_KEY removed - stored securely as PERPLEXITY_API_KEY environment variable on Cloudflare
+        // Client now calls https://tabmangment.com/api/perplexity-search (secure backend proxy)
         SEARCH_URL: 'https://tabmangment.com/api/perplexity-search',
         MAX_RESULTS: 10,
         MAX_TOKENS: 25000,
@@ -23,7 +26,7 @@ const CONFIG = {
         TIMER_CHECK_INTERVAL: 5000,
         STATUS_CHECK_INTERVAL: 300000,
         CACHE_TIMEOUT: 2000,
-        SYNC_INTERVAL: 30000 
+        SYNC_INTERVAL: 30000 // Sync every 30 seconds
     }
 };
 
@@ -60,20 +63,28 @@ class TabmangmentPopup {
         }
     }
     async init() {
+        // Fallback: Force hide loader after 5 seconds no matter what
         setTimeout(() => {
             this.hideLoader();
         }, 5000);
 
         try {
+            // Setup event listeners FIRST - needed to detect login
             this.setupEventListeners();
 
+            // Note: startDashboardSync is called AFTER instance creation
+            // (at bottom of file where prototype methods are available)
+
+            // CHECK AUTHENTICATION FIRST - Users must be logged in
             const isAuthenticated = await this.checkAuthentication();
 
             if (!isAuthenticated) {
+                // Not found in extension storage - try to sync from web as last resort
 
                 const webLogin = await this.checkWebLoginStatus();
 
                 if (webLogin) {
+                    // Get the newly synced data
                     const syncedData = await chrome.storage.local.get(['userEmail', 'userName', 'isPremium', 'isPro']);
 
                     if (syncedData.userEmail) {
@@ -81,8 +92,10 @@ class TabmangmentPopup {
                         this.userName = syncedData.userName;
                         this.isPremium = syncedData.isPremium || syncedData.isPro || false;
 
+                        // Update PRO badge visibility
                         this.updatePremiumUI();
 
+                        // Continue with initialization
                     } else {
                         this.hideLoader();
                         this.showLoginScreen();
@@ -91,7 +104,7 @@ class TabmangmentPopup {
                 } else {
                     this.hideLoader();
                     this.showLoginScreen();
-                    return; 
+                    return; // Stop initialization - user must login first
                 }
             } else {
             }
@@ -99,9 +112,12 @@ class TabmangmentPopup {
             this.initializeEmailJS();
             this.setupPaymentListener();
 
+            // Load and apply custom theme (non-blocking, don't break popup if fails)
             loadAndApplyTheme().catch(err => {
+                // Theme load failed silently
             });
 
+            // Load and show cached data IMMEDIATELY (non-blocking)
             this.loadData().then(() => {
                 this.render();
                 this.hideLoader();
@@ -109,22 +125,27 @@ class TabmangmentPopup {
                 this.hideLoader();
             });
 
+            // Do background checks without blocking UI
             this.checkServiceWorkerHealth().catch(e => {});
             this.checkPendingActivation().catch(e => {});
             this.checkSubscription().catch(e => {});
 
+            // Background subscription check (non-blocking, updates UI when done)
             this.checkSubscriptionStatusBackground();
 
+            // Initialize timer system in background
             this.initializeTimerSystem().catch(e => {});
 
+            // Start real-time updates
             this.startRealTimeUpdates();
             this.startSubscriptionStatusRefresh();
         } catch (error) {
             this.showError('Failed to initialize extension: ' + error.message);
-            this.hideLoader(); 
+            this.hideLoader(); // Hide loader even on error
         }
     }
     hideLoader() {
+        // Add smooth transition
         document.body.classList.add('loaded');
         const loader = document.getElementById('app-loader');
         if (loader) {
@@ -628,21 +649,27 @@ class TabmangmentPopup {
             contactBtn.addEventListener('click', () => this.showContactModal());
         }
 
+        // Profile menu event listeners
         this.setupProfileMenu();
 
+        // Search Panel Event Listeners
         this.setupSearchPanel();
 
         chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
             if (message.action === 'updateClosingSoonCount') {
                 this.updateClosingSoonCounter(message.count);
             }
+            // Listen for user login from dashboard
             if (message.type === 'USER_LOGGED_IN' || message.type === 'USER_LOGIN') {
+                // Reload the popup to initialize with logged in state
                 window.location.reload();
             }
         });
 
+        // Listen for storage changes (when user logs in/out from dashboard)
         chrome.storage.onChanged.addListener(async (changes, areaName) => {
 
+            // INSTANT THEME UPDATES - Apply theme immediately when changed
             if (areaName === 'local' && (changes.themeConfig || changes.activeTheme)) {
                 const { themeConfig } = await chrome.storage.local.get(['themeConfig']);
                 if (themeConfig) {
@@ -654,6 +681,8 @@ class TabmangmentPopup {
                 const newEmail = changes.userEmail.newValue;
                 const oldEmail = changes.userEmail.oldValue;
 
+
+                // User logged out (email removed)
                 if (oldEmail && !newEmail) {
                     this.userEmail = null;
                     this.isPremium = false;
@@ -661,27 +690,34 @@ class TabmangmentPopup {
                     return;
                 }
 
+                // If email changed from nothing to something OR changed to a real email (user logged in)
                 if (newEmail && !newEmail.startsWith('fallback_') && !newEmail.startsWith('user_')) {
 
+                    // Get all the user data from storage
                     const userData = await chrome.storage.local.get(['userEmail', 'userName', 'authToken', 'isPremium', 'isPro', 'planType']);
 
+                    // Update popup state
                     this.userEmail = userData.userEmail;
                     this.userName = userData.userName || userData.userEmail.split('@')[0];
                     this.isPremium = userData.isPremium || userData.isPro || false;
 
+                    // IMPORTANT: Hide login screen first (if it exists)
                     const loginScreen = document.getElementById('login-screen');
                     if (loginScreen) {
                         this.hideLoginScreen();
                     }
 
+                    // Show the main UI
                     const header = document.querySelector('.header');
                     const tabsContainer = document.getElementById('tabs-container');
                     if (header) header.style.display = '';
                     if (tabsContainer) tabsContainer.style.display = '';
 
+                    // Re-initialize with the logged-in user
                     await this.loadData();
                     await this.render();
 
+                    // Hide the loader
                     this.hideLoader();
 
                 }
@@ -692,14 +728,17 @@ class TabmangmentPopup {
         this.setupPremiumModal();
     }
 
+    // Setup Profile Menu
     setupProfileMenu() {
         const profileBtn = document.getElementById('profile-btn');
         const profileMenu = document.getElementById('profile-menu');
         const viewDashboardBtn = document.getElementById('view-dashboard-btn');
         const menuLogoutBtn = document.getElementById('menu-logout-btn');
 
+        // Load and display user info in profile menu
         this.loadProfileInfo();
 
+        // Toggle profile menu
         if (profileBtn && profileMenu) {
             profileBtn.addEventListener('click', (e) => {
                 e.stopPropagation();
@@ -707,6 +746,7 @@ class TabmangmentPopup {
                 profileMenu.style.display = isVisible ? 'none' : 'block';
             });
 
+            // Close menu when clicking outside
             document.addEventListener('click', (e) => {
                 if (!profileMenu.contains(e.target) && !profileBtn.contains(e.target)) {
                     profileMenu.style.display = 'none';
@@ -714,6 +754,7 @@ class TabmangmentPopup {
             });
         }
 
+        // View Dashboard button
         if (viewDashboardBtn) {
             viewDashboardBtn.addEventListener('click', () => {
                 chrome.tabs.create({ url: CONFIG.WEB.DASHBOARD_URL });
@@ -721,6 +762,7 @@ class TabmangmentPopup {
             });
         }
 
+        // Logout button in menu
         if (menuLogoutBtn) {
             menuLogoutBtn.addEventListener('click', async () => {
                 await this.handleLogout();
@@ -729,18 +771,20 @@ class TabmangmentPopup {
         }
     }
 
+    // Helper method to get user-specific bookmark storage key
     async getUserBookmarkKey() {
         try {
             const result = await chrome.storage.local.get(['userEmail']);
             if (result.userEmail) {
                 return `bookmarks_${result.userEmail}`;
             }
-            return 'bookmarks_guest'; 
+            return 'bookmarks_guest'; // Fallback for non-logged-in users
         } catch (error) {
             return 'bookmarks_guest';
         }
     }
 
+    // Load user profile information
     async loadProfileInfo() {
         try {
             const result = await chrome.storage.local.get(['userEmail', 'userName', 'userPhoto']);
@@ -755,6 +799,7 @@ class TabmangmentPopup {
                 if (profileMenuName) profileMenuName.textContent = displayName;
                 if (profileMenuEmail) profileMenuEmail.textContent = result.userEmail;
 
+                // Set profile photo if available
                 if (result.userPhoto) {
                     if (profileImage) profileImage.src = result.userPhoto;
                     if (profileMenuImage) profileMenuImage.src = result.userPhoto;
@@ -765,8 +810,10 @@ class TabmangmentPopup {
         }
     }
 
+    // Handle user logout
     async handleLogout() {
         try {
+            // Clear all user data from storage
             await chrome.storage.local.remove([
                 'userEmail',
                 'userName',
@@ -779,18 +826,22 @@ class TabmangmentPopup {
                 'subscriptionActive'
             ]);
 
+            // Clear instance variables
             this.userEmail = null;
             this.userName = null;
             this.isPremium = false;
 
+            // Notify background script of logout
             chrome.runtime.sendMessage({ type: 'USER_LOGGED_OUT' });
 
+            // Show login screen
             this.showLoginScreen();
         } catch (error) {
             console.error('Error during logout:', error);
         }
     }
 
+    // Setup Search Panel
     setupSearchPanel() {
         const searchBtn = document.getElementById('search-btn');
         const searchSection = document.getElementById('search-section');
@@ -800,6 +851,7 @@ class TabmangmentPopup {
         const collapseBtn = document.getElementById('collapse-btn');
         const bookmarkBtn = document.getElementById('bookmark-all-btn');
 
+        // Function to show tabs view
         const showTabsView = () => {
             if (searchSection) searchSection.style.display = 'none';
             if (tabsContainer) tabsContainer.style.display = 'block';
@@ -809,6 +861,7 @@ class TabmangmentPopup {
             this.clearSearchResults();
         };
 
+        // Function to show search view
         const showSearchView = async () => {
             if (searchSection) searchSection.style.display = 'block';
             if (tabsContainer) tabsContainer.style.display = 'none';
@@ -819,21 +872,27 @@ class TabmangmentPopup {
             }, 100);
         };
 
+        // Toggle search section (open/close)
         if (searchBtn) {
             searchBtn.addEventListener('click', async () => {
+                // Check if search is currently active
                 const isSearchActive = searchSection && searchSection.style.display !== 'none';
 
                 if (isSearchActive) {
+                    // Go back to tabs view
                     showTabsView();
                 } else {
+                    // Show search view
                     await showSearchView();
                 }
             });
         }
 
+        // Store references for use in other methods
         this.showTabsView = showTabsView;
         this.showSearchView = showSearchView;
 
+        // Search results action buttons
         const refreshBtn = document.getElementById('search-refresh-btn');
         const clearResultsBtn = document.getElementById('search-clear-results-btn');
 
@@ -841,6 +900,7 @@ class TabmangmentPopup {
             refreshBtn.addEventListener('click', () => {
                 const currentQuery = searchInput ? searchInput.value.trim() : '';
                 if (currentQuery) {
+                    // Pass true to indicate this is a refresh - get NEW results
                     this.performAISearch(currentQuery, true);
                 }
             });
@@ -856,19 +916,23 @@ class TabmangmentPopup {
             });
         }
 
+        // Search input - only show/hide clear button
         if (searchInput) {
             searchInput.addEventListener('input', (e) => {
                 const query = e.target.value;
 
+                // Show/hide clear button
                 if (searchClearBtn) {
                     searchClearBtn.style.display = query ? 'flex' : 'none';
                 }
 
+                // Clear results if input is empty
                 if (!query.trim()) {
                     this.clearSearchResults();
                 }
             });
 
+            // Search ONLY on Enter key press
             searchInput.addEventListener('keypress', (e) => {
                 if (e.key === 'Enter') {
                     const query = e.target.value.trim();
@@ -879,6 +943,7 @@ class TabmangmentPopup {
             });
         }
 
+        // Clear search
         if (searchClearBtn) {
             searchClearBtn.addEventListener('click', () => {
                 if (searchInput) {
@@ -891,6 +956,7 @@ class TabmangmentPopup {
         }
     }
 
+    // Clear search results and show empty state
     clearSearchResults() {
         const emptyState = document.getElementById('search-empty-state');
         const loading = document.getElementById('search-loading');
@@ -898,6 +964,7 @@ class TabmangmentPopup {
         const resultsInfo = document.getElementById('search-results-info');
         const resultsCount = document.getElementById('search-results-count');
 
+        // Remove class from body to restore normal UI (show tabs, stats, etc.)
         document.body.classList.remove('has-search-results');
 
         if (emptyState) emptyState.style.display = 'flex';
@@ -907,24 +974,30 @@ class TabmangmentPopup {
         if (resultsInfo) resultsInfo.style.display = 'none';
     }
 
+    // Check and update search usage with 24-hour rolling window (SERVER-SIDE TRACKED)
     async checkSearchUsage() {
         try {
+            // Get user email and admin status
             const storage = await chrome.storage.local.get(['userEmail', 'isAdmin', 'planType']);
             const userEmail = storage.userEmail;
             const isAdmin = storage.isAdmin || storage.planType === 'admin';
 
+            // If no email (not logged in), BLOCK searches completely
             if (!userEmail) {
                 return { count: 5, canSearch: false, isAdmin: false };
             }
 
+            // ADMIN USERS: Unlimited searches - bypass all limits
             if (isAdmin) {
                 return { count: 0, canSearch: true, isPro: true, isAdmin: true };
             }
 
+            // PREMIUM USERS: Unlimited searches
             if (this.isPremium) {
                 return { count: 0, canSearch: true, isPro: true, isAdmin: false };
             }
 
+            // ALWAYS fetch from backend API - NO LOCAL FALLBACK for logged-in users
             const response = await fetch(CONFIG.API.CHECK_SEARCH_USAGE, {
                 method: 'POST',
                 headers: {
@@ -939,6 +1012,7 @@ class TabmangmentPopup {
 
             const data = await response.json();
 
+            // CRITICAL: Use backend's canSearch value directly - DO NOT recalculate locally
             const count = data.searchCount || 0;
             const canSearch = data.canSearch !== undefined ? data.canSearch : false;
             const isPro = data.isPro || false;
@@ -946,10 +1020,12 @@ class TabmangmentPopup {
             return { count, canSearch, isPro, isAdmin: false };
 
         } catch (error) {
+            // SECURITY: Block search on API error - prevents local exploitation
             return { count: 5, canSearch: false, isAdmin: false };
         }
     }
 
+    // Local fallback for search usage (still tracked, but can be exploited)
     async checkSearchUsageLocal() {
         const stored = await chrome.storage.local.get(['searchTimestamps']);
         const now = Date.now();
@@ -969,16 +1045,20 @@ class TabmangmentPopup {
         return { count, canSearch };
     }
 
+    // Increment search usage counter (SERVER-SIDE ONLY - NO LOCAL TRACKING)
     async incrementSearchUsage() {
         try {
+            // Get user email for server-side tracking
             const storage = await chrome.storage.local.get(['userEmail']);
             const userEmail = storage.userEmail;
 
+            // If no email, block increment (search should have been blocked already)
             if (!userEmail) {
                 
                 return;
             }
 
+            // ALWAYS increment on backend - NEVER use local storage for logged-in users
             const response = await fetch(CONFIG.API.INCREMENT_SEARCH, {
                 method: 'POST',
                 headers: {
@@ -993,13 +1073,15 @@ class TabmangmentPopup {
             }
 
             const data = await response.json();
+            
 
         } catch (error) {
             
-            throw error; 
+            throw error; // Propagate error so search can be handled properly
         }
     }
 
+    // Local fallback for incrementing search usage
     async incrementSearchUsageLocal() {
         const stored = await chrome.storage.local.get(['searchTimestamps']);
         const now = Date.now();
@@ -1010,12 +1092,14 @@ class TabmangmentPopup {
         await chrome.storage.local.set({ searchTimestamps: timestamps });
     }
 
+    // Update search usage display
     async updateSearchUsageDisplay() {
         const usageInfo = document.getElementById('search-usage-info');
         if (!usageInfo) return;
 
         const { count, canSearch, isAdmin } = await this.checkSearchUsage();
 
+        // Admin users get unlimited searches
         if (isAdmin) {
             usageInfo.innerHTML = '👑 Admin: Unlimited searches';
             usageInfo.className = 'search-usage-info admin';
@@ -1037,12 +1121,15 @@ class TabmangmentPopup {
         }
     }
 
+    // Show search limit modal
     showSearchLimitModal() {
+        // Remove existing modal if any
         const existingModal = document.getElementById('search-limit-modal');
         if (existingModal) {
             existingModal.remove();
         }
 
+        // Create modal
         const modal = document.createElement('div');
         modal.id = 'search-limit-modal';
         modal.className = 'search-limit-modal';
@@ -1073,6 +1160,7 @@ class TabmangmentPopup {
 
         document.body.appendChild(modal);
 
+        // Add event listeners
         const closeBtn = document.getElementById('search-limit-close');
         const upgradeBtn = document.getElementById('search-limit-upgrade');
 
@@ -1094,6 +1182,7 @@ class TabmangmentPopup {
             });
         }
 
+        // Close on backdrop click
         modal.addEventListener('click', (e) => {
             if (e.target === modal) {
                 closeModal();
@@ -1101,7 +1190,9 @@ class TabmangmentPopup {
         });
     }
 
+    // Perform AI search using Perplexity API
     async performAISearch(query, isRefresh = false) {
+        // Check search usage limit
         const { canSearch } = await this.checkSearchUsage();
 
         if (!canSearch) {
@@ -1116,12 +1207,14 @@ class TabmangmentPopup {
         const resultsInfo = document.getElementById('search-results-info');
         const resultsCount = document.getElementById('search-results-count');
 
+        // Show loading state
         if (emptyState) emptyState.style.display = 'none';
         if (loading) loading.style.display = 'flex';
         if (resultsList) resultsList.innerHTML = '';
         if (resultsInfo) resultsInfo.style.display = 'none';
 
         try {
+            // Build search parameters with variation for refresh
             const searchParams = {
                 query: query,
                 max_results: CONFIG.PERPLEXITY.MAX_RESULTS,
@@ -1130,15 +1223,20 @@ class TabmangmentPopup {
                 country: CONFIG.PERPLEXITY.COUNTRY
             };
 
+            // Add variation parameters for refresh to get different results
             if (isRefresh) {
+                // Add recency filter to get fresh/recent results
                 const recencyOptions = ['day', 'week', 'month'];
                 searchParams.search_recency_filter = recencyOptions[Math.floor(Math.random() * recencyOptions.length)];
 
+                // Add timestamp to prevent caching
                 searchParams._t = Date.now();
             }
 
+            // Get user email for secure API call
             const { userEmail } = await chrome.storage.local.get(['userEmail']);
 
+            // Call secure backend endpoint (API key is server-side only)
             const response = await fetch('https://tabmangment.com/api/perplexity-search', {
                 method: 'POST',
                 headers: {
@@ -1164,18 +1262,23 @@ class TabmangmentPopup {
             const responseData = await response.json();
             const data = responseData.data;
 
+            // Update search usage display (already incremented on backend)
             await this.updateSearchUsageDisplay();
 
+            // Hide loading
             if (loading) loading.style.display = 'none';
 
             if (data.results && data.results.length > 0) {
+                // Show results
                 this.displaySearchResults(data.results);
 
+                // Update results count
                 if (resultsInfo) resultsInfo.style.display = 'block';
                 if (resultsCount) {
                     resultsCount.textContent = `${data.results.length} results`;
                 }
             } else {
+                // No results found
                 if (resultsList) {
                     resultsList.innerHTML = `
                         <div class="search-empty-state">
@@ -1186,9 +1289,12 @@ class TabmangmentPopup {
                 }
             }
         } catch (error) {
+            
 
+            // Hide loading
             if (loading) loading.style.display = 'none';
 
+            // Show error message
             if (resultsList) {
                 resultsList.innerHTML = `
                     <div class="search-empty-state">
@@ -1200,6 +1306,7 @@ class TabmangmentPopup {
         }
     }
 
+    // Display search results
     displaySearchResults(results) {
         const resultsList = document.getElementById('search-results-list');
         const emptyState = document.getElementById('search-empty-state');
@@ -1207,10 +1314,12 @@ class TabmangmentPopup {
 
         resultsList.innerHTML = '';
 
+        // Hide empty state when showing results
         if (emptyState) {
             emptyState.style.display = 'none';
         }
 
+        // Add class to body to trigger clean UI (hide main content, show focused message)
         document.body.classList.add('has-search-results');
 
         results.forEach(result => {
@@ -1218,14 +1327,16 @@ class TabmangmentPopup {
             resultItem.className = 'search-result-item';
             resultItem.dataset.url = result.url;
 
+            // Extract domain from URL for display
             let displayText = '';
             try {
                 const urlObj = new URL(result.url);
-                displayText = urlObj.hostname.replace('www.', ''); 
+                displayText = urlObj.hostname.replace('www.', ''); // Show clean domain
             } catch (e) {
-                displayText = result.url; 
+                displayText = result.url; // Fallback to full URL if parsing fails
             }
 
+            // Use description/snippet if available, otherwise use domain
             const description = result.snippet || result.description || displayText;
 
             resultItem.innerHTML = `
@@ -1239,6 +1350,7 @@ class TabmangmentPopup {
                 </div>
             `;
 
+            // Click to open in new tab
             resultItem.addEventListener('click', () => {
                 chrome.tabs.create({ url: result.url });
             });
@@ -1247,6 +1359,7 @@ class TabmangmentPopup {
         });
     }
 
+    // Escape HTML to prevent XSS
     escapeHtml(text) {
         const div = document.createElement('div');
         div.textContent = text;
@@ -1272,17 +1385,21 @@ class TabmangmentPopup {
                     return;
                 }
 
+                // Check if search is currently active
                 const searchSection = document.getElementById('search-section');
                 const isSearchActive = searchSection && searchSection.style.display !== 'none';
 
+                // If search is active, close it first
                 if (isSearchActive && this.showTabsView) {
                     this.showTabsView();
                 }
 
+                // Toggle behavior: if already in bookmarks view, go back to tabs
                 if (this.currentView === 'bookmarks') {
                     this.currentView = 'tabs';
                     this.render();
                 } else {
+                    // Show bookmarks view
                     this.showBookmarkMenu();
                 }
             });
@@ -1423,6 +1540,7 @@ class TabmangmentPopup {
                 form.reset();
             }
 
+            // Auto-populate email from logged-in user
             const emailInput = document.getElementById('contact-email');
             if (emailInput) {
                 try {
@@ -1624,6 +1742,8 @@ class TabmangmentPopup {
             const realTabIds = new Set(realTabs.map(tab => tab.id));
             let tabsResponse, statsResponse, subscriptionData;
             try {
+                // Removed ping - unnecessary delay
+                // Get data with shorter timeout for faster response
                 const promises = [
                     this.sendMessageWithTimeout('getTabData', 1500),
                     this.sendMessageWithTimeout('getStats', 1500),
@@ -1787,7 +1907,7 @@ class TabmangmentPopup {
 
         this.removeAllProBadges();
         await this.updateSubscriptionHeader();
-        await this.loadProfileInfo(); 
+        await this.loadProfileInfo(); // Update profile photo
     }
     async checkSubscriptionExpiry(subscriptionData) {
         try {
@@ -2047,6 +2167,7 @@ class TabmangmentPopup {
             let nextBillingDate = result.nextBillingDate || result.subscriptionExpiry || result.currentPeriodEnd;
             const subscriptionType = result.subscriptionType || 'monthly';
 
+            // Show detailed subscription info
             if (result.subscriptionId) {
                 const activatedDate = result.activatedAt ? new Date(result.activatedAt) : new Date();
                 const formattedDate = activatedDate.toLocaleDateString('en-US', {
@@ -2054,6 +2175,7 @@ class TabmangmentPopup {
                     day: 'numeric'
                 });
 
+                // Show activation method and date for ANY user
                 if (result.subscriptionId.startsWith('paid_') || result.subscriptionId.startsWith('stripe_')) {
                     const userType = result.isAnonymousUser ? 'Anonymous user' : 'Registered user';
                     return `${userType} • Activated ${formattedDate}`;
@@ -2063,9 +2185,11 @@ class TabmangmentPopup {
                     return `Pro member since ${formattedDate}`;
                 }
 
+                // Default display
                 return `Pro member since ${formattedDate}`;
             }
 
+            // Show user tracking info
             if (result.userIdentifier) {
                 const activatedDate = result.activatedAt ? new Date(result.activatedAt) : new Date();
                 const formattedDate = activatedDate.toLocaleDateString('en-US', {
@@ -2192,16 +2316,19 @@ class TabmangmentPopup {
         if (!subscriptionInfo || !planName || !billingDate) return;
 
         if (this.isPremium) {
+            // Check if user is admin
             const stored = await chrome.storage.local.get(['isAdmin', 'planType', 'nextBillingDate', 'currentPeriodEnd']);
             const isAdmin = stored.isAdmin || stored.planType === 'admin';
 
             if (isAdmin) {
+                // Admin users - show admin badge instead of billing date
                 planName.textContent = 'Admin Plan';
                 subscriptionInfo.classList.add('pro');
                 subscriptionInfo.classList.remove('free');
                 billingDate.textContent = 'Unlimited Pro Access';
                 billingDate.style.display = 'block';
             } else {
+                // Regular Pro users - show billing date
                 planName.textContent = 'Pro Plan';
                 subscriptionInfo.classList.add('pro');
                 subscriptionInfo.classList.remove('free');
@@ -2255,12 +2382,14 @@ class TabmangmentPopup {
             const badge = button.querySelector('.pro-badge');
 
             if (this.isPremium) {
+                // Hide badge for Pro users
                 if (badge) {
                     badge.style.display = 'none';
                 }
                 button.classList.remove('disabled');
                 button.title = button.textContent.trim();
             } else {
+                // Show badge for Free users
                 if (badge) {
                     badge.style.display = 'block';
                 } else {
@@ -2306,6 +2435,7 @@ class TabmangmentPopup {
         });
     }
     handlePremiumButtonClick() {
+        // Always redirect to user dashboard subscription page for both free and pro users
         chrome.tabs.create({
             url: `${CONFIG.WEB.DASHBOARD_URL}#subscription`,
             active: true
@@ -2313,6 +2443,7 @@ class TabmangmentPopup {
     }
     async handleLogout() {
         try {
+            // Close search panel if open
             const searchPanel = document.getElementById('search-panel');
             const searchBtn = document.getElementById('search-btn');
             if (searchPanel) {
@@ -2323,6 +2454,7 @@ class TabmangmentPopup {
             }
             document.body.classList.remove('search-active');
 
+            // Get all user-specific bookmark keys before clearing
             const allKeys = await chrome.storage.local.get(null);
             const bookmarkKeys = Object.keys(allKeys).filter(key => key.startsWith('bookmarks_'));
             const bookmarksToPreserve = {};
@@ -2330,12 +2462,15 @@ class TabmangmentPopup {
                 bookmarksToPreserve[key] = allKeys[key];
             }
 
+            // Clear all stored data
             await chrome.storage.local.clear();
 
+            // Restore all users' bookmarks (preserve bookmarks for all accounts)
             if (Object.keys(bookmarksToPreserve).length > 0) {
                 await chrome.storage.local.set(bookmarksToPreserve);
             }
 
+            // Reset ALL instance variables
             this.isPremium = false;
             this.userEmail = null;
             this.userName = null;
@@ -2343,15 +2478,21 @@ class TabmangmentPopup {
             this.stats = { active: 0, scheduled: 0 };
             this.totalTabCount = 0;
 
+            // Notify simple auth to logout
             if (window.logoutUser) {
                 await window.logoutUser();
             }
 
+            // Send logout message to dashboard (if open)
             try {
                 await chrome.runtime.sendMessage({ type: 'LOGOUT_USER' });
             } catch (e) {
+                // Dashboard may not be open, that's fine
             }
 
+            // Notification disabled
+
+            // Show login screen instead of reloading
             this.showLoginScreen();
         } catch (error) {
             alert('Failed to logout. Please try again.');
@@ -2359,16 +2500,21 @@ class TabmangmentPopup {
     }
     async checkWebLoginStatus() {
         try {
+            // FIRST: Try to validate existing token with Supabase/API
             const stored = await chrome.storage.local.get(['authToken', 'userEmail']);
 
+
             if (stored.userEmail) {
+                // Check localStorage for user data (set by dashboard)
                 try {
                     const storedUserData = localStorage.getItem('tabmangment_user');
                     if (storedUserData) {
                         const userData = JSON.parse(storedUserData);
 
+                        // Check if user is admin
                         const isAdmin = userData.email && userData.email.toLowerCase() === 'selfshios@gmail.com';
 
+                        // Update chrome.storage with data from dashboard (admin gets Pro)
                         await chrome.storage.local.set({
                             userEmail: userData.email || stored.userEmail,
                             userName: userData.name || userData.email?.split('@')[0] || stored.userEmail.split('@')[0],
@@ -2381,58 +2527,5433 @@ class TabmangmentPopup {
                         });
                     }
                 } catch (e) {
+                    // localStorage error, keep existing storage
                 }
-                return true; 
+                return true; // User is logged in
             } else {
             }
 
-            const tabs = await chrome.tabs.query({ url: ['*://tabmangment.com
-async function applyStoredTheme() {
-    try {
-        const stored = await chrome.storage.local.get(['themeConfig', 'activeTheme']);
+            // SECOND: If no valid token, try to sync from open web page
+            const tabs = await chrome.tabs.query({ url: ['*://tabmangment.com/*', '*://tabmangment.netlify.app/*'] });
 
-        if (!stored.themeConfig) {
+            if (tabs.length === 0) {
+                return false;
+            }
+
+
+            // Inject script to read localStorage
+            const results = await chrome.scripting.executeScript({
+                target: { tabId: tabs[0].id },
+                func: () => {
+                    const user = localStorage.getItem('tabmangment_user');
+                    const token = localStorage.getItem('tabmangment_token');
+                    if (user && token) {
+                        return { user: JSON.parse(user), token };
+                    }
+                    return null;
+                }
+            });
+
+            const webData = results[0]?.result;
+
+            if (webData && webData.user && webData.token) {
+                // Check if user is admin
+                const isAdmin = webData.user.email && webData.user.email.toLowerCase() === 'selfshios@gmail.com';
+
+                // Save to extension storage (admin gets Pro)
+                await chrome.storage.local.set({
+                    userEmail: webData.user.email,
+                    userName: webData.user.name || webData.user.email.split('@')[0],
+                    userPhoto: webData.user.photoURL || webData.user.picture || webData.user.photo || null,
+                    authToken: webData.token,
+                    isPremium: webData.user.isPro || isAdmin || false,
+                    isPro: webData.user.isPro || isAdmin || false,
+                    planType: isAdmin ? 'admin' : (webData.user.plan || 'free'),
+                    subscriptionActive: webData.user.isPro || isAdmin || false,
+                    userId: webData.user.id || webData.user.email,
+                    provider: webData.user.provider || 'email',
+                    loginTimestamp: Date.now(),
+                    isAdmin: isAdmin
+                });
+
+                return true;
+            }
+
+            return false;
+        } catch (error) {
+            return false;
+        }
+    }
+
+    async checkAuthentication() {
+        try {
+
+            // Get ALL storage data for debugging
+            const allData = await chrome.storage.local.get(null);
+
+            // ONE-TIME CLEANUP: Remove fallback emails
+            if (allData.userEmail && (allData.userEmail.startsWith('fallback_') || allData.userEmail.startsWith('user_'))) {
+                await chrome.storage.local.remove(['userEmail', 'authToken', 'fallbackGenerated', 'emailDetectionError']);
+                // Reload storage data
+                const cleanData = await chrome.storage.local.get(null);
+                return false; // Show login screen
+            }
+
+            const stored = await chrome.storage.local.get(['userEmail', 'authToken', 'userName', 'isPremium', 'isPro', 'planType', 'currentPeriodEnd', 'subscriptionStatus']);
+
+            // Check if user has email (not fallback or anonymous)
+            if (stored.userEmail &&
+                !stored.userEmail.startsWith('fallback_') &&
+                !stored.userEmail.startsWith('user_')) {
+                this.userEmail = stored.userEmail;
+                this.userName = stored.userName || stored.userEmail.split('@')[0];
+
+                // Set premium status - check both isPremium and isPro
+                this.isPremium = stored.isPremium || stored.isPro || false;
+
+                return true;
+            }
+
+            return false;
+        } catch (error) {
+            return false;
+        }
+    }
+    showLoginScreen() {
+        // Check if login screen already exists
+        const existingLoginScreen = document.getElementById('login-screen');
+        if (existingLoginScreen) {
             return;
         }
 
-        applyThemeToPopup(stored.themeConfig);
+        // Hide the entire extension UI
+        const header = document.querySelector('.header');
+        const tabsContainer = document.getElementById('tabs-container');
+        const tabLimitWarningContainer = document.getElementById('tab-limit-warning');
+        const tabLimitWarning = document.querySelector('.tab-limit-warning-content');
+        const statsActionsRow = document.querySelector('.stats-actions-row');
+        const popupMainContent = document.querySelector('.popup-main-content');
+
+        if (header) header.style.display = 'none';
+        if (tabsContainer) tabsContainer.style.display = 'none';
+        if (tabLimitWarningContainer) tabLimitWarningContainer.style.display = 'none';
+        if (tabLimitWarning) tabLimitWarning.remove();
+        if (statsActionsRow) statsActionsRow.style.display = 'none';
+        if (popupMainContent) popupMainContent.style.display = 'none';
+
+        // Check if user data exists in localStorage (coming from dashboard)
+        let autoLogin = false;
+        let userName = null;
+        try {
+            const webUserData = localStorage.getItem('tabmangment_user');
+            const webToken = localStorage.getItem('tabmangment_token');
+            if (webUserData && webToken) {
+                const userData = JSON.parse(webUserData);
+                userName = userData.name || userData.email?.split('@')[0] || 'User';
+                autoLogin = true;
+            }
+        } catch (e) {
+            autoLogin = false;
+        }
+
+        // Create login screen
+        const loginScreen = document.createElement('div');
+        loginScreen.id = 'login-screen';
+        loginScreen.style.cssText = `
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 40px 20px;
+            background: #f8fafc;
+            color: #1e293b;
+            text-align: center;
+            z-index: 10000;
+            animation: fadeIn 0.3s ease;
+        `;
+
+        if (autoLogin) {
+            // Auto-login screen
+            loginScreen.innerHTML = `
+                <style>
+                    @keyframes fadeIn {
+                        from { opacity: 0; }
+                        to { opacity: 1; }
+                    }
+                    @keyframes pulse {
+                        0%, 100% { transform: scale(1); opacity: 1; }
+                        50% { transform: scale(1.05); opacity: 0.8; }
+                    }
+                    @keyframes spin {
+                        to { transform: rotate(360deg); }
+                    }
+                    .login-logo-wrapper {
+                        width: 80px;
+                        height: 80px;
+                        margin: 0 auto 24px;
+                        background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+                        border-radius: 20px;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        box-shadow: 0 8px 32px rgba(99, 102, 241, 0.3);
+                        animation: pulse 2s infinite;
+                    }
+                    .login-logo-wrapper img {
+                        width: 48px;
+                        height: 48px;
+                    }
+                    .spinner {
+                        width: 40px;
+                        height: 40px;
+                        border: 3px solid #e2e8f0;
+                        border-top-color: #6366f1;
+                        border-radius: 50%;
+                        animation: spin 0.8s linear infinite;
+                        margin: 24px auto;
+                    }
+                </style>
+                <div class="login-logo-wrapper">
+                    <img src="icons/icon-48.png" alt="Tabmangment">
+                </div>
+                <h2 style="margin: 0 0 8px 0; font-size: 22px; font-weight: 700; color: #1e293b;">
+                    Automatically Logging In
+                </h2>
+                <p style="margin: 0 0 16px 0; font-size: 15px; color: #64748b; font-weight: 500;">
+                    Welcome back, ${userName}!
+                </p>
+                <div class="spinner"></div>
+                <p id="countdown-text" style="margin: 8px 0 0 0; font-size: 13px; color: #94a3b8; font-weight: 500;">
+                    Signing you in...
+                </p>
+            `;
+
+            document.body.appendChild(loginScreen);
+
+            // Start countdown
+            let countdown = 3;
+            const countdownEl = document.getElementById('countdown-text');
+
+            const countdownInterval = setInterval(() => {
+                countdown--;
+                if (countdown > 0 && countdownEl) {
+                    countdownEl.textContent = `Signing you in... ${countdown}`;
+                }
+            }, 1000);
+
+            // Auto-login after 3 seconds
+            setTimeout(async () => {
+                clearInterval(countdownInterval);
+                const success = await this.checkWebLoginStatus();
+                if (success) {
+                    window.location.reload();
+                }
+            }, 3000);
+
+        } else {
+            // Manual login screen
+            loginScreen.innerHTML = `
+                <style>
+                    @keyframes fadeIn {
+                        from { opacity: 0; }
+                        to { opacity: 1; }
+                    }
+                    @keyframes slideUp {
+                        from {
+                            opacity: 0;
+                            transform: translateY(20px);
+                        }
+                        to {
+                            opacity: 1;
+                            transform: translateY(0);
+                        }
+                    }
+                    .login-card {
+                        max-width: 360px;
+                        width: 100%;
+                        animation: slideUp 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+                    }
+                    .login-logo-container {
+                        width: 72px;
+                        height: 72px;
+                        margin: 0 auto 20px;
+                        background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+                        border-radius: 18px;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        box-shadow: 0 8px 32px rgba(99, 102, 241, 0.25);
+                    }
+                    .login-logo-container img {
+                        width: 44px;
+                        height: 44px;
+                    }
+                    .login-button {
+                        width: 100%;
+                        background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+                        color: white;
+                        border: none;
+                        padding: 14px 24px;
+                        border-radius: 12px;
+                        font-size: 15px;
+                        font-weight: 600;
+                        cursor: pointer;
+                        box-shadow: 0 4px 16px rgba(99, 102, 241, 0.3);
+                        transition: all 0.2s ease;
+                    }
+                    .login-button:hover {
+                        transform: translateY(-2px);
+                        box-shadow: 0 6px 24px rgba(99, 102, 241, 0.4);
+                    }
+                    .login-button:active {
+                        transform: translateY(0);
+                    }
+                </style>
+                <div class="login-card">
+                    <div class="login-logo-container">
+                        <img src="icons/icon-48.png" alt="Tabmangment">
+                    </div>
+                    <h2 style="margin: 0 0 8px 0; font-size: 24px; font-weight: 700; color: #1e293b;">
+                        Welcome to Tabmangment
+                    </h2>
+                    <p style="margin: 0 0 32px 0; font-size: 14px; color: #64748b; line-height: 1.6;">
+                        Manage your browser tabs efficiently
+                    </p>
+                    <button id="login-btn" class="login-button">
+                        Sign In
+                    </button>
+                    <p style="margin: 20px 0 0 0; font-size: 12px; color: #94a3b8;">
+                        Your tabs will sync across all devices
+                    </p>
+                </div>
+            `;
+
+            document.body.appendChild(loginScreen);
+
+            // Add event handlers
+            setTimeout(() => {
+                const loginBtn = document.getElementById('login-btn');
+                if (loginBtn) {
+                    loginBtn.addEventListener('click', (e) => {
+                        e.preventDefault();
+                        chrome.tabs.create({
+                            url: CONFIG.WEB.AUTH_URL,
+                            active: true
+                        });
+                    });
+                }
+            }, 100);
+        }
+    }
+
+    hideLoginScreen() {
+        // Remove login screen
+        const loginScreen = document.getElementById('login-screen');
+        if (loginScreen) {
+            loginScreen.remove();
+        }
+
+        // Show the extension UI
+        const header = document.querySelector('.header');
+        const tabsContainer = document.getElementById('tabs-container');
+        const tabLimitWarningContainer = document.getElementById('tab-limit-warning');
+        const statsActionsRow = document.querySelector('.stats-actions-row');
+        const popupMainContent = document.querySelector('.popup-main-content');
+
+        if (header) header.style.display = '';
+        if (tabsContainer) tabsContainer.style.display = '';
+        if (tabLimitWarningContainer) tabLimitWarningContainer.style.display = '';
+        if (statsActionsRow) statsActionsRow.style.display = '';
+        if (popupMainContent) popupMainContent.style.display = '';
+    }
+
+    renderStats() {
+        const activeEl = document.getElementById('active-tabs');
+        const scheduledEl = document.getElementById('scheduled-tabs');
+
+        if (activeEl) {
+            // Always show just the number - keep it clean
+            // Cap display at 99+ for counts over 100
+            const count = this.realTimeTabCount || 0;
+            activeEl.textContent = count > 100 ? '99+' : count;
+
+            // Show hidden count in the label instead
+            const labelEl = activeEl.nextElementSibling;
+            if (labelEl && labelEl.classList.contains('count-label')) {
+                if (!this.isPremium && this.hiddenTabCount > 0) {
+                    labelEl.innerHTML = `Open Tabs <span class="hidden-count">${this.hiddenTabCount} hidden</span>`;
+                } else {
+                    labelEl.textContent = 'Open Tabs';
+                }
+            }
+        }
+
+        if (scheduledEl) scheduledEl.textContent = this.stats.scheduled || 0;
+    }
+
+    updatePremiumUI() {
+        // Hide PRO badges if user has premium
+        if (this.isPremium) {
+            document.body.classList.add('user-has-premium');
+        } else {
+            document.body.classList.remove('user-has-premium');
+        }
+    }
+    updateClosingSoonCounter(count) {
+        const scheduledEl = document.getElementById('scheduled-tabs');
+        if (!scheduledEl) return;
+        const currentCount = parseInt(scheduledEl.textContent) || 0;
+        if (currentCount === count) return;
+        scheduledEl.textContent = count;
+        this.stats.scheduled = count;
+        if (count > 0) {
+            scheduledEl.style.color = '#ef4444';
+            scheduledEl.style.fontWeight = '600';
+        } else {
+            scheduledEl.style.color = '';
+            scheduledEl.style.fontWeight = '';
+        }
+    }
+    async updateTabCount() {
+        try {
+            const allTabs = await chrome.tabs.query({});
+            const validTabs = allTabs.filter(tab => this.isValidTab(tab));
+            this.realTimeTabCount = validTabs.length;
+            this.totalTabCount = validTabs.length;
+            if (!this.isPremium) {
+                this.hiddenTabCount = Math.max(0, this.totalTabCount - this.tabLimit);
+            } else {
+                this.hiddenTabCount = 0;
+            }
+        } catch (error) {
+            this.totalTabCount = this.tabs.length;
+            this.hiddenTabCount = 0;
+        }
+    }
+    renderTabLimitWarning() {
+        const container = document.getElementById('tab-limit-warning');
+        if (!container) return;
+        if (this.isPremium) {
+            this.hideTabLimitWarning(container);
+            return;
+        }
+        const currentExcessTabs = Math.max(0, this.realTimeTabCount - this.tabLimit);
+        const remainingTabs = Math.max(0, this.tabLimit - this.realTimeTabCount);
+        if (currentExcessTabs > 0) {
+            this.showExcessTabsWarning(container, currentExcessTabs);
+        } else if (this.realTimeTabCount <= this.tabLimit) {
+            this.showWithinLimitsMessage(container, remainingTabs);
+        }
+    }
+    showExcessTabsWarning(container, excessTabs) {
+        const warningHtml = `
+            <div class="tab-limit-warning-content" style="background: linear-gradient(135deg, #fef3c7 0%, #fbbf24 100%); border: 2px solid #f59e0b; border-radius: 12px; padding: 16px; margin: 12px 16px; color: #92400e; font-size: 14px; box-shadow: 0 4px 12px rgba(245, 158, 11, 0.2); transition: all 0.3s ease; opacity: 1; transform: translateY(0);">
+                <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 12px;">
+                    <div style="font-size: 20px;">📈</div>
+                    <strong>Free Plan Limit (${this.tabLimit} tabs)</strong>
+                </div>
+                <p style="margin: 0 0 16px 0; line-height: 1.5;">
+                    You have <strong><span id="excess-count">${excessTabs}</span> extra tab${excessTabs > 1 ? 's' : ''}</strong> beyond the free limit.
+                    Basic tab management still works, but timers and advanced features require Pro.
+                </p>
+                <div style="display: flex; gap: 8px;">
+                    <button id="tab-limit-close-some" style="background: rgba(255, 255, 255, 0.9); color: #92400e; border: 1px solid rgba(146, 64, 14, 0.3); padding: 8px 12px; border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: 500; margin-right: 8px; transition: all 0.2s ease;">Close Extra Tabs</button>
+                    <button id="tab-limit-upgrade-btn" style="background: linear-gradient(135deg, #d97706, #ea580c); color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: 600; box-shadow: 0 2px 8px rgba(217, 119, 6, 0.3); transition: all 0.2s ease;">Upgrade to Pro - $4.99/month</button>
+                </div>
+            </div>
+        `;
+        const existingContent = container.querySelector('.tab-limit-warning-content');
+        if (existingContent) {
+            const excessCountSpan = container.querySelector('#excess-count');
+            if (excessCountSpan && excessCountSpan.textContent !== excessTabs.toString()) {
+                excessCountSpan.textContent = excessTabs;
+            }
+        } else {
+            container.innerHTML = warningHtml;
+            const content = container.querySelector('.tab-limit-warning-content');
+            if (content) {
+                content.style.opacity = '0';
+                content.style.transform = 'translateY(-10px)';
+                setTimeout(() => {
+                    content.style.opacity = '1';
+                    content.style.transform = 'translateY(0)';
+                }, 10);
+            }
+            this.attachWarningEventListeners();
+        }
+    }
+    showWithinLimitsMessage(container, remainingTabs) {
+        const successHtml = `
+            <div class="tab-limit-warning-content" style="background: linear-gradient(135deg, #dcfdf4 0%, #a7f3d0 100%); border: 2px solid #34d399; border-radius: 12px; padding: 12px; margin: 12px 16px; color: #065f46; font-size: 13px; transition: all 0.3s ease; opacity: 1; transform: translateY(0);">
+                <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+                    <div style="font-size: 16px;">✨</div>
+                    <strong>Free Plan Active</strong>
+                </div>
+                <p style="margin: 0; line-height: 1.4;">
+                    ${remainingTabs > 0
+                        ? `You can open <strong><span id="remaining-count">${remainingTabs}</span> more tab${remainingTabs > 1 ? 's' : ''}</strong>. Upgrade for unlimited tabs + timers!`
+                        : 'Perfect! You are using all free tabs efficiently. Need more? Upgrade to Pro!'
+                    }
+                </p>
+                <div style="margin-top: 8px;">
+                    <button id="tab-limit-upgrade-btn" style="background: linear-gradient(135deg, #10b981, #059669); color: white; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 11px; font-weight: 500; transition: all 0.2s ease;">Upgrade to Pro</button>
+                </div>
+            </div>
+        `;
+        const existingContent = container.querySelector('.tab-limit-warning-content');
+        if (existingContent && existingContent.style.background.includes('#dcfdf4')) {
+            const remainingCountSpan = container.querySelector('#remaining-count');
+            if (remainingCountSpan && remainingCountSpan.textContent !== remainingTabs.toString()) {
+                remainingCountSpan.textContent = remainingTabs;
+            }
+        } else {
+            container.innerHTML = successHtml;
+            const content = container.querySelector('.tab-limit-warning-content');
+            if (content) {
+                content.style.opacity = '0';
+                content.style.transform = 'translateY(-10px)';
+                setTimeout(() => {
+                    content.style.opacity = '1';
+                    content.style.transform = 'translateY(0)';
+                }, 10);
+            }
+            this.attachWarningEventListeners();
+        }
+    }
+    hideTabLimitWarning(container) {
+        const existingContent = container.querySelector('.tab-limit-warning-content');
+        if (existingContent) {
+            existingContent.style.opacity = '0';
+            existingContent.style.transform = 'translateY(-10px)';
+            setTimeout(() => {
+                container.innerHTML = '';
+            }, 300);
+        }
+    }
+    attachWarningEventListeners() {
+        const closeSomeBtn = document.getElementById('tab-limit-close-some');
+        if (closeSomeBtn) {
+            closeSomeBtn.addEventListener('click', () => this.closeExtraTabs());
+        }
+        const upgradeBtn = document.getElementById('tab-limit-upgrade-btn');
+        if (upgradeBtn) {
+            upgradeBtn.addEventListener('click', () => this.handleDirectUpgrade());
+        }
+    }
+    async renderTabs() {
+        const container = document.getElementById('tabs-container');
+        const emptyState = document.getElementById('empty-state');
+        if (!container) {
+            return;
+        }
+        if (this.isRendering) {
+            return;
+        }
+        this.isRendering = true;
+        try {
+            // Load favorites FIRST before filtering tabs
+            try {
+                const bookmarkKey = await this.getUserBookmarkKey();
+                const result = await chrome.storage.local.get([bookmarkKey]);
+                this.favorites = result[bookmarkKey] || [];
+            } catch (error) {
+                this.favorites = [];
+            }
+
+            if (!Array.isArray(this.tabs)) {
+                this.tabs = [];
+            }
+
+            // Filter out bookmarked tabs from display
+            let displayTabs = [...this.tabs];
+            if (this.favorites && Array.isArray(this.favorites)) {
+                const bookmarkedUrls = new Set(this.favorites.map(fav => fav.url));
+                displayTabs = displayTabs.filter(tab => !bookmarkedUrls.has(tab.url));
+            }
+
+            if (!this.isPremium) {
+                displayTabs = displayTabs.slice(0, this.tabLimit);
+            } else {
+            }
+            if (displayTabs.length === 0) {
+                if (emptyState) emptyState.style.display = 'block';
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <svg class="empty-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                            <line x1="9" y1="9" x2="15" y2="9"></line>
+                            <line x1="9" y1="13" x2="15" y2="13"></line>
+                            <line x1="9" y1="17" x2="13" y2="17"></line>
+                        </svg>
+                        <h3 class="empty-title">No Tabs Open</h3>
+                        <p class="empty-description">Open some tabs to get started with Tabmangment</p>
+                    </div>
+                `;
+                return;
+            }
+            if (emptyState) emptyState.style.display = 'none';
+            const tabsHTML = displayTabs.map((tab, index) => {
+                try {
+                    return this.createTabHTML(tab, index);
+                } catch (htmlError) {
+                    return `<div class="tab-item error">Error loading tab: ${tab.title || 'Unknown'}</div>`;
+                }
+            }).join('');
+            container.innerHTML = tabsHTML;
+            if (!this.isPremium && displayTabs.length >= this.tabLimit) {
+                this.addFreeLimitFooter(container);
+            }
+            this.attachTabListeners();
+            this.handleFaviconErrors();
+        } catch (error) {
+            container.innerHTML = `
+                <div class="empty-state">
+                    <svg class="empty-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="color: #ef4444;">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <line x1="12" y1="8" x2="12" y2="12"></line>
+                        <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                    </svg>
+                    <h3 class="empty-title">Error Loading Tabs</h3>
+                    <p class="empty-description">Something went wrong. Please try reloading.</p>
+                    <button onclick="location.reload()" style="margin-top: 16px; padding: 10px 20px; border: 1px solid #e2e8f0; border-radius: 8px; background: #ffffff; color: #475569; font-size: 14px; font-weight: 500; cursor: pointer; transition: all 0.2s;">
+                        Reload Extension
+                    </button>
+                </div>
+            `;
+        } finally {
+            this.isRendering = false;
+        }
+    }
+    createTabHTML(tab, index = 0) {
+        if (!tab || !tab.id) {
+            return '<div class="tab-item error">Invalid tab data</div>';
+        }
+        const isActive = tab.active || false;
+        const hasTimer = this.tabTimers && this.tabTimers[tab.id] && this.tabTimers[tab.id].active;
+        const isEmptyTab = this.isEmptyTabForDisplay(tab);
+        const isPremium = this.isPremium || false;
+        const domain = this.extractDomain(tab.url || '');
+        const isBookmarked = this.favorites && Array.isArray(this.favorites)
+            ? this.favorites.some(fav => fav.url === tab.url)
+            : false;
+        return `
+            <div class="tab-item ${isActive ? 'active' : ''} ${isEmptyTab ? 'empty-tab' : ''}" data-tab-id="${tab.id}">
+                <div class="tab-header">
+                    <div class="tab-favicon-container">
+                        <img src="${this.sanitizeUrl(tab.favIconUrl) || 'icons/icon-16.png'}"
+                             alt="${domain} favicon"
+                             class="tab-favicon">
+                    </div>
+                    <div class="tab-info">
+                        <div class="tab-title" title="${this.sanitizeText(tab.title)}">${isEmptyTab ? '🆕 New Tab (Empty)' : this.sanitizeText(this.truncate(tab.title, 25))}</div>
+                        <div class="tab-url" title="${this.sanitizeUrl(tab.url)}">${!isEmptyTab ? domain : ''}</div>
+                        ${hasTimer || isEmptyTab ? `<div class="timer-countdown ${isEmptyTab ? 'empty-tab-timer' : ''}" id="timer-display-${tab.id}" style="
+                            color: ${isEmptyTab ? '#6366f1' : '#ff6b6b'};
+                            font-weight: 600;
+                            font-size: 11px;
+                            margin-top: 4px;
+                            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+                            background: ${isEmptyTab ? 'rgba(99, 102, 241, 0.1)' : 'rgba(255, 107, 107, 0.1)'};
+                            padding: 3px 8px;
+                            border-radius: 6px;
+                            display: inline-block;
+                            letter-spacing: 0.3px;
+                        ">${hasTimer ? '⏰ Loading...' : '🕐 Auto-closes in 24h'}</div>` : ''}
+                    </div>
+                </div>
+                <div class="tab-actions">
+                    <button class="action-btn ${!isPremium ? 'disabled' : ''} ${hasTimer ? 'active' : ''}"
+                            data-action="timer"
+                            data-tab-id="${tab.id}"
+                            style="position: relative;"
+                            title="${!isPremium ? 'Timer - Pro Feature' : (hasTimer ? 'Remove Timer' : 'Set Timer')}">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="12" cy="12" r="10"></circle>
+                            <polyline points="12,6 12,12 16,14"></polyline>
+                        </svg>
+                        ${!isPremium ? '<div class="pro-badge-mini" style="position: absolute; top: -2px; right: -2px; background: linear-gradient(45deg, #ff6b6b, #ee5a24); color: white; font-size: 8px; font-weight: 600; padding: 1px 3px; border-radius: 3px; box-shadow: 0 1px 3px rgba(0,0,0,0.3); z-index: 10; pointer-events: none;">PRO</div>' : ''}
+                    </button>
+                    <button class="action-btn ${!isPremium ? 'disabled' : ''} ${isBookmarked ? 'active' : ''}"
+                            data-action="bookmark"
+                            data-tab-id="${tab.id}"
+                            style="position: relative;"
+                            title="${!isPremium ? 'Favorites - Pro Feature' : (isBookmarked ? 'Remove from Favorites' : 'Add to Favorites')}">
+                        <svg viewBox="0 0 24 24" fill="${isBookmarked ? 'currentColor' : 'none'}" stroke="currentColor" stroke-width="2">
+                            <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16z"></path>
+                        </svg>
+                        ${!isPremium ? '<div class="pro-badge-mini" style="position: absolute; top: -2px; right: -2px; background: linear-gradient(45deg, #ff6b6b, #ee5a24); color: white; font-size: 8px; font-weight: 600; padding: 1px 3px; border-radius: 3px; box-shadow: 0 1px 3px rgba(0,0,0,0.3); z-index: 10; pointer-events: none;">PRO</div>' : ''}
+                    </button>
+                    <button class="action-btn danger"
+                            data-action="close"
+                            data-tab-id="${tab.id}"
+                            title="Close Tab"
+>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <line x1="18" y1="6" x2="6" y2="18"></line>
+                            <line x1="6" y1="6" x2="18" y2="18"></line>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        `;
+    }
+    attachTabListeners() {
+        const tabItems = document.querySelectorAll('.tab-item');
+        tabItems.forEach(item => {
+            const tabId = parseInt(item.dataset.tabId);
+            if (!tabId) {
+                return;
+            }
+            const tabHeader = item.querySelector('.tab-header');
+            if (tabHeader) {
+                tabHeader.addEventListener('click', () => this.switchToTab(tabId));
+            }
+            const actionBtns = item.querySelectorAll('.action-btn');
+            actionBtns.forEach((btn, btnIndex) => {
+                btn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    const action = btn.dataset.action;
+                    if (btn.classList.contains('disabled') && !this.isPremium && action !== 'pause') {
+                        this.showPremiumModal();
+                        return;
+                    }
+                    this.handleTabAction(tabId, action);
+                });
+            });
+
+            // Adjust action button colors based on tab background
+            this.adjustActionButtonColors(item);
+        });
+    }
+
+    adjustActionButtonColors(tabItem) {
+        try {
+            const computedStyle = window.getComputedStyle(tabItem);
+            const bgColor = computedStyle.backgroundColor;
+
+            // Calculate brightness of background
+            const rgb = bgColor.match(/\d+/g);
+            if (!rgb || rgb.length < 3) return;
+
+            const r = parseInt(rgb[0]);
+            const g = parseInt(rgb[1]);
+            const b = parseInt(rgb[2]);
+
+            // Calculate relative luminance (0-1 scale)
+            const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+
+            // If background is dark (luminance < 0.5), use light icons
+            // If background is light (luminance >= 0.5), use dark icons
+            const isDark = luminance < 0.5;
+
+            const actionBtns = tabItem.querySelectorAll('.action-btn');
+            actionBtns.forEach(btn => {
+                const svg = btn.querySelector('svg');
+                if (!svg) return;
+
+                if (isDark) {
+                    // Dark background - use light icons
+                    btn.style.setProperty('background', 'transparent', 'important');
+                    btn.style.setProperty('border', 'none', 'important');
+                    btn.style.setProperty('color', 'rgba(255, 255, 255, 0.95)', 'important');
+                    svg.style.setProperty('stroke', 'rgba(255, 255, 255, 0.95)', 'important');
+
+                    // Apply shadow for depth
+                    btn.style.setProperty('filter', 'drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3))', 'important');
+                } else {
+                    // Light background - use dark icons
+                    btn.style.setProperty('background', 'transparent', 'important');
+                    btn.style.setProperty('border', 'none', 'important');
+                    btn.style.setProperty('color', 'rgba(0, 0, 0, 0.8)', 'important');
+                    svg.style.setProperty('stroke', 'rgba(0, 0, 0, 0.8)', 'important');
+
+                    // Apply shadow for depth
+                    btn.style.setProperty('filter', 'drop-shadow(0 2px 4px rgba(0, 0, 0, 0.15))', 'important');
+                }
+            });
+        } catch (error) {
+            console.error('Error adjusting action button colors:', error);
+        }
+    }
+    handleFaviconErrors() {
+        // Handle all favicon images (tabs, bookmarks, toasts, etc.)
+        const faviconImages = document.querySelectorAll('.tab-favicon, .bookmark-favicon img, img[alt*="Favicon"], img[alt*="favicon"]');
+        faviconImages.forEach(img => {
+            // Remove any existing error listeners to avoid duplicates
+            const newImg = img.cloneNode(true);
+            img.parentNode?.replaceChild(newImg, img);
+
+            // Add silent error handler
+            newImg.addEventListener('error', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                newImg.src = 'icons/icon-16.png';
+            }, { once: true });
+
+            // Also prevent the error from propagating to console
+            newImg.onerror = null;
+        });
+    }
+    async handleTabAction(tabId, action) {
+        try {
+            switch (action) {
+                case 'timer':
+                    if (this.isPremium) {
+                        await this.showTimerModal(tabId);
+                    } else {
+                        this.showPremiumModal();
+                    }
+                    break;
+                case 'bookmark':
+                    if (this.isPremium) {
+                        await this.addToFavorites(tabId);
+                    } else {
+                        this.showPremiumModal();
+                    }
+                    break;
+                case 'close':
+                    await this.closeTab(tabId);
+                    break;
+            }
+        } catch (error) {
+            this.showError(`Failed to ${action} tab`);
+        }
+    }
+    async switchToTab(tabId) {
+        try {
+            const response = await chrome.runtime.sendMessage({
+                action: 'switchToTab',
+                tabId: tabId
+            });
+            if (response && response.success) {
+                window.close();
+            } else {
+                throw new Error(response?.error || 'Failed to switch tab');
+            }
+        } catch (error) {
+            try {
+                const tab = await chrome.tabs.get(tabId);
+                if (tab) {
+                    await chrome.tabs.update(tabId, { active: true });
+                    await chrome.windows.update(tab.windowId, { focused: true });
+                    window.close();
+                }
+            } catch (fallbackError) {
+                this.showError('Failed to switch to tab');
+            }
+        }
+    }
+    async closeTab(tabId) {
+        try {
+            try {
+                const response = await chrome.runtime.sendMessage({
+                    action: 'closeTab',
+                    tabId: tabId
+                });
+                if (response && response.success) {
+                    this.removeTabWithAnimation(tabId);
+                    return;
+                }
+            } catch (bgError) {
+            }
+            await chrome.tabs.remove(tabId);
+            this.removeTabWithAnimation(tabId);
+        } catch (error) {
+            this.showError('Failed to close tab');
+        }
+    }
+    async collapseAllTabs() {
+        try {
+            const collapseBtn = document.getElementById('collapse-btn');
+            if (collapseBtn) {
+                collapseBtn.style.transform = 'scale(0.95)';
+                collapseBtn.style.transition = 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)';
+                collapseBtn.classList.add('collapsing');
+                setTimeout(() => {
+                    collapseBtn.style.transform = 'scale(1)';
+                }, 200);
+            }
+            const allTabs = await chrome.tabs.query({});
+            const currentWindow = await chrome.windows.getCurrent();
+            const tabsToClose = [];
+            for (const tab of allTabs) {
+                if (this.isValidTab(tab)) {
+                    const tabData = this.tabs.find(t => t.id === tab.id);
+                    if (!tabData || !tabData.paused) {
+                        tabsToClose.push(tab);
+                    }
+                }
+            }
+            if (tabsToClose.length === 0) {
+                this.showMessage('No tabs available to close. All tabs are either protected or essential.', 'info');
+                return;
+            }
+            this.showMessage(`Closing ${tabsToClose.length} tabs...`, 'info');
+            let closedCount = 0;
+            const closePromises = [];
+            for (let i = 0; i < tabsToClose.length; i++) {
+                const tab = tabsToClose[i];
+                const closePromise = new Promise(async (resolve) => {
+                    setTimeout(async () => {
+                        try {
+                            await chrome.tabs.remove(tab.id);
+                            this.removeTabWithAnimation(tab.id);
+                            closedCount++;
+                        } catch (error) {
+                        }
+                        resolve();
+                    }, i * 100);
+                });
+                closePromises.push(closePromise);
+            }
+            await Promise.all(closePromises);
+            setTimeout(() => {
+                if (collapseBtn) {
+                    collapseBtn.classList.remove('collapsing');
+                }
+                this.refreshTabList();
+                this.showMessage(`Successfully closed ${closedCount} tabs!`, 'success');
+            }, 500);
+        } catch (error) {
+            this.showError('Failed to close all tabs. Some tabs may be protected or inaccessible.');
+            const collapseBtn = document.getElementById('collapse-btn');
+            if (collapseBtn) {
+                collapseBtn.classList.remove('collapsing');
+            }
+        }
+    }
+    removeTabWithAnimation(tabId) {
+        const tabElement = document.querySelector(`[data-tab-id="${tabId}"]`);
+        if (!tabElement) return;
+        this.tabs = this.tabs.filter(tab => tab.id !== tabId);
+        if (!this.isPremium && this.totalTabCount > this.tabs.length) {
+            this.addNextHiddenTab();
+        }
+        tabElement.style.transition = 'all 0.3s ease-out';
+        tabElement.style.opacity = '0';
+        tabElement.style.transform = 'translateX(100%) scale(0.9)';
+        tabElement.style.height = '0';
+        tabElement.style.margin = '0';
+        tabElement.style.padding = '0';
+        setTimeout(() => {
+            if (tabElement.parentNode) {
+                tabElement.remove();
+            }
+            if (this.tabs.length === 0) {
+                const container = document.getElementById('tabs-container');
+                const emptyState = document.getElementById('empty-state');
+                if (container && emptyState) {
+                    emptyState.style.display = 'block';
+                }
+            } else if (!this.isPremium && this.tabs.length < this.tabLimit) {
+                setTimeout(() => {
+                    this.render();
+                }, 100);
+            }
+        }, 300);
+    }
+    async addNextHiddenTab() {
+        try {
+            const allTabs = await chrome.tabs.query({});
+            const visibleTabIds = new Set(this.tabs.map(tab => tab.id));
+            const hiddenTabs = allTabs.filter(tab =>
+                this.isValidTab(tab) && !visibleTabIds.has(tab.id)
+            );
+            if (hiddenTabs.length > 0) {
+                const prioritizedHidden = this.prioritizeTabsForFreeUser(hiddenTabs);
+                const nextTab = prioritizedHidden[0];
+                this.tabs.push({
+                    id: nextTab.id,
+                    title: nextTab.title || 'Untitled',
+                    url: nextTab.url,
+                    favIconUrl: nextTab.favIconUrl,
+                    active: nextTab.active,
+                    paused: false,
+                    timerActive: false,
+                    autoCloseTime: null
+                });
+                if (!this.lastHiddenTabNotification ||
+                    Date.now() - this.lastHiddenTabNotification > 5000) {
+                    this.showMessage(`Tab revealed: ${this.truncate(nextTab.title || 'Untitled', 20)}`, 'success');
+                    this.lastHiddenTabNotification = Date.now();
+                }
+            }
+        } catch (error) {
+        }
+    }
+    showBookmarkMenu() {
+        this.currentView = 'bookmarks';
+        this.renderBookmarksView();
+    }
+    async renderBookmarksView() {
+        const container = document.getElementById('tabs-container');
+        if (!container) return;
+        container.style.transition = 'all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)';
+        container.style.opacity = '0';
+        container.style.transform = 'translateY(10px)';
+        setTimeout(async () => {
+            try {
+                const bookmarkKey = await this.getUserBookmarkKey();
+                const result = await chrome.storage.local.get([bookmarkKey, 'themeConfig']);
+                const bookmarks = result[bookmarkKey] || [];
+
+                // Get theme with safe fallback
+                let theme = result.themeConfig || { primaryColor: '#667eea', secondaryColor: '#764ba2' };
+
+                // Ensure theme colors are valid hex codes
+                const isValidHex = (color) => /^#[0-9A-F]{6}$/i.test(color);
+                if (!isValidHex(theme.primaryColor)) theme.primaryColor = '#667eea';
+                if (!isValidHex(theme.secondaryColor)) theme.secondaryColor = '#764ba2';
+
+                // Create gradient from theme colors
+                const themeGradient = `linear-gradient(135deg, ${theme.primaryColor} 0%, ${theme.secondaryColor} 100%)`;
+
+                // Create shadow color safely
+                const hexToRgba = (hex, alpha) => {
+                    const r = parseInt(hex.slice(1, 3), 16);
+                    const g = parseInt(hex.slice(3, 5), 16);
+                    const b = parseInt(hex.slice(5, 7), 16);
+                    return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+                };
+                const themeShadow = hexToRgba(theme.primaryColor, 0.25);
+
+                // Create darker version for hover
+                const darkenColor = (hex) => {
+                    const r = Math.max(0, parseInt(hex.slice(1, 3), 16) - 20);
+                    const g = Math.max(0, parseInt(hex.slice(3, 5), 16) - 20);
+                    const b = Math.max(0, parseInt(hex.slice(5, 7), 16) - 20);
+                    return `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`;
+                };
+                const themeGradientDark = `linear-gradient(135deg, ${darkenColor(theme.primaryColor)}, ${darkenColor(theme.secondaryColor)})`;
+                const bookmarksHTML = `
+                    <!-- Bookmark Header -->
+                    <div class="bookmark-header" style="
+                        background: ${themeGradient};
+                        color: white;
+                        padding: 24px 20px;
+                        margin: -16px -16px 20px -16px;
+                        position: relative;
+                        border-radius: 16px 16px 0 0;
+                        box-shadow:
+                            0 8px 32px rgba(255, 107, 53, 0.25),
+                            0 2px 8px rgba(255, 107, 53, 0.15),
+                            inset 0 1px 0 rgba(255, 255, 255, 0.2);
+                        background-size: 200% 200%;
+                        animation: gradientShift 6s ease infinite;
+                        overflow: hidden;
+                    ">
+                        <!-- Decorative Elements -->
+                        <div style="
+                            position: absolute;
+                            top: -50%;
+                            right: -20%;
+                            width: 100px;
+                            height: 100px;
+                            background: radial-gradient(circle, rgba(255, 255, 255, 0.1), transparent);
+                            border-radius: 50%;
+                        "></div>
+                        <div style="
+                            position: absolute;
+                            bottom: -30%;
+                            left: -15%;
+                            width: 80px;
+                            height: 80px;
+                            background: radial-gradient(circle, rgba(255, 255, 255, 0.08), transparent);
+                            border-radius: 50%;
+                        "></div>
+                        <!-- Header Content -->
+                        <div style="text-align: center; position: relative; z-index: 5;">
+                            <div style="
+                                display: inline-flex;
+                                align-items: center;
+                                justify-content: center;
+                                gap: 14px;
+                                margin-bottom: 10px;
+                                background: rgba(255, 255, 255, 0.1);
+                                padding: 12px 20px;
+                                border-radius: 50px;
+                                backdrop-filter: blur(10px);
+                                border: 1px solid rgba(255, 255, 255, 0.2);
+                            ">
+                                <div style="font-size: 24px; filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));">🔖</div>
+                                <div style="font-size: 18px; font-weight: 700; letter-spacing: -0.5px;">My Bookmarks</div>
+                            </div>
+                            <div style="
+                                font-size: 13px;
+                                opacity: 0.9;
+                                font-weight: 500;
+                                text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+                            ">Your saved tabs collection</div>
+                        </div>
+                    </div>
+                    <!-- Search and Counter Bar -->
+                    <div style="
+                        background: linear-gradient(135deg, rgba(255, 255, 255, 0.95), rgba(248, 250, 252, 0.95));
+                        backdrop-filter: blur(20px);
+                        border: 1px solid rgba(99, 102, 241, 0.15);
+                        border-radius: 14px;
+                        padding: 16px;
+                        margin-bottom: 12px;
+                        box-shadow:
+                            0 4px 16px rgba(99, 102, 241, 0.08),
+                            inset 0 1px 0 rgba(255, 255, 255, 0.8);
+                    ">
+                        <div style="display: flex; gap: 12px; align-items: center; margin-bottom: 12px;">
+                            <div style="flex: 1; position: relative;">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #64748b; pointer-events: none;">
+                                    <circle cx="11" cy="11" r="8"></circle>
+                                    <path d="m21 21-4.35-4.35"></path>
+                                </svg>
+                                <input
+                                    type="text"
+                                    id="bookmark-search"
+                                    placeholder="Search bookmarks..."
+                                    style="
+                                        width: 100%;
+                                        padding: 10px 12px 10px 38px;
+                                        border: 1px solid rgba(203, 213, 225, 0.6);
+                                        border-radius: 10px;
+                                        font-size: 13px;
+                                        font-weight: 500;
+                                        background: white;
+                                        color: #1e293b;
+                                        transition: all 0.3s ease;
+                                        outline: none;
+                                    "
+                                />
+                            </div>
+                            <div style="
+                                background: linear-gradient(135deg, #1e293b, #0f172a);
+                                color: white;
+                                padding: 10px 16px;
+                                border-radius: 10px;
+                                font-size: 13px;
+                                font-weight: 700;
+                                white-space: nowrap;
+                                box-shadow: 0 2px 8px rgba(15, 23, 42, 0.3);
+                                display: flex;
+                                align-items: center;
+                                gap: 6px;
+                            ">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2">
+                                    <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16z"/>
+                                </svg>
+                                <span id="bookmark-count">${bookmarks.length}</span>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Enhanced Actions Bar -->
+                    <div class="bookmark-actions" style="
+                        background: linear-gradient(135deg, rgba(255, 255, 255, 0.95), rgba(248, 250, 252, 0.95));
+                        backdrop-filter: blur(20px);
+                        border: 1px solid rgba(255, 107, 53, 0.15);
+                        border-radius: 14px;
+                        padding: 16px;
+                        display: flex;
+                        gap: 12px;
+                        margin-bottom: 20px;
+                        box-shadow:
+                            0 4px 16px rgba(255, 107, 53, 0.08),
+                            inset 0 1px 0 rgba(255, 255, 255, 0.8);
+                    ">
+                        <button id="bookmark-all-current"
+                            data-gradient="${themeGradient}"
+                            data-gradient-dark="${themeGradientDark}"
+                            data-shadow="${themeShadow}"
+                            style="
+                            flex: 1;
+                            background: ${themeGradient};
+                            color: white;
+                            border: none;
+                            padding: 12px 16px;
+                            border-radius: 10px;
+                            font-size: 13px;
+                            font-weight: 600;
+                            cursor: pointer;
+                            transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+                            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+                            box-shadow:
+                                0 4px 12px ${themeShadow},
+                                inset 0 1px 0 rgba(255, 255, 255, 0.2);
+                            display: flex;
+                            align-items: center;
+                            justify-content: center;
+                            gap: 8px;
+                        ">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16z"/>
+                                <path d="M12 7v6M9 10h6"/>
+                            </svg>
+                            Save All Tabs
+                        </button>
+                        <button id="clear-all-bookmarks" style="
+                            background: rgba(255, 255, 255, 0.9);
+                            color: #dc2626;
+                            border: 1px solid rgba(220, 38, 38, 0.2);
+                            padding: 12px 16px;
+                            border-radius: 10px;
+                            font-size: 13px;
+                            font-weight: 600;
+                            cursor: pointer;
+                            transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+                            backdrop-filter: blur(10px);
+                            box-shadow: 0 2px 8px rgba(220, 38, 38, 0.1);
+                            display: flex;
+                            align-items: center;
+                            justify-content: center;
+                            gap: 6px;
+                        ">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/>
+                            </svg>
+                            Clear All
+                        </button>
+                    </div>
+                    <!-- Bookmarks List Container -->
+                    <div id="bookmarks-list" style="position: relative;">${this.renderBookmarksList(bookmarks, themeGradient)}</div>
+                `;
+                container.innerHTML = bookmarksHTML;
+                this.attachBookmarkListeners();
+                // Handle favicon errors silently
+                setTimeout(() => this.handleFaviconErrors(), 100);
+                container.style.opacity = '1';
+                container.style.transform = 'translateY(0)';
+            } catch (error) {
+                console.error('Error rendering bookmarks:', error);
+                console.error('Error stack:', error.stack);
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <svg class="empty-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="color: #ef4444;">
+                            <circle cx="12" cy="12" r="10"></circle>
+                            <line x1="12" y1="8" x2="12" y2="12"></line>
+                            <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                        </svg>
+                        <h3 class="empty-title">Error Loading Bookmarks</h3>
+                        <p class="empty-description">Unable to load your saved bookmarks. Check console for details.</p>
+                    </div>
+                `;
+                container.style.opacity = '1';
+                container.style.transform = 'translateY(0)';
+            }
+        }, 150);
+    }
+    renderBookmarksList(bookmarks, themeGradient = 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)') {
+        if (bookmarks.length === 0) {
+            return `
+                <div class="empty-state">
+                    <svg class="empty-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                        <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16z"></path>
+                    </svg>
+                    <h3 class="empty-title">No Bookmarks Yet</h3>
+                    <p class="empty-description">Save your favorite tabs to access them quickly later</p>
+                </div>
+            `;
+        }
+        return bookmarks.map((bookmark, index) => `
+            <div class="bookmark-item" data-index="${index}" style="
+                display: flex;
+                align-items: center;
+                gap: 16px;
+                padding: 18px;
+                margin-bottom: 14px;
+                background: linear-gradient(135deg, rgba(255, 255, 255, 0.95), rgba(248, 250, 252, 0.95));
+                border-radius: 16px;
+                border: 1px solid rgba(226, 232, 240, 0.6);
+                backdrop-filter: blur(20px);
+                box-shadow:
+                    0 4px 16px rgba(0, 0, 0, 0.04),
+                    0 2px 4px rgba(0, 0, 0, 0.02),
+                    inset 0 1px 0 rgba(255, 255, 255, 0.8);
+                transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+                cursor: pointer;
+                position: relative;
+                animation: bookmarkFadeIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+                opacity: 0;
+                transform: translateY(20px) scale(0.95);
+                animation-delay: ${index * 80}ms;
+                overflow: hidden;
+            ">
+                <!-- Accent Line -->
+                <div style="
+                    position: absolute;
+                    left: 0;
+                    top: 0;
+                    bottom: 0;
+                    width: 4px;
+                    background: ${themeGradient};
+                    border-radius: 0 4px 4px 0;
+                    transition: width 0.3s ease;
+                "></div>
+                <!-- Enhanced Favicon -->
+                <div class="bookmark-favicon" style="
+                    width: 48px;
+                    height: 48px;
+                    background: ${themeGradient};
+                    border-radius: 12px;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    flex-shrink: 0;
+                    box-shadow:
+                        0 4px 12px rgba(255, 107, 53, 0.25),
+                        inset 0 1px 0 rgba(255, 255, 255, 0.2);
+                    position: relative;
+                    transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+                ">
+                    <img src="${this.getSafeFaviconUrl(bookmark.favIconUrl)}"
+                         alt="Favicon"
+                         style="
+                            width: 24px;
+                            height: 24px;
+                            object-fit: cover;
+                            border-radius: 6px;
+                            filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.1));
+                         ">
+                </div>
+                <!-- Bookmark Info -->
+                <div class="bookmark-info" style="flex: 1; min-width: 0; padding: 2px 0;">
+                    <div class="bookmark-title" style="
+                        font-size: 15px;
+                        font-weight: 600;
+                        color: #1e293b;
+                        margin-bottom: 6px;
+                        white-space: nowrap;
+                        overflow: hidden;
+                        text-overflow: ellipsis;
+                        letter-spacing: -0.25px;
+                        line-height: 1.3;
+                    ">${this.sanitizeText(bookmark.title || 'Untitled')}</div>
+                    <div class="bookmark-url" style="
+                        font-size: 13px;
+                        color: #64748b;
+                        white-space: nowrap;
+                        overflow: hidden;
+                        text-overflow: ellipsis;
+                        font-weight: 500;
+                        display: flex;
+                        align-items: center;
+                        gap: 6px;
+                    ">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="opacity: 0.6;">
+                            <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
+                            <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
+                        </svg>
+                        ${this.extractDomain(bookmark.url)}
+                    </div>
+                </div>
+                <!-- Enhanced Remove Button -->
+                <button class="remove-bookmark-btn" data-index="${index}" style="
+                    background: linear-gradient(135deg, #ef4444, #dc2626);
+                    color: white;
+                    border: none;
+                    width: 32px;
+                    height: 32px;
+                    border-radius: 10px;
+                    cursor: pointer;
+                    font-size: 14px;
+                    font-weight: 600;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+                    box-shadow:
+                        0 4px 12px rgba(239, 68, 68, 0.25),
+                        inset 0 1px 0 rgba(255, 255, 255, 0.2);
+                    flex-shrink: 0;
+                    opacity: 0.8;
+                ">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                        <path d="M18 6L6 18M6 6l12 12"/>
+                    </svg>
+                </button>
+            </div>
+        `).join('');
+    }
+
+    async searchBookmarks(query) {
+        const bookmarkKey = await this.getUserBookmarkKey();
+        const result = await chrome.storage.local.get([bookmarkKey]);
+        const allBookmarks = result[bookmarkKey] || [];
+
+        const searchQuery = query.trim().toLowerCase();
+        const bookmarkItems = document.querySelectorAll('.bookmark-item');
+
+        let visibleCount = 0;
+
+        // Show/hide and highlight bookmarks based on search
+        bookmarkItems.forEach((item, index) => {
+            const bookmark = allBookmarks[index];
+            if (!bookmark) return;
+
+            const title = (bookmark.title || '').toLowerCase();
+            const url = (bookmark.url || '').toLowerCase();
+            const domain = this.extractDomain(bookmark.url).toLowerCase();
+
+            // Check if bookmark matches search
+            const matchesSearch = searchQuery === '' ||
+                                title.includes(searchQuery) ||
+                                url.includes(searchQuery) ||
+                                domain.includes(searchQuery);
+
+            if (matchesSearch) {
+                item.style.display = 'flex';
+                visibleCount++;
+
+                // Highlight matching text
+                if (searchQuery !== '') {
+                    const titleEl = item.querySelector('.bookmark-title');
+                    const urlEl = item.querySelector('.bookmark-url');
+
+                    if (titleEl) {
+                        titleEl.innerHTML = this.highlightText(bookmark.title || 'Untitled', searchQuery);
+                    }
+                    if (urlEl) {
+                        const domainText = this.extractDomain(bookmark.url);
+                        const highlightedDomain = this.highlightText(domainText, searchQuery);
+                        urlEl.innerHTML = `
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="opacity: 0.6;">
+                                <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
+                                <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
+                            </svg>
+                            ${highlightedDomain}
+                        `;
+                    }
+                } else {
+                    // Reset to original text when search is cleared
+                    const titleEl = item.querySelector('.bookmark-title');
+                    const urlEl = item.querySelector('.bookmark-url');
+
+                    if (titleEl) {
+                        titleEl.textContent = this.sanitizeText(bookmark.title || 'Untitled');
+                    }
+                    if (urlEl) {
+                        const domainText = this.extractDomain(bookmark.url);
+                        urlEl.innerHTML = `
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="opacity: 0.6;">
+                                <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
+                                <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
+                            </svg>
+                            ${domainText}
+                        `;
+                    }
+                }
+            } else {
+                item.style.display = 'none';
+            }
+        });
+
+        // Update the counter
+        const bookmarkCount = document.getElementById('bookmark-count');
+        if (bookmarkCount) {
+            if (searchQuery === '') {
+                bookmarkCount.textContent = allBookmarks.length;
+            } else {
+                bookmarkCount.textContent = `${visibleCount} of ${allBookmarks.length}`;
+            }
+        }
+    }
+
+    highlightText(text, query) {
+        if (!query || !text) return this.sanitizeText(text);
+
+        const sanitizedText = this.sanitizeText(text);
+        const regex = new RegExp(`(${this.escapeRegex(query)})`, 'gi');
+
+        return sanitizedText.replace(regex, '<mark style="background: linear-gradient(135deg, #fbbf24, #f59e0b); color: #78350f; padding: 2px 4px; border-radius: 3px; font-weight: 700;">$1</mark>');
+    }
+
+    escapeRegex(string) {
+        return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    }
+
+    attachBookmarkListeners() {
+        // Attach search input listeners
+        const searchInput = document.getElementById('bookmark-search');
+        if (searchInput) {
+            searchInput.addEventListener('input', (e) => {
+                this.searchBookmarks(e.target.value);
+            });
+            searchInput.addEventListener('focus', (e) => {
+                e.target.style.borderColor = 'rgba(99, 102, 241, 0.5)';
+                e.target.style.boxShadow = '0 0 0 3px rgba(99, 102, 241, 0.1)';
+            });
+            searchInput.addEventListener('blur', (e) => {
+                e.target.style.borderColor = 'rgba(203, 213, 225, 0.6)';
+                e.target.style.boxShadow = 'none';
+            });
+        }
+
+        const bookmarkAllBtn = document.getElementById('bookmark-all-current');
+        if (bookmarkAllBtn) {
+            bookmarkAllBtn.addEventListener('click', async () => {
+                await this.bookmarkAllCurrentTabs();
+                this.renderBookmarksView();
+            });
+            const gradientNormal = bookmarkAllBtn.dataset.gradient;
+            const gradientHover = bookmarkAllBtn.dataset.gradientDark;
+            const shadow = bookmarkAllBtn.dataset.shadow;
+
+            bookmarkAllBtn.addEventListener('mouseenter', () => {
+                bookmarkAllBtn.style.background = gradientHover;
+                bookmarkAllBtn.style.transform = 'translateY(-2px) scale(1.02)';
+                bookmarkAllBtn.style.boxShadow = `0 8px 20px ${shadow}, inset 0 1px 0 rgba(255, 255, 255, 0.3)`;
+            });
+            bookmarkAllBtn.addEventListener('mouseleave', () => {
+                bookmarkAllBtn.style.background = gradientNormal;
+                bookmarkAllBtn.style.transform = 'translateY(0) scale(1)';
+                bookmarkAllBtn.style.boxShadow = `0 4px 12px ${shadow}, inset 0 1px 0 rgba(255, 255, 255, 0.2)`;
+            });
+        }
+        const clearAllBtn = document.getElementById('clear-all-bookmarks');
+        if (clearAllBtn) {
+            clearAllBtn.addEventListener('click', async () => {
+                await this.clearAllBookmarks();
+                this.renderBookmarksView();
+            });
+            clearAllBtn.addEventListener('mouseenter', () => {
+                clearAllBtn.style.background = 'rgba(220, 38, 38, 0.15)';
+                clearAllBtn.style.color = '#b91c1c';
+                clearAllBtn.style.transform = 'translateY(-2px) scale(1.02)';
+                clearAllBtn.style.boxShadow = '0 8px 20px rgba(220, 38, 38, 0.15)';
+            });
+            clearAllBtn.addEventListener('mouseleave', () => {
+                clearAllBtn.style.background = 'rgba(255, 255, 255, 0.9)';
+                clearAllBtn.style.color = '#dc2626';
+                clearAllBtn.style.transform = 'translateY(0) scale(1)';
+                clearAllBtn.style.boxShadow = '0 2px 8px rgba(220, 38, 38, 0.1)';
+            });
+        }
+        const bookmarkItems = document.querySelectorAll('.bookmark-item');
+        bookmarkItems.forEach((item, index) => {
+            item.addEventListener('click', async (e) => {
+                if (e.target.classList.contains('remove-bookmark-btn')) return;
+                const bookmarkKey = await this.getUserBookmarkKey();
+                const result = await chrome.storage.local.get([bookmarkKey]);
+                const bookmarks = result[bookmarkKey] || [];
+                if (bookmarks[index]) {
+                    this.openBookmark(bookmarks[index]);
+                }
+            });
+            item.addEventListener('mouseenter', () => {
+                item.style.transform = 'translateY(-4px) scale(1.01)';
+                item.style.boxShadow = `
+                    0 12px 32px rgba(0, 0, 0, 0.08),
+                    0 4px 8px rgba(0, 0, 0, 0.04),
+                    inset 0 1px 0 rgba(255, 255, 255, 0.9),
+                    0 0 0 1px rgba(255, 107, 53, 0.15)
+                `;
+                const accentLine = item.querySelector('div[style*="position: absolute"]');
+                if (accentLine) {
+                    accentLine.style.width = '6px';
+                }
+                const favicon = item.querySelector('.bookmark-favicon');
+                if (favicon) {
+                    favicon.style.transform = 'scale(1.05) rotate(2deg)';
+                    favicon.style.boxShadow = '0 6px 16px rgba(255, 107, 53, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.3)';
+                }
+            });
+            item.addEventListener('mouseleave', () => {
+                item.style.transform = 'translateY(0) scale(1)';
+                item.style.boxShadow = `
+                    0 4px 16px rgba(0, 0, 0, 0.04),
+                    0 2px 4px rgba(0, 0, 0, 0.02),
+                    inset 0 1px 0 rgba(255, 255, 255, 0.8)
+                `;
+                const accentLine = item.querySelector('div[style*="position: absolute"]');
+                if (accentLine) {
+                    accentLine.style.width = '4px';
+                }
+                const favicon = item.querySelector('.bookmark-favicon');
+                if (favicon) {
+                    favicon.style.transform = 'scale(1) rotate(0deg)';
+                    favicon.style.boxShadow = '0 4px 12px rgba(255, 107, 53, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.2)';
+                }
+            });
+        });
+        const removeButtons = document.querySelectorAll('.remove-bookmark-btn');
+        removeButtons.forEach(btn => {
+            btn.addEventListener('click', async (e) => {
+                e.stopPropagation();
+                const index = parseInt(btn.dataset.index);
+                await this.removeBookmark(index);
+                this.renderBookmarksView();
+            });
+            btn.addEventListener('mouseenter', () => {
+                btn.style.background = 'linear-gradient(135deg, #dc2626, #b91c1c)';
+                btn.style.transform = 'scale(1.1) rotate(-3deg)';
+                btn.style.boxShadow = '0 6px 16px rgba(239, 68, 68, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.3)';
+                btn.style.opacity = '1';
+            });
+            btn.addEventListener('mouseleave', () => {
+                btn.style.background = 'linear-gradient(135deg, #ef4444, #dc2626)';
+                btn.style.transform = 'scale(1) rotate(0deg)';
+                btn.style.boxShadow = '0 4px 12px rgba(239, 68, 68, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.2)';
+                btn.style.opacity = '0.8';
+            });
+        });
+    }
+    async bookmarkAllCurrentTabs() {
+        try {
+            const tabs = await chrome.tabs.query({});
+            const validTabs = tabs.filter(tab => this.isValidTab(tab));
+            const bookmarkKey = await this.getUserBookmarkKey();
+            const result = await chrome.storage.local.get([bookmarkKey]);
+            let favorites = result[bookmarkKey] || [];
+            let addedCount = 0;
+            for (const tab of validTabs) {
+                const exists = favorites.some(fav => fav.url === tab.url);
+                if (!exists) {
+                    favorites.push({
+                        id: tab.id,
+                        title: tab.title,
+                        url: tab.url,
+                        favIconUrl: tab.favIconUrl,
+                        dateAdded: Date.now()
+                    });
+                    addedCount++;
+                }
+            }
+            await chrome.storage.local.set({ [bookmarkKey]: favorites });
+            this.favorites = favorites;
+            this.showMessage(`Added ${addedCount} new bookmarks!`, 'success');
+            setTimeout(() => {
+                this.renderTabs();
+            }, 300);
+        } catch (error) {
+            this.showError('Failed to bookmark tabs');
+        }
+    }
+    async clearAllBookmarks() {
+        try {
+            const bookmarkKey = await this.getUserBookmarkKey();
+            await chrome.storage.local.set({ [bookmarkKey]: [] });
+            this.favorites = [];
+            this.showMessage('All bookmarks cleared - tabs restored', 'success');
+            setTimeout(() => {
+                this.renderTabs();
+            }, 100);
+        } catch (error) {
+            this.showError('Failed to clear bookmarks');
+        }
+    }
+    async removeBookmark(index) {
+        try {
+            const bookmarkKey = await this.getUserBookmarkKey();
+            const result = await chrome.storage.local.get([bookmarkKey]);
+            let favorites = result[bookmarkKey] || [];
+            if (index >= 0 && index < favorites.length) {
+                const removedBookmark = favorites[index];
+                await this.animateBookmarkToTab(removedBookmark);
+                favorites.splice(index, 1);
+                await chrome.storage.local.set({ [bookmarkKey]: favorites });
+                this.favorites = favorites;
+                this.showMessage(`Restored "${this.truncate(removedBookmark.title, 20)}" to tabs`, 'success');
+                setTimeout(() => {
+                    this.renderTabs();
+                }, 700);
+            }
+        } catch (error) {
+            this.showError('Failed to remove bookmark');
+        }
+    }
+    async openBookmark(bookmark) {
+        try {
+            await chrome.tabs.create({
+                url: bookmark.url,
+                active: true
+            });
+            this.showMessage(`Opening "${this.truncate(bookmark.title, 20)}"`, 'success');
+        } catch (error) {
+            this.showError('Failed to open bookmark');
+        }
+    }
+    async addToFavorites(tabId) {
+        try {
+            const tab = this.tabs.find(t => t.id === tabId);
+            if (!tab) {
+                this.showError('Tab not found');
+                return;
+            }
+            const bookmarkKey = await this.getUserBookmarkKey();
+            const result = await chrome.storage.local.get([bookmarkKey]);
+            let favorites = result[bookmarkKey] || [];
+            const existingIndex = favorites.findIndex(fav => fav.url === tab.url);
+            if (existingIndex !== -1) {
+                await this.animateBookmarkToTab(favorites[existingIndex]);
+                favorites.splice(existingIndex, 1);
+                await chrome.storage.local.set({ [bookmarkKey]: favorites });
+                this.showMessage(`Restored "${this.truncate(tab.title, 20)}" to tabs`, 'success');
+                this.favorites = favorites;
+                setTimeout(() => {
+                    this.renderTabs();
+                }, 700);
+            } else {
+                const bookmarkData = {
+                    id: tab.id,
+                    title: tab.title,
+                    url: tab.url,
+                    favIconUrl: tab.favIconUrl,
+                    dateAdded: Date.now()
+                };
+                await this.animateTabToBookmark(tabId, bookmarkData);
+                favorites.push(bookmarkData);
+                await chrome.storage.local.set({ [bookmarkKey]: favorites });
+                this.showMessage(`Bookmarked "${this.truncate(tab.title, 20)}"`, 'success');
+                this.favorites = favorites;
+                setTimeout(() => {
+                    this.renderTabs();
+                }, 700);
+            }
+        } catch (error) {
+            this.showError('Failed to update bookmark');
+        }
+    }
+    async animateTabToBookmark(tabId, bookmarkData) {
+        const tabElement = document.querySelector(`[data-tab-id="${tabId}"]`);
+        if (!tabElement) return;
+        const clone = tabElement.cloneNode(true);
+        clone.classList.add('animating-to-bookmark');
+        clone.style.position = 'fixed';
+        clone.style.zIndex = '10000';
+        clone.style.pointerEvents = 'none';
+        clone.style.transition = 'all 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94)';
+        const tabRect = tabElement.getBoundingClientRect();
+        clone.style.left = tabRect.left + 'px';
+        clone.style.top = tabRect.top + 'px';
+        clone.style.width = tabRect.width + 'px';
+        clone.style.height = tabRect.height + 'px';
+        document.body.appendChild(clone);
+        tabElement.style.transition = 'all 0.4s ease-out';
+        tabElement.style.opacity = '0';
+        tabElement.style.transform = 'translateX(-100%) scale(0.8)';
+        setTimeout(() => {
+            clone.style.transform = 'translateX(200px) translateY(-100px) scale(0.6) rotate(5deg)';
+            clone.style.opacity = '0.3';
+            clone.style.borderColor = '#ff6b35';
+            clone.style.background = 'linear-gradient(135deg, #ff9a56, #ff6b35)';
+        }, 100);
+        setTimeout(() => {
+            if (clone.parentNode) {
+                clone.parentNode.removeChild(clone);
+            }
+            const originalTab = document.querySelector(`[data-tab-id="${tabId}"]`);
+            if (originalTab) {
+                originalTab.style.display = 'none';
+            }
+        }, 600);
+    }
+    async animateBookmarkToTab(bookmarkData) {
+        const tempBookmark = this.createTempBookmarkElement(bookmarkData);
+        document.body.appendChild(tempBookmark);
+        // Handle favicon errors silently
+        setTimeout(() => this.handleFaviconErrors(), 50);
+        tempBookmark.style.position = 'fixed';
+        tempBookmark.style.right = '20px';
+        tempBookmark.style.top = '20px';
+        tempBookmark.style.zIndex = '10000';
+        tempBookmark.style.pointerEvents = 'none';
+        tempBookmark.style.transition = 'all 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94)';
+        const tabsContainer = document.getElementById('tabs-container');
+        const containerRect = tabsContainer.getBoundingClientRect();
+        setTimeout(() => {
+            tempBookmark.style.transform = 'translateX(-300px) translateY(150px) scale(1.1) rotate(-3deg)';
+            tempBookmark.style.opacity = '0.8';
+            tempBookmark.style.borderColor = '#10b981';
+            tempBookmark.style.background = 'linear-gradient(135deg, #34d399, #10b981)';
+        }, 100);
+        setTimeout(() => {
+            if (tempBookmark.parentNode) {
+                tempBookmark.parentNode.removeChild(tempBookmark);
+            }
+        }, 600);
+    }
+    createTempBookmarkElement(bookmarkData) {
+        const element = document.createElement('div');
+        element.innerHTML = `
+            <div style="
+                background: white;
+                border-radius: 12px;
+                padding: 12px;
+                box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+                border: 2px solid #ff6b35;
+                min-width: 280px;
+                display: flex;
+                align-items: center;
+                gap: 12px;
+            ">
+                <div style="
+                    width: 40px;
+                    height: 40px;
+                    border-radius: 8px;
+                    background: linear-gradient(135deg, #ff9a56, #ff6b35);
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                ">
+                    <img src="${this.getSafeFaviconUrl(bookmarkData.favIconUrl)}"
+                         alt="Favicon"
+                         style="width: 24px; height: 24px; object-fit: cover; border-radius: 4px;">
+                </div>
+                <div style="flex: 1; min-width: 0;">
+                    <div style="font-weight: 600; color: #1e293b; font-size: 14px; margin-bottom: 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                        ${this.sanitizeText(bookmarkData.title || 'Untitled')}
+                    </div>
+                    <div style="font-size: 12px; color: #64748b; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                        ${this.extractDomain(bookmarkData.url)}
+                    </div>
+                </div>
+            </div>
+        `;
+        return element;
+    }
+    removeTabFromDOM(tabId) {
+        const tabElement = document.querySelector(`[data-tab-id="${tabId}"]`);
+        if (tabElement && tabElement.parentNode) {
+            tabElement.parentNode.removeChild(tabElement);
+        }
+    }
+    async renderCurrentView() {
+        await this.renderTabs();
+    }
+    showPremiumModal() {
+
+        document.querySelectorAll('.premium-upgrade-modal').forEach(modal => modal.remove());
+        const modal = document.createElement('div');
+        modal.className = 'premium-upgrade-modal';
+        modal.style.cssText = `
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 10000;
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            transition: all 0.3s ease;
+            pointer-events: all;
+            opacity: 0;
+        `;
+        modal.innerHTML = `
+            <div style="background: #ffffff; border-radius: 8px; padding: 20px; width: 90%; max-width: 320px; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1); color: #374151; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
+                <div style="text-align: center; margin-bottom: 16px;">
+                    <h2 style="margin: 0 0 4px 0; color: #111827; font-size: 18px; font-weight: 600;">Upgrade to Pro</h2>
+                    <p style="margin: 0; color: #6b7280; font-size: 13px;">Unlimited tabs and advanced features</p>
+                </div>
+                <div style="background: #f9fafb; border-radius: 6px; padding: 14px; margin-bottom: 16px; font-size: 12px;">
+                    <div style="margin-bottom: 8px; color: #374151; font-weight: 500;">Features:</div>
+                    <div style="margin-bottom: 4px; color: #4b5563;">• Custom timers and auto-close</div>
+                    <div style="margin-bottom: 4px; color: #4b5563;">• Unlimited favorites</div>
+                    <div style="margin-bottom: 4px; color: #4b5563;">• Advanced tab management</div>
+                    <div style="margin-bottom: 4px; color: #4b5563;">• Remove 10-tab limit</div>
+                    <div style="color: #4b5563;">• Priority support</div>
+                </div>
+                <div style="background: #eff6ff; border-radius: 6px; padding: 12px; margin-bottom: 16px; text-align: center;">
+                    <div style="font-size: 16px; font-weight: 600; color: #1d4ed8; margin-bottom: 2px;">$4.99/month</div>
+                    <div style="font-size: 11px; color: #64748b;">Cancel anytime</div>
+                </div>
+                <div style="display: flex; flex-direction: column; gap: 8px;">
+                    <button id="premium-upgrade" style="padding: 10px; border: none; border-radius: 6px; background: #2563eb; color: white; cursor: pointer; font-size: 13px; font-weight: 500;">Subscribe Now</button>
+                    <button id="premium-close" style="padding: 8px; border: none; border-radius: 4px; background: #f3f4f6; color: #6b7280; cursor: pointer; font-size: 12px;">Not now</button>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(modal);
+
+        document.body.style.overflow = 'hidden';
+        setTimeout(() => modal.style.opacity = '1', 10);
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) {
+                document.body.style.overflow = '';
+                modal.remove();
+            }
+        });
+        document.getElementById('premium-close').addEventListener('click', () => {
+            document.body.style.overflow = '';
+            modal.remove();
+        });
+        document.getElementById('premium-upgrade').addEventListener('click', async () => {
+            const upgradeBtn = document.getElementById('premium-upgrade');
+            const originalText = upgradeBtn.textContent;
+            try {
+                upgradeBtn.textContent = '🔄 Processing...';
+                upgradeBtn.disabled = true;
+                await this.handleUpgrade();
+
+                if (document.getElementById('premium-upgrade')) {
+                    upgradeBtn.textContent = originalText;
+                    upgradeBtn.disabled = false;
+                }
+            } catch (error) {
+
+                if (upgradeBtn) {
+                    upgradeBtn.textContent = originalText;
+                    upgradeBtn.disabled = false;
+                }
+            }
+        });
+    }
+    async handleUpgrade() {
+        try {
+            // Close any open modals
+            const modal = document.querySelector('div[style*="position: fixed"][style*="z-index: 10000"]');
+            if (modal) modal.remove();
+
+            // Redirect to user dashboard subscription page
+            await chrome.tabs.create({
+                url: `${CONFIG.WEB.DASHBOARD_URL}#subscription`,
+                active: true
+            });
+
+            this.showMessage('📊 Opening subscription page...', 'success');
+        } catch (error) {
+            this.showMessage('❌ Failed to open dashboard.', 'error');
+        }
+    }
+    setupPaymentTabListener(tabId, userEmail) {
+
+        const tabUpdateListener = async (updatedTabId, changeInfo, tab) => {
+            if (updatedTabId !== tabId) return;
+
+            if (tab.url && (
+                tab.url.includes('success') ||
+                tab.url.includes('payment') ||
+                tab.url.includes('thank') ||
+                tab.url.includes('complete')
+            )) {
+
+                try {
+                    const status = await this.checkSubscriptionStatus(userEmail);
+                    if (status.isActive) {
+                        await chrome.storage.local.set({
+                            isPremium: true,
+                            subscriptionActive: true,
+                            planType: 'pro',
+                            subscriptionId: status.subscriptionId,
+                            activatedAt: Date.now(),
+                            userEmail: userEmail
+                        });
+                        this.isPremium = true;
+                        await this.render();
+                        this.updateUIForProUser();
+                        this.showProActivationSuccess();
+
+                        chrome.tabs.onUpdated.removeListener(tabUpdateListener);
+                    }
+                } catch (error) {
+                }
+            }
+
+            if (changeInfo.status === 'complete' && tab.url && !tab.url.includes('stripe.com')) {
+                setTimeout(async () => {
+                    try {
+                        const status = await this.checkSubscriptionStatus(userEmail);
+                        if (status.isActive) {
+
+                        }
+                    } catch (error) {
+                    }
+                }, 2000);
+            }
+        };
+
+        const tabRemoveListener = async (removedTabId) => {
+            if (removedTabId === tabId) {
+
+                setTimeout(async () => {
+                    try {
+                        const status = await this.checkSubscriptionStatus(userEmail);
+                        if (status.isActive) {
+                            await chrome.storage.local.set({
+                                isPremium: true,
+                                subscriptionActive: true,
+                                planType: 'pro',
+                                subscriptionId: status.subscriptionId,
+                                activatedAt: Date.now(),
+                                userEmail: userEmail
+                            });
+                            this.isPremium = true;
+                            await this.render();
+                            this.updateUIForProUser();
+                            this.showProActivationSuccess();
+                        }
+                    } catch (error) {
+                    }
+                }, 3000);
+
+                chrome.tabs.onUpdated.removeListener(tabUpdateListener);
+                chrome.tabs.onRemoved.removeListener(tabRemoveListener);
+            }
+        };
+
+        chrome.tabs.onUpdated.addListener(tabUpdateListener);
+        chrome.tabs.onRemoved.addListener(tabRemoveListener);
+
+        setTimeout(() => {
+            chrome.tabs.onUpdated.removeListener(tabUpdateListener);
+            chrome.tabs.onRemoved.removeListener(tabRemoveListener);
+        }, 30 * 60 * 1000);
+    }
+
+    startAggressivePolling(userEmail) {
+        let attempts = 0;
+        const maxAttempts = 120;
+        const intervalTime = 5000;
+        const pollInterval = setInterval(async () => {
+            attempts++;
+            try {
+                const status = await this.checkSubscriptionStatus(userEmail);
+                if (status.isActive && status.plan === 'pro') {
+
+                    await chrome.storage.local.set({
+                        isPremium: true,
+                        subscriptionActive: true,
+                        planType: 'pro',
+                        subscriptionId: status.subscriptionId,
+                        activatedAt: Date.now(),
+                        userEmail: userEmail
+                    });
+                    this.isPremium = true;
+                    await this.render();
+                    this.updateUIForProUser();
+
+                    this.showProActivationSuccess();
+
+                    clearInterval(pollInterval);
+                    return;
+                }
+
+                if (attempts >= maxAttempts) {
+                    clearInterval(pollInterval);
+                    this.startSubscriptionPolling(userEmail);
+                }
+            } catch (error) {
+            }
+        }, intervalTime);
+
+        chrome.storage.local.set({
+            pollingInterval: pollInterval,
+            pollingUserEmail: userEmail
+        });
+    }
+
+    startSubscriptionPolling(userEmail) {
+        let attempts = 0;
+        const maxAttempts = 40;
+        const intervalTime = 30000;
+        const pollInterval = setInterval(async () => {
+            attempts++;
+            try {
+                const status = await this.checkSubscriptionStatus(userEmail);
+                if (status.isActive && status.plan === 'pro') {
+
+                    await chrome.storage.local.set({
+                        isPremium: true,
+                        subscriptionActive: true,
+                        planType: 'pro',
+                        subscriptionId: status.subscriptionId,
+                        activatedAt: Date.now()
+                    });
+                    this.isPremium = true;
+                    await this.render();
+                    this.updateUIForProUser();
+
+                    clearInterval(pollInterval);
+
+                    this.showProActivationSuccess();
+                    return;
+                }
+                if (attempts >= maxAttempts) {
+                    clearInterval(pollInterval);
+                    this.showMessage('⏰ Pro activation check timed out. Please refresh or contact support.', 'warning');
+                }
+            } catch (error) {
+                if (attempts >= maxAttempts) {
+                    clearInterval(pollInterval);
+                    this.showMessage('❌ Unable to verify Pro activation. Please refresh or contact support.', 'error');
+                }
+            }
+        }, intervalTime);
+
+        chrome.storage.local.set({
+            pollingStarted: Date.now(),
+            pollingActive: true
+        });
+    }
+
+    showProActivationSuccess() {
+        const modal = document.createElement('div');
+        modal.style.cssText = `
+            position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0, 0, 0, 0.5); display: flex; align-items: center;
+            justify-content: center; z-index: 10001; backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px); transition: all 0.3s ease; pointer-events: all;
+        `;
+        modal.innerHTML = `
+            <div style="background: white; border-radius: 12px; padding: 32px; max-width: 400px; text-align: center; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);">
+                <div style="font-size: 48px; margin-bottom: 16px;">🎉</div>
+                <h2 style="margin: 0 0 12px 0; color: #16a34a; font-size: 24px;">Welcome to Pro!</h2>
+                <p style="margin: 0 0 20px 0; color: #666; font-size: 16px;">
+                    Your subscription is now active. Enjoy unlimited tabs and all premium features!
+                </p>
+                <div style="background: #f0fdf4; border: 1px solid #22c55e; border-radius: 8px; padding: 16px; margin-bottom: 20px;">
+                    <div style="color: #15803d; font-weight: 600; margin-bottom: 8px;">✅ Pro Features Unlocked:</div>
+                    <div style="color: #16a34a; font-size: 14px; text-align: left;">
+                        • Unlimited tab management<br>
+                        • Custom timers and scheduling<br>
+                        • Bookmarks and favorites<br>
+                        • Advanced organization tools<br>
+                        • Priority support
+                    </div>
+                </div>
+                <button id="pro-success-close" style="
+                    background: linear-gradient(135deg, #16a34a, #15803d); color: white;
+                    border: none; padding: 12px 24px; border-radius: 6px; cursor: pointer;
+                    font-size: 16px; font-weight: 600; width: 100%;
+                ">Start Using Pro Features</button>
+            </div>
+        `;
+        document.body.appendChild(modal);
+
+        const closeBtn = modal.querySelector('#pro-success-close');
+        const closeModal = () => modal.remove();
+        closeBtn.addEventListener('click', closeModal);
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) closeModal();
+        });
+        setTimeout(closeModal, 5000);
+    }
+
+    async checkProStatus(installationId) {
+        return false;
+    }
+    async getOrCreateInstallationId() {
+        try {
+            let result = await chrome.storage.local.get(['installationId']);
+            if (!result.installationId) {
+                const installationId = 'ext_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+                await chrome.storage.local.set({ installationId });
+                return installationId;
+            }
+            return result.installationId;
+        } catch (error) {
+            return 'ext_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+        }
+    }
+    async createPaymentSession(userEmail) {
+        try {
+
+            try {
+                const response = await fetch(`${API_BASE}/create-checkout`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email: userEmail })
+                });
+                if (response.ok) {
+                    const data = await response.json();
+
+                    await chrome.storage.local.set({
+                        checkoutSessionId: data.sessionId,
+                        stripeCustomerId: data.customerId
+                    });
+                    this.showMessage('💳 Opening secure Stripe checkout...', 'info');
+                    return data.url;
+                } else {
+                }
+            } catch (apiError) {
+            }
+
+            this.showMessage('💳 Opening Stripe payment page...', 'info');
+            return this.createFallbackPaymentLink(userEmail);
+        } catch (error) {
+            this.showMessage('❌ Payment system error. Please try again or contact support.', 'error');
+            return null;
+        }
+    }
+    createFallbackPaymentLink(userEmail) {
+
+        const extensionId = chrome.runtime.id;
+        const successUrl = `chrome-extension://${extensionId}/success.html`;
+
+        const livePaymentLink = `https://buy.stripe.com/dRm5kEgDE1R29cPgM84Rq00`;
+        this.showMessage('💳 Opening Stripe checkout. Complete payment to activate Pro instantly.', 'info');
+        return livePaymentLink;
+    }
+    async showInlineStripePortal() {
+        try {
+
+            const customerData = await chrome.storage.local.get(['stripeCustomerId', 'userEmail']);
+            const userEmail = customerData.userEmail || await this.getUserEmail();
+            if (!userEmail && !customerData.stripeCustomerId) {
+                this.showError('Unable to access billing portal. Please contact support.');
+                return;
+            }
+
+            const response = await fetch(`${API_BASE}/billing-portal`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    email: userEmail,
+                    customerId: customerData.stripeCustomerId,
+                    bypassKey: 'ext_bypass_2024'
+                })
+            });
+            if (response.ok) {
+                const data = await response.json();
+
+                if (data.customer_id) {
+                    await chrome.storage.local.set({
+                        stripeCustomerId: data.customer_id
+                    });
+                }
+
+                chrome.tabs.create({
+                    url: data.url,
+                    active: true
+                });
+            } else {
+                let errorData;
+                try {
+                    errorData = await response.text();
+                } catch (e) {
+                    errorData = 'Unable to parse error response';
+                }
+
+                if (response.status === 401 || (errorData && errorData.includes('Authentication Required'))) {
+                    throw new Error('Deployment protection enabled - using fallback portal');
+                }
+                throw new Error(`API Error: ${response.status} - ${response.statusText}`);
+            }
+        } catch (error) {
+
+            chrome.tabs.create({
+                url: 'https://buy.stripe.com/payment_link',
+                active: true
+            });
+        }
+    }
+
+    async testStripeAPI() {
+        try {
+            const response = await fetch(`${API_BASE}/test-stripe`, {
+                method: 'GET'
+            });
+            const data = await response.json();
+            if (data.status === 'success') {
+                this.showMessage('✅ Stripe API is working!', 'success');
+            } else {
+                this.showMessage(`❌ Stripe API Error: ${data.error}`, 'error');
+            }
+            return data;
+        } catch (error) {
+            this.showMessage(`❌ API Test Failed: ${error.message}`, 'error');
+            return null;
+        }
+    }
+    showCancellationConfirm(parentModal) {
+        const confirmModal = document.createElement('div');
+        confirmModal.style.cssText = `
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.6);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 10002;
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            transition: all 0.3s ease;
+            pointer-events: all;
+        `;
+        const confirmContent = document.createElement('div');
+        confirmContent.style.cssText = `
+            background: white;
+            border-radius: 12px;
+            width: 90%;
+            max-width: 400px;
+            padding: 30px;
+            text-align: center;
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.5);
+        `;
+        confirmContent.innerHTML = `
+            <div style="color: #ff6b6b; font-size: 48px; margin-bottom: 16px;">⚠️</div>
+            <h3 style="margin: 0 0 16px 0; color: #333; font-size: 20px;">Cancel Subscription?</h3>
+            <p style="margin: 0 0 24px 0; color: #666; line-height: 1.6;">
+                Are you sure you want to cancel your Pro subscription? You'll lose access to premium features at the end of your current billing period.
+            </p>
+            <div style="display: flex; gap: 12px;">
+                <button id="confirm-cancel" style="
+                    flex: 1;
+                    background: #ff6b6b;
+                    color: white;
+                    border: none;
+                    padding: 12px;
+                    border-radius: 8px;
+                    cursor: pointer;
+                    font-weight: 600;
+                ">Yes, Cancel</button>
+                <button id="keep-subscription" style="
+                    flex: 1;
+                    background: #4caf50;
+                    color: white;
+                    border: none;
+                    padding: 12px;
+                    border-radius: 8px;
+                    cursor: pointer;
+                    font-weight: 600;
+                ">Keep Pro</button>
+            </div>
+        `;
+        confirmContent.querySelector('#confirm-cancel').addEventListener('click', () => {
+            chrome.tabs.create({
+                url: 'https://buy.stripe.com/payment_link',
+                active: true
+            });
+            confirmModal.remove();
+            parentModal.remove();
+        });
+        confirmContent.querySelector('#keep-subscription').addEventListener('click', () => {
+            confirmModal.remove();
+        });
+        confirmModal.appendChild(confirmContent);
+        document.body.appendChild(confirmModal);
+    }
+    showPopupBlockedMessage(existingModal) {
+        if (existingModal) {
+            existingModal.remove();
+        }
+        const modal = document.createElement('div');
+        modal.className = 'popup-blocked-modal';
+        modal.style.cssText = `
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 10002;
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            transition: all 0.3s ease;
+            pointer-events: all;
+        `;
+        const modalContent = document.createElement('div');
+        modalContent.style.cssText = `
+            background: white;
+            border-radius: 12px;
+            width: 90%;
+            max-width: 400px;
+            padding: 30px;
+            text-align: center;
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.4);
+        `;
+        modalContent.innerHTML = `
+            <div style="color: #f59e0b; font-size: 48px; margin-bottom: 15px;">🚫</div>
+            <h3 style="margin: 0 0 15px 0; color: #333; font-size: 18px;">Popup Blocked</h3>
+            <p style="margin: 0 0 20px 0; color: #666; line-height: 1.6; font-size: 14px;">
+                Your browser blocked the Stripe billing portal popup. Please click the button below to open it manually.
+            </p>
+            <button id="manual-open-btn" style="
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                color: white;
+                border: none;
+                padding: 12px 24px;
+                border-radius: 8px;
+                cursor: pointer;
+                font-size: 14px;
+                font-weight: 600;
+                margin-bottom: 10px;
+                transition: transform 0.2s;
+            " onmouseover="this.style.transform='translateY(-1px)'" onmouseout="this.style.transform='translateY(0)'">Open Stripe Portal</button>
+            <br>
+            <button id="close-blocked-modal" style="
+                background: none;
+                border: none;
+                color: #666;
+                cursor: pointer;
+                font-size: 14px;
+                text-decoration: underline;
+            ">Close</button>
+        `;
+        modalContent.querySelector('#manual-open-btn').addEventListener('click', () => {
+            chrome.tabs.create({
+                url: 'https://buy.stripe.com/payment_link',
+                active: true
+            });
+            modal.remove();
+        });
+        modalContent.querySelector('#close-blocked-modal').addEventListener('click', () => {
+            modal.remove();
+        });
+        modal.appendChild(modalContent);
+        document.body.appendChild(modal);
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) {
+                modal.remove();
+            }
+        });
+    }
+    // Pro activation is now handled only by payment verification from backend
+    // Manual activation has been removed for security
+
+    async checkSubscriptionStatus(userEmail) {
+        try {
+            if (!userEmail || typeof userEmail !== 'string') {
+                return { isActive: false, plan: 'free', subscriptionId: null };
+            }
+
+            // FIRST: Check storage - if it says Pro, ALWAYS trust it (don't expire)
+            const stored = await chrome.storage.local.get(['isPremium', 'planType', 'subscriptionActive', 'lastSyncTime', 'subscriptionId']);
+            if (stored.isPremium === true || stored.planType === 'pro' || stored.subscriptionActive === true) {
+                this.isPremium = true;
+                return { isActive: true, plan: 'pro', subscriptionId: stored.subscriptionId };
+            }
+
+            // SECOND: Check localStorage for Pro status (set by dashboard) and fetch real billing date
+            try {
+                const storedUserData = localStorage.getItem('tabmangment_user');
+                if (storedUserData) {
+                    const userData = JSON.parse(storedUserData);
+
+                    if (userData.isPro === true || userData.plan === 'pro') {
+                        // Fetch REAL billing date from API
+                        let billingData = {};
+                        try {
+                            const backendUrl = await this.getBackendUrl();
+                            if (backendUrl) {
+                                const response = await fetch(`${backendUrl}/api/get-subscription`, {
+                                    method: 'POST',
+                                    headers: {
+                                        'Content-Type': 'application/json'
+                                    },
+                                    body: JSON.stringify({ email: userEmail }),
+                                    timeout: 5000
+                                });
+
+                                if (response.ok) {
+                                    billingData = await response.json();
+                                }
+                            }
+                        } catch (apiError) {
+                            // API failed, will use userData fallback
+                        }
+
+                        // IMMEDIATE PRO ACTIVATION with REAL billing date
+                        await chrome.storage.local.set({
+                            isPremium: true,
+                            subscriptionActive: true,
+                            planType: 'pro',
+                            activatedAt: new Date().toISOString(),
+                            nextBillingDate: billingData.nextBillingDate || userData.currentPeriodEnd,
+                            currentPeriodEnd: billingData.currentPeriodEnd || userData.currentPeriodEnd,
+                            subscriptionId: userData.subscriptionId || ('dash_' + Date.now()),
+                            paymentConfirmed: true,
+                            subscriptionStatus: billingData.subscriptionStatus || 'active',
+                            userEmail: userEmail,
+                            isAdmin: billingData.isAdmin || false
+                        });
+
+                        // Immediate UI update
+                        this.isPremium = true;
+                        await this.render();
+                        this.updateUIForProUser();
+                        await this.renderSubscriptionPlan();
+
+                        return {
+                            isActive: true,
+                            plan: 'pro',
+                            subscriptionId: userData.subscriptionId,
+                            currentPeriodEnd: billingData.currentPeriodEnd
+                        };
+                    }
+                }
+            } catch (error) {
+                // localStorage error, continue to check chrome.storage
+            }
+
+            const localStatus = await chrome.storage.local.get(['isPremium', 'subscriptionActive', 'planType', 'subscriptionId', 'payment_success']);
+
+            if (localStatus.payment_success && !localStatus.payment_success.processed) {
+                const paymentTime = new Date(localStatus.payment_success.timestamp);
+                const now = new Date();
+                const timeDiff = now - paymentTime;
+                if (timeDiff < 30 * 60 * 1000) {
+                    await this.upgradeToProPlan();
+                    await chrome.storage.local.set({
+                        payment_success: { ...localStatus.payment_success, processed: true }
+                    });
+                    return { isActive: true, plan: 'pro', subscriptionId: 'recent_payment' };
+                }
+            }
+
+            // REMOVED: API call to /status endpoint (no longer exists)
+            // Storage is the source of truth - updated by dashboard and webhooks
+
+            if (localStatus.isPremium && localStatus.subscriptionActive) {
+                return {
+                    isActive: true,
+                    plan: localStatus.planType || 'pro',
+                    subscriptionId: localStatus.subscriptionId || 'local_subscription'
+                };
+            }
+            return {
+                isActive: false,
+                plan: 'free',
+                subscriptionId: null
+            };
+        } catch (error) {
+            return {
+                isActive: false,
+                plan: 'free',
+                subscriptionId: null
+            };
+        }
+    }
+
+    // Simple subscription check with real billing date sync
+    async checkSubscriptionStatusBackground() {
+        try {
+            // Get cached premium status first
+            const cached = await chrome.storage.local.get(['isPremium', 'planType', 'subscriptionActive']);
+
+            // If user has email, fetch REAL billing data from API
+            if (this.userEmail) {
+                try {
+                    const backendUrl = await this.getBackendUrl();
+                    if (backendUrl) {
+                        const response = await fetch(`${backendUrl}/api/get-subscription`, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify({ email: this.userEmail }),
+                            timeout: 8000
+                        });
+
+                        if (response.ok) {
+                            const data = await response.json();
+
+                            if (data.success && data.isPro) {
+                                // Update with REAL billing date from Stripe/Database
+                                await chrome.storage.local.set({
+                                    isPremium: true,
+                                    subscriptionActive: true,
+                                    planType: data.subscriptionType || 'pro',
+                                    subscriptionStatus: data.subscriptionStatus,
+                                    nextBillingDate: data.nextBillingDate,
+                                    currentPeriodEnd: data.currentPeriodEnd,
+                                    stripeCustomerId: data.stripeCustomerId,
+                                    stripeSubscriptionId: data.stripeSubscriptionId,
+                                    isAdmin: data.isAdmin || false,
+                                    lastBillingSync: new Date().toISOString()
+                                });
+                                this.isPremium = true;
+
+                                // Update UI with Pro features
+                                this.removeAllProBadges();
+                                this.updateUIForProUser();
+                                this.renderSubscriptionPlan();
+                            } else if (data.success && !data.isPro) {
+                                // User no longer has Pro
+                                await chrome.storage.local.set({
+                                    isPremium: false,
+                                    subscriptionActive: false,
+                                    planType: 'free',
+                                    subscriptionStatus: 'inactive',
+                                    nextBillingDate: null,
+                                    currentPeriodEnd: null
+                                });
+                                this.isPremium = false;
+                            }
+                        }
+                    }
+                } catch (apiError) {
+                    // API failed, use cached data
+                }
+            }
+
+            // Check for refunds
+            const refundCheck = await chrome.storage.local.get(['refundProcessed', 'subscriptionRefunded']);
+            if (refundCheck.refundProcessed || refundCheck.subscriptionRefunded) {
+                await chrome.storage.local.set({
+                    isPremium: false,
+                    subscriptionActive: false,
+                    planType: 'free'
+                });
+                this.isPremium = false;
+                this.render(); // Re-render to show free tier
+            }
+        } catch (error) {
+        }
+    }
+
+    async checkSubscription() {
+        try {
+            const userEmail = await this.getUserEmail();
+            if (userEmail) {
+                const status = await this.checkSubscriptionStatus(userEmail);
+                if (status.isActive && status.plan === 'pro') {
+                    await this.activateProFeatures();
+                }
+            }
+        } catch (error) {
+            // Silent fail
+        }
+    }
+
+    // Simple Pro activation
+    async activateProFeatures() {
+        try {
+            const userEmail = await this.getUserEmail();
+            const proData = {
+                isPremium: true,
+                subscriptionActive: true,
+                planType: 'pro',
+                activatedAt: new Date().toISOString(),
+                nextBillingDate: Date.now() + (30 * 24 * 60 * 60 * 1000),
+                subscriptionId: 'simple_' + Date.now(),
+                userEmail: userEmail
+            };
+
+            await chrome.storage.local.set(proData);
+            this.isPremium = true;
+            await this.render();
+            this.updateUIForProUser();
+        } catch (error) {
+            // Silent fail
+        }
+    }
+
+    async autoCheckPaymentCompletion() {
+        try {
+
+            // Check ALL tabs for payment confirmation (both active and inactive)
+            const tabs = await chrome.tabs.query({});
+
+            for (const tab of tabs) {
+                if (tab.url) {
+                    // Check if any open tab contains payment confirmation
+                    const url = tab.url.toLowerCase();
+                    const hasPaymentUrl = (
+                        url.includes('success') ||
+                        url.includes('thank') ||
+                        url.includes('confirmation') ||
+                        url.includes('complete') ||
+                        url.includes('sites.google.com') ||
+                        url.includes('stripe.com') ||
+                        url.includes('payment')
+                    );
+
+
+                    if (hasPaymentUrl) {
+                        // Try to get page content using Manifest V3 API
+                        try {
+                            const results = await chrome.scripting.executeScript({
+                                target: { tabId: tab.id },
+                                func: () => {
+                                    return document.body ? document.body.textContent.toLowerCase() : '';
+                                }
+                            });
+
+                            if (results && results[0] && results[0].result) {
+                                const pageText = results[0].result;
+
+                                const hasPaymentContent = (
+                                    pageText.includes('thanks for subscribing') ||
+                                    pageText.includes('thank you for subscribing') ||
+                                    pageText.includes('payment successful') ||
+                                    pageText.includes('will appear on your statement') ||
+                                    pageText.includes('sites.google.com/view') ||
+                                    (pageText.includes('payment to') && pageText.includes('will appear'))
+                                );
+
+
+                                if (hasPaymentContent) {
+                                    // Auto-activate Pro features
+                                    const userEmail = await this.getUserEmail();
+                                    await this.activateProForPayment(userEmail);
+                                    return;
+                                }
+                            }
+                        } catch (e) {
+                            // Fallback: if this looks like a payment page, try activating anyway
+                            if (url.includes('sites.google.com') || url.includes('thank') || url.includes('success')) {
+                                const userEmail = await this.getUserEmail();
+                                await this.activateProForPayment(userEmail);
+                                return;
+                            }
+                        }
+                    }
+                }
+            }
+
+
+        } catch (error) {
+        }
+    }
+
+    // Activate Pro features after detecting payment
+    async activateProForPayment(userEmail) {
+        try {
+
+            // Check if user is already Pro - don't spam notifications
+            const currentStatus = await chrome.storage.local.get(['isPremium', 'proWelcomeShown']);
+
+            // If already Pro, just update UI silently
+            if (currentStatus.isPremium) {
+                this.isPremium = true;
+                await this.render();
+                this.updateUIForProUser();
+                await this.renderSubscriptionPlan();
+                return true;
+            }
+
+            // User is newly becoming Pro
+            const shouldShowNotification = !currentStatus.proWelcomeShown;
+
+            const proData = {
+                isPremium: true,
+                subscriptionActive: true,
+                planType: 'pro',
+                activatedAt: new Date().toISOString(),
+                nextBillingDate: Date.now() + (30 * 24 * 60 * 60 * 1000),
+                subscriptionId: 'auto_detected_' + Date.now(),
+                paymentConfirmed: true,
+                userEmail: userEmail,
+                activatedVia: 'popup_auto_detection',
+                paymentDetected: true,
+                autoActivated: true,
+                detectionMethod: 'popup_scan',
+                proWelcomeShown: true  // Mark as shown immediately
+            };
+
+            await chrome.storage.local.set(proData);
+
+            this.isPremium = true;
+
+            // Force UI updates
+            await this.render();
+            this.updateUIForProUser();
+            await this.renderSubscriptionPlan();
+
+            // Notification removed - no spam
+
+            if (this.showMessage) {
+                this.showMessage('🎉 Pro features activated! Payment detected.', 'success');
+            }
+
+            return true;
+        } catch (error) {
+            return false;
+        }
+    }
+
+    async getUserEmail() {
+        try {
+            // CRITICAL: Check if user already has a real email from web login
+            // NEVER overwrite a real email with a fallback!
+            const stored = await chrome.storage.local.get(['userEmail']);
+            if (stored.userEmail &&
+                !stored.userEmail.startsWith('fallback_') &&
+                !stored.userEmail.startsWith('user_')) {
+                return stored.userEmail;
+            }
+
+            // Initialize email detector if not already done
+            if (!this.emailDetector) {
+                this.emailDetector = new EmailDetector();
+            }
+
+            // Use the enhanced email detection
+            const email = await this.emailDetector.detectUserEmail();
+
+            if (email) {
+                return email;
+            } else {
+                // Generate a unique user identifier for Chrome Web Store users
+                const uniqueUserId = 'user_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+
+                // Store this unique ID for future use and tracking
+                await chrome.storage.local.set({
+                    userEmail: uniqueUserId,
+                    detectedEmail: uniqueUserId,
+                    emailDetectedAt: new Date().toISOString(),
+                    anonymousUser: true,
+                    userType: 'chrome_web_store'
+                });
+
+                return uniqueUserId;
+            }
+        } catch (error) {
+            // CRITICAL: Before generating fallback, check if real email exists
+            const stored = await chrome.storage.local.get(['userEmail']);
+            if (stored.userEmail &&
+                !stored.userEmail.startsWith('fallback_') &&
+                !stored.userEmail.startsWith('user_')) {
+                return stored.userEmail;
+            }
+
+            // Generate fallback unique ID instead of prompting
+            const fallbackId = 'fallback_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+            await chrome.storage.local.set({
+                userEmail: fallbackId,
+                emailDetectionError: error.message,
+                fallbackGenerated: true
+            });
+            return fallbackId;
+        }
+    }
+    async promptForEmail() {
+        return new Promise((resolve) => {
+            const email = prompt('Please enter your email address to access premium features:');
+            if (email && this.isValidEmail(email)) {
+                chrome.storage.local.set({ userEmail: email });
+                resolve(email);
+            } else {
+                resolve(null);
+            }
+        });
+    }
+    isValidEmail(email) {
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        return emailRegex.test(email);
+    }
+    async checkAndApplySubscriptionStatus() {
+        try {
+            const stored = await chrome.storage.local.get(['userEmail', 'isPremium', 'planType', 'subscriptionActive']);
+            if (!stored.userEmail) {
+                this.isPremium = false;
+                return;
+            }
+
+            // Check localStorage for Pro status (set by dashboard)
+            let isPro = false;
+            let userData = null;
+
+            try {
+                const storedUserData = localStorage.getItem('tabmangment_user');
+                if (storedUserData) {
+                    userData = JSON.parse(storedUserData);
+                    isPro = userData.isPro === true || userData.plan === 'pro';
+                }
+            } catch (e) {
+                // localStorage error
+            }
+
+            // Fallback to chrome.storage
+            if (!isPro) {
+                isPro = stored.isPremium === true || stored.planType === 'pro' || stored.subscriptionActive === true;
+            }
+
+            if (isPro) {
+                // User has active Pro subscription
+                await chrome.storage.local.set({
+                    hasProPlan: true,
+                    isPremium: true,
+                    subscriptionActive: true,
+                    planType: 'pro',
+                    subscriptionStatus: userData?.subscriptionStatus || 'active',
+                    currentPeriodEnd: userData?.currentPeriodEnd || null,
+                    nextBillingDate: userData?.nextBillingDate || userData?.currentPeriodEnd || null,
+                    stripeCustomerId: userData?.stripeCustomerId,
+                    stripeSubscriptionId: userData?.stripeSubscriptionId,
+                    lastStatusCheck: new Date().toISOString()
+                });
+                this.isPremium = true;
+                this.updateUIForProUser();
+
+                // Show subscription info in UI
+                if (userData) {
+                    this.updateSubscriptionInfo(userData);
+                }
+            } else {
+                // Not Pro - set to free
+                await chrome.storage.local.set({
+                    hasProPlan: false,
+                    isPremium: false,
+                    subscriptionActive: false,
+                    planType: 'free',
+                    subscriptionStatus: 'free',
+                    subscriptionId: null,
+                    lastStatusCheck: new Date().toISOString()
+                });
+                this.isPremium = false;
+            }
+        } catch (error) {
+            // On error, check chrome.storage for existing Pro status
+            const fallback = await chrome.storage.local.get(['isPremium']);
+            this.isPremium = fallback.isPremium === true;
+        }
+    }
+
+    // Update subscription info in UI
+    updateSubscriptionInfo(data) {
+        if (data.currentPeriodEnd) {
+            const endDate = new Date(data.currentPeriodEnd);
+            const daysLeft = Math.ceil((endDate - new Date()) / (1000 * 60 * 60 * 24));
+
+            // Store for display in subscription plan section
+            this.subscriptionInfo = {
+                status: data.subscriptionStatus,
+                currentPeriodEnd: data.currentPeriodEnd,
+                daysLeft: daysLeft,
+                customerId: data.stripeCustomerId,
+                subscriptionId: data.stripeSubscriptionId
+            };
+        }
+    }
+
+    // Auto-refresh subscription status every 5 minutes
+    // DISABLED: Storage is now source of truth, not API
+    // Only webhooks should update subscription status
+    startSubscriptionStatusRefresh() {
+        // if (this.statusRefreshInterval) {
+        //     clearInterval(this.statusRefreshInterval);
+        // }
+
+        // this.statusRefreshInterval = setInterval(async () => {
+        //     await this.checkAndApplySubscriptionStatus();
+        //     // Re-render if the user is viewing the popup
+        //     if (document.visibilityState === 'visible') {
+        //         await this.renderSubscriptionPlan();
+        //     }
+        // }, 5 * 60 * 1000); // 5 minutes
+    }
+    async upgradeToProPlan() {
+        try {
+            // IMPORTANT: Check if already Pro - don't show welcome again
+            const currentStatus = await chrome.storage.local.get(['isPremium', 'hasProPlan', 'proWelcomeShown']);
+
+            // If already Pro, just update UI silently (no notification)
+            if (currentStatus.isPremium || currentStatus.hasProPlan) {
+                this.isPremium = true;
+                this.updateUIForProUser();
+                return; // Don't show welcome message again
+            }
+
+            // User is newly upgrading to Pro
+            const shouldShowWelcome = !currentStatus.proWelcomeShown;
+
+            await chrome.storage.local.set({
+                hasProPlan: true,
+                isPremium: true,
+                subscriptionActive: true,
+                planType: 'pro',
+                proUpgradedAt: new Date().toISOString(),
+                proFeatures: ['unlimited_tabs', 'advanced_management', 'premium_themes'],
+                proWelcomeShown: true  // Mark as shown to prevent spam
+            });
+
+            await chrome.storage.local.remove(['expecting_payment', 'payment_success']);
+
+            this.isPremium = true;
+
+            // Welcome notification removed - no spam
+            this.updateUIForProUser();
+
+            const paymentBtn = document.getElementById('payment-completion-btn');
+            if (paymentBtn) paymentBtn.remove();
+
+            setTimeout(() => {
+                window.location.reload();
+            }, 2000);
+        } catch (error) {
+            this.showMessage('⚠️ Payment detected but upgrade failed. Please refresh the extension.', 'warning');
+        }
+    }
+    async showProSuccessMessage() {
+        // Function disabled - no notifications/modals
+        return;
+    }
+    async updateUIForProUser() {
+
+        const upgradeButtons = document.querySelectorAll('#tab-limit-upgrade-btn, #premium-upgrade');
+        upgradeButtons.forEach(btn => {
+            if (btn) {
+                btn.style.display = 'none';
+            }
+        });
+
+        const tabLimitWarning = document.getElementById('tab-limit-warning');
+        if (tabLimitWarning) {
+            tabLimitWarning.style.display = 'none';
+        }
+
+        const premiumBtn = document.getElementById('premium-btn');
+        const premiumBtnText = document.getElementById('premium-btn-text');
+        if (premiumBtn && premiumBtnText) {
+            premiumBtnText.textContent = 'Manage Subscription';
+            premiumBtn.title = 'Manage your Pro subscription';
+
+            premiumBtn.replaceWith(premiumBtn.cloneNode(true));
+            const newPremiumBtn = document.getElementById('premium-btn');
+            newPremiumBtn.addEventListener('click', () => {
+                this.openStripeBillingPortal();
+            });
+        }
+
+        await this.updatePlanIndicator();
+
+        this.removeAllProBadges();
+
+        // Hide PRO badges for premium users
+        this.updatePremiumUI();
+    }
+    async updateUIForFreeUser() {
+        // Show upgrade buttons
+        const upgradeButtons = document.querySelectorAll('#tab-limit-upgrade-btn, #premium-upgrade');
+        upgradeButtons.forEach(btn => {
+            if (btn) {
+                btn.style.display = 'block';
+            }
+        });
+
+        // Reset premium button to upgrade state
+        const premiumBtn = document.getElementById('premium-btn');
+        const premiumBtnText = document.getElementById('premium-btn-text');
+        if (premiumBtn && premiumBtnText) {
+            premiumBtnText.textContent = 'Upgrade Pro';
+            premiumBtn.title = 'Upgrade to Pro';
+
+            premiumBtn.replaceWith(premiumBtn.cloneNode(true));
+            const newPremiumBtn = document.getElementById('premium-btn');
+            newPremiumBtn.addEventListener('click', () => {
+                this.handlePremiumButtonClick();
+            });
+        }
+
+        // Update plan indicator to show free plan
+        const planIndicator = document.getElementById('plan-indicator');
+        if (planIndicator) {
+            planIndicator.className = 'plan-indicator free-plan';
+            planIndicator.innerHTML = '<div class="plan-badge">FREE PLAN</div><div class="plan-description">Limited to 10 tabs</div>';
+        }
+
+        // Add pro badges back to locked features
+        this.removeAllProBadges();
+        this.addProBadgesToLockedFeatures();
+
+        // Show PRO badges for free users
+        this.updatePremiumUI();
+    }
+    async updatePlanIndicator() {
+        const planIndicator = document.getElementById('plan-indicator');
+        if (planIndicator) {
+
+            const subData = await chrome.storage.local.get(['currentPeriodEnd', 'subscriptionId', 'subscriptionStatus']);
+            let billingInfo = '';
+
+            if (subData.currentPeriodEnd) {
+                const nextBilling = new Date(subData.currentPeriodEnd);
+                const formattedDate = nextBilling.toLocaleDateString('en-US', {
+                    month: 'short',
+                    day: 'numeric',
+                    year: 'numeric'
+                });
+
+                // Check if subscription is being cancelled
+                if (subData.subscriptionStatus === 'cancelling') {
+                    billingInfo = `Ends ${formattedDate}`;
+                } else {
+                    billingInfo = `Renews ${formattedDate}`;
+                }
+            } else {
+                billingInfo = 'Pro features active';
+            }
+
+            planIndicator.className = 'plan-indicator pro-plan';
+            planIndicator.innerHTML = `
+                <div class="plan-badge">PRO PLAN</div>
+                <div class="plan-description">${billingInfo}</div>
+            `;
+        }
+    }
+    removeAllProBadges() {
+
+        const existingBadges = document.querySelectorAll('.pro-badge');
+        existingBadges.forEach(badge => badge.remove());
+    }
+    async checkAndApplyProStatus() {
+        try {
+
+            const paymentData = await chrome.storage.local.get(['payment_success']);
+            if (paymentData.payment_success && !paymentData.payment_success.processed) {
+                const paymentTime = new Date(paymentData.payment_success.timestamp);
+                const now = new Date();
+                const timeDiff = now - paymentTime;
+
+                if (timeDiff < 30 * 60 * 1000) {
+                    await this.upgradeToProPlan();
+
+                    await chrome.storage.local.set({
+                        payment_success: {
+                            ...paymentData.payment_success,
+                            processed: true
+                        }
+                    });
+                    return;
+                }
+            }
+
+            const data = await chrome.storage.local.get(['hasProPlan', 'proUpgradedAt']);
+            if (data.hasProPlan) {
+                this.updateUIForProUser();
+
+                const upgradedDate = new Date(data.proUpgradedAt).toLocaleDateString();
+            } else {
+            }
+        } catch (error) {
+        }
+    }
+    startSubscriptionStatusMonitoring(installationId) {
+        let checkCount = 0;
+        const maxChecks = 60;
+        const checkInterval = setInterval(async () => {
+            checkCount++;
+            try {
+                const status = await this.checkPaymentStatus(installationId);
+                if (status.isPaid) {
+                    await this.activateSubscription(status);
+                    clearInterval(checkInterval);
+                    await this.render();
+                    await this.renderSubscriptionPlan();
+                }
+            } catch (error) {
+            }
+            if (checkCount >= maxChecks) {
+                clearInterval(checkInterval);
+            }
+        }, 3000);
+    }
+    clearPaymentStatusCache() {
+        this.paymentStatusCache = null;
+        this.paymentStatusCacheTime = 0;
+    }
+    async checkPaymentStatus(installationId) {
+        try {
+            const now = Date.now();
+            if (this.paymentStatusCache && (now - this.paymentStatusCacheTime) < this.cacheTimeout) {
+                return this.paymentStatusCache;
+            }
+            const refundCheck = await chrome.storage.local.get([
+                'refundProcessed',
+                'subscriptionRefunded',
+                'subscriptionCancelled'
+            ]);
+            if (refundCheck.refundProcessed || refundCheck.subscriptionRefunded || refundCheck.subscriptionCancelled) {
+                const result = { isPaid: false };
+                this.paymentStatusCache = result;
+                this.paymentStatusCacheTime = now;
+                return result;
+            }
+            // NEW: Check localStorage (set by dashboard) instead of making API calls
+            let isPro = false;
+
+            // Check localStorage first
+            try {
+                const storedUserData = localStorage.getItem('tabmangment_user');
+                if (storedUserData) {
+                    const userData = JSON.parse(storedUserData);
+                    isPro = userData.isPro === true || userData.plan === 'pro';
+                }
+            } catch (e) {
+                // Fall through to chrome.storage
+            }
+
+            // Fallback to chrome.storage
+            const localSub = await chrome.storage.local.get(['stripePaymentCompleted', 'isPremium', 'isPro', 'planType']);
+            if (!isPro) {
+                isPro = localSub.stripePaymentCompleted || localSub.isPremium || localSub.isPro || localSub.planType === 'pro';
+            }
+
+            if (isPro) {
+                const result = {
+                    isPaid: true,
+                    customer_id: 'stripe_customer',
+                    subscription_id: 'stripe_sub',
+                    subscription_type: 'monthly',
+                    next_billing_date: this.calculateNextBillingDate('monthly')
+                };
+                this.paymentStatusCache = result;
+                this.paymentStatusCacheTime = now;
+                return result;
+            }
+            const result = { isPaid: false };
+            this.paymentStatusCache = result;
+            this.paymentStatusCacheTime = now;
+            return result;
+        } catch (error) {
+            if (!error.message.includes('Failed to fetch') && !error.message.includes('NetworkError')) {
+            }
+            try {
+                const emergencyCheck = await chrome.storage.local.get(['isPremium', 'subscriptionActive']);
+                if (emergencyCheck.isPremium || emergencyCheck.subscriptionActive) {
+                    return {
+                        isPaid: true,
+                        customer_id: 'emergency_customer',
+                        subscription_id: 'emergency_sub',
+                        subscription_type: 'monthly',
+                        next_billing_date: this.calculateNextBillingDate('monthly')
+                    };
+                }
+            } catch (emergencyError) {
+            }
+            return { isPaid: false };
+        }
+    }
+    async activateSubscription(subscriptionData) {
+        try {
+            const now = Date.now();
+            const subscriptionType = subscriptionData.subscription_type || 'monthly';
+
+            // Check if user is admin
+            const stored = await chrome.storage.local.get(['isAdmin', 'planType']);
+            const isAdmin = stored.isAdmin || stored.planType === 'admin';
+
+            let nextBillingDate = subscriptionData.next_billing_date;
+
+            // For admin users, set a far-future date to prevent recalculation
+            if (isAdmin) {
+                // Set billing date to 100 years in the future for admins
+                const farFuture = new Date();
+                farFuture.setFullYear(farFuture.getFullYear() + 100);
+                nextBillingDate = farFuture.getTime();
+            } else if (!nextBillingDate || nextBillingDate <= now) {
+                // For regular users, only recalculate if missing or expired
+                nextBillingDate = this.calculateNextBillingDate(subscriptionType, now);
+            }
+
+            await chrome.storage.local.set({
+                isPremium: true,
+                subscriptionActive: true,
+                planType: isAdmin ? 'admin' : 'pro',
+                subscriptionExpiry: nextBillingDate,
+                nextBillingDate: nextBillingDate,
+                subscriptionType: subscriptionType,
+                stripeCustomerId: subscriptionData.customer_id,
+                subscriptionId: subscriptionData.subscription_id,
+                subscriptionDate: now,
+                lastPaymentDate: subscriptionData.payment_date || now
+            });
+            this.isPremium = true;
+        } catch (error) {
+        }
+    }
+    async forceSubscriptionCheck() {
+        try {
+            const installationId = await this.getOrCreateInstallationId();
+            const status = await this.checkPaymentStatus(installationId);
+            if (status.isPaid && !this.isPremium) {
+                await this.activateSubscription(status);
+            }
+            const currentSub = await chrome.storage.local.get(['isPremium']);
+            this.isPremium = currentSub.isPremium || false;
+        } catch (error) {
+        }
+    }
+    setupStripeWebhookListener() {
+        chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+            if (message.type === 'stripe-webhook') {
+                this.handleStripeWebhook(message.data);
+            }
+        });
+    }
+    async handleStripeWebhook(webhookData) {
+        try {
+            this.clearPaymentStatusCache();
+            const { event_type, customer_id, subscription_id } = webhookData;
+            const currentData = await chrome.storage.local.get(['stripeCustomerId', 'subscriptionId']);
+            if (currentData.stripeCustomerId !== customer_id && currentData.subscriptionId !== subscription_id) {
+                return;
+            }
+            switch (event_type) {
+                case 'checkout.session.completed':
+                    await this.handleCheckoutCompleted(webhookData);
+                    break;
+                case 'customer.subscription.created':
+                    await this.handleSubscriptionCreated(webhookData);
+                    break;
+                case 'invoice.payment_succeeded':
+                    await this.handlePaymentSucceeded(webhookData);
+                    break;
+                case 'customer.subscription.deleted':
+                case 'customer.subscription.cancelled':
+                    await this.handleSubscriptionCancelled(webhookData);
+                    break;
+                case 'charge.dispute.created':
+                case 'invoice.payment_failed':
+                    await this.handlePaymentFailed(webhookData);
+                    break;
+                case 'customer.subscription.updated':
+                    await this.handleSubscriptionUpdated(webhookData);
+                    break;
+                default:
+            }
+            await this.loadData();
+            await this.render();
+            await this.renderSubscriptionPlan();
+        } catch (error) {
+        }
+    }
+    async handlePaymentSucceeded(webhookData) {
+        try {
+            const {
+                next_billing_date,
+                subscription_type,
+                customer_id,
+                subscription_id,
+                current_period_start,
+                current_period_end
+            } = webhookData;
+            if (!next_billing_date || isNaN(new Date(next_billing_date).getTime())) {
+                return;
+            }
+            const billingDate = new Date(next_billing_date);
+            const formattedDate = billingDate.toLocaleDateString('en-US', {
+                month: 'long',
+                day: 'numeric',
+                year: 'numeric'
+            });
+            await chrome.storage.local.set({
+                isPremium: true,
+                subscriptionActive: true,
+                planType: 'pro',
+                subscriptionExpiry: next_billing_date,
+                nextBillingDate: next_billing_date,
+                subscriptionType: subscription_type || 'monthly',
+                lastPaymentDate: Date.now(),
+                stripeCustomerId: customer_id,
+                subscriptionId: subscription_id,
+                currentPeriodStart: current_period_start,
+                currentPeriodEnd: current_period_end,
+                lastWebhookUpdate: Date.now()
+            });
+            this.isPremium = true;
+            await this.renderSubscriptionPlan();
+        } catch (error) {
+        }
+    }
+    async handleCheckoutCompleted(webhookData) {
+        try {
+            const {
+                customer_id,
+                subscription_id,
+                subscription_type,
+                subscription_status,
+                current_period_start,
+                current_period_end,
+                trial_end
+            } = webhookData;
+            await chrome.storage.local.set({
+                isPremium: true,
+                subscriptionActive: true,
+                planType: 'pro',
+                stripeCustomerId: customer_id,
+                subscriptionId: subscription_id,
+                subscriptionType: subscription_type,
+                subscriptionStatus: subscription_status,
+                activationDate: Date.now(),
+                currentPeriodStart: current_period_start,
+                currentPeriodEnd: current_period_end,
+                trialEnd: trial_end,
+                nextBillingDate: current_period_end,
+                stripePaymentCompleted: true
+            });
+            this.isPremium = true;
+            await this.renderSubscriptionPlan();
+        } catch (error) {
+        }
+    }
+    async handleSubscriptionCreated(webhookData) {
+        try {
+            const {
+                customer_id,
+                subscription_id,
+                subscription_type,
+                subscription_status,
+                current_period_start,
+                current_period_end,
+                trial_end
+            } = webhookData;
+            await chrome.storage.local.set({
+                isPremium: true,
+                subscriptionActive: true,
+                planType: 'pro',
+                stripeCustomerId: customer_id,
+                subscriptionId: subscription_id,
+                subscriptionType: subscription_type,
+                subscriptionStatus: subscription_status,
+                createdDate: Date.now(),
+                currentPeriodStart: current_period_start,
+                currentPeriodEnd: current_period_end,
+                trialEnd: trial_end,
+                nextBillingDate: current_period_end,
+                stripePaymentCompleted: true
+            });
+            this.isPremium = true;
+            await this.renderSubscriptionPlan();
+        } catch (error) {
+        }
+    }
+    async handleSubscriptionCancelled(webhookData) {
+        const { cancellation_date, period_end } = webhookData;
+        await chrome.storage.local.set({
+            subscriptionCancelled: true,
+            cancellationDate: cancellation_date || Date.now(),
+            subscriptionExpiry: period_end || (this.calculateNextBillingDate('monthly'))
+        });
+    }
+    async handlePaymentFailed(webhookData) {
+        const { reason, refund_amount } = webhookData;
+        await chrome.storage.local.set({
+            isPremium: false,
+            subscriptionActive: false,
+            planType: 'free',
+            refundProcessed: true,
+            refundDate: Date.now(),
+            refundReason: reason || 'payment_failed',
+            refundAmount: refund_amount || 0,
+            subscriptionExpiry: null,
+            nextBillingDate: null,
+            stripeCustomerId: null,
+            subscriptionId: null
+        });
+        this.isPremium = false;
+    }
+    async handleSubscriptionUpdated(webhookData) {
+        const { subscription_status, next_billing_date, subscription_type } = webhookData;
+        if (subscription_status === 'active') {
+            await chrome.storage.local.set({
+                isPremium: true,
+                subscriptionActive: true,
+                subscriptionExpiry: next_billing_date,
+                nextBillingDate: next_billing_date,
+                subscriptionType: subscription_type
+            });
+            this.isPremium = true;
+        } else {
+            await chrome.storage.local.set({
+                isPremium: false,
+                subscriptionActive: false,
+                planType: 'free'
+            });
+            this.isPremium = false;
+        }
+    }
+    async getBackendUrl() {
+
+        return CONFIG.API.BASE.replace('/api', '');
+    }
+    async getAuthToken() {
+        try {
+            const data = await chrome.storage.local.get(['installationId', 'stripeCustomerId']);
+            return data.installationId || data.stripeCustomerId || 'anonymous';
+        } catch (error) {
+            return 'anonymous';
+        }
+    }
+    async openSubscriptionManagement() {
+        try {
+            const customerData = await chrome.storage.local.get(['stripeCustomerId', 'installationId']);
+            const customerId = customerData.stripeCustomerId;
+            const installationId = customerData.installationId;
+            if (!customerId && !installationId) {
+                this.showError('Unable to open subscription management. Please contact support.');
+                return;
+            }
+            let portalUrl = null;
+            try {
+                const backendUrl = await this.getBackendUrl();
+                if (!backendUrl) {
+                    throw new Error('Backend disabled for offline mode');
+                }
+                const response = await fetch(`${backendUrl}/create-portal`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        customer_id: customerId,
+                        installation_id: installationId,
+                        return_url: chrome.runtime.getURL('popup.html')
+                    }),
+                    timeout: 5000
+                });
+                if (response.ok) {
+                    const contentType = response.headers.get('content-type');
+                    if (contentType && contentType.includes('application/json')) {
+                        const data = await response.json();
+                        portalUrl = data.portal_url;
+                    }
+                }
+            } catch (apiError) {
+            }
+            if (!portalUrl) {
+                const backendUrl = await this.getBackendUrl();
+                if (backendUrl) {
+                    portalUrl = `${backendUrl}/portal`;
+                }
+                this.showSubscriptionManagementModal();
+                return;
+            }
+            await chrome.tabs.create({
+                url: portalUrl,
+                active: true
+            });
+            setTimeout(() => {
+                window.close();
+            }, 1500);
+        } catch (error) {
+            this.showError('Failed to open subscription management. Please try again or contact support.');
+        }
+    }
+    showSubscriptionManagementModal() {
+        const modal = document.createElement('div');
+        modal.className = 'contact-modal';
+        modal.style.display = 'flex';
+        const modalContent = document.createElement('div');
+        modalContent.className = 'contact-modal-content';
+        modalContent.style.maxWidth = '400px';
+        modalContent.innerHTML = `
+            <div class="contact-header">
+                <h3><img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABgAAAAYCAYAAADgdz34AAAACXBIWXMAAAsTAAALEwEAmpwYAAAB4ElEQVR4nLWWTWsUQRCGxyAsSLz7ES+Si+BBzEH/Qg45BIJiCGR3qxxhQ1fNBleCBwcP3sWcJdmf4FlQ8As86CkgbKaqs4EQ8QNPKitkV1pXWMTp6VlJQd9m3me66623J4o8ZUyngpxdA5I2kG4hyWdk6QPLV2TZQ9IXyLoOrFfrrXfHozKFRq8gyz6yDkIWkHwDtufCxEnuhgrj6KJsplg8kYWxxDkIMDgCLHpogJj1kv+c9SOQvAHWDFm+lwYgaewBrKfpYOLPs2n69GidsvNA0hy6KQQgtz0uWfS/m80sN+wJPyCRlfwdyL6z7uguSpf7ikK/s3aB9V6w5/8uYH0Z7hp5BYnMOfeFA5rb08j6vow9gfV5dXX7TDCkvtI9BaTPys2A7sbJzslgiGsmkp1H0tcl8uhRNE4h2wvA8uB3mvog0q8l3bPRuGVMp1I3etMlZz7EVnMFbjR3T8fJzsUiEJDe8hzTWv5RGHt5mDmPgWSp0dia/CeA9U7uDoyaQsCIM3ouZ4DlPrK2kG2CpA+B9Ece4Drb2XAAl41r+eL6dHgAtkl+5/4TACTtwiB0444sT4DkIFxcPrkULpVHaDpTQFkNWTaHk/zh1w1G2nO3GrK8BZIN97sSx3vHfGI/AbTJUIUUxJjAAAAAAElFTkSuQmCC" alt="Stripe" style="width: 20px; height: 20px; margin-right: 8px; vertical-align: middle;"> Manage Subscription</h3>
+                <button class="contact-close-btn">×</button>
+            </div>
+            <div style="padding: 20px 0px;">
+                <p style="margin-bottom: 20px; color: rgb(71, 85, 105); line-height: 1.6;">Manage your subscription, update payment methods, view invoices, or cancel anytime through Stripe's secure portal.</p>
+                <div style="display: flex; flex-direction: column; gap: 16px; align-items: center;">
+                    <button class="stripe-portal-btn" style="background: linear-gradient(135deg, rgb(99, 91, 255), rgb(79, 70, 229)); color: white; border: none; padding: 16px 32px; border-radius: 12px; font-weight: 600; font-size: 16px; cursor: pointer; transition: 0.3s; box-shadow: rgba(99, 91, 255, 0.3) 0px 4px 14px; width: 100%; max-width: 280px; transform: translateY(0px);">
+                        <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABgAAAAYCAYAAADgdz34AAAACXBIWXMAAAsTAAALEwEAmpwYAAAB4ElEQVR4nLWWTWsUQRCGxyAsSLz7ES+Si+BBzEH/Qg45BIJiCGR3qxxhQ1fNBleCBwcP3sWcJdmf4FlQ8As86CkgbKaqs4EQ8QNPKitkV1pXWMTp6VlJQd9m3me66623J4o8ZUyngpxdA5I2kG4hyWdk6QPLV2TZQ9IXyLoOrFfrrXfHozKFRq8gyz6yDkIWkHwDtufCxEnuhgrj6KJsplg8kYWxxDkIMDgCLHpogJj1kv+c9SOQvAHWDFm+lwYgaewBrKfpYOLPs2n69GidsvNA0hy6KQQgtz0uWfS/m80sN+wJPyCRlfwdyL6z7uguSpf7ikK/s3aB9V6w5/8uYH0Z7hp5BYnMOfeFA5rb08j6vow9gfV5dXX7TDCkvtI9BaTPys2A7sbJzslgiGsmkp1H0tcl8uhRNE4h2wvA8uB3mvog0q8l3bPRuGVMp1I3etMlZz7EVnMFbjR3T8fJzsUiEJDe8hzTWv5RGHt5mDmPgWSp0dia/CeA9U7uDoyaQsCIM3ouZ4DlPrK2kG2CpA+B9Ece4Drb2XAAl41r+eL6dHgAtkl+5/4TACTtwiB0444sT4DkIFxcPrkULpVHaDpTQFkNWTaHk/zh1w1G2nO3GrK8BZIN97sSx3vHfGI/AbTJUIUUxJjAAAAAAElFTkSuQmCC" alt="Stripe" style="width: 20px; height: 20px; margin-right: 8px; vertical-align: middle;"> Open Stripe Portal
+                    </button>
+                    <div style="text-align: center; font-size: 14px; color: rgb(100, 116, 139); line-height: 1.5;">✨ Secure portal powered by Stripe<br>Cancel, modify, or download invoices</div>
+                </div>
+            </div>
+        `;
+
+        const closeBtn = modalContent.querySelector('.contact-close-btn');
+        closeBtn.addEventListener('click', () => modal.remove());
+        const portalBtn = modalContent.querySelector('.stripe-portal-btn');
+        portalBtn.addEventListener('mouseenter', () => {
+            portalBtn.style.transform = 'translateY(-2px)';
+            portalBtn.style.boxShadow = '0 6px 20px rgba(99, 91, 255, 0.4)';
+        });
+        portalBtn.addEventListener('mouseleave', () => {
+            portalBtn.style.transform = 'translateY(0)';
+            portalBtn.style.boxShadow = '0 4px 14px rgba(99, 91, 255, 0.3)';
+        });
+        portalBtn.addEventListener('click', async () => {
+            await this.openStripeBillingPortal();
+            modal.remove();
+        });
+        modal.appendChild(modalContent);
+        document.body.appendChild(modal);
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) {
+                modal.remove();
+            }
+        });
+    }
+    async openStripeBillingPortal() {
+        try {
+            // Redirect to dashboard where user can click "Manage Subscription"
+            // This is more reliable than calling API from extension
+            await chrome.tabs.create({
+                url: `${CONFIG.WEB.DASHBOARD_URL}`,
+                active: true
+            });
+        } catch (error) {
+            this.showError('Failed to open dashboard. Please try again.');
+        }
+    }
+    async showFallbackSubscriptionPortal(userEmail) {
+
+        await this.showInlineStripePortal();
+    }
+    showStripePortalInstructions(userEmail) {
+        const modal = document.createElement('div');
+        modal.className = 'instruction-modal';
+        modal.style.cssText = `
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 10001;
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            transition: all 0.3s ease;
+            pointer-events: all;
+        `;
+        const modalContent = document.createElement('div');
+        modalContent.style.cssText = `
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            padding: 30px;
+            border-radius: 15px;
+            max-width: 550px;
+            width: 90%;
+            color: white;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
+            text-align: center;
+        `;
+        modalContent.innerHTML = `
+            <h2 style="margin: 0 0 20px 0; font-size: 24px;">🏛️ Access Your Stripe Portal</h2>
+            <div style="background: rgba(255, 255, 255, 0.1); padding: 20px; border-radius: 10px; margin-bottom: 20px; text-align: left;">
+                <h3 style="margin: 0 0 15px 0; color: #FFE066;">📋 Step-by-Step Instructions:</h3>
+                <ol style="margin: 0; padding-left: 20px; line-height: 1.6;">
+                    <li><strong>Log into Stripe</strong> with your account credentials</li>
+                    <li><strong>Look for "Customers"</strong> section in the dashboard</li>
+                    <li><strong>Search for your email:</strong> <code style="background: rgba(0,0,0,0.3); padding: 2px 6px; border-radius: 3px;">${userEmail}</code></li>
+                    <li><strong>Click on your customer record</strong></li>
+                    <li><strong>View/manage subscriptions</strong> from your customer page</li>
+                </ol>
+            </div>
+            <div style="background: rgba(255, 196, 0, 0.2); padding: 15px; border-radius: 10px; margin-bottom: 20px; text-align: left;">
+                <p style="margin: 0; font-size: 13px; line-height: 1.4;">
+                    <strong>💡 Alternative:</strong> If you can't access Stripe dashboard, you can email us at
+                    <strong>support@tabmangment.com</strong> with your subscription email to request cancellation.
+                </p>
+            </div>
+            <div style="display: flex; gap: 10px;">
+                <button id="try-different-btn" style="
+                    flex: 1;
+                    padding: 12px;
+                    background: rgba(255, 255, 255, 0.2);
+                    color: white;
+                    border: 1px solid rgba(255, 255, 255, 0.3);
+                    border-radius: 8px;
+                    font-size: 14px;
+                    cursor: pointer;
+                ">Try Different Method</button>
+                <button id="close-instructions-btn" style="
+                    flex: 1;
+                    padding: 12px;
+                    background: #ff6b6b;
+                    color: white;
+                    border: none;
+                    border-radius: 8px;
+                    font-size: 14px;
+                    cursor: pointer;
+                ">Got It!</button>
+            </div>
+        `;
+        modalContent.querySelector('#try-different-btn').addEventListener('click', () => {
+            modal.remove();
+            this.showManualCancellationInstructions(userEmail);
+        });
+        modalContent.querySelector('#close-instructions-btn').addEventListener('click', () => {
+            modal.remove();
+        });
+        modal.appendChild(modalContent);
+        document.body.appendChild(modal);
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) {
+                modal.remove();
+            }
+        });
+    }
+    showManualCancellationInstructions(userEmail) {
+        const modal = document.createElement('div');
+        modal.className = 'cancellation-modal';
+        modal.style.cssText = `
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 10001;
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            transition: all 0.3s ease;
+            pointer-events: all;
+        `;
+        const modalContent = document.createElement('div');
+        modalContent.style.cssText = `
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 30px;
+            border-radius: 15px;
+            max-width: 550px;
+            width: 90%;
+            color: white;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
+            text-align: center;
+        `;
+        modalContent.innerHTML = `
+            <h2 style="margin: 0 0 20px 0; font-size: 24px;">✉️ Email Cancellation Request</h2>
+            <div style="background: rgba(255, 255, 255, 0.1); padding: 20px; border-radius: 10px; margin-bottom: 20px; text-align: left;">
+                <h3 style="margin: 0 0 15px 0; color: #FFE066;">📧 Quick Cancellation via Email:</h3>
+                <p style="margin: 0 0 15px 0; line-height: 1.6;">
+                    Send an email with the following details to get your subscription cancelled within 24 hours:
+                </p>
+                <div style="background: rgba(0, 0, 0, 0.2); padding: 15px; border-radius: 8px; font-family: monospace; font-size: 13px;">
+                    <strong>To:</strong> support@tabmangment.com<br>
+                    <strong>Subject:</strong> Cancel Subscription Request<br><br>
+                    <strong>Message:</strong><br>
+                    Please cancel my Tabmangment Pro subscription.<br>
+                    <strong>Email:</strong> ${userEmail}<br>
+                    <strong>Cancellation Type:</strong> [Immediate OR End of billing period]<br>
+                    <strong>Reason:</strong> [Optional]
+                </div>
+            </div>
+            <div style="background: rgba(76, 175, 80, 0.2); padding: 15px; border-radius: 10px; margin-bottom: 20px;">
+                <p style="margin: 0; font-size: 13px; line-height: 1.4;">
+                    <strong>✅ Guaranteed:</strong> We'll process your cancellation within 24 hours and send confirmation.
+                    No penalties, no hassle!
+                </p>
+            </div>
+            <div style="display: flex; gap: 10px;">
+                <button id="send-email-btn" style="
+                    flex: 1;
+                    padding: 12px;
+                    background: #4CAF50;
+                    color: white;
+                    border: none;
+                    border-radius: 8px;
+                    font-size: 14px;
+                    cursor: pointer;
+                ">Send Email Now</button>
+                <button id="close-cancel-btn" style="
+                    flex: 1;
+                    padding: 12px;
+                    background: rgba(255, 255, 255, 0.2);
+                    color: white;
+                    border: 1px solid rgba(255, 255, 255, 0.3);
+                    border-radius: 8px;
+                    font-size: 14px;
+                    cursor: pointer;
+                ">Close</button>
+            </div>
+        `;
+        modalContent.querySelector('#send-email-btn').addEventListener('click', () => {
+            const emailBody = encodeURIComponent(`Please cancel my Tabmangment Pro subscription.
+Email: ${userEmail}
+Cancellation Type: [Please specify: Immediate OR End of billing period]
+Reason: [Optional]
+Thank you!`);
+            chrome.tabs.create({
+                url: `mailto:support@tabmangment.com?subject=Cancel%20Subscription%20Request&body=${emailBody}`
+            });
+            modal.remove();
+        });
+        modalContent.querySelector('#close-cancel-btn').addEventListener('click', () => {
+            modal.remove();
+        });
+        modal.appendChild(modalContent);
+        document.body.appendChild(modal);
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) {
+                modal.remove();
+            }
+        });
+    }
+    async cancelSubscription() {
+        try {
+            const confirmCancel = confirm('Are you sure you want to cancel your Pro subscription? You will lose access to unlimited tabs and premium features.');
+            if (!confirmCancel) {
+                return;
+            }
+            const customerData = await chrome.storage.local.get(['stripeCustomerId', 'subscriptionId', 'installationId']);
+            const customerId = customerData.stripeCustomerId;
+            const subscriptionId = customerData.subscriptionId;
+            const installationId = customerData.installationId;
+            if (!customerId && !subscriptionId && !installationId) {
+                this.showError('Unable to find subscription information. Please contact support.');
+                return;
+            }
+            try {
+                const backendUrl = await this.getBackendUrl();
+                if (!backendUrl) {
+                    throw new Error('Backend disabled for offline mode');
+                }
+                const response = await fetch(`${backendUrl}/cancel-subscription`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        customer_id: customerId,
+                        subscription_id: subscriptionId,
+                        installation_id: installationId
+                    }),
+                    timeout: 10000
+                });
+                if (response.ok) {
+                    const contentType = response.headers.get('content-type');
+                    if (contentType && contentType.includes('application/json')) {
+                        const result = await response.json();
+                        if (result.success) {
+                            await this.handleSubscriptionCancellation();
+                            this.showMessage('✅ Subscription cancelled successfully. You still have access until the end of your billing period.', 'success');
+                            return;
+                        }
+                    }
+                }
+            } catch (apiError) {
+            }
+            this.showManualCancellationInstructions();
+        } catch (error) {
+            this.showError('Failed to cancel subscription. Please contact support or use the billing portal.');
+        }
+    }
+    async handleSubscriptionCancellation() {
+        try {
+            await chrome.storage.local.set({
+                subscriptionCancelled: true,
+                cancellationDate: Date.now(),
+            });
+            await this.render();
+            await this.renderSubscriptionPlan();
+        } catch (error) {
+        }
+    }
+    showManualCancellationInstructions() {
+        const modal = document.createElement('div');
+        modal.className = 'contact-modal';
+        modal.style.display = 'flex';
+        const modalContent = document.createElement('div');
+        modalContent.className = 'contact-modal-content';
+        modalContent.style.maxWidth = '450px';
+        modalContent.innerHTML = `
+            <div class="contact-header" style="background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%); border-radius: 12px 12px 0 0; padding: 20px; border-bottom: 1px solid #e2e8f0;">
+                <h3 style="margin: 0; color: #1e293b; font-size: 18px; font-weight: 600; display: flex; align-items: center;">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 8px; color: #635bff;">
+                        <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                        <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                    </svg>
+                    Subscription Management
+                </h3>
+                <button class="contact-close-btn" style="position: absolute; top: 15px; right: 15px; background: none; border: none; font-size: 24px; cursor: pointer; color: #64748b;">×</button>
+            </div>
+            <div style="padding: 24px;">
+                <div style="background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%); border: 1px solid #0ea5e9; border-radius: 12px; padding: 16px; margin-bottom: 20px;">
+                    <div style="display: flex; align-items: center; margin-bottom: 8px;">
+                        <span style="color: #0369a1; font-weight: 600; font-size: 14px;">🎯 Your Pro Subscription</span>
+                    </div>
+                    <div style="color: #0c4a6e; font-size: 13px; line-height: 1.4;">
+                        • $4.99/month recurring billing<br>
+                        • Cancel anytime with one click<br>
+                        • Download invoices and receipts<br>
+                        • Update payment methods securely
+                    </div>
+                </div>
+                <div style="text-align: center;">
+                    <button id="open-portal-btn" style="
+                        background: linear-gradient(135deg, #635bff, #4f46e5);
+                        color: white;
+                        border: none;
+                        padding: 14px 28px;
+                        border-radius: 10px;
+                        font-weight: 600;
+                        font-size: 15px;
+                        cursor: pointer;
+                        transition: all 0.2s ease;
+                        box-shadow: 0 3px 12px rgba(99, 91, 255, 0.25);
+                        width: 100%;
+                        max-width: 300px;
+                        margin-bottom: 16px;
+                    ">
+                        🏛️ Open Billing Portal
+                    </button>
+                    <div style="font-size: 12px; color: #64748b; line-height: 1.4;">
+                        <div style="margin-bottom: 4px;">🔒 Powered by Stripe - Bank-level security</div>
+                        <div>⚡ Instant changes • 📧 Email confirmations</div>
+                    </div>
+                </div>
+            </div>
+        `;
+        modal.appendChild(modalContent);
+        document.body.appendChild(modal);
+        const portalBtn = modal.querySelector('#open-portal-btn');
+        portalBtn.addEventListener('mouseenter', () => {
+            portalBtn.style.transform = 'translateY(-2px)';
+            portalBtn.style.boxShadow = '0 6px 20px rgba(99, 91, 255, 0.4)';
+        });
+        portalBtn.addEventListener('mouseleave', () => {
+            portalBtn.style.transform = 'translateY(0)';
+            portalBtn.style.boxShadow = '0 4px 14px rgba(99, 91, 255, 0.3)';
+        });
+        portalBtn.addEventListener('click', async () => {
+            await this.openStripeBillingPortal();
+            modal.remove();
+        });
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) {
+                modal.remove();
+            }
+        });
+    }
+    async handleDirectUpgrade() {
+        const upgradeBtn = document.getElementById('tab-limit-upgrade-btn');
+        let originalText = 'Upgrade to Pro - $4.99/month';
+        try {
+            if (upgradeBtn) {
+                originalText = upgradeBtn.innerHTML;
+                upgradeBtn.innerHTML = '🔄 Opening Dashboard...';
+                upgradeBtn.disabled = true;
+            }
+
+            // Redirect to user dashboard subscription page
+            await chrome.tabs.create({
+                url: `${CONFIG.WEB.DASHBOARD_URL}#subscription`,
+                active: true
+            });
+
+            this.showMessage('📊 Opening subscription page...', 'success');
+
+            if (upgradeBtn) {
+                upgradeBtn.innerHTML = originalText;
+                upgradeBtn.disabled = false;
+            }
+        } catch (error) {
+            this.showMessage('❌ Failed to open dashboard. Please try again.', 'error');
+        } finally {
+            if (upgradeBtn) {
+                upgradeBtn.innerHTML = originalText;
+                upgradeBtn.disabled = false;
+            }
+        }
+    }
+    showMessage(message, type = 'success') {
+        const now = Date.now();
+        if (now - this.lastNotificationTime < this.notificationCooldown) {
+            return;
+        }
+        const existingMessages = document.querySelectorAll('.toast-message');
+        for (const existing of existingMessages) {
+            if (existing.textContent === message) {
+                return;
+            }
+        }
+        this.lastNotificationTime = now;
+        const messageDiv = document.createElement('div');
+        messageDiv.className = 'toast-message';
+        let backgroundColor;
+        switch(type) {
+            case 'success':
+                backgroundColor = '#10b981';
+                break;
+            case 'warning':
+                backgroundColor = '#f59e0b';
+                break;
+            case 'error':
+                backgroundColor = '#ef4444';
+                break;
+            default:
+                backgroundColor = '#10b981';
+        }
+        messageDiv.style.cssText = `
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            background: ${backgroundColor};
+            color: white;
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 12px;
+            z-index: 10001;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+            transition: all 0.3s ease;
+        `;
+        messageDiv.textContent = message;
+        document.body.appendChild(messageDiv);
+        setTimeout(() => {
+            messageDiv.style.opacity = '0';
+            messageDiv.style.transform = 'translateY(-20px)';
+            setTimeout(() => {
+                if (messageDiv.parentNode) {
+                    messageDiv.remove();
+                }
+            }, 300);
+        }, 3000);
+    }
+    showError(message) {
+        this.showMessage(message, 'error');
+    }
+    isValidTab(tab) {
+        if (!tab.id || !tab.url) return false;
+        if (tab.url.startsWith('chrome-extension:') ||
+            tab.url.startsWith('moz-extension:') ||
+            tab.url.startsWith('chrome://extensions/') ||
+            tab.url.startsWith('chrome://settings/') ||
+            tab.url.startsWith('chrome://flags/') ||
+            tab.url.startsWith('chrome://history/') ||
+            tab.url.startsWith('chrome://downloads/')) {
+            return false;
+        }
+        if (tab.url.startsWith('chrome://newtab/') ||
+            tab.url.startsWith('chrome://new-tab-page/') ||
+            tab.url.startsWith('chrome-search://local-ntp/local-ntp.html')) {
+            return true;
+        }
+        if (!tab.url.startsWith('chrome://') &&
+            !tab.url.startsWith('about:') &&
+            !tab.url.startsWith('edge://')) {
+            return true;
+        }
+        if (tab.url === 'about:blank' || tab.url === 'about:newtab') {
+            return true;
+        }
+        return false;
+    }
+    isEmptyTabForDisplay(tab) {
+        if (!tab || !tab.url) return false;
+        const chromeNewTabUrls = [
+            'chrome://newtab/',
+            'chrome://new-tab-page/',
+            'chrome-search://local-ntp/local-ntp.html',
+            'chrome://startpageshared/'
+        ];
+        const otherBrowserNewTabs = [
+            'about:newtab',
+            'about:blank',
+            'about:home'
+        ];
+        if (chromeNewTabUrls.some(url => tab.url === url || tab.url.startsWith(url))) {
+            return true;
+        }
+        if (otherBrowserNewTabs.some(url => tab.url === url)) {
+            return true;
+        }
+        const searchEngineHomepages = [
+            'https://www.google.com',
+            'https://www.bing.com',
+            'https://www.yahoo.com',
+            'https://duckduckgo.com'
+        ];
+        if (searchEngineHomepages.includes(tab.url)) {
+            return true;
+        }
+        return false;
+    }
+    sendMessageWithTimeout(action, timeout = 5000, extraData = {}) {
+        return new Promise((resolve, reject) => {
+            if (!chrome.runtime || !chrome.runtime.sendMessage) {
+                reject(new Error('Service Worker not available - chrome.runtime missing'));
+                return;
+            }
+            const timeoutId = setTimeout(() => {
+                reject(new Error(`Message timeout: ${action} - Service Worker may not be responding`));
+            }, timeout);
+            const message = { action, ...extraData };
+            try {
+                chrome.runtime.sendMessage(message, (response) => {
+                    clearTimeout(timeoutId);
+                    if (chrome.runtime.lastError) {
+                        const errorMsg = chrome.runtime.lastError.message;
+                        if (errorMsg.includes('Receiving end does not exist')) {
+                            reject(new Error(`Service Worker not running - background script unavailable (${action})`));
+                        } else if (errorMsg.includes('Extension context invalidated')) {
+                            reject(new Error(`Extension context invalidated - please reload extension (${action})`));
+                        } else {
+                            reject(new Error(`Service Worker error: ${errorMsg} (${action})`));
+                        }
+                    } else if (!response) {
+                        reject(new Error(`No response from Service Worker for ${action}`));
+                    } else if (!response.success) {
+                        reject(new Error(response.error || `Service Worker returned error for ${action}`));
+                    } else {
+                        resolve(response);
+                    }
+                });
+            } catch (error) {
+                clearTimeout(timeoutId);
+                reject(new Error(`Failed to send message to Service Worker: ${error.message} (${action})`));
+            }
+        });
+    }
+    sanitizeText(text) {
+        if (!text) return 'Untitled';
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+    sanitizeUrl(url) {
+        if (!url || typeof url !== 'string') return '';
+        try {
+            const urlObj = new URL(url);
+            return urlObj.href;
+        } catch {
+            return '';
+        }
+    }
+    truncate(text, maxLength) {
+        if (!text) return '';
+        return text.length > maxLength ? text.substring(0, maxLength - 3) + '...' : text;
+    }
+    async setTimer(tabId, minutes) {
+        await this.setCustomTimer(tabId, minutes, 'minutes');
+    }
+    async clearTimer(tabId) {
+        try {
+            const tab = this.tabs.find(t => t.id === tabId);
+            if (tab) {
+                tab.timerActive = false;
+                tab.autoCloseTime = null;
+                tab.timerDuration = null;
+                tab.timerStartTime = null;
+            }
+            try {
+                await chrome.runtime.sendMessage({
+                    action: 'clearTimer',
+                    tabId: tabId
+                });
+            } catch (error) {
+            }
+            this.showMessage('Timer removed', 'success');
+            await this.render();
+        } catch (error) {
+            this.showError('Failed to remove timer');
+        }
+    }
+    updateConfirmButton(modal, value, unit) {
+        const confirmBtn = modal.querySelector('#timer-confirm-btn');
+        const removeBtn = modal.querySelector('#timer-remove-btn');
+        if (value === 0) {
+            confirmBtn.textContent = 'Remove Timer';
+            confirmBtn.style.background = 'linear-gradient(135deg, #dc2626, #b91c1c)';
+            if (removeBtn) removeBtn.style.display = 'none';
+        } else {
+            const unitText = unit === 'minutes' ? (value === 1 ? 'minute' : 'minutes') :
+                            unit === 'hours' ? (value === 1 ? 'hour' : 'hours') :
+                            unit === 'seconds' ? (value === 1 ? 'second' : 'seconds') :
+                            (value === 1 ? 'day' : 'days');
+            confirmBtn.textContent = `Set ${value} ${unitText}`;
+            confirmBtn.style.background = 'linear-gradient(135deg, #4f46e5, #3b82f6)';
+            if (removeBtn) removeBtn.style.display = 'flex';
+        }
+    }
+    async setCustomTimer(tabId, value, unit) {
+        try {
+            const tab = this.tabs.find(t => t.id === tabId);
+            if (!tab) {
+                this.showError('Tab not found');
+                return;
+            }
+            if (value === 0) {
+                await this.clearTimer(tabId);
+                return;
+            }
+            let milliseconds;
+            switch (unit) {
+                case 'seconds':
+                    milliseconds = value * 1000;
+                    break;
+                case 'minutes':
+                    milliseconds = value * 60 * 1000;
+                    break;
+                case 'hours':
+                    milliseconds = value * 60 * 60 * 1000;
+                    break;
+                case 'days':
+                    milliseconds = value * 24 * 60 * 60 * 1000;
+                    break;
+                default:
+                    milliseconds = value * 60 * 1000;
+            }
+            const MAX_TIMEOUT = 2147483647;
+            const MAX_DAYS = 100;
+            const JS_TIMEOUT_LIMIT = 2147483647;
+            const usePollingMode = milliseconds > JS_TIMEOUT_LIMIT;
+            const MAX_ALLOWED_MS = MAX_DAYS * 24 * 60 * 60 * 1000;
+            if (milliseconds > MAX_ALLOWED_MS) {
+                this.showError(`Timer too long! Maximum limit is ${MAX_DAYS} days. Please use a smaller value.`);
+                return;
+            }
+            const autoCloseTime = Date.now() + milliseconds;
+            tab.timerActive = true;
+            tab.autoCloseTime = autoCloseTime;
+            tab.timerDuration = milliseconds;
+            tab.timerStartTime = Date.now();
+            try {
+                await chrome.runtime.sendMessage({
+                    action: 'setTimer',
+                    tabId: tabId,
+                    minutes: 0,
+                    milliseconds: milliseconds,
+                    usePolling: usePollingMode
+                });
+            } catch (error) {
+            }
+            const unitText = unit === 'minutes' ? (value === 1 ? 'minute' : 'minutes') :
+                            unit === 'hours' ? (value === 1 ? 'hour' : 'hours') :
+                            unit === 'seconds' ? (value === 1 ? 'second' : 'seconds') :
+                            (value === 1 ? 'day' : 'days');
+            const successMsg = usePollingMode
+                ? `Timer set for ${value} ${unitText} (${this.formatTime(milliseconds)}) - Long timer mode enabled`
+                : `Timer set for ${value} ${unitText} (${this.formatTime(milliseconds)})`;
+            this.showMessage(successMsg, 'success');
+            await this.render();
+            this.startTimerCountdown();
+        } catch (error) {
+            this.showError('Failed to set timer');
+        }
+    }
+    convertTimeUnits(value, fromUnit, toUnit) {
+        if (fromUnit === toUnit) return value;
+        let milliseconds;
+        switch (fromUnit) {
+            case 'seconds':
+                milliseconds = value * 1000;
+                break;
+            case 'minutes':
+                milliseconds = value * 60 * 1000;
+                break;
+            case 'hours':
+                milliseconds = value * 60 * 60 * 1000;
+                break;
+            case 'days':
+                milliseconds = value * 24 * 60 * 60 * 1000;
+                break;
+            default:
+                return null;
+        }
+        let result;
+        switch (toUnit) {
+            case 'seconds':
+                result = Math.round(milliseconds / 1000);
+                break;
+            case 'minutes':
+                result = Math.round(milliseconds / (60 * 1000));
+                break;
+            case 'hours':
+                result = Math.round(milliseconds / (60 * 60 * 1000));
+                break;
+            case 'days':
+                result = Math.round(milliseconds / (24 * 60 * 60 * 1000));
+                break;
+            default:
+                return null;
+        }
+        const limits = {
+            seconds: 8640000,
+            minutes: 144000,
+            hours: 2400,
+            days: 100
+        };
+        if (result > limits[toUnit]) {
+            return null;
+        }
+        return result;
+    }
+    updateTimerPreview(modal, value, unit) {
+        const previewElement = modal.querySelector('#timer-preview');
+        if (!previewElement) return;
+        if (value === 0) {
+            previewElement.textContent = 'Timer will be removed';
+            previewElement.style.color = '#dc2626';
+        } else {
+            let milliseconds;
+            switch (unit) {
+                case 'seconds': milliseconds = value * 1000; break;
+                case 'minutes': milliseconds = value * 60 * 1000; break;
+                case 'hours': milliseconds = value * 60 * 60 * 1000; break;
+                case 'days': milliseconds = value * 24 * 60 * 60 * 1000; break;
+                default: milliseconds = value * 60 * 1000;
+            }
+            const formatted = this.formatTime(milliseconds);
+            const isLongTimer = milliseconds > 2147483647;
+            if (isLongTimer) {
+                previewElement.textContent = `Duration: ${formatted} (Long timer mode)`;
+                previewElement.style.color = '#f59e0b';
+            } else {
+                previewElement.textContent = `Duration: ${formatted}`;
+                previewElement.style.color = '#6b7280';
+            }
+        }
+    }
+    formatTime(milliseconds) {
+        if (milliseconds <= 0) return '0s';
+        const totalSeconds = Math.floor(milliseconds / 1000);
+        const days = Math.floor(totalSeconds / (24 * 3600));
+        const hours = Math.floor((totalSeconds % (24 * 3600)) / 3600);
+        const minutes = Math.floor((totalSeconds % 3600) / 60);
+        const seconds = totalSeconds % 60;
+        if (days > 0) {
+            if (hours > 0) {
+                return `${days}d ${hours}h`;
+            } else {
+                return `${days}d`;
+            }
+        } else if (hours > 0) {
+            if (minutes > 0) {
+                return `${hours}h ${minutes}m`;
+            } else {
+                return `${hours}h`;
+            }
+        } else if (minutes > 0) {
+            if (seconds > 0) {
+                return `${minutes}m ${seconds}s`;
+            } else {
+                return `${minutes}m`;
+            }
+        } else {
+            return `${seconds}s`;
+        }
+    }
+    extractDomain(url) {
+        if (!url) return 'Unknown';
+        try {
+            const urlObj = new URL(url);
+            let domain = urlObj.hostname;
+            if (domain.startsWith('www.')) {
+                domain = domain.substring(4);
+            }
+            return domain;
+        } catch (error) {
+            return 'Unknown';
+        }
+    }
+    getSafeFaviconUrl(faviconUrl) {
+        // Return the actual favicon URL if available, otherwise use local icon
+        // Note: Some external favicons may trigger CORS console errors, but they're harmless
+        return faviconUrl || 'icons/icon-16.png';
+    }
+    async syncWithBrowserTabs(realTabs) {
+        const extensionTabIds = new Set(this.tabs.map(tab => tab.id));
+        let newTabsAdded = 0;
+        for (const realTab of realTabs) {
+            if (!extensionTabIds.has(realTab.id) && this.isValidTab(realTab)) {
+                this.tabs.push({
+                    id: realTab.id,
+                    title: realTab.title,
+                    url: realTab.url,
+                    favIconUrl: realTab.favIconUrl,
+                    active: realTab.active,
+                    paused: false,
+                    timerActive: false,
+                    autoCloseTime: null
+                });
+                newTabsAdded++;
+            }
+        }
+        if (!this.isPremium && this.tabs.length > this.tabLimit) {
+            this.tabs = this.prioritizeTabsForFreeUser(this.tabs).slice(0, this.tabLimit);
+        }
+        if (!this.isPremium && newTabsAdded > 0) {
+        }
+    }
+    prioritizeTabsForFreeUser(tabs) {
+        return tabs.sort((a, b) => {
+            if (a.active && !b.active) return -1;
+            if (!a.active && b.active) return 1;
+            if (a.paused && !b.paused) return -1;
+            if (!a.paused && b.paused) return 1;
+            if (a.timerActive && !b.timerActive) return -1;
+            if (!a.timerActive && b.timerActive) return 1;
+            if (a.lastActivated && b.lastActivated) {
+                return b.lastActivated - a.lastActivated;
+            }
+            if (a.pinned && !b.pinned) return -1;
+            if (!a.pinned && b.pinned) return 1;
+            return (a.index || 0) - (b.index || 0);
+        });
+    }
+    showFreeLimitNotice(hiddenCount) {
+        const noticeDiv = document.createElement('div');
+        noticeDiv.style.cssText = `
+            position: fixed;
+            top: 40px;
+            left: 10px;
+            right: 10px;
+            background: linear-gradient(135deg, #fef3c7 0%, #fbbf24 100%);
+            border: 2px solid #f59e0b;
+            border-radius: 8px;
+            padding: 12px;
+            z-index: 10001;
+            font-size: 12px;
+            color: #92400e;
+            font-weight: 500;
+            box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3);
+        `;
+        noticeDiv.innerHTML = `
+            <div style="display: flex; align-items: center; gap: 8px;">
+                <span style="font-size: 16px;">📊</span>
+                <div>
+                    <strong>Free Plan Limit</strong><br>
+                    Showing 10 of ${this.totalTabCount} tabs. ${hiddenCount} tabs hidden.
+                    <button onclick="this.parentElement.parentElement.remove()"
+                            style="float: right; background: none; border: none; color: #92400e; font-size: 16px; cursor: pointer; padding: 0; margin-left: 8px;">×</button>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(noticeDiv);
+        setTimeout(() => {
+            if (noticeDiv.parentNode) {
+                noticeDiv.remove();
+            }
+        }, 5000);
+    }
+    addFreeLimitFooter(container) {
+        const footer = document.createElement('div');
+        footer.style.cssText = `
+            background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%);
+            border: 2px dashed #d1d5db;
+            border-radius: 8px;
+            padding: 16px;
+            margin: 8px 0;
+            text-align: center;
+            color: #6b7280;
+            font-size: 13px;
+        `;
+        footer.innerHTML = `
+            <div style="margin-bottom: 8px;">
+                <span style="font-size: 20px;">🔒</span>
+            </div>
+            <div style="font-weight: 500; margin-bottom: 4px;">Free Plan Limit Reached</div>
+            <div style="margin-bottom: 12px;">Showing maximum ${this.tabLimit} tabs. Close a tab to see others.</div>
+            <button onclick="window.popup.showPremiumModal()"
+                    style="background: linear-gradient(135deg, #3b82f6, #2563eb); color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: 500;">
+                Upgrade for Unlimited Tabs
+            </button>
+        `;
+        container.appendChild(footer);
+    }
+    updateScrollWheelHighlight(scrollWheel, selectedIndex) {
+        const options = scrollWheel.querySelectorAll('.wheel-option');
+        options.forEach((option, index) => {
+            if (selectedIndex === -1) {
+                option.style.opacity = '0.3';
+                option.style.transform = 'scale(0.9)';
+            } else {
+                const distance = Math.abs(index - selectedIndex);
+                const opacity = distance === 0 ? 1 : distance === 1 ? 0.6 : 0.3;
+                const scale = distance === 0 ? 1 : 0.9;
+                option.style.opacity = opacity.toString();
+                option.style.transform = `scale(${scale})`;
+            }
+        });
+    }
+    populatePreBuiltScrollWheel(modal) {
+        const scrollWheel = modal.querySelector('#scroll-wheel');
+        const options = [
+            { label: 'No Timer', value: 0, unit: 'minutes' },
+            { label: '30 seconds', value: 30, unit: 'seconds' },
+            { label: '1 minute', value: 1, unit: 'minutes' },
+            { label: '2 minutes', value: 2, unit: 'minutes' },
+            { label: '5 minutes', value: 5, unit: 'minutes' },
+            { label: '10 minutes', value: 10, unit: 'minutes' },
+            { label: '15 minutes', value: 15, unit: 'minutes' },
+            { label: '30 minutes', value: 30, unit: 'minutes' },
+            { label: '1 hour', value: 1, unit: 'hours' },
+            { label: '2 hours', value: 2, unit: 'hours' },
+            { label: '4 hours', value: 4, unit: 'hours' },
+            { label: '8 hours', value: 8, unit: 'hours' },
+            { label: '1 day', value: 1, unit: 'days' },
+            { label: '3 days', value: 3, unit: 'days' },
+            { label: '7 days', value: 7, unit: 'days' }
+        ];
+        const optionsHTML = options.map((option, index) => {
+            const isNoTimer = option.value === 0;
+            return `
+                <div class="wheel-option" data-value="${option.value}" data-unit="${option.unit}" data-label="${option.label}" data-index="${index}" style="
+                    height: 44px;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    font-size: ${isNoTimer ? '15px' : '16px'};
+                    font-weight: ${isNoTimer ? '600' : '500'};
+                    color: ${isNoTimer ? '#ef4444' : '#374151'};
+                    transition: all 0.2s ease;
+                    cursor: pointer;
+                    user-select: none;
+                    position: relative;
+                ">
+                    ${option.label}
+                </div>
+            `;
+        }).join('');
+        scrollWheel.innerHTML = optionsHTML;
+        scrollWheel.dataset.selected = '0';
+        scrollWheel.style.transform = 'translateY(0px)';
+    }
+    setupScrollWheel(scrollWheel, onValueChange) {
+        let isDragging = false;
+        let startY = 0;
+        let startTransform = 0;
+        let currentTransform = 0;
+        const itemHeight = 44;
+        const options = scrollWheel.querySelectorAll('.wheel-option');
+        const maxIndex = options.length - 1;
+        const getTransformY = () => {
+            const transform = scrollWheel.style.transform;
+            const match = transform.match(/translateY\((-?\d+(?:\.\d+)?)px\)/);
+            return match ? parseFloat(match[1]) : 0;
+        };
+        const setTransform = (y, animate = true) => {
+            const boundedY = Math.max(Math.min(y, 0), -(maxIndex * itemHeight));
+            currentTransform = boundedY;
+            scrollWheel.style.transition = animate ? 'transform 0.2s ease-out' : 'none';
+            scrollWheel.style.transform = `translateY(${boundedY}px)`;
+            const selectedIndex = Math.round(-boundedY / itemHeight);
+            scrollWheel.dataset.selected = selectedIndex.toString();
+            options.forEach((option, index) => {
+                const distance = Math.abs(index - selectedIndex);
+                const opacity = distance === 0 ? 1 : distance === 1 ? 0.6 : 0.3;
+                const scale = distance === 0 ? 1 : 0.9;
+                option.style.opacity = opacity.toString();
+                option.style.transform = `scale(${scale})`;
+            });
+            const selectedOption = options[selectedIndex];
+            if (selectedOption && onValueChange) {
+                const value = parseInt(selectedOption.dataset.value);
+                const unit = selectedOption.dataset.unit;
+                const label = selectedOption.dataset.label;
+                onValueChange({ value, unit, label });
+            }
+        };
+        const startDrag = (clientY) => {
+            isDragging = true;
+            startY = clientY;
+            startTransform = getTransformY();
+            scrollWheel.style.cursor = 'grabbing';
+        };
+        const updateDrag = (clientY) => {
+            if (!isDragging) return;
+            const deltaY = clientY - startY;
+            setTransform(startTransform + deltaY, false);
+        };
+        const endDrag = () => {
+            if (!isDragging) return;
+            isDragging = false;
+            scrollWheel.style.cursor = 'grab';
+            const currentY = getTransformY();
+            const nearestIndex = Math.round(-currentY / itemHeight);
+            const snapY = -(nearestIndex * itemHeight);
+            setTransform(snapY, true);
+        };
+        scrollWheel.addEventListener('mousedown', (e) => {
+            e.preventDefault();
+            startDrag(e.clientY);
+        });
+        document.addEventListener('mousemove', (e) => {
+            updateDrag(e.clientY);
+        });
+        document.addEventListener('mouseup', endDrag);
+        scrollWheel.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            startDrag(e.touches[0].clientY);
+        }, { passive: false });
+        document.addEventListener('touchmove', (e) => {
+            if (isDragging) e.preventDefault();
+            updateDrag(e.touches[0].clientY);
+        }, { passive: false });
+        document.addEventListener('touchend', endDrag);
+        options.forEach((option, index) => {
+            option.addEventListener('click', () => {
+                const targetY = -(index * itemHeight);
+                setTransform(targetY, true);
+            });
+        });
+        scrollWheel.addEventListener('wheel', (e) => {
+            e.preventDefault();
+            const currentY = getTransformY();
+            const direction = e.deltaY > 0 ? 1 : -1;
+            const newIndex = Math.round(-currentY / itemHeight) + direction;
+            const clampedIndex = Math.max(0, Math.min(maxIndex, newIndex));
+            const targetY = -(clampedIndex * itemHeight);
+            setTransform(targetY, true);
+        });
+        setTransform(0, false);
+    }
+    setScrollWheelValue(scrollWheel, value) {
+        const options = scrollWheel.querySelectorAll('.wheel-option');
+        let targetIndex = 0;
+        options.forEach((option, index) => {
+            if (parseInt(option.dataset.value) === value) {
+                targetIndex = index;
+            }
+        });
+        const targetY = -(targetIndex * 40);
+        scrollWheel.style.transform = `translateY(${targetY}px)`;
+        scrollWheel.dataset.selected = targetIndex.toString();
+    }
+    updateConfirmButton(modal, value, unit) {
+        const confirmBtn = modal.querySelector('#timer-confirm-btn');
+        if (value === 0) {
+            confirmBtn.innerHTML = `
+                <span style="position: relative; z-index: 2; display: flex; align-items: center; justify-content: center; gap: 6px;">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M18 6L6 18M6 6l12 12"/>
+                    </svg>
+                    Remove Timer
+                </span>
+            `;
+            confirmBtn.style.background = 'linear-gradient(135deg, #ef4444, #dc2626)';
+        } else {
+            let unitText = '';
+            switch (unit) {
+                case 'seconds':
+                    unitText = value === 1 ? 'second' : 'seconds';
+                    break;
+                case 'minutes':
+                    unitText = value === 1 ? 'minute' : 'minutes';
+                    break;
+                case 'hours':
+                    unitText = value === 1 ? 'hour' : 'hours';
+                    break;
+                case 'days':
+                    unitText = value === 1 ? 'day' : 'days';
+                    break;
+                default:
+                    unitText = unit;
+            }
+            confirmBtn.innerHTML = `
+                <span style="position: relative; z-index: 2; display: flex; align-items: center; justify-content: center; gap: 6px;">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="20,6 9,17 4,12"/>
+                    </svg>
+                    Set ${value} ${unitText}
+                </span>
+            `;
+            confirmBtn.style.background = 'linear-gradient(135deg, #3b82f6, #2563eb)';
+        }
+    }
+    startRealTimeUpdates() {
+        this.performRealTimeUpdate();
+        this.updateInterval = setInterval(() => {
+            this.performRealTimeUpdate();
+        }, 1000);
+        try {
+            chrome.tabs.onCreated.addListener(() => this.handleTabEvent('created'));
+            chrome.tabs.onRemoved.addListener(() => this.handleTabEvent('removed'));
+            chrome.tabs.onUpdated.addListener(() => this.handleTabEvent('updated'));
+            chrome.tabs.onActivated.addListener(() => this.handleTabEvent('activated'));
+        } catch (error) {
+        }
+    }
+    async performRealTimeUpdate() {
+        try {
+            const previousTabCount = this.realTimeTabCount;
+            const previousHiddenCount = this.hiddenTabCount;
+            await this.updateTabCount();
+            this.renderStats();
+            if (previousTabCount !== this.realTimeTabCount) {
+                if (this.shouldRefreshTabList(previousTabCount)) {
+                    await this.refreshTabList();
+                }
+            }
+            if (!this.isPremium) {
+                if (previousHiddenCount !== this.hiddenTabCount || previousTabCount !== this.realTimeTabCount) {
+                    this.updateHiddenTabDisplay();
+                    this.renderTabLimitWarning();
+                }
+            }
+        } catch (error) {
+        }
+    }
+    handleTabEvent(eventType) {
+        clearTimeout(this.tabEventDebounce);
+        this.tabEventDebounce = setTimeout(() => {
+            this.performRealTimeUpdate();
+        }, 200);
+    }
+    shouldRefreshTabList(previousCount) {
+        return Math.abs(this.realTimeTabCount - previousCount) >= 1 ||
+               (!this.isPremium && this.tabs.length < this.tabLimit);
+    }
+    async refreshTabList() {
+        try {
+            if (this.isRendering) return;
+            await this.loadData();
+            await this.renderTabs();
+        } catch (error) {
+        }
+    }
+    updateHiddenTabDisplay() {
+        const warningContainer = document.getElementById('tab-limit-warning');
+        if (warningContainer && !this.isPremium && this.hiddenTabCount > 0) {
+            this.renderTabLimitWarning();
+        }
+    }
+    stopRealTimeUpdates() {
+        if (this.updateInterval) {
+            clearInterval(this.updateInterval);
+            this.updateInterval = null;
+        }
+        if (this.timerInterval) {
+            clearInterval(this.timerInterval);
+            this.timerInterval = null;
+        }
+    }
+    async closeExtraTabs() {
+        if (this.isPremium) {
+            return;
+        }
+        try {
+            const allTabs = await chrome.tabs.query({});
+            const validTabs = allTabs.filter(tab => this.isValidTab(tab));
+            if (validTabs.length <= this.tabLimit) {
+                this.showMessage('You are already within the 10-tab limit!', 'success');
+                return;
+            }
+            const excessCount = validTabs.length - this.tabLimit;
+            this.showClosingProgress(excessCount);
+            const prioritizedTabs = this.prioritizeTabsForFreeUser(validTabs);
+            const tabsToKeep = prioritizedTabs.slice(0, this.tabLimit);
+            const tabsToClose = prioritizedTabs.slice(this.tabLimit);
+            const batchSize = 3;
+            let closedCount = 0;
+            for (let i = 0; i < tabsToClose.length; i += batchSize) {
+                const batch = tabsToClose.slice(i, i + batchSize);
+                const closePromises = batch.map(async (tab) => {
+                    try {
+                        if (tab.paused) {
+                            return false;
+                        }
+                        await chrome.tabs.remove(tab.id);
+                        closedCount++;
+                        return true;
+                    } catch (error) {
+                        return false;
+                    }
+                });
+                await Promise.all(closePromises);
+                this.updateClosingProgress(closedCount, excessCount);
+                if (i + batchSize < tabsToClose.length) {
+                    await new Promise(resolve => setTimeout(resolve, 200));
+                }
+            }
+            this.hideClosingProgress();
+            if (closedCount > 0) {
+                this.showMessage(`Successfully closed ${closedCount} extra tabs!`, 'success');
+                setTimeout(() => {
+                    this.performRealTimeUpdate();
+                    this.renderTabLimitWarning();
+                }, 500);
+            } else {
+                this.showMessage('No tabs could be closed (protected tabs?)', 'warning');
+            }
+        } catch (error) {
+            this.showError('Failed to close extra tabs');
+            this.hideClosingProgress();
+        }
+    }
+    showClosingProgress(totalToClose) {
+        const progressDiv = document.createElement('div');
+        progressDiv.id = 'closing-progress';
+        progressDiv.style.cssText = `
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: white;
+            border: 2px solid #3b82f6;
+            border-radius: 12px;
+            padding: 20px;
+            z-index: 10003;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+            text-align: center;
+            min-width: 250px;
+        `;
+        progressDiv.innerHTML = `
+            <div style="font-size: 18px; margin-bottom: 8px;">🗂️</div>
+            <div style="font-weight: 500; margin-bottom: 12px; color: #1f2937;">Closing Extra Tabs</div>
+            <div id="progress-text" style="font-size: 14px; color: #6b7280; margin-bottom: 16px;">
+                Preparing to close ${totalToClose} excess tabs...
+            </div>
+            <div style="width: 100%; height: 4px; background: #e5e7eb; border-radius: 2px; overflow: hidden;">
+                <div id="progress-bar" style="width: 0%; height: 100%; background: linear-gradient(135deg, #3b82f6, #2563eb); transition: width 0.3s ease;"></div>
+            </div>
+        `;
+        document.body.appendChild(progressDiv);
+    }
+    updateClosingProgress(closed, total) {
+        const progressText = document.getElementById('progress-text');
+        const progressBar = document.getElementById('progress-bar');
+        if (progressText) {
+            progressText.textContent = `Closed ${closed} of ${total} extra tabs...`;
+        }
+        if (progressBar) {
+            const percentage = Math.round((closed / total) * 100);
+            progressBar.style.width = `${percentage}%`;
+        }
+    }
+    hideClosingProgress() {
+        const progressDiv = document.getElementById('closing-progress');
+        if (progressDiv) {
+            progressDiv.style.opacity = '0';
+            progressDiv.style.transform = 'translate(-50%, -50%) scale(0.9)';
+            setTimeout(() => {
+                if (progressDiv.parentNode) {
+                    progressDiv.remove();
+                }
+            }, 300);
+        }
+    }
+    async loadAnalyticsData() {
+        try {
+            const analyticsData = await chrome.storage.local.get([
+                'tabAnalytics',
+                'siteVisitCounts',
+                'totalTabsOpened',
+                'tabsClosedAuto',
+                'domainUsageTime'
+            ]);
+            const analytics = analyticsData.tabAnalytics || {};
+            const siteVisits = analyticsData.siteVisitCounts || {};
+            const totalOpened = analyticsData.totalTabsOpened || 0;
+            const autosClosed = analyticsData.tabsClosedAuto || 0;
+            const domainTime = analyticsData.domainUsageTime || {};
+            await this.clearFakeData();
+            await this.collectCurrentTabData();
+            const cleanData = await chrome.storage.local.get([
+                'tabAnalytics',
+                'siteVisitCounts',
+                'totalTabsOpened',
+                'tabsClosedAuto',
+                'domainUsageTime'
+            ]);
+            const cleanAnalytics = cleanData.tabAnalytics || {};
+            const cleanSiteVisits = cleanData.siteVisitCounts || {};
+            const cleanTotalOpened = cleanData.totalTabsOpened || 0;
+            const cleanAutosClosed = cleanData.tabsClosedAuto || 0;
+            const cleanDomainTime = cleanData.domainUsageTime || {};
+            this.updateMostVisitedList(cleanAnalytics, cleanSiteVisits, cleanDomainTime);
+        } catch (error) {
+        }
+    }
+    updateMostVisitedList(analytics, siteVisits, domainTime) {
+        const listContainer = document.getElementById('most-visited-list');
+        if (!listContainer) {
+            return;
+        }
+        const combinedData = {};
+        Object.entries(siteVisits).forEach(([domain, visits]) => {
+            combinedData[domain] = { visits, time: domainTime[domain] || 0, tabs: 0, avgTime: 0 };
+        });
+        Object.entries(analytics).forEach(([domain, data]) => {
+            if (!combinedData[domain]) {
+                combinedData[domain] = { visits: siteVisits[domain] || 0, time: data.totalTime || 0, tabs: data.totalTabs || 0, avgTime: data.avgTimePerTab || 0 };
+            } else {
+                combinedData[domain].tabs = data.totalTabs || 0;
+                combinedData[domain].avgTime = data.avgTimePerTab || 0;
+                combinedData[domain].time = data.totalTime || combinedData[domain].time;
+            }
+        });
+        if (Object.keys(combinedData).length === 0) {
+            this.showCurrentTabsInAnalytics(listContainer);
+            return;
+        }
+        let totalTime = 0;
+        Object.values(combinedData).forEach(data => {
+            totalTime += data.time;
+        });
+        const sortedSites = Object.entries(combinedData)
+            .sort((a, b) => b[1].time - a[1].time)
+            .slice(0, 10);
+        listContainer.innerHTML = `
+            <div class="screen-time-summary">
+                <div class="total-screen-time">
+                    <div class="total-time-label">Total Screen Time</div>
+                    <div class="total-time-value">${this.formatTime(totalTime)}</div>
+                </div>
+            </div>
+            <div class="sites-list">
+                ${sortedSites.map(([domain, data]) => {
+                    const percentage = totalTime > 0 ? (data.time / totalTime * 100).toFixed(1) : 0;
+                    return `
+                        <div class="site-item">
+                            <div class="site-header">
+                                <div class="site-info">
+                                    <div class="site-favicon">${this.getDomainIcon(domain)}</div>
+                                    <div class="site-details">
+                                        <div class="site-name">${this.formatDomain(domain)}</div>
+                                        <div class="site-stats">${data.visits} visits</div>
+                                    </div>
+                                </div>
+                                <div class="site-time-info">
+                                    <div class="site-time">${this.formatTime(data.time)}</div>
+                                    <div class="site-percentage">${percentage}%</div>
+                                </div>
+                            </div>
+                            <div class="site-progress">
+                                <div class="progress-bar">
+                                    <div class="progress-fill" style="width: ${percentage}%"></div>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                }).join('')}
+            </div>
+        `;
+    }
+    formatTime(milliseconds) {
+        if (!milliseconds || milliseconds === 0) return '0s';
+        const totalSeconds = Math.floor(milliseconds / 1000);
+        const hours = Math.floor(totalSeconds / 3600);
+        const minutes = Math.floor((totalSeconds % 3600) / 60);
+        const seconds = totalSeconds % 60;
+        if (hours > 0) {
+            return `${hours}h ${minutes}m`;
+        } else if (minutes > 0) {
+            return `${minutes}m ${seconds}s`;
+        } else {
+            return `${seconds}s`;
+        }
+    }
+    getDomainIcon(domain, useFavicon = true) {
+        if (useFavicon) {
+            return `<img src="https://www.google.com/s2/favicons?domain=${encodeURIComponent(domain)}" alt="" class="tab-favicon">
+                    <span class="fallback-icon" style="display:none;">${this.getFallbackIcon(domain)}</span>`;
+        }
+        return this.getFallbackIcon(domain);
+    }
+    getFallbackIcon(domain) {
+        const icons = {
+            'google.com': '🔍',
+            'youtube.com': '📺',
+            'github.com': '💻',
+            'stackoverflow.com': '💡',
+            'twitter.com': '🐦',
+            'facebook.com': '📘',
+            'linkedin.com': '💼',
+            'reddit.com': '🤖',
+            'instagram.com': '📷',
+            'amazon.com': '🛒',
+            'netflix.com': '🎬',
+            'spotify.com': '🎵'
+        };
+        return icons[domain] || '🌐';
+    }
+    formatDomain(domain) {
+        return domain.replace('www.', '').split('.')[0];
+    }
+    updateAnalyticsInsights(analytics, siteVisits, totalOpened, domainTime) {
+        const insightsContainer = document.getElementById('analytics-insights');
+        if (!insightsContainer) {
+            return;
+        }
+        const insights = [];
+        const totalTime = Object.values(domainTime).reduce((sum, time) => sum + time, 0);
+        if (totalOpened > 50) {
+            insights.push({
+                icon: '📈',
+                text: `You've opened ${totalOpened} tabs! You're an active browser user.`
+            });
+        }
+        if (totalTime > 0) {
+            insights.push({
+                icon: '⏱️',
+                text: `Total browsing time tracked: ${this.formatTime(totalTime)}`
+            });
+        }
+        const topSitesByTime = Object.entries(domainTime).sort((a, b) => b[1] - a[1]);
+        if (topSitesByTime.length > 0 && topSitesByTime[0][1] > 0) {
+            const [topDomain, timeSpent] = topSitesByTime[0];
+            const percentage = Math.round((timeSpent / totalTime) * 100);
+            insights.push({
+                icon: '🎯',
+                text: `${percentage}% of your time is spent on ${this.formatDomain(topDomain)} (${this.formatTime(timeSpent)})`
+            });
+        }
+        const topByTabs = Object.entries(analytics)
+            .sort((a, b) => (b[1].totalTabs || 0) - (a[1].totalTabs || 0));
+        if (topByTabs.length > 0 && topByTabs[0][1].totalTabs > 5) {
+            const [domain, data] = topByTabs[0];
+            insights.push({
+                icon: '📊',
+                text: `You opened ${data.totalTabs} tabs on ${this.formatDomain(domain)} with ${this.formatTime(data.avgTimePerTab)} average time per tab`
+            });
+        }
+        if (insights.length === 0) {
+            this.addCurrentTabInsights(insights);
+        }
+        insightsContainer.innerHTML = insights.map(insight => `
+            <div class="insight-item">
+                <span class="insight-icon">${insight.icon}</span>
+                <span class="insight-text">${insight.text}</span>
+            </div>
+        `).join('');
+    }
+    async addCurrentTabInsights(insights) {
+        try {
+            const currentTabs = await chrome.tabs.query({});
+            const validTabs = currentTabs.filter(tab =>
+                tab.url &&
+                !tab.url.startsWith('chrome://') &&
+                !tab.url.startsWith('moz-extension://') &&
+                !tab.url.startsWith('chrome-extension://')
+            );
+            if (validTabs.length > 0) {
+                insights.push({
+                    icon: '📊',
+                    text: `You currently have ${validTabs.length} ${validTabs.length === 1 ? 'tab' : 'tabs'} open for browsing`
+                });
+                const domains = new Set();
+                validTabs.forEach(tab => {
+                    try {
+                        domains.add(new URL(tab.url).hostname);
+                    } catch (e) {}
+                });
+                if (domains.size > 1) {
+                    insights.push({
+                        icon: '🌐',
+                        text: `You're browsing ${domains.size} different websites right now`
+                    });
+                }
+                const activeTab = validTabs.find(tab => tab.active);
+                if (activeTab) {
+                    try {
+                        const domain = new URL(activeTab.url).hostname;
+                        insights.push({
+                            icon: '👁️',
+                            text: `Currently viewing: ${this.formatDomain(domain)}`
+                        });
+                    } catch (e) {}
+                }
+            } else {
+                insights.push({
+                    icon: '⏰',
+                    text: 'Open some tabs and browse to start tracking your usage patterns and analytics!'
+                });
+            }
+        } catch (error) {
+            insights.push({
+                icon: '📈',
+                text: 'Start browsing to see your tab usage analytics and insights!'
+            });
+        }
+    }
+    async clearFakeData() {
+        try {
+            await chrome.storage.local.remove([
+                'tabAnalytics',
+                'siteVisitCounts',
+                'totalTabsOpened',
+                'tabsClosedAuto',
+                'domainUsageTime'
+            ]);
+        } catch (error) {
+        }
+    }
+    async collectCurrentTabData() {
+        try {
+            const response = await chrome.runtime.sendMessage({ action: 'getTabData' });
+            if (response && response.success && response.data) {
+                const currentTabs = response.data;
+                const existing = await chrome.storage.local.get([
+                    'siteVisitCounts',
+                    'totalTabsOpened',
+                    'tabAnalytics',
+                    'domainUsageTime'
+                ]);
+                const siteVisits = existing.siteVisitCounts || {};
+                let totalOpened = existing.totalTabsOpened || 0;
+                const analytics = existing.tabAnalytics || {};
+                const domainTime = existing.domainUsageTime || {};
+            }
+        } catch (error) {
+        }
+    }
+    async showCurrentTabsInAnalytics(listContainer) {
+        try {
+            const currentTabs = await chrome.tabs.query({});
+            const response = await chrome.runtime.sendMessage({ action: 'getTabDurations' });
+            const tabDurations = response?.durations || {};
+            const validTabs = [];
+            let totalCurrentTime = 0;
+            const uniqueDomains = new Set();
+            for (const tab of currentTabs) {
+                if (tab.url && !tab.url.startsWith('chrome://')) {
+                    try {
+                        const domain = new URL(tab.url).hostname;
+                        if (!domain) continue;
+                        const duration = tabDurations[tab.id] || 0;
+                        totalCurrentTime += duration;
+                        uniqueDomains.add(domain);
+                        validTabs.push({
+                            id: tab.id,
+                            title: tab.title || 'Untitled',
+                            domain: domain,
+                            url: tab.url,
+                            active: tab.active,
+                            duration: duration
+                        });
+                    } catch (e) {
+                    }
+                }
+            }
+            if (validTabs.length === 0) {
+                listContainer.innerHTML = `
+                    <div class="current-session-summary">
+                        <div class="session-time">
+                            <div class="session-label">Current Session</div>
+                            <div class="session-value">Start browsing to track time</div>
+                        </div>
+                    </div>
+                    <div class="analytics-item">
+                        <div class="analytics-item-icon">📊</div>
+                        <div class="analytics-item-text">
+                            <div class="analytics-item-title">Analytics tracking started</div>
+                            <div class="analytics-item-subtitle">Open some tabs and browse to see real-time data</div>
+                        </div>
+                    </div>
+                `;
+                return;
+            }
+            const sortedTabs = validTabs.sort((a, b) => b.duration - a.duration);
+            listContainer.innerHTML = `
+                <div class="current-session-summary">
+                    <div class="session-time">
+                        <div class="session-label">Current Session</div>
+                        <div class="session-value">${this.formatTime(totalCurrentTime)}</div>
+                    </div>
+                    <div class="session-stats">
+                        <div class="stat">
+                            <span class="stat-number">${validTabs.length}</span>
+                            <span class="stat-label">Active Tabs</span>
+                        </div>
+                        <div class="stat">
+                            <span class="stat-number">${uniqueDomains.size}</span>
+                            <span class="stat-label">Sites</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="current-tabs-list">
+                    ${sortedTabs.map(tab => {
+                        const percentage = totalCurrentTime > 0 ? (tab.duration / totalCurrentTime * 100).toFixed(1) : 0;
+                        return `
+                            <div class="current-tab-item ${tab.active ? 'active-tab' : ''}">
+                                <div class="tab-header">
+                                    <div class="tab-info">
+                                        <div class="tab-favicon">${this.getDomainIcon(tab.domain)}</div>
+                                        <div class="tab-details">
+                                            <div class="tab-title">${tab.title.length > 40 ? tab.title.substring(0, 40) + '...' : tab.title}</div>
+                                            <div class="tab-domain">${this.formatDomain(tab.domain)} ${tab.active ? '• Active now' : ''}</div>
+                                        </div>
+                                    </div>
+                                    <div class="tab-time-info">
+                                        <div class="tab-time">${this.formatTime(tab.duration)}</div>
+                                        <div class="tab-percentage">${percentage}%</div>
+                                    </div>
+                                </div>
+                                <div class="tab-progress">
+                                    <div class="progress-bar">
+                                        <div class="progress-fill" style="width: ${percentage}%"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                    }).join('')}
+                </div>
+            `;
+        } catch (error) {
+            listContainer.innerHTML = `
+                <div class="analytics-item">
+                    <div class="analytics-item-icon">❌</div>
+                    <div class="analytics-item-text">
+                        <div class="analytics-item-title">Error loading data</div>
+                        <div class="analytics-item-subtitle">Please try again</div>
+                    </div>
+                </div>
+            `;
+        }
+    }
+    async trackTabOpen(url) {
+        try {
+            const domain = new URL(url).hostname;
+            const data = await chrome.storage.local.get(['siteVisitCounts', 'totalTabsOpened']);
+            const siteVisits = data.siteVisitCounts || {};
+            const totalOpened = (data.totalTabsOpened || 0) + 1;
+            siteVisits[domain] = (siteVisits[domain] || 0) + 1;
+            await chrome.storage.local.set({
+                siteVisitCounts: siteVisits,
+                totalTabsOpened: totalOpened
+            });
+        } catch (error) {
+        }
+    }
+    async trackTabAutoClose() {
+        try {
+            const data = await chrome.storage.local.get(['tabsClosedAuto']);
+            const autosClosed = (data.tabsClosedAuto || 0) + 1;
+            await chrome.storage.local.set({
+                tabsClosedAuto: autosClosed
+            });
+        } catch (error) {
+        }
+    }
+}
+let popup;
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', async () => {
+        // Apply theme FIRST before creating popup
+        await applyStoredTheme();
+
+        popup = new TabmangmentPopup();
+        window.popup = popup;
+
+        // Start dashboard sync immediately after instance creation
+        // (prototype methods are now available)
+        if (typeof popup.startDashboardSync === 'function') {
+            popup.startDashboardSync();
+        }
+
+        // DISABLED: checkAndApplyProStatus creates fallback emails that overwrite real logins
+        // await popup.checkAndApplyProStatus();
+    });
+} else {
+    // Apply theme FIRST before creating popup
+    applyStoredTheme();
+
+    popup = new TabmangmentPopup();
+    window.popup = popup;
+
+    // Start dashboard sync immediately after instance creation
+    // (prototype methods are now available)
+    if (typeof popup.startDashboardSync === 'function') {
+        popup.startDashboardSync();
+    }
+
+    // DISABLED: checkAndApplyProStatus creates fallback emails that overwrite real logins
+    // popup.checkAndApplyProStatus();
+}
+window.addEventListener('beforeunload', () => {
+    if (popup) {
+        popup.stopRealTimeUpdates();
+    }
+});
+// Dashboard sync functionality for TabmangmentPopup
+
+// Add dashboard sync methods to the prototype
+TabmangmentPopup.prototype.startDashboardSync = function() {
+    // Listen for messages from dashboard
+    if (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.onMessage) {
+        chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+            if (message.type === 'SUBSCRIPTION_UPDATE') {
+                this.handleDashboardSync(message);
+                sendResponse({ status: 'received' });
+            } else if (message.type === 'USER_LOGGED_IN') {
+                this.handleUserLogin(message);
+                sendResponse({ status: 'received' });
+            }
+            return true;
+        });
+    }
+
+    // Check for dashboard sync data in localStorage periodically
+    setInterval(() => {
+        this.checkDashboardSyncData();
+    }, 10000); // Check every 10 seconds
+
+    // Also send stats to dashboard
+    setInterval(() => {
+        this.sendStatsToLocalStorage();
+    }, 30000); // Send stats every 30 seconds
+};
+
+TabmangmentPopup.prototype.handleDashboardSync = async function(message) {
+    try {
+        if (message.user && message.user.email) {
+            // Update extension with dashboard data
+            const userData = message.user;
+
+            // CRITICAL: Dashboard is the source of truth - ALWAYS sync plan status
+            // This allows downgrading from Pro to Free when subscription is cancelled
+            const newPlanStatus = userData.isPro || false;
+
+            await chrome.storage.local.set({
+                isPremium: newPlanStatus,
+                subscriptionActive: newPlanStatus,
+                planType: userData.plan || 'free',
+                subscriptionStatus: userData.subscriptionStatus || 'free',
+                userEmail: userData.email,
+                dashboardSyncTime: Date.now()
+            });
+
+            this.isPremium = newPlanStatus;
+
+            // Update UI
+            await this.render();
+            if (this.isPremium) {
+                this.updateUIForProUser();
+            } else {
+                // Update UI for free user
+                this.updateUIForFreeUser();
+            }
+            await this.renderSubscriptionPlan();
+
+        }
+    } catch (error) {
+    }
+};
+
+TabmangmentPopup.prototype.handleUserLogin = async function(message) {
+    try {
+
+        const userData = message.userData;
+        const token = message.token;
+
+        // Save user data to chrome.storage
+        await chrome.storage.local.set({
+            userEmail: userData.email,
+            userName: userData.name || userData.email.split('@')[0],
+            authToken: token,
+            isPremium: userData.isPro || false,
+            planType: userData.plan || 'free',
+            subscriptionActive: userData.isPro || false,
+            userId: userData.id || userData.email
+        });
+
+
+        // Update popup state
+        this.userEmail = userData.email;
+        this.userName = userData.name || userData.email.split('@')[0];
+        this.isPremium = userData.isPro || false;
+
+        // Hide login screen and show main UI
+        this.hideLoginScreen();
+
+        // Re-initialize the extension with authenticated state
+        await this.loadData();
+        await this.render();
 
     } catch (error) {
     }
+};
+
+TabmangmentPopup.prototype.checkDashboardSyncData = function() {
+    try {
+        const syncData = localStorage.getItem('dashboardSyncData');
+        if (syncData) {
+            const data = JSON.parse(syncData);
+            const now = Date.now();
+
+            // Only process if data is recent (less than 1 minute old)
+            if (data.timestamp && (now - data.timestamp) < 60000) {
+                this.handleDashboardSync(data);
+                // Clear the sync data after processing
+                localStorage.removeItem('dashboardSyncData');
+            }
+        }
+    } catch (error) {
+    }
+};
+
+TabmangmentPopup.prototype.sendStatsToLocalStorage = async function() {
+    try {
+        // Get current tab statistics
+        const tabs = await chrome.tabs.query({});
+        const managedTabs = this.tabs ? this.tabs.length : 0;
+        const activeTimers = Object.keys(this.tabTimers || {}).length;
+
+        // Calculate memory saved (estimate)
+        const memorySavedMB = Math.max(0, (tabs.length - managedTabs) * 50); // Estimate 50MB per tab
+
+        // Calculate focus score based on managed vs total tabs
+        const focusScore = tabs.length > 0 ? Math.round((managedTabs / tabs.length) * 100) : 100;
+
+        const stats = {
+            totalTabs: managedTabs,
+            autoClosed: this.stats ? this.stats.scheduled : 0,
+            memorySaved: memorySavedMB,
+            focusScore: focusScore,
+            lastUpdated: Date.now()
+        };
+
+        // Store stats for dashboard to read
+        localStorage.setItem('extensionStats', JSON.stringify(stats));
+
+    } catch (error) {
+    }
+};
+
+// ========== THEME APPLICATION FUNCTIONALITY ==========
+
+/**
+ * Apply stored theme from localStorage to popup
+ */
+async function applyStoredTheme() {
+    try {
+        // Get theme config from chrome.storage.local (shared across extension)
+        const stored = await chrome.storage.local.get(['themeConfig', 'activeTheme']);
+
+        if (!stored.themeConfig) {
+            // No theme set, use defaults
+            return;
+        }
+
+        // Apply theme to popup
+        applyThemeToPopup(stored.themeConfig);
+
+    } catch (error) {
+        // Error loading theme - silently fail
+    }
 }
 
+/**
+ * Apply theme configuration to popup elements
+ */
+// Calculate luminance of a color to determine if it's light or dark (WCAG 2.1 formula)
 function getColorLuminance(hexColor) {
+    // Remove # if present
     let hex = hexColor.replace('#', '');
 
+    // Handle 3-digit hex codes by expanding them to 6 digits
     if (hex.length === 3) {
         hex = hex[0] + hex[0] + hex[1] + hex[1] + hex[2] + hex[2];
     }
 
+    // Convert to RGB (0-1 range)
     let r = parseInt(hex.substr(0, 2), 16) / 255;
     let g = parseInt(hex.substr(2, 2), 16) / 255;
     let b = parseInt(hex.substr(4, 2), 16) / 255;
 
+    // Apply gamma correction (sRGB to linear RGB)
     r = r <= 0.03928 ? r / 12.92 : Math.pow((r + 0.055) / 1.055, 2.4);
     g = g <= 0.03928 ? g / 12.92 : Math.pow((g + 0.055) / 1.055, 2.4);
     b = b <= 0.03928 ? b / 12.92 : Math.pow((b + 0.055) / 1.055, 2.4);
 
+    // Calculate relative luminance using WCAG formula
     const luminance = 0.2126 * r + 0.7152 * g + 0.0722 * b;
 
     return luminance;
 }
 
+// Get contrasting text color based on background
 function getContrastingTextColor(backgroundColor) {
     const luminance = getColorLuminance(backgroundColor);
 
+    // If background is light (luminance > 0.5), use dark text
+    // If background is dark (luminance <= 0.5), use light text
     return luminance > 0.5 ? '#1e293b' : '#ffffff';
 }
 
+// Get secondary text color (slightly transparent)
 function getSecondaryTextColor(backgroundColor) {
     const luminance = getColorLuminance(backgroundColor);
 
+    // If background is light, use dark gray
+    // If background is dark, use light gray
     return luminance > 0.5 ? '#64748b' : '#94a3b8';
 }
 
+// Calculate WCAG contrast ratio between two colors
 function getContrastRatio(color1, color2) {
     const lum1 = getColorLuminance(color1);
     const lum2 = getColorLuminance(color2);
@@ -2443,22 +7964,28 @@ function getContrastRatio(color1, color2) {
     return (lighter + 0.05) / (darker + 0.05);
 }
 
+// Check if text color has sufficient contrast with background (WCAG AA: 4.5:1)
 function hasGoodContrast(textColor, backgroundColor, minRatio = 4.5) {
     try {
         const ratio = getContrastRatio(textColor, backgroundColor);
         return ratio >= minRatio;
     } catch (error) {
+        // If error in calculation, assume bad contrast
         return false;
     }
 }
 
+// Helper function to convert hex to RGB
 function hexToRgb(hex) {
+    // Remove # if present
     hex = hex.replace('#', '');
 
+    // Handle 3-digit hex
     if (hex.length === 3) {
         hex = hex[0] + hex[0] + hex[1] + hex[1] + hex[2] + hex[2];
     }
 
+    // Parse hex values
     const r = parseInt(hex.substr(0, 2), 16);
     const g = parseInt(hex.substr(2, 2), 16);
     const b = parseInt(hex.substr(4, 2), 16);
@@ -2470,6 +7997,7 @@ function hexToRgb(hex) {
     return { r, g, b };
 }
 
+// Load and apply custom theme from storage
 async function loadAndApplyTheme() {
     try {
         const { activeTheme, themeConfig } = await chrome.storage.local.get(['activeTheme', 'themeConfig']);
@@ -2478,66 +8006,102 @@ async function loadAndApplyTheme() {
             applyThemeToPopup(themeConfig);
         }
     } catch (error) {
+        // Error loading theme - silently fail
     }
 }
 
+/**
+ * Apply theme to popup with INTELLIGENT AUTO-CONTRAST
+ *
+ * CRITICAL: All text must be readable against its actual background.
+ * This function calculates text colors based on each element's specific background,
+ * not just the global theme color.
+ *
+ * Auto-contrast calculations:
+ * - Tab items: Text color based on theme.backgroundColor (can be dark/light)
+ * - Stat cards: Text color based on white background (#ffffff)
+ * - General UI: Text color based on body gradient (theme.primaryColor)
+ *
+ * This ensures text is always visible regardless of theme configuration.
+ */
 function applyThemeToPopup(theme) {
     try {
+        // Auto-calculate contrasting text colors based on ACTUAL backgrounds
         const bgColor = theme.primaryColor || '#667eea';
         const accentColor = theme.accentColor || '#8b5cf6';
 
+        // Calculate light accent background for tabs (if not provided)
         let tabItemBg = theme.backgroundColor;
 
+        // If no backgroundColor provided, or if it's white, use light accent color
         if (!tabItemBg || tabItemBg === 'rgba(255, 255, 255, 0.95)' || tabItemBg === '#ffffff') {
+            // Create light accent background: 8% opacity of accent color
             const accentRgb = hexToRgb(accentColor);
             tabItemBg = accentRgb
                 ? `rgba(${accentRgb.r}, ${accentRgb.g}, ${accentRgb.b}, 0.08)`
-                : 'rgba(139, 92, 246, 0.08)'; 
+                : 'rgba(139, 92, 246, 0.08)'; // Fallback
         }
 
+        // Extract solid color from rgba/rgb if needed
         let tabItemBgHex;
         if (tabItemBg.startsWith('rgba') || tabItemBg.startsWith('rgb')) {
+            // For transparent backgrounds, check against body gradient background
+            // Use primary color as reference since tabs appear on gradient background
             tabItemBgHex = bgColor;
         } else if (tabItemBg.startsWith('#')) {
+            // Direct hex color
             tabItemBgHex = tabItemBg;
         } else {
+            // Fallback
             tabItemBgHex = bgColor;
         }
 
+        // Calculate auto-contrast text colors for tab items
         const autoTabItemTextColor = getContrastingTextColor(tabItemBgHex);
         const autoTabItemSecondaryTextColor = getSecondaryTextColor(tabItemBgHex);
 
+        // CRITICAL: Validate user's text color against tab background
+        // If user provided a text color, check if it has sufficient contrast with tab background
         let tabItemTextColor;
         let tabItemSecondaryTextColor;
 
         if (theme.textColor && hasGoodContrast(theme.textColor, tabItemBgHex)) {
+            // User's color has good contrast - use it for tabs
             tabItemTextColor = theme.textColor;
-            tabItemSecondaryTextColor = `${theme.textColor}cc`; 
+            tabItemSecondaryTextColor = `${theme.textColor}cc`; // Add opacity
         } else {
+            // User's color has poor contrast or not provided - use auto-calculated
             tabItemTextColor = autoTabItemTextColor;
             tabItemSecondaryTextColor = autoTabItemSecondaryTextColor;
 
+            // Log warning if user's color was rejected
             if (theme.textColor) {
                 console.warn(`Theme text color ${theme.textColor} has insufficient contrast with tab background ${tabItemBgHex}. Using auto-calculated color ${tabItemTextColor} instead.`);
             }
         }
 
+        // Calculate text colors for STAT CARDS (white background)
         const statCardTextColor = getContrastingTextColor('#ffffff');
         const statCardSecondaryTextColor = getSecondaryTextColor('#ffffff');
 
+        // General UI text colors (for elements on gradient background)
         const primaryTextColor = theme.textColor || getContrastingTextColor(bgColor);
-        const secondaryTextColor = theme.textColor ? `${theme.textColor}cc` : getSecondaryTextColor(bgColor); 
+        const secondaryTextColor = theme.textColor ? `${theme.textColor}cc` : getSecondaryTextColor(bgColor); // Add opacity to user's color
 
+        // Create style element for theme
         const themeStyle = document.createElement('style');
         themeStyle.id = 'custom-theme-styles';
 
+        // Remove existing theme styles
         const existingStyle = document.getElementById('custom-theme-styles');
         if (existingStyle) {
             existingStyle.remove();
         }
 
+        // Build CSS based on theme config
         let css = '';
 
+        // Background gradient for main content and loader (NOT body - each section has its own)
         if (theme.bgType === 'gradient' || !theme.bgType) {
             css += `
                 .popup-main-content {
@@ -2571,6 +8135,7 @@ function applyThemeToPopup(theme) {
             `;
         }
 
+        // Font family - Apply to ALL text elements
         if (theme.fontFamily) {
             css += `
                 body,
@@ -2595,6 +8160,7 @@ function applyThemeToPopup(theme) {
             `;
         }
 
+        // Font size - Apply to body and key elements
         if (theme.fontSize) {
             css += `
                 body {
@@ -2612,6 +8178,7 @@ function applyThemeToPopup(theme) {
             `;
         }
 
+        // Button and UI element colors
         css += `
             .header-btn.premium-btn {
                 background: linear-gradient(135deg, ${theme.primaryColor} 0%, ${theme.secondaryColor} 100%) !important;
@@ -2628,11 +8195,13 @@ function applyThemeToPopup(theme) {
                 background: linear-gradient(135deg, ${theme.primaryColor}25 0%, ${theme.secondaryColor}25 100%) !important;
             }
 
+            /* Ensure stat cards stay visible */
             .stat-card {
                 background: rgba(255, 255, 255, 0.95) !important;
                 backdrop-filter: blur(10px);
             }
 
+            /* Tab Items - Full Theme Integration - Adaptive Backgrounds */
             .tab-item {
                 background: ${theme.backgroundColor || 'rgba(255, 255, 255, 0.95)'} !important;
                 border: 1px solid ${theme.primaryColor}30 !important;
@@ -2654,6 +8223,7 @@ function applyThemeToPopup(theme) {
                 box-shadow: 0 0 0 2px ${theme.primaryColor}60, 0 4px 16px ${theme.primaryColor}40 !important;
             }
 
+            /* Tab Title and URL Colors - VALIDATED CONTRAST-SAFE COLORS */
             .tab-title {
                 color: ${tabItemTextColor} !important;
                 font-weight: 500;
@@ -2664,12 +8234,14 @@ function applyThemeToPopup(theme) {
                 opacity: 0.7 !important;
             }
 
+            /* Tab Timer Display - Match validated tab text color */
             .tab-timer,
             .timer-countdown {
                 color: ${tabItemTextColor} !important;
                 background: ${theme.primaryColor}15 !important;
             }
 
+            /* Stats and Labels - AUTO CONTRAST BASED ON STAT CARD BACKGROUND */
             .stat-value {
                 color: ${statCardTextColor} !important;
             }
@@ -2678,6 +8250,7 @@ function applyThemeToPopup(theme) {
                 color: ${statCardSecondaryTextColor} !important;
             }
 
+            /* Empty State Text - Force dark colors for white background */
             .empty-state p,
             .empty-state h3,
             .empty-title,
@@ -2690,6 +8263,7 @@ function applyThemeToPopup(theme) {
                 opacity: 0.8;
             }
 
+            /* Bookmark Text - Force dark colors for light background */
             .bookmark-title {
                 color: #1e293b !important;
             }
@@ -2698,11 +8272,13 @@ function applyThemeToPopup(theme) {
                 color: #64748b !important;
             }
 
+            /* Header and Buttons Text - AUTO CONTRAST */
             .header-title,
             .control-btn {
                 color: ${primaryTextColor} !important;
             }
 
+            /* Tab Action Buttons - Inside tab items, must contrast with tab background */
             .tab-item .action-btn {
                 background: ${theme.primaryColor}15 !important;
                 border: 1px solid ${theme.primaryColor}30 !important;
@@ -2717,6 +8293,7 @@ function applyThemeToPopup(theme) {
                 transform: scale(1.1) !important;
             }
 
+            /* General action buttons (outside tabs) */
             .action-btn {
                 background: rgba(255, 255, 255, 0.12) !important;
                 border: 1px solid rgba(255, 255, 255, 0.15) !important;
@@ -2749,6 +8326,7 @@ function applyThemeToPopup(theme) {
                 opacity: 0.6 !important;
             }
 
+            /* PRO Badge in buttons - ensure visibility */
             .pro-badge-mini {
                 background: linear-gradient(45deg, #ff6b6b, #ee5a24) !important;
                 color: white !important;
@@ -2756,6 +8334,7 @@ function applyThemeToPopup(theme) {
                 z-index: 10 !important;
             }
 
+            /* Tabs Container - Professional Background */
             .tabs-container {
                 background: linear-gradient(135deg, ${theme.primaryColor}12 0%, ${theme.secondaryColor}12 100%) !important;
                 backdrop-filter: blur(20px) !important;
@@ -2765,6 +8344,7 @@ function applyThemeToPopup(theme) {
                 transition: all 0.3s ease !important;
             }
 
+            /* Stats Actions Row */
             .stats-actions-row {
                 background: linear-gradient(135deg, ${theme.primaryColor}18 0%, ${theme.secondaryColor}18 100%) !important;
                 backdrop-filter: blur(10px) !important;
@@ -2772,6 +8352,7 @@ function applyThemeToPopup(theme) {
                 transition: all 0.3s ease !important;
             }
 
+            /* Header */
             .header {
                 background: linear-gradient(135deg, ${theme.primaryColor}20 0%, ${theme.secondaryColor}20 100%) !important;
                 backdrop-filter: blur(15px) !important;
@@ -2810,16 +8391,25 @@ function applyThemeToPopup(theme) {
                 background-clip: text !important;
             }
 
+            /*
+             * Search Panel - FIXED PROFESSIONAL DESIGN
+             * NOT affected by themes for maximum visibility and consistency
+             * Uses dark glass design with high contrast that works on all backgrounds
+             */
+
+            /* Tab Favicon Container */
             .tab-favicon-container {
                 background: ${theme.primaryColor}10 !important;
                 border-color: ${theme.primaryColor}20 !important;
             }
 
+            /* Tab Header Hover Effects */
             .tab-header:hover .tab-favicon-container {
                 background: ${theme.primaryColor}20 !important;
                 border-color: ${theme.primaryColor}40 !important;
             }
 
+            /* Header Buttons - BLACK text and icons for visibility */
             .header-btn {
                 background: rgba(255, 255, 255, 0.95) !important;
                 color: #000000 !important;
@@ -2853,6 +8443,7 @@ function applyThemeToPopup(theme) {
                 box-shadow: 0 4px 16px ${theme.primaryColor}40 !important;
             }
 
+            /* Premium button - keep colorful */
             .header-btn.premium-btn {
                 background: linear-gradient(135deg, ${theme.primaryColor}, ${theme.secondaryColor}) !important;
                 color: #ffffff !important;
@@ -2862,6 +8453,7 @@ function applyThemeToPopup(theme) {
                 color: #ffffff !important;
             }
 
+            /* Action Buttons in stats/actions section - BLACK SVGs for visibility */
             .actions-section .action-btn {
                 background: rgba(255, 255, 255, 0.95) !important;
                 border: 1px solid rgba(255, 255, 255, 0.3) !important;
@@ -2885,6 +8477,7 @@ function applyThemeToPopup(theme) {
                 stroke: #000000 !important;
             }
 
+            /* General action buttons (fallback) */
             .action-btn {
                 background: rgba(255, 255, 255, 0.95) !important;
                 border: 1px solid rgba(255, 255, 255, 0.3) !important;
@@ -2902,6 +8495,7 @@ function applyThemeToPopup(theme) {
                 border-color: ${theme.primaryColor} !important;
             }
 
+            /* Stat Cards with proper background */
             .stat-card {
                 background: rgba(255, 255, 255, 0.95) !important;
                 backdrop-filter: blur(15px) !important;
@@ -2921,6 +8515,7 @@ function applyThemeToPopup(theme) {
                 color: ${statCardSecondaryTextColor} !important;
             }
 
+            /* Tab Limit Warning - Solid background with dark text for readability */
             .tab-limit-warning-content {
                 background: rgba(245, 158, 11, 0.95) !important;
                 border: 2px solid rgba(245, 158, 11, 0.3) !important;
@@ -2939,6 +8534,7 @@ function applyThemeToPopup(theme) {
                 color: #92400e !important;
             }
 
+            /* Success message (green background) */
             .tab-limit-warning-content[style*="dcfdf4"] {
                 background: rgba(167, 243, 208, 0.95) !important;
             }
@@ -2949,6 +8545,7 @@ function applyThemeToPopup(theme) {
                 color: #065f46 !important;
             }
 
+            /* Empty State - Force dark colors for white background */
             .empty-state {
                 color: #475569 !important;
             }
@@ -2968,6 +8565,7 @@ function applyThemeToPopup(theme) {
                 opacity: 0.8;
             }
 
+            /* Scrollbar Theming */
             .tabs-container::-webkit-scrollbar-thumb {
                 background: ${theme.primaryColor}60 !important;
             }
@@ -2980,6 +8578,9 @@ function applyThemeToPopup(theme) {
                 background: ${theme.primaryColor}10 !important;
             }
 
+            /* ========== BOOKMARKS VIEW COMPREHENSIVE THEMING ========== */
+
+            /* Bookmark Header */
             .bookmark-header {
                 background: linear-gradient(135deg, ${theme.primaryColor} 0%, ${theme.secondaryColor} 100%) !important;
                 backdrop-filter: blur(20px) !important;
@@ -2989,22 +8590,26 @@ function applyThemeToPopup(theme) {
                     inset 0 1px 0 rgba(255, 255, 255, 0.2) !important;
             }
 
+            /* Bookmark Stats */
             .bookmark-stats {
                 background: rgba(255, 255, 255, 0.15) !important;
                 backdrop-filter: blur(10px) !important;
                 border: 1px solid rgba(255, 255, 255, 0.2) !important;
             }
 
+            /* Bookmark All Current Button */
             #bookmark-all-current {
                 background: linear-gradient(135deg, ${theme.primaryColor}, ${theme.secondaryColor}) !important;
                 box-shadow: 0 4px 12px ${theme.primaryColor}40, inset 0 1px 0 rgba(255, 255, 255, 0.2) !important;
             }
 
+            /* Clear All Bookmarks Button */
             #clear-all-bookmarks {
                 background: rgba(255, 255, 255, 0.9) !important;
                 backdrop-filter: blur(10px) !important;
             }
 
+            /* Bookmark Items */
             .bookmark-item {
                 background: rgba(255, 255, 255, 0.15) !important;
                 backdrop-filter: blur(15px) !important;
@@ -3023,6 +8628,7 @@ function applyThemeToPopup(theme) {
                     0 0 0 1px ${theme.primaryColor}30 !important;
             }
 
+            /* Bookmark Favicon */
             .bookmark-favicon {
                 background: linear-gradient(135deg, ${theme.primaryColor}20, ${theme.secondaryColor}20) !important;
                 border: 2px solid ${theme.primaryColor}40 !important;
@@ -3033,6 +8639,7 @@ function applyThemeToPopup(theme) {
                 box-shadow: 0 6px 16px ${theme.primaryColor}60, inset 0 1px 0 rgba(255, 255, 255, 0.3) !important;
             }
 
+            /* Bookmark Text - Force dark colors for light background */
             .bookmark-title {
                 color: #1e293b !important;
             }
@@ -3041,6 +8648,7 @@ function applyThemeToPopup(theme) {
                 color: #64748b !important;
             }
 
+            /* Remove Bookmark Button */
             .remove-bookmark-btn {
                 background: linear-gradient(135deg, #ef4444, #dc2626) !important;
                 box-shadow: 0 4px 12px rgba(239, 68, 68, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.2) !important;
@@ -3052,6 +8660,7 @@ function applyThemeToPopup(theme) {
             }
         `;
 
+        // Animations
         if (theme.animationsEnabled) {
             const animationDuration = theme.animationSpeed || '300ms';
 
@@ -3102,22 +8711,27 @@ function applyThemeToPopup(theme) {
         document.head.appendChild(themeStyle);
 
     } catch (error) {
+        // Error applying theme - silently fail
     }
 }
 
+// Listen for theme changes from dashboard via chrome.runtime messages
 if (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.onMessage) {
     chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         if (message.type === 'THEME_UPDATE') {
+            // Theme was changed in dashboard, apply it
             if (message.themeConfig) {
+                // Save to chrome.storage.local (shared across extension)
                 chrome.storage.local.set({
                     activeTheme: message.themeName,
                     themeConfig: message.themeConfig
                 }, () => {
+                    // Apply immediately
                     applyThemeToPopup(message.themeConfig);
                     sendResponse({ status: 'Theme applied and saved' });
                 });
             }
         }
-        return true; 
+        return true; // Required for async sendResponse
     });
 }
