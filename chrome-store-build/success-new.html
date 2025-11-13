@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Payment Successful - Tabmangment Pro</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            margin: 0;
+            padding: 20px;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .container {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 40px;
+            text-align: center;
+            max-width: 500px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        .success-icon {
+            font-size: 64px;
+            margin-bottom: 20px;
+            animation: bounce 1s ease-in-out;
+        }
+        @keyframes bounce {
+            0%, 20%, 50%, 80%, 100% { transform: translateY(0); }
+            40% { transform: translateY(-10px); }
+            60% { transform: translateY(-5px); }
+        }
+        h1 { margin: 0 0 20px; font-size: 28px; }
+        p { font-size: 16px; line-height: 1.6; margin-bottom: 30px; }
+        .close-btn {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+        .close-btn:hover { background: #45a049; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="success-icon">✅</div>
+        <h1>Payment Successful!</h1>
+        <p>Welcome to Tabmangment Pro! Your subscription is now active and all premium features have been unlocked.</p>
+        <p>You can now enjoy unlimited tabs and advanced features.</p>
+        <button class="close-btn" id="close-btn">Close</button>
+    </div>
+
+    <script>
+        // Universal payment success handler for all Chrome Web Store users
+        (async function() {
+            try {
+                // Get email from URL params
+                const urlParams = new URLSearchParams(window.location.search);
+                const sessionId = urlParams.get('session_id');
+                const email = urlParams.get('email');
+
+
+                if (!email) {
+                    return;
+                }
+
+                // Method 1: Try to communicate with extension directly (if user has popup open)
+                try {
+                    if (typeof chrome !== 'undefined' && chrome.runtime) {
+                        // Try to send message to extension
+                        chrome.runtime.sendMessage({
+                            type: 'PAYMENT_SUCCESS',
+                            sessionId: sessionId,
+                            email: email,
+                            timestamp: new Date().toISOString()
+                        });
+                    }
+                } catch (extError) {
+                }
+
+                // Method 2: Store in localStorage for extension to pick up
+                try {
+                    localStorage.setItem('tabmangment_payment_success', JSON.stringify({
+                        sessionId: sessionId,
+                        email: email,
+                        timestamp: new Date().toISOString(),
+                        processed: false
+                    }));
+                } catch (storageError) {
+                }
+
+                // Method 3: Post message to opener window (if extension opened this tab)
+                try {
+                    if (window.opener && !window.opener.closed) {
+                        window.opener.postMessage({
+                            type: 'PAYMENT_SUCCESS',
+                            sessionId: sessionId,
+                            email: email,
+                            timestamp: new Date().toISOString()
+                        }, '*');
+                    }
+                } catch (postError) {
+                }
+
+                // Method 4: Broadcast to all tabs (for extension content scripts)
+                try {
+                    const bc = new BroadcastChannel('tabmangment_payment');
+                    bc.postMessage({
+                        type: 'PAYMENT_SUCCESS',
+                        sessionId: sessionId,
+                        email: email,
+                        timestamp: new Date().toISOString()
+                    });
+                } catch (bcError) {
+                }
+
+                // Show success message to user
+
+            } catch (error) {
+            }
+        })();
+
+        // Auto-close after 5 seconds
+        setTimeout(() => {
+            window.close();
+        }, 5000);
+
+        // Add event listener for close button
+        document.getElementById('close-btn').addEventListener('click', () => {
+            window.close();
+        });
+    </script>
+</body>
+</html>

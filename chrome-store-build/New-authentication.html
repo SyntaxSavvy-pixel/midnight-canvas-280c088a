@@ -1,0 +1,1773 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Content-Security-Policy" content="
+        default-src 'self';
+        script-src 'self' 'unsafe-inline' 'unsafe-eval'
+            https://cdn.jsdelivr.net
+            https://*.supabase.co
+            https://unpkg.com;
+        style-src 'self' 'unsafe-inline';
+        img-src 'self' data: https: blob:;
+        font-src 'self' data:;
+        connect-src 'self'
+            https://*.supabase.co
+            wss://*.supabase.co
+            https://cdn.jsdelivr.net
+            https://unpkg.com
+            https://api.emailjs.com
+            https://tabmangment.com;
+        frame-src 'self' https://accounts.google.com https://github.com;
+        worker-src 'self' blob:;
+        object-src 'none';
+        base-uri 'self';
+        form-action 'self' https://accounts.google.com https://github.com;
+    ">
+    <title>Sign In - TabManagement</title>
+    <link rel="icon" type="image/png" sizes="32x32" href="/icons/icon-32.png">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://unpkg.com/feather-icons"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'SF Pro Display', Roboto, Helvetica, Arial, sans-serif;
+            line-height: 1.6;
+            color: #1e293b;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        .auth-container {
+            display: grid;
+            grid-template-columns: 1fr 1.2fr;
+            height: 100vh;
+            width: 100vw;
+        }
+
+        /* Left Side - Auth Form */
+        .auth-left {
+            background: #ffffff;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            overflow-y: auto;
+            overflow-x: hidden;
+        }
+
+        .auth-left::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .auth-left::-webkit-scrollbar-track {
+            background: #f1f5f9;
+        }
+
+        .auth-left::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 3px;
+        }
+
+        .auth-left::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+
+        /* Header with Logo */
+        .auth-header-logo {
+            padding: 20px 60px;
+            border-bottom: 1px solid #f1f5f9;
+        }
+
+        .logo-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 12px;
+            text-decoration: none;
+            transition: all 0.3s ease;
+        }
+
+        .logo-link:hover {
+            transform: translateX(-4px);
+        }
+
+        .logo-icon {
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            padding: 7px;
+            background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+        }
+
+        .logo-icon img {
+            width: 18px;
+            height: 18px;
+            filter: brightness(0) invert(1);
+        }
+
+        .logo-text {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: #0f172a;
+        }
+
+        /* Form Content */
+        .form-wrapper {
+            flex: 1;
+            padding: 32px 60px 40px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            max-width: 520px;
+            margin: 0 auto;
+            width: 100%;
+        }
+
+        .auth-title {
+            margin-bottom: 8px;
+        }
+
+        .auth-title h1 {
+            font-size: 1.875rem;
+            font-weight: 700;
+            color: #0f172a;
+            letter-spacing: -0.02em;
+        }
+
+        .auth-subtitle {
+            font-size: 0.875rem;
+            color: #64748b;
+            margin-bottom: 24px;
+            line-height: 1.5;
+        }
+
+        /* Tabs */
+        .form-tabs {
+            display: flex;
+            gap: 24px;
+            margin-bottom: 28px;
+            border-bottom: 2px solid #f1f5f9;
+        }
+
+        .tab-btn {
+            padding: 10px 0;
+            border: none;
+            background: transparent;
+            color: #94a3b8;
+            font-size: 0.875rem;
+            font-weight: 600;
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+            margin-bottom: -2px;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .tab-btn.active {
+            color: #6366f1;
+            border-bottom-color: #6366f1;
+        }
+
+        .tab-btn:hover:not(.active) {
+            color: #6366f1;
+        }
+
+        /* Social Buttons - Top of Form */
+        .social-buttons {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .social-btn {
+            padding: 12px;
+            border: 1.5px solid #e2e8f0;
+            background: white;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            font-size: 0.8125rem;
+            font-weight: 600;
+            color: #0f172a;
+        }
+
+        .social-btn svg {
+            width: 18px;
+            height: 18px;
+        }
+
+        .social-btn:hover {
+            border-color: #6366f1;
+            background: #f8fafc;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(99, 102, 241, 0.2);
+        }
+
+        .social-btn:active {
+            transform: translateY(0);
+        }
+
+        .divider {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            margin: 18px 0;
+            color: #94a3b8;
+            font-size: 0.8125rem;
+            font-weight: 500;
+        }
+
+        .divider::before,
+        .divider::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: #e2e8f0;
+        }
+
+        /* Form */
+        .form-content {
+            display: none;
+        }
+
+        .form-content.active {
+            display: block;
+            animation: fadeIn 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .form-group {
+            margin-bottom: 16px;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 0.8125rem;
+            font-weight: 600;
+            color: #0f172a;
+            margin-bottom: 6px;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 12px 14px;
+            border: 1.5px solid #e2e8f0;
+            border-radius: 10px;
+            font-size: 0.875rem;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            outline: none;
+            background: #ffffff;
+        }
+
+        .form-group input:focus {
+            border-color: #6366f1;
+            box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.1);
+        }
+
+        .form-group input::placeholder {
+            color: #cbd5e1;
+        }
+
+        .password-wrapper {
+            position: relative;
+        }
+
+        .password-toggle {
+            position: absolute;
+            right: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            cursor: pointer;
+            color: #94a3b8;
+            padding: 6px;
+            display: flex;
+            align-items: center;
+            transition: all 0.3s ease;
+            border-radius: 6px;
+        }
+
+        .password-toggle:hover {
+            background: #f1f5f9;
+            color: #6366f1;
+        }
+
+        .password-toggle svg {
+            width: 18px;
+            height: 18px;
+        }
+
+        /* Password Strength Bar */
+        .password-strength {
+            margin-top: 6px;
+            height: 3px;
+            background: #f1f5f9;
+            border-radius: 2px;
+            overflow: hidden;
+            display: none;
+        }
+
+        .password-strength.show {
+            display: block;
+        }
+
+        .password-strength-bar {
+            height: 100%;
+            width: 0%;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            border-radius: 2px;
+        }
+
+        .password-strength-bar.weak {
+            width: 33%;
+            background: #ef4444;
+        }
+
+        .password-strength-bar.medium {
+            width: 66%;
+            background: #f59e0b;
+        }
+
+        .password-strength-bar.strong {
+            width: 100%;
+            background: #10b981;
+        }
+
+        .password-strength-text {
+            font-size: 0.6875rem;
+            margin-top: 3px;
+            font-weight: 500;
+        }
+
+        .password-strength-text.weak {
+            color: #ef4444;
+        }
+
+        .password-strength-text.medium {
+            color: #f59e0b;
+        }
+
+        .password-strength-text.strong {
+            color: #10b981;
+        }
+
+        .form-footer {
+            text-align: right;
+            margin-bottom: 20px;
+        }
+
+        .forgot-link {
+            color: #6366f1;
+            text-decoration: none;
+            font-size: 0.8125rem;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            display: inline-block;
+        }
+
+        .forgot-link:hover {
+            color: #4f46e5;
+            text-decoration: underline;
+        }
+
+        /* Password Reset Modal */
+        .reset-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 10000;
+            align-items: center;
+            justify-content: center;
+            backdrop-filter: blur(4px);
+            animation: fadeIn 0.3s ease;
+        }
+
+        .reset-modal.show {
+            display: flex;
+        }
+
+        .reset-modal-content {
+            background: white;
+            border-radius: 16px;
+            padding: 40px;
+            max-width: 480px;
+            width: 90%;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            animation: slideUp 0.3s ease;
+            position: relative;
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .reset-modal-close {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            color: #94a3b8;
+            cursor: pointer;
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+        }
+
+        .reset-modal-close:hover {
+            background: #f1f5f9;
+            color: #0f172a;
+        }
+
+        .reset-modal h2 {
+            font-size: 1.75rem;
+            font-weight: 700;
+            color: #0f172a;
+            margin-bottom: 12px;
+        }
+
+        .reset-modal p {
+            color: #64748b;
+            margin-bottom: 24px;
+            line-height: 1.6;
+        }
+
+        .reset-success {
+            background: linear-gradient(135deg, rgba(16, 185, 129, 0.1) 0%, rgba(16, 185, 129, 0.05) 100%);
+            border: 1px solid rgba(16, 185, 129, 0.2);
+            border-radius: 12px;
+            padding: 16px;
+            margin-top: 20px;
+            display: none;
+        }
+
+        .reset-success.show {
+            display: block;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .reset-success-text {
+            color: #059669;
+            font-size: 0.875rem;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .reset-success-text svg {
+            width: 20px;
+            height: 20px;
+            flex-shrink: 0;
+        }
+
+        .submit-btn {
+            width: 100%;
+            padding: 13px;
+            border: none;
+            border-radius: 10px;
+            background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+            color: white;
+            font-size: 0.875rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+        }
+
+        .submit-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(99, 102, 241, 0.4);
+        }
+
+        .submit-btn:active {
+            transform: translateY(0);
+        }
+
+        .submit-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .loading-spinner {
+            display: none;
+            width: 18px;
+            height: 18px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-top-color: white;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .submit-btn.loading .btn-text {
+            opacity: 0;
+        }
+
+        .submit-btn.loading .loading-spinner {
+            display: inline-block;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
+
+        .register-link {
+            display: none;
+        }
+
+        /* Right Side - Animated Showcase */
+        .auth-right {
+            background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #a855f7 100%);
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 60px;
+        }
+
+        .showcase-content {
+            position: relative;
+            z-index: 2;
+            text-align: center;
+            color: white;
+            margin-bottom: 60px;
+        }
+
+        .showcase-content h2 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 16px;
+            line-height: 1.2;
+            letter-spacing: -0.02em;
+            animation: fadeInUp 0.8s ease-out;
+        }
+
+        .showcase-content p {
+            font-size: 1.125rem;
+            opacity: 0.95;
+            max-width: 500px;
+            animation: fadeInUp 0.8s ease-out 0.2s backwards;
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Infinite Scrolling Tabs Animation - Marquee Style */
+        .infinite-tabs-container {
+            position: relative;
+            width: 100%;
+            max-width: 600px;
+            height: 500px;
+            overflow: hidden;
+            z-index: 1;
+            display: flex;
+            gap: 16px;
+        }
+
+        /* Gradient fade overlays */
+        .infinite-tabs-container::before,
+        .infinite-tabs-container::after {
+            content: '';
+            position: absolute;
+            left: 0;
+            right: 0;
+            height: 25%;
+            pointer-events: none;
+            z-index: 10;
+        }
+
+        .infinite-tabs-container::before {
+            top: 0;
+            background: linear-gradient(to bottom,
+                rgba(139, 92, 246, 1) 0%,
+                rgba(139, 92, 246, 0.8) 20%,
+                rgba(139, 92, 246, 0) 100%);
+        }
+
+        .infinite-tabs-container::after {
+            bottom: 0;
+            background: linear-gradient(to top,
+                rgba(168, 85, 247, 1) 0%,
+                rgba(168, 85, 247, 0.8) 20%,
+                rgba(168, 85, 247, 0) 100%);
+        }
+
+        .tabs-column {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            flex: 1;
+            will-change: transform;
+        }
+
+        .tabs-column:nth-child(1) {
+            animation: marqueeUp 40s linear infinite;
+        }
+
+        .tabs-column:nth-child(2) {
+            animation: marqueeDown 45s linear infinite;
+        }
+
+        @keyframes marqueeUp {
+            0% {
+                transform: translateY(0);
+            }
+            100% {
+                transform: translateY(-50%);
+            }
+        }
+
+        @keyframes marqueeDown {
+            0% {
+                transform: translateY(-50%);
+            }
+            100% {
+                transform: translateY(0);
+            }
+        }
+
+        .tab-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 12px;
+            padding: 14px 16px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            min-height: 64px;
+            flex-shrink: 0;
+            transition: all 0.3s ease;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .tab-card:hover {
+            transform: scale(1.02);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+        }
+
+        .tab-favicon {
+            width: 28px;
+            height: 28px;
+            border-radius: 6px;
+            flex-shrink: 0;
+            object-fit: contain;
+            background: white;
+            padding: 6px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+        }
+
+        .tab-info {
+            flex: 1;
+            min-width: 0;
+            text-align: left;
+        }
+
+        .tab-title {
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: #0f172a;
+            margin-bottom: 2px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .tab-url {
+            font-size: 0.75rem;
+            color: #64748b;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        /* Notification */
+        .notification {
+            position: fixed;
+            top: 24px;
+            right: 24px;
+            padding: 16px 24px;
+            border-radius: 12px;
+            background: white;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            z-index: 10000;
+            animation: slideInRight 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            max-width: 400px;
+        }
+
+        @keyframes slideInRight {
+            from {
+                opacity: 0;
+                transform: translateX(100px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        .notification.success {
+            border-left: 4px solid #10b981;
+        }
+
+        .notification.error {
+            border-left: 4px solid #ef4444;
+        }
+
+        .notification-icon {
+            width: 24px;
+            height: 24px;
+        }
+
+        .notification.success .notification-icon {
+            color: #10b981;
+        }
+
+        .notification.error .notification-icon {
+            color: #ef4444;
+        }
+
+        .notification-message {
+            color: #1e293b;
+            font-size: 0.9375rem;
+            font-weight: 500;
+        }
+
+        /* Responsive */
+        @media (max-width: 1024px) {
+            .auth-container {
+                grid-template-columns: 1fr;
+            }
+
+            .auth-right {
+                display: none;
+            }
+
+            .form-wrapper {
+                max-width: 540px;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .auth-header-logo {
+                padding: 20px 24px;
+            }
+
+            .form-wrapper {
+                padding: 32px 24px;
+            }
+
+            .auth-title h1 {
+                font-size: 1.75rem;
+            }
+
+            .social-buttons {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="auth-container">
+        <!-- Left Side - Form -->
+        <div class="auth-left">
+            <!-- Header with Logo -->
+            <div class="auth-header-logo">
+                <a href="/" class="logo-link">
+                    <div class="logo-icon">
+                        <img src="/icons/icon-48.png" alt="TabManagement">
+                    </div>
+                    <div class="logo-text">TabManagement</div>
+                </a>
+            </div>
+
+            <!-- Form Content -->
+            <div class="form-wrapper">
+                <div class="auth-title">
+                    <h1>Welcome Back</h1>
+                </div>
+                <div class="auth-subtitle">
+                    Enter your email and password to access your account.
+                </div>
+
+                <!-- Tabs -->
+                <div class="form-tabs">
+                    <button class="tab-btn active" onclick="switchTab('login')">Sign In</button>
+                    <button class="tab-btn" onclick="switchTab('signup')">Sign Up</button>
+                </div>
+
+                <!-- Login Form -->
+                <div id="login-form" class="form-content active">
+                    <!-- Social Buttons at Top -->
+                    <div class="social-buttons">
+                        <button class="social-btn" onclick="handleGoogleLogin()">
+                            <svg viewBox="0 0 24 24"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>
+                            <span>Google</span>
+                        </button>
+                        <button class="social-btn" onclick="handleGithubLogin()">
+                            <svg viewBox="0 0 24 24"><path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/></svg>
+                            <span>GitHub</span>
+                        </button>
+                    </div>
+
+                    <div class="divider">Or continue with email</div>
+
+                    <form onsubmit="handleEmailLogin(event)">
+                        <div class="form-group">
+                            <label for="login-email">Email</label>
+                            <input type="email" id="login-email" placeholder="you@company.com" required autocomplete="email">
+                        </div>
+                        <div class="form-group">
+                            <label for="login-password">Password</label>
+                            <div class="password-wrapper">
+                                <input type="password" id="login-password" placeholder="Enter your password" required autocomplete="current-password">
+                                <button type="button" class="password-toggle" onclick="togglePassword('login-password', this)" title="Show password">
+                                    <i data-feather="eye"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="form-footer">
+                            <a href="#" class="forgot-link" onclick="showForgotPasswordModal(); return false;">Forgot Your Password?</a>
+                        </div>
+                        <button type="submit" class="submit-btn" id="login-btn">
+                            <span class="btn-text">Log In</span>
+                            <span class="loading-spinner"></span>
+                        </button>
+                    </form>
+
+                    <div class="register-link">
+                        Don't Have An Account? <a href="#" onclick="switchTab('signup'); return false;">Register Now</a>
+                    </div>
+                </div>
+
+                <!-- Signup Form -->
+                <div id="signup-form" class="form-content">
+                    <!-- Social Buttons at Top -->
+                    <div class="social-buttons">
+                        <button class="social-btn" onclick="handleGoogleLogin()">
+                            <svg viewBox="0 0 24 24"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>
+                            <span>Google</span>
+                        </button>
+                        <button class="social-btn" onclick="handleGithubLogin()">
+                            <svg viewBox="0 0 24 24"><path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/></svg>
+                            <span>GitHub</span>
+                        </button>
+                    </div>
+
+                    <div class="divider">Or sign up with email</div>
+
+                    <form onsubmit="handleEmailSignup(event)">
+                        <div class="form-group">
+                            <label for="signup-name">Full Name</label>
+                            <input type="text" id="signup-name" placeholder="John Doe" required autocomplete="name">
+                        </div>
+                        <div class="form-group">
+                            <label for="signup-email">Email</label>
+                            <input type="email" id="signup-email" placeholder="you@company.com" required autocomplete="email">
+                        </div>
+                        <div class="form-group">
+                            <label for="signup-password">Password</label>
+                            <div class="password-wrapper">
+                                <input type="password" id="signup-password" placeholder="Create a strong password" required minlength="6" autocomplete="new-password" oninput="checkPasswordStrength(this.value)">
+                                <button type="button" class="password-toggle" onclick="togglePassword('signup-password', this)" title="Show password">
+                                    <i data-feather="eye"></i>
+                                </button>
+                            </div>
+                            <div class="password-strength" id="password-strength">
+                                <div class="password-strength-bar" id="strength-bar"></div>
+                            </div>
+                            <div class="password-strength-text" id="strength-text"></div>
+                        </div>
+                        <button type="submit" class="submit-btn" id="signup-btn">
+                            <span class="btn-text">Create Account</span>
+                            <span class="loading-spinner"></span>
+                        </button>
+                    </form>
+
+                    <div class="register-link">
+                        Already Have An Account? <a href="#" onclick="switchTab('login'); return false;">Sign In</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Side - Infinite Scrolling Tabs -->
+        <div class="auth-right">
+            <div class="showcase-content">
+                <h2>Effortlessly manage your tabs<br>and productivity.</h2>
+                <p>Log in to access your tab dashboard and manage your browsing efficiently.</p>
+            </div>
+
+            <div class="infinite-tabs-container">
+                <!-- Tabs columns will be dynamically generated -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Password Reset Modal -->
+    <div class="reset-modal" id="reset-modal">
+        <div class="reset-modal-content">
+            <button class="reset-modal-close" onclick="closeForgotPasswordModal()">&times;</button>
+            <h2>Reset Your Password</h2>
+            <p>Enter your email address and we'll send you a link to reset your password. If the email exists in our system, you'll receive a password reset link within a few minutes.</p>
+
+            <form onsubmit="handlePasswordReset(event)">
+                <div class="form-group">
+                    <label for="reset-email">Email Address</label>
+                    <input type="email" id="reset-email" placeholder="you@company.com" required autocomplete="email">
+                </div>
+                <button type="submit" class="submit-btn" id="reset-btn">
+                    <span class="btn-text">Send Reset Link</span>
+                    <span class="loading-spinner"></span>
+                </button>
+            </form>
+
+            <div class="reset-success" id="reset-success">
+                <div class="reset-success-text">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                        <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                    </svg>
+                    <div>
+                        <strong>Email sent!</strong><br>
+                        Check your inbox and spam folder. The link expires in 1 hour.
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+const SUPABASE_URL = 'https://voislxlhfepnllamagxm.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZvaXNseGxoZmVwbmxsYW1hZ3htIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTkwMTI4MDcsImV4cCI6MjA3NDU4ODgwN30.mDdMdGg4JAInS7kXNL6-edvRaQ_mVuMGRjU7rX-hMCM';
+
+// Supabase client with proper auth config for OAuth
+const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+    auth: {
+        flowType: 'pkce', // PKCE flow for better security and reliability
+        autoRefreshToken: true,
+        persistSession: true,
+        detectSessionInUrl: true // Automatically detect and process OAuth callbacks
+    }
+});
+
+// Initialize feather icons
+document.addEventListener('DOMContentLoaded', () => {
+    feather.replace();
+    generateInfiniteTabs();
+});
+
+// Password Strength Checker
+function checkPasswordStrength(password) {
+    const strengthBar = document.getElementById('strength-bar');
+    const strengthText = document.getElementById('strength-text');
+    const strengthContainer = document.getElementById('password-strength');
+
+    if (!strengthBar || !strengthText || !strengthContainer) return;
+
+    if (password.length === 0) {
+        strengthContainer.classList.remove('show');
+        return;
+    }
+
+    strengthContainer.classList.add('show');
+
+    let strength = 0;
+    if (password.length >= 8) strength++;
+    if (password.match(/[a-z]/) && password.match(/[A-Z]/)) strength++;
+    if (password.match(/\d/)) strength++;
+    if (password.match(/[^a-zA-Z\d]/)) strength++;
+
+    strengthBar.className = 'password-strength-bar';
+    strengthText.className = 'password-strength-text';
+
+    if (strength <= 2) {
+        strengthBar.classList.add('weak');
+        strengthText.classList.add('weak');
+        strengthText.textContent = 'Weak password';
+    } else if (strength === 3) {
+        strengthBar.classList.add('medium');
+        strengthText.classList.add('medium');
+        strengthText.textContent = 'Medium password';
+    } else {
+        strengthBar.classList.add('strong');
+        strengthText.classList.add('strong');
+        strengthText.textContent = 'Strong password';
+    }
+}
+
+// Shuffle array function
+function shuffleArray(array) {
+    const shuffled = [...array];
+    for (let i = shuffled.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+    }
+    return shuffled;
+}
+
+// Generate Infinite Scrolling Tabs with Logo.dev API
+function generateInfiniteTabs() {
+    const container = document.querySelector('.infinite-tabs-container');
+    const LOGO_API_KEY = 'pk_YIMtrjZvSpG8_u5_F5uxoA';
+
+    // 100+ popular websites for infinite scroll
+    const tabExamples = [
+        { title: 'Google', domain: 'google.com' },
+        { title: 'YouTube', domain: 'youtube.com' },
+        { title: 'Facebook', domain: 'facebook.com' },
+        { title: 'Twitter', domain: 'twitter.com' },
+        { title: 'Instagram', domain: 'instagram.com' },
+        { title: 'LinkedIn', domain: 'linkedin.com' },
+        { title: 'GitHub', domain: 'github.com' },
+        { title: 'Stack Overflow', domain: 'stackoverflow.com' },
+        { title: 'Reddit', domain: 'reddit.com' },
+        { title: 'Medium', domain: 'medium.com' },
+        { title: 'Netflix', domain: 'netflix.com' },
+        { title: 'Amazon', domain: 'amazon.com' },
+        { title: 'eBay', domain: 'ebay.com' },
+        { title: 'Apple', domain: 'apple.com' },
+        { title: 'Microsoft', domain: 'microsoft.com' },
+        { title: 'Figma', domain: 'figma.com' },
+        { title: 'Notion', domain: 'notion.so' },
+        { title: 'Slack', domain: 'slack.com' },
+        { title: 'Discord', domain: 'discord.com' },
+        { title: 'Spotify', domain: 'spotify.com' },
+        { title: 'Twitch', domain: 'twitch.tv' },
+        { title: 'TikTok', domain: 'tiktok.com' },
+        { title: 'Pinterest', domain: 'pinterest.com' },
+        { title: 'Dropbox', domain: 'dropbox.com' },
+        { title: 'Gmail', domain: 'gmail.com' },
+        { title: 'Zoom', domain: 'zoom.us' },
+        { title: 'Shopify', domain: 'shopify.com' },
+        { title: 'WordPress', domain: 'wordpress.com' },
+        { title: 'Stripe', domain: 'stripe.com' },
+        { title: 'PayPal', domain: 'paypal.com' },
+        { title: 'Adobe', domain: 'adobe.com' },
+        { title: 'Canva', domain: 'canva.com' },
+        { title: 'Trello', domain: 'trello.com' },
+        { title: 'Asana', domain: 'asana.com' },
+        { title: 'Jira', domain: 'atlassian.com' },
+        { title: 'Salesforce', domain: 'salesforce.com' },
+        { title: 'HubSpot', domain: 'hubspot.com' },
+        { title: 'Mailchimp', domain: 'mailchimp.com' },
+        { title: 'Intercom', domain: 'intercom.com' },
+        { title: 'GitLab', domain: 'gitlab.com' },
+        { title: 'Bitbucket', domain: 'bitbucket.org' },
+        { title: 'DigitalOcean', domain: 'digitalocean.com' },
+        { title: 'Heroku', domain: 'heroku.com' },
+        { title: 'Vercel', domain: 'vercel.com' },
+        { title: 'Netlify', domain: 'netlify.com' },
+        { title: 'AWS', domain: 'aws.amazon.com' },
+        { title: 'Google Cloud', domain: 'cloud.google.com' },
+        { title: 'Azure', domain: 'azure.microsoft.com' },
+        { title: 'MongoDB', domain: 'mongodb.com' },
+        { title: 'PostgreSQL', domain: 'postgresql.org' },
+        { title: 'Docker', domain: 'docker.com' },
+        { title: 'Kubernetes', domain: 'kubernetes.io' },
+        { title: 'React', domain: 'react.dev' },
+        { title: 'Vue.js', domain: 'vuejs.org' },
+        { title: 'Angular', domain: 'angular.io' },
+        { title: 'Next.js', domain: 'nextjs.org' },
+        { title: 'Tailwind CSS', domain: 'tailwindcss.com' },
+        { title: 'Bootstrap', domain: 'getbootstrap.com' },
+        { title: 'NPM', domain: 'npmjs.com' },
+        { title: 'Yarn', domain: 'yarnpkg.com' },
+        { title: 'VS Code', domain: 'code.visualstudio.com' },
+        { title: 'Sublime Text', domain: 'sublimetext.com' },
+        { title: 'Chrome', domain: 'google.com/chrome' },
+        { title: 'Firefox', domain: 'mozilla.org' },
+        { title: 'Safari', domain: 'apple.com/safari' },
+        { title: 'Edge', domain: 'microsoft.com/edge' },
+        { title: 'Opera', domain: 'opera.com' },
+        { title: 'Brave', domain: 'brave.com' },
+        { title: 'Telegram', domain: 'telegram.org' },
+        { title: 'WhatsApp', domain: 'whatsapp.com' },
+        { title: 'Signal', domain: 'signal.org' },
+        { title: 'Messenger', domain: 'messenger.com' },
+        { title: 'Skype', domain: 'skype.com' },
+        { title: 'Wikipedia', domain: 'wikipedia.org' },
+        { title: 'Wikimedia', domain: 'wikimedia.org' },
+        { title: 'Coursera', domain: 'coursera.org' },
+        { title: 'Udemy', domain: 'udemy.com' },
+        { title: 'Khan Academy', domain: 'khanacademy.org' },
+        { title: 'Duolingo', domain: 'duolingo.com' },
+        { title: 'Grammarly', domain: 'grammarly.com' },
+        { title: 'Quora', domain: 'quora.com' },
+        { title: 'Tumblr', domain: 'tumblr.com' },
+        { title: 'Flickr', domain: 'flickr.com' },
+        { title: 'DeviantArt', domain: 'deviantart.com' },
+        { title: 'Behance', domain: 'behance.net' },
+        { title: 'Dribbble', domain: 'dribbble.com' },
+        { title: 'Unsplash', domain: 'unsplash.com' },
+        { title: 'Pexels', domain: 'pexels.com' },
+        { title: 'Freepik', domain: 'freepik.com' },
+        { title: 'SoundCloud', domain: 'soundcloud.com' },
+        { title: 'Bandcamp', domain: 'bandcamp.com' },
+        { title: 'Apple Music', domain: 'music.apple.com' },
+        { title: 'Deezer', domain: 'deezer.com' },
+        { title: 'Pandora', domain: 'pandora.com' },
+        { title: 'Vimeo', domain: 'vimeo.com' },
+        { title: 'Dailymotion', domain: 'dailymotion.com' },
+        { title: 'Hulu', domain: 'hulu.com' },
+        { title: 'Disney+', domain: 'disneyplus.com' },
+        { title: 'HBO Max', domain: 'hbomax.com' },
+        { title: 'Paramount+', domain: 'paramountplus.com' },
+        { title: 'Peacock', domain: 'peacocktv.com' },
+        { title: 'Crunchyroll', domain: 'crunchyroll.com' },
+    ];
+
+    // Shuffle tabs for random order
+    const shuffled = shuffleArray(tabExamples);
+
+    // Create two columns
+    const column1 = document.createElement('div');
+    const column2 = document.createElement('div');
+    column1.className = 'tabs-column';
+    column2.className = 'tabs-column';
+
+    // Split shuffled tabs into two groups
+    const midpoint = Math.ceil(shuffled.length / 2);
+    const firstHalf = shuffled.slice(0, midpoint);
+    const secondHalf = shuffled.slice(midpoint);
+
+    // Create interleaved pattern to avoid exact duplicates appearing together
+    const column1Tabs = [...firstHalf, ...shuffleArray(firstHalf)];
+    const column2Tabs = [...secondHalf, ...shuffleArray(secondHalf)];
+
+    // Generate column 1 tabs
+    column1Tabs.forEach((tab) => {
+        const tabCard = document.createElement('div');
+        tabCard.className = 'tab-card';
+        const logoUrl = `https://img.logo.dev/${tab.domain}?token=${LOGO_API_KEY}`;
+        const firstLetter = (tab.domain || tab.title || '?').charAt(0).toUpperCase();
+        tabCard.innerHTML = `
+            <img src="${logoUrl}" alt="" class="tab-favicon" loading="lazy" style="display: block;" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+            <div style="display: none; width: 24px; height: 24px; border-radius: 6px; background: linear-gradient(135deg, rgba(99, 102, 241, 0.2), rgba(139, 92, 246, 0.2)); align-items: center; justify-content: center; font-size: 12px; color: #a5b4fc; font-weight: 700; border: 1px solid rgba(99, 102, 241, 0.3); flex-shrink: 0;">
+                ${firstLetter}
+            </div>
+            <div class="tab-info">
+                <div class="tab-title">${tab.title}</div>
+                <div class="tab-url">${tab.domain}</div>
+            </div>
+        `;
+        column1.appendChild(tabCard);
+    });
+
+    // Generate column 2 tabs
+    column2Tabs.forEach((tab) => {
+        const tabCard = document.createElement('div');
+        tabCard.className = 'tab-card';
+        const logoUrl = `https://img.logo.dev/${tab.domain}?token=${LOGO_API_KEY}`;
+        const firstLetter = (tab.domain || tab.title || '?').charAt(0).toUpperCase();
+        tabCard.innerHTML = `
+            <img src="${logoUrl}" alt="" class="tab-favicon" loading="lazy" style="display: block;" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+            <div style="display: none; width: 24px; height: 24px; border-radius: 6px; background: linear-gradient(135deg, rgba(99, 102, 241, 0.2), rgba(139, 92, 246, 0.2)); align-items: center; justify-content: center; font-size: 12px; color: #a5b4fc; font-weight: 700; border: 1px solid rgba(99, 102, 241, 0.3); flex-shrink: 0;">
+                ${firstLetter}
+            </div>
+            <div class="tab-info">
+                <div class="tab-title">${tab.title}</div>
+                <div class="tab-url">${tab.domain}</div>
+            </div>
+        `;
+        column2.appendChild(tabCard);
+    });
+
+    container.appendChild(column1);
+    container.appendChild(column2);
+}
+
+// Check if user is already logged in
+(async function checkExistingSession() {
+    try {
+        // ============================================
+        // REDIRECT LOOP PREVENTION
+        // ============================================
+        const REDIRECT_COOLDOWN_MS = 2000; // 2 seconds between redirects
+        const MAX_REDIRECT_ATTEMPTS = 3;   // Max 3 attempts before giving up
+
+        // Check if we're in a redirect loop
+        const lastRedirectTime = sessionStorage.getItem('auth_last_redirect_time');
+        const redirectCount = parseInt(sessionStorage.getItem('auth_redirect_count') || '0');
+        const now = Date.now();
+
+        // If too many redirects in short time, stop and show error
+        if (redirectCount >= MAX_REDIRECT_ATTEMPTS) {
+            
+            sessionStorage.removeItem('auth_redirect_count');
+            sessionStorage.removeItem('auth_last_redirect_time');
+            // Let user manually login instead of looping
+            return;
+        }
+
+        // If redirected recently, wait before checking again
+        if (lastRedirectTime && (now - parseInt(lastRedirectTime)) < REDIRECT_COOLDOWN_MS) {
+            
+            return;
+        }
+        // ============================================
+
+        const urlParams = new URLSearchParams(window.location.search);
+        const hashParams = new URLSearchParams(window.location.hash.substring(1));
+        const isLoggingOut = urlParams.get('logout') === 'true';
+        const justLoggedOut = sessionStorage.getItem('user_logged_out');
+        const hasOAuthParams = urlParams.has('code') || urlParams.has('access_token') || urlParams.has('error') ||
+                               hashParams.has('access_token') || hashParams.has('error');
+
+        // Clear logout flag and don't redirect if user just logged out
+        if (isLoggingOut || justLoggedOut) {
+            sessionStorage.setItem('user_logged_out', 'true');
+            // Clear redirect tracking when logging out
+            sessionStorage.removeItem('auth_redirect_count');
+            sessionStorage.removeItem('auth_last_redirect_time');
+            window.history.replaceState({}, document.title, window.location.pathname);
+            return;
+        }
+
+        // Wait for OAuth to complete
+        if (hasOAuthParams) {
+            return;
+        }
+
+        // Give localStorage time to be set by login functions
+        await new Promise(resolve => setTimeout(resolve, 300)); // Increased from 100ms to 300ms
+
+        // Check localStorage first (faster than Supabase call)
+        const storedToken = localStorage.getItem('tabmangment_token');
+        const storedUser = localStorage.getItem('tabmangment_user');
+
+        if (storedToken && storedUser) {
+            // User is logged in, redirect to dashboard
+            sessionStorage.removeItem('user_logged_out');
+
+            // Track redirect to prevent loops
+            sessionStorage.setItem('auth_redirect_count', String(redirectCount + 1));
+            sessionStorage.setItem('auth_last_redirect_time', String(now));
+
+            window.location.replace('/user-dashboard.html');
+            return;
+        }
+
+        // If not in localStorage, check Supabase session
+        const { data: { session }, error } = await supabaseClient.auth.getSession();
+
+        if (!error && session && session.user) {
+            const userData = {
+                email: session.user.email,
+                name: session.user.user_metadata.full_name || session.user.user_metadata.name || session.user.user_metadata.preferred_username || session.user.email.split('@')[0],
+                id: session.user.id,
+                provider: session.user.app_metadata.provider || 'email',
+                avatar: session.user.user_metadata.avatar_url || session.user.user_metadata.picture,
+                deletionScheduledAt: session.user.user_metadata.deletion_scheduled_at || null
+            };
+
+            // Save to localStorage SYNCHRONOUSLY
+            localStorage.setItem('tabmangment_user', JSON.stringify(userData));
+            localStorage.setItem('tabmangment_token', session.access_token);
+            localStorage.setItem('tabmangment_remember', 'true');
+            sessionStorage.removeItem('user_logged_out');
+
+            // Set flag that we just authenticated (prevents dashboard from redirecting back)
+            sessionStorage.setItem('just_authenticated', 'true');
+            sessionStorage.setItem('auth_timestamp', String(Date.now()));
+
+            // Track redirect to prevent loops
+            sessionStorage.setItem('auth_redirect_count', String(redirectCount + 1));
+            sessionStorage.setItem('auth_last_redirect_time', String(now));
+
+            // Wait a bit to ensure localStorage is written to disk
+            await new Promise(resolve => setTimeout(resolve, 100));
+
+            // Verify localStorage was actually saved before redirecting
+            const verifyUser = localStorage.getItem('tabmangment_user');
+            const verifyToken = localStorage.getItem('tabmangment_token');
+
+            if (verifyUser && verifyToken) {
+                window.location.replace('/user-dashboard.html');
+            } else {
+                
+                // Try one more time
+                localStorage.setItem('tabmangment_user', JSON.stringify(userData));
+                localStorage.setItem('tabmangment_token', session.access_token);
+                await new Promise(resolve => setTimeout(resolve, 200));
+                window.location.replace('/user-dashboard.html');
+            }
+        }
+    } catch (error) {
+        // Silently fail - user can still login manually
+    }
+})();
+
+function switchTab(tab) {
+    const tabs = document.querySelectorAll('.tab-btn');
+    const contents = document.querySelectorAll('.form-content');
+    tabs.forEach(t => t.classList.remove('active'));
+    contents.forEach(c => c.classList.remove('active'));
+    if (tab === 'login') {
+        tabs[0].classList.add('active');
+        document.getElementById('login-form').classList.add('active');
+        document.querySelector('.auth-title h1').textContent = 'Welcome Back';
+        document.querySelector('.auth-subtitle').textContent = 'Enter your email and password to access your account.';
+    } else {
+        tabs[1].classList.add('active');
+        document.getElementById('signup-form').classList.add('active');
+        document.querySelector('.auth-title h1').textContent = 'Create Account';
+        document.querySelector('.auth-subtitle').textContent = 'Sign up to start managing your tabs efficiently.';
+    }
+}
+
+function togglePassword(inputId, button) {
+    const input = document.getElementById(inputId);
+    const icon = button.querySelector('i');
+    if (input.type === 'password') {
+        input.type = 'text';
+        icon.setAttribute('data-feather', 'eye-off');
+        button.setAttribute('title', 'Hide password');
+    } else {
+        input.type = 'password';
+        icon.setAttribute('data-feather', 'eye');
+        button.setAttribute('title', 'Show password');
+    }
+    feather.replace();
+}
+
+// Password Reset Modal Functions
+function showForgotPasswordModal() {
+    const modal = document.getElementById('reset-modal');
+    const resetSuccess = document.getElementById('reset-success');
+    const resetEmail = document.getElementById('reset-email');
+
+    // Reset form state
+    resetSuccess.classList.remove('show');
+    resetEmail.value = '';
+
+    // Show modal
+    modal.classList.add('show');
+}
+
+function closeForgotPasswordModal() {
+    const modal = document.getElementById('reset-modal');
+    modal.classList.remove('show');
+}
+
+// Close modal when clicking outside
+document.addEventListener('click', (e) => {
+    const modal = document.getElementById('reset-modal');
+    if (e.target === modal) {
+        closeForgotPasswordModal();
+    }
+});
+
+// Handle Password Reset
+async function handlePasswordReset(e) {
+    e.preventDefault();
+
+    try {
+        showLoading('reset-btn', true);
+        const email = document.getElementById('reset-email').value;
+
+
+        // Send password reset email via Supabase
+        const { data, error } = await supabaseClient.auth.resetPasswordForEmail(email, {
+            redirectTo: `${window.location.origin}/password-reset?type=recovery`,
+            options: {
+                // This is important - ensures email is sent even if user doesn't exist
+                shouldCreateUser: false
+            }
+        });
+
+
+        if (error) {
+            throw error;
+        }
+
+
+        // Show success message (Supabase will send email if account exists)
+        const resetSuccess = document.getElementById('reset-success');
+        resetSuccess.classList.add('show');
+
+        // Clear the email field
+        document.getElementById('reset-email').value = '';
+
+        // Close modal after 4 seconds
+        setTimeout(() => {
+            closeForgotPasswordModal();
+        }, 4000);
+
+    } catch (error) {
+
+        let errorMessage = 'Failed to send reset email. ';
+
+        if (error.message.includes('Email not confirmed')) {
+            errorMessage = 'Please verify your email address first.';
+        } else if (error.message.includes('rate limit')) {
+            errorMessage = 'Too many requests. Please try again in a few minutes.';
+        } else if (error.message) {
+            errorMessage += error.message;
+        } else {
+            errorMessage += 'Please try again or contact support.';
+        }
+
+        showNotification(errorMessage, 'error');
+    } finally {
+        showLoading('reset-btn', false);
+    }
+}
+
+function showNotification(message, type = 'success') {
+    const notification = document.createElement('div');
+    notification.className = `notification ${type}`;
+    notification.innerHTML = `
+        <i class="notification-icon" data-feather="${type === 'success' ? 'check-circle' : 'alert-circle'}"></i>
+        <div class="notification-message">${message}</div>
+    `;
+    document.body.appendChild(notification);
+    feather.replace();
+
+    setTimeout(() => {
+        notification.style.animation = 'slideInRight 0.4s cubic-bezier(0.4, 0, 0.2, 1) reverse';
+        setTimeout(() => notification.remove(), 400);
+    }, 3000);
+}
+
+function showLoading(btnId, loading) {
+    const btn = document.getElementById(btnId);
+    if (loading) {
+        btn.classList.add('loading');
+        btn.disabled = true;
+    } else {
+        btn.classList.remove('loading');
+        btn.disabled = false;
+    }
+}
+
+async function handleEmailLogin(e) {
+    e.preventDefault();
+    try {
+        showLoading('login-btn', true);
+        const email = document.getElementById('login-email').value;
+        const password = document.getElementById('login-password').value;
+
+        const { data, error } = await supabaseClient.auth.signInWithPassword({
+            email,
+            password
+        });
+
+        if (error) throw error;
+
+        const userData = {
+            email: data.user.email,
+            name: data.user.user_metadata.full_name || data.user.user_metadata.name || email.split('@')[0],
+            id: data.user.id,
+            provider: 'email',
+            isPro: false
+        };
+
+        localStorage.setItem('tabmangment_user', JSON.stringify(userData));
+        localStorage.setItem('tabmangment_token', data.session.access_token);
+        localStorage.setItem('tabmangment_remember', 'true');
+        sessionStorage.removeItem('user_logged_out'); // Clear logout flag
+        // Clear redirect loop prevention counters on successful login
+        sessionStorage.removeItem('auth_redirect_count');
+        sessionStorage.removeItem('auth_last_redirect_time');
+
+        window.postMessage({ type: 'USER_LOGGED_IN', userData: { email: userData.email, name: userData.name, id: userData.id } }, '*');
+
+        // Redirect immediately - no delay needed!
+        window.location.replace('/user-dashboard.html');
+    } catch (error) {
+        showNotification(error.message, 'error');
+    } finally {
+        showLoading('login-btn', false);
+    }
+}
+
+async function handleEmailSignup(e) {
+    e.preventDefault();
+    try {
+        showLoading('signup-btn', true);
+        const name = document.getElementById('signup-name').value;
+        const email = document.getElementById('signup-email').value;
+        const password = document.getElementById('signup-password').value;
+
+        if (password.length < 6) {
+            throw new Error('Password must be at least 6 characters long');
+        }
+
+        const { data, error } = await supabaseClient.auth.signUp({
+            email,
+            password,
+            options: {
+                data: {
+                    full_name: name,
+                    name: name
+                }
+            }
+        });
+
+        if (error) throw error;
+
+        if (data.user) {
+            const userData = {
+                email: data.user.email,
+                name: name,
+                id: data.user.id,
+                provider: 'email',
+                isPro: false
+            };
+
+            localStorage.setItem('tabmangment_user', JSON.stringify(userData));
+            localStorage.setItem('tabmangment_token', data.session.access_token);
+            localStorage.setItem('tabmangment_remember', 'true');
+            sessionStorage.removeItem('user_logged_out'); // Clear logout flag
+            // Clear redirect loop prevention counters on successful signup
+            sessionStorage.removeItem('auth_redirect_count');
+            sessionStorage.removeItem('auth_last_redirect_time');
+
+            window.postMessage({ type: 'USER_LOGGED_IN', userData: { email: userData.email, name: userData.name, id: userData.id } }, '*');
+
+            // Redirect immediately - no delay needed!
+            window.location.replace('/user-dashboard.html');
+        }
+    } catch (error) {
+        showNotification(error.message, 'error');
+    } finally {
+        showLoading('signup-btn', false);
+    }
+}
+
+// FIX: OAuth must redirect back to auth page to process callback
+async function handleGoogleLogin() {
+    try {
+        const { data, error} = await supabaseClient.auth.signInWithOAuth({
+            provider: 'google',
+            options: {
+                // CRITICAL: Return to auth page to process OAuth callback
+                redirectTo: window.location.origin + '/new-authentication',
+                queryParams: {
+                    access_type: 'offline',
+                    prompt: 'consent',
+                }
+            }
+        });
+
+        if (error) throw error;
+    } catch (error) {
+        showNotification(error.message, 'error');
+    }
+}
+
+// FIX: OAuth must redirect back to auth page to process callback
+async function handleGithubLogin() {
+    try {
+        const { data, error } = await supabaseClient.auth.signInWithOAuth({
+            provider: 'github',
+            options: {
+                // CRITICAL: Return to auth page to process OAuth callback
+                redirectTo: window.location.origin + '/new-authentication'
+            }
+        });
+
+        if (error) throw error;
+    } catch (error) {
+        showNotification(error.message, 'error');
+    }
+}
+
+// FIX: Simplified OAuth callback handler using Supabase auth state listener
+(async function() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const hashParams = new URLSearchParams(window.location.hash.substring(1));
+    const isLogout = urlParams.has('logout');
+    const hasOAuthParams = urlParams.has('code') || hashParams.has('access_token') ||
+                           hashParams.has('error') || urlParams.has('error');
+
+    // Handle logout
+    if (isLogout || sessionStorage.getItem('user_logged_out')) {
+        sessionStorage.removeItem('user_logged_out');
+        await supabaseClient.auth.signOut();
+        window.history.replaceState({}, '', '/new-authentication');
+        return;
+    }
+
+    // Show loading if processing OAuth callback
+    if (hasOAuthParams) {
+        const loadingDiv = document.createElement('div');
+        loadingDiv.id = 'oauth-loading';
+        loadingDiv.style.cssText = 'position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center; z-index: 9999; background: white; padding: 32px; border-radius: 16px; box-shadow: 0 8px 24px rgba(0,0,0,0.15);';
+        loadingDiv.innerHTML = '<div style="font-size: 18px; color: #6366f1; font-weight: 600;">Completing sign in...</div>';
+        document.body.appendChild(loadingDiv);
+    }
+
+    // FIX: Use auth state listener for reliable OAuth handling
+    supabaseClient.auth.onAuthStateChange(async (event, session) => {
+        // Only process SIGNED_IN events (OAuth callback or existing session)
+        if (event === 'SIGNED_IN' && session) {
+            const user = session.user;
+
+            // Check for scheduled deletion
+            if (user.user_metadata.deletion_scheduled_at) {
+                const deletionTime = new Date(user.user_metadata.deletion_scheduled_at);
+                if (deletionTime <= new Date()) {
+                    await supabaseClient.auth.signOut();
+                    localStorage.removeItem('tabmangment_user');
+                    localStorage.removeItem('tabmangment_token');
+                    showNotification('Your account has been deleted. Please contact support if you need assistance.', 'error');
+                    return;
+                }
+            }
+
+            // Build user data object
+            const userData = {
+                email: user.email,
+                name: user.user_metadata.full_name || user.user_metadata.name ||
+                      user.user_metadata.preferred_username || user.email.split('@')[0],
+                id: user.id,
+                provider: user.app_metadata.provider || 'email',
+                avatar: user.user_metadata.avatar_url || user.user_metadata.picture,
+                deletionScheduledAt: user.user_metadata.deletion_scheduled_at || null
+            };
+
+            // FIX: Wait for user sync before redirecting (prevents "User not found" error)
+            // Use Cloudflare Pages function (not Netlify)
+            // Retry logic handles cold starts and transient failures
+            const syncUserWithRetry = async (maxRetries = 3, initialDelay = 500) => {
+                for (let attempt = 1; attempt <= maxRetries; attempt++) {
+                    try {
+                        const syncResponse = await fetch(window.location.origin + '/api/sync-user', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Authorization': `Bearer ${session.access_token}`
+                            },
+                            body: JSON.stringify({
+                                email: userData.email,
+                                name: userData.name,
+                                userId: userData.id,
+                                provider: userData.provider
+                            })
+                        });
+
+                        if (syncResponse.ok) {
+                            const syncResult = await syncResponse.json();
+                            if (syncResult.success) {
+                                return syncResult;
+                            }
+                            console.warn(`Attempt ${attempt}/${maxRetries}: Sync returned failure`, syncResult);
+                        } else {
+                            const errorData = await syncResponse.json().catch(() => ({}));
+                            console.warn(`Attempt ${attempt}/${maxRetries}: Sync failed with status ${syncResponse.status}`, errorData);
+                        }
+                    } catch (error) {
+                        console.warn(`Attempt ${attempt}/${maxRetries}: Sync request error`, error);
+                    }
+
+                    // If not last attempt, wait before retrying with exponential backoff
+                    if (attempt < maxRetries) {
+                        const delay = initialDelay * Math.pow(2, attempt - 1);
+                        await new Promise(resolve => setTimeout(resolve, delay));
+                    }
+                }
+
+                // All attempts failed
+                throw new Error('User sync failed after multiple attempts');
+            };
+
+            try {
+                const syncResult = await syncUserWithRetry();
+                if (!syncResult || !syncResult.success) {
+                    console.error('User sync returned failure:', syncResult);
+                }
+            } catch (syncError) {
+                // If sync fails after retries, continue anyway - user might already exist
+                console.warn('User sync error after retries:', syncError);
+            }
+
+            // Save session data (synchronous, no waiting needed)
+            localStorage.setItem('tabmangment_user', JSON.stringify(userData));
+            localStorage.setItem('tabmangment_token', session.access_token);
+            localStorage.setItem('tabmangment_remember', 'true');
+
+            // Set flags for dashboard to recognize fresh login
+            sessionStorage.setItem('just_authenticated', 'true');
+            sessionStorage.setItem('auth_timestamp', String(Date.now()));
+            sessionStorage.removeItem('user_logged_out');
+
+            // Notify extension
+            window.postMessage({
+                type: 'USER_LOGGED_IN',
+                userData: { email: userData.email, name: userData.name, id: userData.id }
+            }, '*');
+
+            // Redirect to dashboard (user now exists in database)
+            window.location.replace('/user-dashboard.html');
+        }
+    });
+
+    // Check if already logged in (for page refresh or direct navigation)
+    const { data: { session } } = await supabaseClient.auth.getSession();
+    if (session && !hasOAuthParams) {
+        // Already authenticated, redirect to dashboard
+        window.location.replace('/user-dashboard.html');
+    }
+})();
+    </script>
+</body>
+</html>

@@ -93,7 +93,6 @@
             email: email,
             sessionId: sessionId,
             timestamp: new Date().toISOString()
-          });
         }
 
         // Method 2: PostMessage to opener window

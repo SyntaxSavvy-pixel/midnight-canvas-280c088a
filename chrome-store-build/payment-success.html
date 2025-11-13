@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Payment Successful - Tabmangment Pro</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            color: white;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .success-container {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(20px);
+            border-radius: 30px;
+            padding: 60px;
+            text-align: center;
+            max-width: 600px;
+            width: 100%;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.1);
+        }
+
+        .success-icon {
+            font-size: 100px;
+            margin-bottom: 30px;
+            animation: bounce 2s infinite;
+        }
+
+        @keyframes bounce {
+            0%, 20%, 50%, 80%, 100% { transform: translateY(0); }
+            40% { transform: translateY(-20px); }
+            60% { transform: translateY(-10px); }
+        }
+
+        h1 {
+            font-size: 48px;
+            margin-bottom: 20px;
+            font-weight: 700;
+        }
+
+        .subtitle {
+            font-size: 24px;
+            margin-bottom: 30px;
+            opacity: 0.9;
+        }
+
+        .user-info {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            padding: 30px;
+            margin: 30px 0;
+            text-align: left;
+        }
+
+        .user-info h3 {
+            font-size: 20px;
+            margin-bottom: 15px;
+        }
+
+        .info-item {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+            padding: 8px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .info-item:last-child {
+            border-bottom: none;
+        }
+
+        .actions {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-top: 40px;
+        }
+
+        .btn {
+            padding: 15px 30px;
+            border-radius: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            text-decoration: none;
+            font-size: 16px;
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: translateY(-3px);
+        }
+
+        .btn-primary {
+            background: rgba(255, 255, 255, 0.9);
+            color: #10b981;
+            border: 2px solid rgba(255, 255, 255, 0.9);
+        }
+
+        .btn-primary:hover {
+            background: white;
+            color: #10b981;
+        }
+
+        .status-indicator {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 20px;
+            padding: 15px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            font-weight: 500;
+        }
+
+        .status-indicator.success {
+            background: rgba(16, 185, 129, 0.3);
+        }
+
+        .status-indicator.syncing {
+            background: rgba(59, 130, 246, 0.3);
+        }
+
+        @media (max-width: 768px) {
+            .success-container {
+                padding: 40px 30px;
+            }
+
+            h1 {
+                font-size: 36px;
+            }
+
+            .subtitle {
+                font-size: 20px;
+            }
+
+            .actions {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="success-container">
+        <div class="success-icon">🎉</div>
+        <h1>Payment Successful!</h1>
+        <div class="subtitle">Welcome to Tabmangment Pro</div>
+
+        <div id="statusIndicator" class="status-indicator syncing">
+            <span>🔄</span>
+            <span>Activating your Pro features...</span>
+        </div>
+
+        <div class="user-info" id="userInfo">
+            <h3>Account Details</h3>
+            <div class="info-item">
+                <span>Email:</span>
+                <span id="userEmail">Loading...</span>
+            </div>
+            <div class="info-item">
+                <span>Plan:</span>
+                <span>Tabmangment Pro</span>
+            </div>
+            <div class="info-item">
+                <span>Status:</span>
+                <span id="planStatus">Activating...</span>
+            </div>
+            <div class="info-item">
+                <span>Next Billing:</span>
+                <span id="nextBilling">Monthly</span>
+            </div>
+        </div>
+
+        <div class="actions">
+            <a href="/dashboard.html" class="btn btn-primary">
+                <span>🏠</span>
+                <span>Go to Dashboard</span>
+            </a>
+            <a href="#" class="btn" onclick="openExtension()">
+                <span>🔧</span>
+                <span>Open Extension</span>
+            </a>
+        </div>
+    </div>
+
+    <script>
+        let userEmail = null;
+        let sessionId = null;
+
+        async function init() {
+
+            // Get URL parameters
+            const urlParams = new URLSearchParams(window.location.search);
+            sessionId = urlParams.get('session_id');
+            userEmail = urlParams.get('email');
+
+
+            // Update UI
+            if (userEmail) {
+                document.getElementById('userEmail').textContent = userEmail;
+            }
+
+            // Start activation process
+            await activateProFeatures();
+        }
+
+        async function activateProFeatures() {
+
+            try {
+                // Method 1: Call completion API
+                await callCompletionAPI();
+
+                // Method 2: Store data for extension
+                storeActivationData();
+
+                // Method 3: Notify extension
+                await notifyExtension();
+
+                // Method 4: Sync with logged-in user
+                await syncWithUser();
+
+                // Update status
+                showSuccess();
+
+            } catch (error) {
+                showError();
+            }
+        }
+
+        async function callCompletionAPI() {
+            try {
+                const response = await fetch('/api/complete-payment', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        session_id: sessionId,
+                        email: userEmail,
+                        source: 'payment_success_page'
+                    })
+                });
+
+                const result = await response.json();
+                return result.success;
+            } catch (error) {
+                return false;
+            }
+        }
+
+        function storeActivationData() {
+            try {
+                const activationData = {
+                    email: userEmail,
+                    sessionId: sessionId,
+                    timestamp: new Date().toISOString(),
+                    activated: true,
+                    source: 'payment_success'
+                };
+
+                localStorage.setItem('tabmangment_payment_success', JSON.stringify(activationData));
+                sessionStorage.setItem('tabmangment_payment_success', JSON.stringify(activationData));
+
+            } catch (error) {
+            }
+        }
+
+        async function notifyExtension() {
+            try {
+                // Chrome extension messaging
+                if (typeof chrome !== 'undefined' && chrome.runtime) {
+                    chrome.runtime.sendMessage({
+                        type: 'PAYMENT_SUCCESS',
+                        email: userEmail,
+                        sessionId: sessionId,
+                        timestamp: new Date().toISOString()
+                    });
+                }
+
+                // BroadcastChannel for cross-tab communication
+                const bc = new BroadcastChannel('tabmangment_payment');
+                bc.postMessage({
+                    type: 'PAYMENT_SUCCESS',
+                    email: userEmail,
+                    sessionId: sessionId
+                });
+                bc.close();
+
+            } catch (error) {
+            }
+        }
+
+        async function syncWithUser() {
+            try {
+                // Check if user is logged in
+                const userData = localStorage.getItem('tabmangment_user');
+                const token = localStorage.getItem('tabmangment_token');
+
+                if (userData && token) {
+
+                    // Trigger sync by verifying token (which updates user data)
+                    const response = await fetch('/api/auth/verify', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${token}`
+                        }
+                    });
+
+                    const result = await response.json();
+                    if (result.success && result.user.isPro) {
+
+                        // Update stored user data
+                        localStorage.setItem('tabmangment_user', JSON.stringify(result.user));
+
+                        // Notify extension about the update
+                        if (typeof chrome !== 'undefined' && chrome.runtime) {
+                            chrome.runtime.sendMessage({
+                                type: 'USER_LOGGED_IN',
+                                user: result.user,
+                                token: token
+                            });
+                        }
+                    }
+                }
+            } catch (error) {
+            }
+        }
+
+        function showSuccess() {
+            const indicator = document.getElementById('statusIndicator');
+            indicator.innerHTML = '<span>✅</span><span>Pro features activated successfully!</span>';
+            indicator.classList.remove('syncing');
+            indicator.classList.add('success');
+
+            document.getElementById('planStatus').textContent = 'Active';
+
+            setTimeout(() => {
+                indicator.innerHTML = '<span>🎉</span><span>You\'re all set! Enjoy your Pro features.</span>';
+            }, 2000);
+        }
+
+        function showError() {
+            const indicator = document.getElementById('statusIndicator');
+            indicator.innerHTML = '<span>⚠️</span><span>Activation in progress... Check extension in a few moments.</span>';
+            indicator.style.background = 'rgba(239, 68, 68, 0.3)';
+
+            document.getElementById('planStatus').textContent = 'Activating...';
+        }
+
+        function openExtension() {
+            try {
+                // Try to open extension popup
+                if (typeof chrome !== 'undefined' && chrome.runtime) {
+                    chrome.runtime.sendMessage({ type: 'OPEN_POPUP' });
+                } else {
+                    alert('Please open the Tabmangment extension from your browser toolbar to see your Pro features.');
+                }
+            } catch (error) {
+                alert('Please open the Tabmangment extension from your browser toolbar to see your Pro features.');
+            }
+        }
+
+        // Initialize when page loads
+        document.addEventListener('DOMContentLoaded', init);
+    </script>
+</body>
+</html>
