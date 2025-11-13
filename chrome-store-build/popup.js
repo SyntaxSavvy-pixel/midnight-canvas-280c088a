@@ -1,4 +1,3 @@
-// Temporarily removed import to fix service worker loading
 const CONFIG = {
     API: {
         BASE: 'https://tabmangment.com/api',
@@ -9,8 +8,6 @@ const CONFIG = {
         INCREMENT_SEARCH: 'https://tabmangment.com/api/increment-search'
     },
     PERPLEXITY: {
-        // API_KEY removed - stored securely as PERPLEXITY_API_KEY environment variable on Cloudflare
-        // Client now calls https://tabmangment.com/api/perplexity-search (secure backend proxy)
         SEARCH_URL: 'https://tabmangment.com/api/perplexity-search',
         MAX_RESULTS: 10,
         MAX_TOKENS: 25000,
@@ -26,7 +23,7 @@ const CONFIG = {
         TIMER_CHECK_INTERVAL: 5000,
         STATUS_CHECK_INTERVAL: 300000,
         CACHE_TIMEOUT: 2000,
-        SYNC_INTERVAL: 30000 // Sync every 30 seconds
+        SYNC_INTERVAL: 30000
     }
 };
 
@@ -63,28 +60,21 @@ class TabmangmentPopup {
         }
     }
     async init() {
-        // Fallback: Force hide loader after 5 seconds no matter what
         setTimeout(() => {
             this.hideLoader();
         }, 5000);
 
         try {
-            // Setup event listeners FIRST - needed to detect login
             this.setupEventListeners();
 
-            // Note: startDashboardSync is called AFTER instance creation
-            // (at bottom of file where prototype methods are available)
 
-            // CHECK AUTHENTICATION FIRST - Users must be logged in
             const isAuthenticated = await this.checkAuthentication();
 
             if (!isAuthenticated) {
-                // Not found in extension storage - try to sync from web as last resort
 
                 const webLogin = await this.checkWebLoginStatus();
 
                 if (webLogin) {
-                    // Get the newly synced data
                     const syncedData = await chrome.storage.local.get(['userEmail', 'userName', 'isPremium', 'isPro']);
 
                     if (syncedData.userEmail) {
@@ -92,10 +82,8 @@ class TabmangmentPopup {
                         this.userName = syncedData.userName;
                         this.isPremium = syncedData.isPremium || syncedData.isPro || false;
 
-                        // Update PRO badge visibility
                         this.updatePremiumUI();
 
-                        // Continue with initialization
                     } else {
                         this.hideLoader();
                         this.showLoginScreen();
@@ -104,7 +92,7 @@ class TabmangmentPopup {
                 } else {
                     this.hideLoader();
                     this.showLoginScreen();
-                    return; // Stop initialization - user must login first
+                    return;
                 }
             } else {
             }
@@ -112,12 +100,9 @@ class TabmangmentPopup {
             this.initializeEmailJS();
             this.setupPaymentListener();
 
-            // Load and apply custom theme (non-blocking, don't break popup if fails)
             loadAndApplyTheme().catch(err => {
-                // Theme load failed silently
             });
 
-            // Load and show cached data IMMEDIATELY (non-blocking)
             this.loadData().then(() => {
                 this.render();
                 this.hideLoader();
@@ -125,27 +110,22 @@ class TabmangmentPopup {
                 this.hideLoader();
             });
 
-            // Do background checks without blocking UI
             this.checkServiceWorkerHealth().catch(e => {});
             this.checkPendingActivation().catch(e => {});
             this.checkSubscription().catch(e => {});
 
-            // Background subscription check (non-blocking, updates UI when done)
             this.checkSubscriptionStatusBackground();
 
-            // Initialize timer system in background
             this.initializeTimerSystem().catch(e => {});
 
-            // Start real-time updates
             this.startRealTimeUpdates();
             this.startSubscriptionStatusRefresh();
         } catch (error) {
             this.showError('Failed to initialize extension: ' + error.message);
-            this.hideLoader(); // Hide loader even on error
+            this.hideLoader();
         }
     }
     hideLoader() {
-        // Add smooth transition
         document.body.classList.add('loaded');
         const loader = document.getElementById('app-loader');
         if (loader) {
@@ -649,27 +629,21 @@ class TabmangmentPopup {
             contactBtn.addEventListener('click', () => this.showContactModal());
         }
 
-        // Profile menu event listeners
         this.setupProfileMenu();
 
-        // Search Panel Event Listeners
         this.setupSearchPanel();
 
         chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
             if (message.action === 'updateClosingSoonCount') {
                 this.updateClosingSoonCounter(message.count);
             }
-            // Listen for user login from dashboard
             if (message.type === 'USER_LOGGED_IN' || message.type === 'USER_LOGIN') {
-                // Reload the popup to initialize with logged in state
                 window.location.reload();
             }
         });
 
-        // Listen for storage changes (when user logs in/out from dashboard)
         chrome.storage.onChanged.addListener(async (changes, areaName) => {
 
-            // INSTANT THEME UPDATES - Apply theme immediately when changed
             if (areaName === 'local' && (changes.themeConfig || changes.activeTheme)) {
                 const { themeConfig } = await chrome.storage.local.get(['themeConfig']);
                 if (themeConfig) {
@@ -682,7 +656,6 @@ class TabmangmentPopup {
                 const oldEmail = changes.userEmail.oldValue;
 
 
-                // User logged out (email removed)
                 if (oldEmail && !newEmail) {
                     this.userEmail = null;
                     this.isPremium = false;
@@ -690,34 +663,27 @@ class TabmangmentPopup {
                     return;
                 }
 
-                // If email changed from nothing to something OR changed to a real email (user logged in)
                 if (newEmail && !newEmail.startsWith('fallback_') && !newEmail.startsWith('user_')) {
 
-                    // Get all the user data from storage
                     const userData = await chrome.storage.local.get(['userEmail', 'userName', 'authToken', 'isPremium', 'isPro', 'planType']);
 
-                    // Update popup state
                     this.userEmail = userData.userEmail;
                     this.userName = userData.userName || userData.userEmail.split('@')[0];
                     this.isPremium = userData.isPremium || userData.isPro || false;
 
-                    // IMPORTANT: Hide login screen first (if it exists)
                     const loginScreen = document.getElementById('login-screen');
                     if (loginScreen) {
                         this.hideLoginScreen();
                     }
 
-                    // Show the main UI
                     const header = document.querySelector('.header');
                     const tabsContainer = document.getElementById('tabs-container');
                     if (header) header.style.display = '';
                     if (tabsContainer) tabsContainer.style.display = '';
 
-                    // Re-initialize with the logged-in user
                     await this.loadData();
                     await this.render();
 
-                    // Hide the loader
                     this.hideLoader();
 
                 }
@@ -728,17 +694,14 @@ class TabmangmentPopup {
         this.setupPremiumModal();
     }
 
-    // Setup Profile Menu
     setupProfileMenu() {
         const profileBtn = document.getElementById('profile-btn');
         const profileMenu = document.getElementById('profile-menu');
         const viewDashboardBtn = document.getElementById('view-dashboard-btn');
         const menuLogoutBtn = document.getElementById('menu-logout-btn');
 
-        // Load and display user info in profile menu
         this.loadProfileInfo();
 
-        // Toggle profile menu
         if (profileBtn && profileMenu) {
             profileBtn.addEventListener('click', (e) => {
                 e.stopPropagation();
@@ -746,7 +709,6 @@ class TabmangmentPopup {
                 profileMenu.style.display = isVisible ? 'none' : 'block';
             });
 
-            // Close menu when clicking outside
             document.addEventListener('click', (e) => {
                 if (!profileMenu.contains(e.target) && !profileBtn.contains(e.target)) {
                     profileMenu.style.display = 'none';
@@ -754,7 +716,6 @@ class TabmangmentPopup {
             });
         }
 
-        // View Dashboard button
         if (viewDashboardBtn) {
             viewDashboardBtn.addEventListener('click', () => {
                 chrome.tabs.create({ url: CONFIG.WEB.DASHBOARD_URL });
@@ -762,7 +723,6 @@ class TabmangmentPopup {
             });
         }
 
-        // Logout button in menu
         if (menuLogoutBtn) {
             menuLogoutBtn.addEventListener('click', async () => {
                 await this.handleLogout();
@@ -771,20 +731,18 @@ class TabmangmentPopup {
         }
     }
 
-    // Helper method to get user-specific bookmark storage key
     async getUserBookmarkKey() {
         try {
             const result = await chrome.storage.local.get(['userEmail']);
             if (result.userEmail) {
                 return `bookmarks_${result.userEmail}`;
             }
-            return 'bookmarks_guest'; // Fallback for non-logged-in users
+            return 'bookmarks_guest';
         } catch (error) {
             return 'bookmarks_guest';
         }
     }
 
-    // Load user profile information
     async loadProfileInfo() {
         try {
             const result = await chrome.storage.local.get(['userEmail', 'userName', 'userPhoto']);
@@ -799,7 +757,6 @@ class TabmangmentPopup {
                 if (profileMenuName) profileMenuName.textContent = displayName;
                 if (profileMenuEmail) profileMenuEmail.textContent = result.userEmail;
 
-                // Set profile photo if available
                 if (result.userPhoto) {
                     if (profileImage) profileImage.src = result.userPhoto;
                     if (profileMenuImage) profileMenuImage.src = result.userPhoto;
@@ -810,10 +767,8 @@ class TabmangmentPopup {
         }
     }
 
-    // Handle user logout
     async handleLogout() {
         try {
-            // Clear all user data from storage
             await chrome.storage.local.remove([
                 'userEmail',
                 'userName',
@@ -826,22 +781,18 @@ class TabmangmentPopup {
                 'subscriptionActive'
             ]);
 
-            // Clear instance variables
             this.userEmail = null;
             this.userName = null;
             this.isPremium = false;
 
-            // Notify background script of logout
             chrome.runtime.sendMessage({ type: 'USER_LOGGED_OUT' });
 
-            // Show login screen
             this.showLoginScreen();
         } catch (error) {
             console.error('Error during logout:', error);
         }
     }
 
-    // Setup Search Panel
     setupSearchPanel() {
         const searchBtn = document.getElementById('search-btn');
         const searchSection = document.getElementById('search-section');
@@ -851,7 +802,6 @@ class TabmangmentPopup {
         const collapseBtn = document.getElementById('collapse-btn');
         const bookmarkBtn = document.getElementById('bookmark-all-btn');
 
-        // Function to show tabs view
         const showTabsView = () => {
             if (searchSection) searchSection.style.display = 'none';
             if (tabsContainer) tabsContainer.style.display = 'block';
@@ -861,7 +811,6 @@ class TabmangmentPopup {
             this.clearSearchResults();
         };
 
-        // Function to show search view
         const showSearchView = async () => {
             if (searchSection) searchSection.style.display = 'block';
             if (tabsContainer) tabsContainer.style.display = 'none';
@@ -872,27 +821,21 @@ class TabmangmentPopup {
             }, 100);
         };
 
-        // Toggle search section (open/close)
         if (searchBtn) {
             searchBtn.addEventListener('click', async () => {
-                // Check if search is currently active
                 const isSearchActive = searchSection && searchSection.style.display !== 'none';
 
                 if (isSearchActive) {
-                    // Go back to tabs view
                     showTabsView();
                 } else {
-                    // Show search view
                     await showSearchView();
                 }
             });
         }
 
-        // Store references for use in other methods
         this.showTabsView = showTabsView;
         this.showSearchView = showSearchView;
 
-        // Search results action buttons
         const refreshBtn = document.getElementById('search-refresh-btn');
         const clearResultsBtn = document.getElementById('search-clear-results-btn');
 
@@ -900,7 +843,6 @@ class TabmangmentPopup {
             refreshBtn.addEventListener('click', () => {
                 const currentQuery = searchInput ? searchInput.value.trim() : '';
                 if (currentQuery) {
-                    // Pass true to indicate this is a refresh - get NEW results
                     this.performAISearch(currentQuery, true);
                 }
             });
@@ -916,23 +858,19 @@ class TabmangmentPopup {
             });
         }
 
-        // Search input - only show/hide clear button
         if (searchInput) {
             searchInput.addEventListener('input', (e) => {
                 const query = e.target.value;
 
-                // Show/hide clear button
                 if (searchClearBtn) {
                     searchClearBtn.style.display = query ? 'flex' : 'none';
                 }
 
-                // Clear results if input is empty
                 if (!query.trim()) {
                     this.clearSearchResults();
                 }
             });
 
-            // Search ONLY on Enter key press
             searchInput.addEventListener('keypress', (e) => {
                 if (e.key === 'Enter') {
                     const query = e.target.value.trim();
@@ -943,7 +881,6 @@ class TabmangmentPopup {
             });
         }
 
-        // Clear search
         if (searchClearBtn) {
             searchClearBtn.addEventListener('click', () => {
                 if (searchInput) {
@@ -956,7 +893,6 @@ class TabmangmentPopup {
         }
     }
 
-    // Clear search results and show empty state
     clearSearchResults() {
         const emptyState = document.getElementById('search-empty-state');
         const loading = document.getElementById('search-loading');
@@ -964,7 +900,6 @@ class TabmangmentPopup {
         const resultsInfo = document.getElementById('search-results-info');
         const resultsCount = document.getElementById('search-results-count');
 
-        // Remove class from body to restore normal UI (show tabs, stats, etc.)
         document.body.classList.remove('has-search-results');
 
         if (emptyState) emptyState.style.display = 'flex';
@@ -974,30 +909,24 @@ class TabmangmentPopup {
         if (resultsInfo) resultsInfo.style.display = 'none';
     }
 
-    // Check and update search usage with 24-hour rolling window (SERVER-SIDE TRACKED)
     async checkSearchUsage() {
         try {
-            // Get user email and admin status
             const storage = await chrome.storage.local.get(['userEmail', 'isAdmin', 'planType']);
             const userEmail = storage.userEmail;
             const isAdmin = storage.isAdmin || storage.planType === 'admin';
 
-            // If no email (not logged in), BLOCK searches completely
             if (!userEmail) {
                 return { count: 5, canSearch: false, isAdmin: false };
             }
 
-            // ADMIN USERS: Unlimited searches - bypass all limits
             if (isAdmin) {
                 return { count: 0, canSearch: true, isPro: true, isAdmin: true };
             }
 
-            // PREMIUM USERS: Unlimited searches
             if (this.isPremium) {
                 return { count: 0, canSearch: true, isPro: true, isAdmin: false };
             }
 
-            // ALWAYS fetch from backend API - NO LOCAL FALLBACK for logged-in users
             const response = await fetch(CONFIG.API.CHECK_SEARCH_USAGE, {
                 method: 'POST',
                 headers: {
@@ -1012,7 +941,6 @@ class TabmangmentPopup {
 
             const data = await response.json();
 
-            // CRITICAL: Use backend's canSearch value directly - DO NOT recalculate locally
             const count = data.searchCount || 0;
             const canSearch = data.canSearch !== undefined ? data.canSearch : false;
             const isPro = data.isPro || false;
@@ -1020,12 +948,10 @@ class TabmangmentPopup {
             return { count, canSearch, isPro, isAdmin: false };
 
         } catch (error) {
-            // SECURITY: Block search on API error - prevents local exploitation
             return { count: 5, canSearch: false, isAdmin: false };
         }
     }
 
-    // Local fallback for search usage (still tracked, but can be exploited)
     async checkSearchUsageLocal() {
         const stored = await chrome.storage.local.get(['searchTimestamps']);
         const now = Date.now();
@@ -1045,20 +971,16 @@ class TabmangmentPopup {
         return { count, canSearch };
     }
 
-    // Increment search usage counter (SERVER-SIDE ONLY - NO LOCAL TRACKING)
     async incrementSearchUsage() {
         try {
-            // Get user email for server-side tracking
             const storage = await chrome.storage.local.get(['userEmail']);
             const userEmail = storage.userEmail;
 
-            // If no email, block increment (search should have been blocked already)
             if (!userEmail) {
-                
+
                 return;
             }
 
-            // ALWAYS increment on backend - NEVER use local storage for logged-in users
             const response = await fetch(CONFIG.API.INCREMENT_SEARCH, {
                 method: 'POST',
                 headers: {
@@ -1068,20 +990,19 @@ class TabmangmentPopup {
             });
 
             if (!response.ok) {
-                
+
                 throw new Error('Backend sync failed');
             }
 
             const data = await response.json();
-            
+
 
         } catch (error) {
-            
-            throw error; // Propagate error so search can be handled properly
+
+            throw error;
         }
     }
 
-    // Local fallback for incrementing search usage
     async incrementSearchUsageLocal() {
         const stored = await chrome.storage.local.get(['searchTimestamps']);
         const now = Date.now();
@@ -1092,14 +1013,12 @@ class TabmangmentPopup {
         await chrome.storage.local.set({ searchTimestamps: timestamps });
     }
 
-    // Update search usage display
     async updateSearchUsageDisplay() {
         const usageInfo = document.getElementById('search-usage-info');
         if (!usageInfo) return;
 
         const { count, canSearch, isAdmin } = await this.checkSearchUsage();
 
-        // Admin users get unlimited searches
         if (isAdmin) {
             usageInfo.innerHTML = '👑 Admin: Unlimited searches';
             usageInfo.className = 'search-usage-info admin';
@@ -1121,15 +1040,12 @@ class TabmangmentPopup {
         }
     }
 
-    // Show search limit modal
     showSearchLimitModal() {
-        // Remove existing modal if any
         const existingModal = document.getElementById('search-limit-modal');
         if (existingModal) {
             existingModal.remove();
         }
 
-        // Create modal
         const modal = document.createElement('div');
         modal.id = 'search-limit-modal';
         modal.className = 'search-limit-modal';
@@ -1160,7 +1076,6 @@ class TabmangmentPopup {
 
         document.body.appendChild(modal);
 
-        // Add event listeners
         const closeBtn = document.getElementById('search-limit-close');
         const upgradeBtn = document.getElementById('search-limit-upgrade');
 
@@ -1182,7 +1097,6 @@ class TabmangmentPopup {
             });
         }
 
-        // Close on backdrop click
         modal.addEventListener('click', (e) => {
             if (e.target === modal) {
                 closeModal();
@@ -1190,9 +1104,7 @@ class TabmangmentPopup {
         });
     }
 
-    // Perform AI search using Perplexity API
     async performAISearch(query, isRefresh = false) {
-        // Check search usage limit
         const { canSearch } = await this.checkSearchUsage();
 
         if (!canSearch) {
@@ -1207,14 +1119,12 @@ class TabmangmentPopup {
         const resultsInfo = document.getElementById('search-results-info');
         const resultsCount = document.getElementById('search-results-count');
 
-        // Show loading state
         if (emptyState) emptyState.style.display = 'none';
         if (loading) loading.style.display = 'flex';
         if (resultsList) resultsList.innerHTML = '';
         if (resultsInfo) resultsInfo.style.display = 'none';
 
         try {
-            // Build search parameters with variation for refresh
             const searchParams = {
                 query: query,
                 max_results: CONFIG.PERPLEXITY.MAX_RESULTS,
@@ -1223,20 +1133,15 @@ class TabmangmentPopup {
                 country: CONFIG.PERPLEXITY.COUNTRY
             };
 
-            // Add variation parameters for refresh to get different results
             if (isRefresh) {
-                // Add recency filter to get fresh/recent results
                 const recencyOptions = ['day', 'week', 'month'];
                 searchParams.search_recency_filter = recencyOptions[Math.floor(Math.random() * recencyOptions.length)];
 
-                // Add timestamp to prevent caching
                 searchParams._t = Date.now();
             }
 
-            // Get user email for secure API call
             const { userEmail } = await chrome.storage.local.get(['userEmail']);
 
-            // Call secure backend endpoint (API key is server-side only)
             const response = await fetch('https://tabmangment.com/api/perplexity-search', {
                 method: 'POST',
                 headers: {
@@ -1262,23 +1167,18 @@ class TabmangmentPopup {
             const responseData = await response.json();
             const data = responseData.data;
 
-            // Update search usage display (already incremented on backend)
             await this.updateSearchUsageDisplay();
 
-            // Hide loading
             if (loading) loading.style.display = 'none';
 
             if (data.results && data.results.length > 0) {
-                // Show results
                 this.displaySearchResults(data.results);
 
-                // Update results count
                 if (resultsInfo) resultsInfo.style.display = 'block';
                 if (resultsCount) {
                     resultsCount.textContent = `${data.results.length} results`;
                 }
             } else {
-                // No results found
                 if (resultsList) {
                     resultsList.innerHTML = `
                         <div class="search-empty-state">
@@ -1289,12 +1189,10 @@ class TabmangmentPopup {
                 }
             }
         } catch (error) {
-            
 
-            // Hide loading
+
             if (loading) loading.style.display = 'none';
 
-            // Show error message
             if (resultsList) {
                 resultsList.innerHTML = `
                     <div class="search-empty-state">
@@ -1306,7 +1204,6 @@ class TabmangmentPopup {
         }
     }
 
-    // Display search results
     displaySearchResults(results) {
         const resultsList = document.getElementById('search-results-list');
         const emptyState = document.getElementById('search-empty-state');
@@ -1314,12 +1211,10 @@ class TabmangmentPopup {
 
         resultsList.innerHTML = '';
 
-        // Hide empty state when showing results
         if (emptyState) {
             emptyState.style.display = 'none';
         }
 
-        // Add class to body to trigger clean UI (hide main content, show focused message)
         document.body.classList.add('has-search-results');
 
         results.forEach(result => {
@@ -1327,16 +1222,14 @@ class TabmangmentPopup {
             resultItem.className = 'search-result-item';
             resultItem.dataset.url = result.url;
 
-            // Extract domain from URL for display
             let displayText = '';
             try {
                 const urlObj = new URL(result.url);
-                displayText = urlObj.hostname.replace('www.', ''); // Show clean domain
+                displayText = urlObj.hostname.replace('www.', '');
             } catch (e) {
-                displayText = result.url; // Fallback to full URL if parsing fails
+                displayText = result.url;
             }
 
-            // Use description/snippet if available, otherwise use domain
             const description = result.snippet || result.description || displayText;
 
             resultItem.innerHTML = `
@@ -1350,7 +1243,6 @@ class TabmangmentPopup {
                 </div>
             `;
 
-            // Click to open in new tab
             resultItem.addEventListener('click', () => {
                 chrome.tabs.create({ url: result.url });
             });
@@ -1359,7 +1251,6 @@ class TabmangmentPopup {
         });
     }
 
-    // Escape HTML to prevent XSS
     escapeHtml(text) {
         const div = document.createElement('div');
         div.textContent = text;
@@ -1385,21 +1276,17 @@ class TabmangmentPopup {
                     return;
                 }
 
-                // Check if search is currently active
                 const searchSection = document.getElementById('search-section');
                 const isSearchActive = searchSection && searchSection.style.display !== 'none';
 
-                // If search is active, close it first
                 if (isSearchActive && this.showTabsView) {
                     this.showTabsView();
                 }
 
-                // Toggle behavior: if already in bookmarks view, go back to tabs
                 if (this.currentView === 'bookmarks') {
                     this.currentView = 'tabs';
                     this.render();
                 } else {
-                    // Show bookmarks view
                     this.showBookmarkMenu();
                 }
             });
@@ -1540,7 +1427,6 @@ class TabmangmentPopup {
                 form.reset();
             }
 
-            // Auto-populate email from logged-in user
             const emailInput = document.getElementById('contact-email');
             if (emailInput) {
                 try {
@@ -1742,8 +1628,6 @@ class TabmangmentPopup {
             const realTabIds = new Set(realTabs.map(tab => tab.id));
             let tabsResponse, statsResponse, subscriptionData;
             try {
-                // Removed ping - unnecessary delay
-                // Get data with shorter timeout for faster response
                 const promises = [
                     this.sendMessageWithTimeout('getTabData', 1500),
                     this.sendMessageWithTimeout('getStats', 1500),
@@ -1907,7 +1791,7 @@ class TabmangmentPopup {
 
         this.removeAllProBadges();
         await this.updateSubscriptionHeader();
-        await this.loadProfileInfo(); // Update profile photo
+        await this.loadProfileInfo();
     }
     async checkSubscriptionExpiry(subscriptionData) {
         try {
@@ -2167,7 +2051,6 @@ class TabmangmentPopup {
             let nextBillingDate = result.nextBillingDate || result.subscriptionExpiry || result.currentPeriodEnd;
             const subscriptionType = result.subscriptionType || 'monthly';
 
-            // Show detailed subscription info
             if (result.subscriptionId) {
                 const activatedDate = result.activatedAt ? new Date(result.activatedAt) : new Date();
                 const formattedDate = activatedDate.toLocaleDateString('en-US', {
@@ -2175,7 +2058,6 @@ class TabmangmentPopup {
                     day: 'numeric'
                 });
 
-                // Show activation method and date for ANY user
                 if (result.subscriptionId.startsWith('paid_') || result.subscriptionId.startsWith('stripe_')) {
                     const userType = result.isAnonymousUser ? 'Anonymous user' : 'Registered user';
                     return `${userType} • Activated ${formattedDate}`;
@@ -2185,11 +2067,9 @@ class TabmangmentPopup {
                     return `Pro member since ${formattedDate}`;
                 }
 
-                // Default display
                 return `Pro member since ${formattedDate}`;
             }
 
-            // Show user tracking info
             if (result.userIdentifier) {
                 const activatedDate = result.activatedAt ? new Date(result.activatedAt) : new Date();
                 const formattedDate = activatedDate.toLocaleDateString('en-US', {
@@ -2316,19 +2196,16 @@ class TabmangmentPopup {
         if (!subscriptionInfo || !planName || !billingDate) return;
 
         if (this.isPremium) {
-            // Check if user is admin
             const stored = await chrome.storage.local.get(['isAdmin', 'planType', 'nextBillingDate', 'currentPeriodEnd']);
             const isAdmin = stored.isAdmin || stored.planType === 'admin';
 
             if (isAdmin) {
-                // Admin users - show admin badge instead of billing date
                 planName.textContent = 'Admin Plan';
                 subscriptionInfo.classList.add('pro');
                 subscriptionInfo.classList.remove('free');
                 billingDate.textContent = 'Unlimited Pro Access';
                 billingDate.style.display = 'block';
             } else {
-                // Regular Pro users - show billing date
                 planName.textContent = 'Pro Plan';
                 subscriptionInfo.classList.add('pro');
                 subscriptionInfo.classList.remove('free');
@@ -2382,14 +2259,12 @@ class TabmangmentPopup {
             const badge = button.querySelector('.pro-badge');
 
             if (this.isPremium) {
-                // Hide badge for Pro users
                 if (badge) {
                     badge.style.display = 'none';
                 }
                 button.classList.remove('disabled');
                 button.title = button.textContent.trim();
             } else {
-                // Show badge for Free users
                 if (badge) {
                     badge.style.display = 'block';
                 } else {
@@ -2435,7 +2310,6 @@ class TabmangmentPopup {
         });
     }
     handlePremiumButtonClick() {
-        // Always redirect to user dashboard subscription page for both free and pro users
         chrome.tabs.create({
             url: `${CONFIG.WEB.DASHBOARD_URL}#subscription`,
             active: true
@@ -2443,7 +2317,6 @@ class TabmangmentPopup {
     }
     async handleLogout() {
         try {
-            // Close search panel if open
             const searchPanel = document.getElementById('search-panel');
             const searchBtn = document.getElementById('search-btn');
             if (searchPanel) {
@@ -2454,17 +2327,14 @@ class TabmangmentPopup {
             }
             document.body.classList.remove('search-active');
 
-            // Get all user-specific data to preserve before clearing
             const allKeys = await chrome.storage.local.get(null);
             const bookmarkKeys = Object.keys(allKeys).filter(key => key.startsWith('bookmarks_'));
             const dataToPreserve = {};
 
-            // Preserve bookmarks for all users
             for (const key of bookmarkKeys) {
                 dataToPreserve[key] = allKeys[key];
             }
 
-            // Preserve theme settings across logout
             if (allKeys.themeConfig) {
                 dataToPreserve.themeConfig = allKeys.themeConfig;
             }
@@ -2472,15 +2342,12 @@ class TabmangmentPopup {
                 dataToPreserve.activeTheme = allKeys.activeTheme;
             }
 
-            // Clear all stored data
             await chrome.storage.local.clear();
 
-            // Restore bookmarks and theme settings (preserve across logout)
             if (Object.keys(dataToPreserve).length > 0) {
                 await chrome.storage.local.set(dataToPreserve);
             }
 
-            // Reset ALL instance variables
             this.isPremium = false;
             this.userEmail = null;
             this.userName = null;
@@ -2488,21 +2355,16 @@ class TabmangmentPopup {
             this.stats = { active: 0, scheduled: 0 };
             this.totalTabCount = 0;
 
-            // Notify simple auth to logout
             if (window.logoutUser) {
                 await window.logoutUser();
             }
 
-            // Send logout message to dashboard (if open)
             try {
                 await chrome.runtime.sendMessage({ type: 'LOGOUT_USER' });
             } catch (e) {
-                // Dashboard may not be open, that's fine
             }
 
-            // Notification disabled
 
-            // Show login screen instead of reloading
             this.showLoginScreen();
         } catch (error) {
             alert('Failed to logout. Please try again.');
@@ -2510,21 +2372,17 @@ class TabmangmentPopup {
     }
     async checkWebLoginStatus() {
         try {
-            // FIRST: Try to validate existing token with Supabase/API
             const stored = await chrome.storage.local.get(['authToken', 'userEmail']);
 
 
             if (stored.userEmail) {
-                // Check localStorage for user data (set by dashboard)
                 try {
                     const storedUserData = localStorage.getItem('tabmangment_user');
                     if (storedUserData) {
                         const userData = JSON.parse(storedUserData);
 
-                        // Check if user is admin
                         const isAdmin = userData.email && userData.email.toLowerCase() === 'selfshios@gmail.com';
 
-                        // Update chrome.storage with data from dashboard (admin gets Pro)
                         await chrome.storage.local.set({
                             userEmail: userData.email || stored.userEmail,
                             userName: userData.name || userData.email?.split('@')[0] || stored.userEmail.split('@')[0],
@@ -2537,13 +2395,11 @@ class TabmangmentPopup {
                         });
                     }
                 } catch (e) {
-                    // localStorage error, keep existing storage
                 }
-                return true; // User is logged in
+                return true;
             } else {
             }
 
-            // SECOND: If no valid token, try to sync from open web page
             const tabs = await chrome.tabs.query({ url: ['*://tabmangment.com/*', '*://tabmangment.netlify.app/*'] });
 
             if (tabs.length === 0) {
@@ -2551,7 +2407,6 @@ class TabmangmentPopup {
             }
 
 
-            // Inject script to read localStorage
             const results = await chrome.scripting.executeScript({
                 target: { tabId: tabs[0].id },
                 func: () => {
@@ -2567,10 +2422,8 @@ class TabmangmentPopup {
             const webData = results[0]?.result;
 
             if (webData && webData.user && webData.token) {
-                // Check if user is admin
                 const isAdmin = webData.user.email && webData.user.email.toLowerCase() === 'selfshios@gmail.com';
 
-                // Save to extension storage (admin gets Pro)
                 await chrome.storage.local.set({
                     userEmail: webData.user.email,
                     userName: webData.user.name || webData.user.email.split('@')[0],
@@ -2598,27 +2451,22 @@ class TabmangmentPopup {
     async checkAuthentication() {
         try {
 
-            // Get ALL storage data for debugging
             const allData = await chrome.storage.local.get(null);
 
-            // ONE-TIME CLEANUP: Remove fallback emails
             if (allData.userEmail && (allData.userEmail.startsWith('fallback_') || allData.userEmail.startsWith('user_'))) {
                 await chrome.storage.local.remove(['userEmail', 'authToken', 'fallbackGenerated', 'emailDetectionError']);
-                // Reload storage data
                 const cleanData = await chrome.storage.local.get(null);
-                return false; // Show login screen
+                return false;
             }
 
             const stored = await chrome.storage.local.get(['userEmail', 'authToken', 'userName', 'isPremium', 'isPro', 'planType', 'currentPeriodEnd', 'subscriptionStatus']);
 
-            // Check if user has email (not fallback or anonymous)
             if (stored.userEmail &&
                 !stored.userEmail.startsWith('fallback_') &&
                 !stored.userEmail.startsWith('user_')) {
                 this.userEmail = stored.userEmail;
                 this.userName = stored.userName || stored.userEmail.split('@')[0];
 
-                // Set premium status - check both isPremium and isPro
                 this.isPremium = stored.isPremium || stored.isPro || false;
 
                 return true;
@@ -2630,13 +2478,11 @@ class TabmangmentPopup {
         }
     }
     showLoginScreen() {
-        // Check if login screen already exists
         const existingLoginScreen = document.getElementById('login-screen');
         if (existingLoginScreen) {
             return;
         }
 
-        // Hide the entire extension UI
         const header = document.querySelector('.header');
         const tabsContainer = document.getElementById('tabs-container');
         const tabLimitWarningContainer = document.getElementById('tab-limit-warning');
@@ -2651,7 +2497,6 @@ class TabmangmentPopup {
         if (statsActionsRow) statsActionsRow.style.display = 'none';
         if (popupMainContent) popupMainContent.style.display = 'none';
 
-        // Check if user data exists in localStorage (coming from dashboard)
         let autoLogin = false;
         let userName = null;
         try {
@@ -2666,7 +2511,6 @@ class TabmangmentPopup {
             autoLogin = false;
         }
 
-        // Create login screen
         const loginScreen = document.createElement('div');
         loginScreen.id = 'login-screen';
         loginScreen.style.cssText = `
@@ -2688,7 +2532,6 @@ class TabmangmentPopup {
         `;
 
         if (autoLogin) {
-            // Auto-login screen
             loginScreen.innerHTML = `
                 <style>
                     @keyframes fadeIn {
@@ -2745,7 +2588,6 @@ class TabmangmentPopup {
 
             document.body.appendChild(loginScreen);
 
-            // Start countdown
             let countdown = 3;
             const countdownEl = document.getElementById('countdown-text');
 
@@ -2756,7 +2598,6 @@ class TabmangmentPopup {
                 }
             }, 1000);
 
-            // Auto-login after 3 seconds
             setTimeout(async () => {
                 clearInterval(countdownInterval);
                 const success = await this.checkWebLoginStatus();
@@ -2766,7 +2607,6 @@ class TabmangmentPopup {
             }, 3000);
 
         } else {
-            // Manual login screen
             loginScreen.innerHTML = `
                 <style>
                     @keyframes fadeIn {
@@ -2845,7 +2685,6 @@ class TabmangmentPopup {
 
             document.body.appendChild(loginScreen);
 
-            // Add event handlers
             setTimeout(() => {
                 const loginBtn = document.getElementById('login-btn');
                 if (loginBtn) {
@@ -2862,13 +2701,11 @@ class TabmangmentPopup {
     }
 
     hideLoginScreen() {
-        // Remove login screen
         const loginScreen = document.getElementById('login-screen');
         if (loginScreen) {
             loginScreen.remove();
         }
 
-        // Show the extension UI
         const header = document.querySelector('.header');
         const tabsContainer = document.getElementById('tabs-container');
         const tabLimitWarningContainer = document.getElementById('tab-limit-warning');
@@ -2887,12 +2724,9 @@ class TabmangmentPopup {
         const scheduledEl = document.getElementById('scheduled-tabs');
 
         if (activeEl) {
-            // Always show just the number - keep it clean
-            // Cap display at 99+ for counts over 100
             const count = this.realTimeTabCount || 0;
             activeEl.textContent = count > 100 ? '99+' : count;
 
-            // Show hidden count in the label instead
             const labelEl = activeEl.nextElementSibling;
             if (labelEl && labelEl.classList.contains('count-label')) {
                 if (!this.isPremium && this.hiddenTabCount > 0) {
@@ -2907,7 +2741,6 @@ class TabmangmentPopup {
     }
 
     updatePremiumUI() {
-        // Hide PRO badges if user has premium
         if (this.isPremium) {
             document.body.classList.add('user-has-premium');
         } else {
@@ -3066,7 +2899,6 @@ class TabmangmentPopup {
         }
         this.isRendering = true;
         try {
-            // Load favorites FIRST before filtering tabs
             try {
                 const bookmarkKey = await this.getUserBookmarkKey();
                 const result = await chrome.storage.local.get([bookmarkKey]);
@@ -3079,7 +2911,6 @@ class TabmangmentPopup {
                 this.tabs = [];
             }
 
-            // Filter out bookmarked tabs from display
             let displayTabs = [...this.tabs];
             if (this.favorites && Array.isArray(this.favorites)) {
                 const bookmarkedUrls = new Set(this.favorites.map(fav => fav.url));
@@ -3236,7 +3067,6 @@ class TabmangmentPopup {
                 });
             });
 
-            // Adjust action button colors based on tab background
             this.adjustActionButtonColors(item);
         });
     }
@@ -3246,7 +3076,6 @@ class TabmangmentPopup {
             const computedStyle = window.getComputedStyle(tabItem);
             const bgColor = computedStyle.backgroundColor;
 
-            // Calculate brightness of background
             const rgb = bgColor.match(/\d+/g);
             if (!rgb || rgb.length < 3) return;
 
@@ -3254,11 +3083,8 @@ class TabmangmentPopup {
             const g = parseInt(rgb[1]);
             const b = parseInt(rgb[2]);
 
-            // Calculate relative luminance (0-1 scale)
             const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
 
-            // If background is dark (luminance < 0.5), use light icons
-            // If background is light (luminance >= 0.5), use dark icons
             const isDark = luminance < 0.5;
 
             const actionBtns = tabItem.querySelectorAll('.action-btn');
@@ -3267,22 +3093,18 @@ class TabmangmentPopup {
                 if (!svg) return;
 
                 if (isDark) {
-                    // Dark background - use light icons
                     btn.style.setProperty('background', 'transparent', 'important');
                     btn.style.setProperty('border', 'none', 'important');
                     btn.style.setProperty('color', 'rgba(255, 255, 255, 0.95)', 'important');
                     svg.style.setProperty('stroke', 'rgba(255, 255, 255, 0.95)', 'important');
 
-                    // Apply shadow for depth
                     btn.style.setProperty('filter', 'drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3))', 'important');
                 } else {
-                    // Light background - use dark icons
                     btn.style.setProperty('background', 'transparent', 'important');
                     btn.style.setProperty('border', 'none', 'important');
                     btn.style.setProperty('color', 'rgba(0, 0, 0, 0.8)', 'important');
                     svg.style.setProperty('stroke', 'rgba(0, 0, 0, 0.8)', 'important');
 
-                    // Apply shadow for depth
                     btn.style.setProperty('filter', 'drop-shadow(0 2px 4px rgba(0, 0, 0, 0.15))', 'important');
                 }
             });
@@ -3291,21 +3113,17 @@ class TabmangmentPopup {
         }
     }
     handleFaviconErrors() {
-        // Handle all favicon images (tabs, bookmarks, toasts, etc.)
         const faviconImages = document.querySelectorAll('.tab-favicon, .bookmark-favicon img, img[alt*="Favicon"], img[alt*="favicon"]');
         faviconImages.forEach(img => {
-            // Remove any existing error listeners to avoid duplicates
             const newImg = img.cloneNode(true);
             img.parentNode?.replaceChild(newImg, img);
 
-            // Add silent error handler
             newImg.addEventListener('error', (e) => {
                 e.preventDefault();
                 e.stopPropagation();
                 newImg.src = 'icons/icon-16.png';
             }, { once: true });
 
-            // Also prevent the error from propagating to console
             newImg.onerror = null;
         });
     }
@@ -3512,18 +3330,14 @@ class TabmangmentPopup {
                 const result = await chrome.storage.local.get([bookmarkKey, 'themeConfig']);
                 const bookmarks = result[bookmarkKey] || [];
 
-                // Get theme with safe fallback
                 let theme = result.themeConfig || { primaryColor: '#667eea', secondaryColor: '#764ba2' };
 
-                // Ensure theme colors are valid hex codes
                 const isValidHex = (color) => /^#[0-9A-F]{6}$/i.test(color);
                 if (!isValidHex(theme.primaryColor)) theme.primaryColor = '#667eea';
                 if (!isValidHex(theme.secondaryColor)) theme.secondaryColor = '#764ba2';
 
-                // Create gradient from theme colors
                 const themeGradient = `linear-gradient(135deg, ${theme.primaryColor} 0%, ${theme.secondaryColor} 100%)`;
 
-                // Create shadow color safely
                 const hexToRgba = (hex, alpha) => {
                     const r = parseInt(hex.slice(1, 3), 16);
                     const g = parseInt(hex.slice(3, 5), 16);
@@ -3532,7 +3346,6 @@ class TabmangmentPopup {
                 };
                 const themeShadow = hexToRgba(theme.primaryColor, 0.25);
 
-                // Create darker version for hover
                 const darkenColor = (hex) => {
                     const r = Math.max(0, parseInt(hex.slice(1, 3), 16) - 20);
                     const g = Math.max(0, parseInt(hex.slice(3, 5), 16) - 20);
@@ -3729,7 +3542,6 @@ class TabmangmentPopup {
                 `;
                 container.innerHTML = bookmarksHTML;
                 this.attachBookmarkListeners();
-                // Handle favicon errors silently
                 setTimeout(() => this.handleFaviconErrors(), 100);
                 container.style.opacity = '1';
                 container.style.transform = 'translateY(0)';
@@ -3895,7 +3707,6 @@ class TabmangmentPopup {
 
         let visibleCount = 0;
 
-        // Show/hide and highlight bookmarks based on search
         bookmarkItems.forEach((item, index) => {
             const bookmark = allBookmarks[index];
             if (!bookmark) return;
@@ -3904,7 +3715,6 @@ class TabmangmentPopup {
             const url = (bookmark.url || '').toLowerCase();
             const domain = this.extractDomain(bookmark.url).toLowerCase();
 
-            // Check if bookmark matches search
             const matchesSearch = searchQuery === '' ||
                                 title.includes(searchQuery) ||
                                 url.includes(searchQuery) ||
@@ -3914,7 +3724,6 @@ class TabmangmentPopup {
                 item.style.display = 'flex';
                 visibleCount++;
 
-                // Highlight matching text
                 if (searchQuery !== '') {
                     const titleEl = item.querySelector('.bookmark-title');
                     const urlEl = item.querySelector('.bookmark-url');
@@ -3934,7 +3743,6 @@ class TabmangmentPopup {
                         `;
                     }
                 } else {
-                    // Reset to original text when search is cleared
                     const titleEl = item.querySelector('.bookmark-title');
                     const urlEl = item.querySelector('.bookmark-url');
 
@@ -3957,7 +3765,6 @@ class TabmangmentPopup {
             }
         });
 
-        // Update the counter
         const bookmarkCount = document.getElementById('bookmark-count');
         if (bookmarkCount) {
             if (searchQuery === '') {
@@ -3982,7 +3789,6 @@ class TabmangmentPopup {
     }
 
     attachBookmarkListeners() {
-        // Attach search input listeners
         const searchInput = document.getElementById('bookmark-search');
         if (searchInput) {
             searchInput.addEventListener('input', (e) => {
@@ -4260,7 +4066,6 @@ class TabmangmentPopup {
     async animateBookmarkToTab(bookmarkData) {
         const tempBookmark = this.createTempBookmarkElement(bookmarkData);
         document.body.appendChild(tempBookmark);
-        // Handle favicon errors silently
         setTimeout(() => this.handleFaviconErrors(), 50);
         tempBookmark.style.position = 'fixed';
         tempBookmark.style.right = '20px';
@@ -4413,11 +4218,9 @@ class TabmangmentPopup {
     }
     async handleUpgrade() {
         try {
-            // Close any open modals
             const modal = document.querySelector('div[style*="position: fixed"][style*="z-index: 10000"]');
             if (modal) modal.remove();
 
-            // Redirect to user dashboard subscription page
             await chrome.tabs.create({
                 url: `${CONFIG.WEB.DASHBOARD_URL}#subscription`,
                 active: true
@@ -4919,8 +4722,6 @@ class TabmangmentPopup {
             }
         });
     }
-    // Pro activation is now handled only by payment verification from backend
-    // Manual activation has been removed for security
 
     async checkSubscriptionStatus(userEmail) {
         try {
@@ -4928,21 +4729,18 @@ class TabmangmentPopup {
                 return { isActive: false, plan: 'free', subscriptionId: null };
             }
 
-            // FIRST: Check storage - if it says Pro, ALWAYS trust it (don't expire)
             const stored = await chrome.storage.local.get(['isPremium', 'planType', 'subscriptionActive', 'lastSyncTime', 'subscriptionId']);
             if (stored.isPremium === true || stored.planType === 'pro' || stored.subscriptionActive === true) {
                 this.isPremium = true;
                 return { isActive: true, plan: 'pro', subscriptionId: stored.subscriptionId };
             }
 
-            // SECOND: Check localStorage for Pro status (set by dashboard) and fetch real billing date
             try {
                 const storedUserData = localStorage.getItem('tabmangment_user');
                 if (storedUserData) {
                     const userData = JSON.parse(storedUserData);
 
                     if (userData.isPro === true || userData.plan === 'pro') {
-                        // Fetch REAL billing date from API
                         let billingData = {};
                         try {
                             const backendUrl = await this.getBackendUrl();
@@ -4961,10 +4759,8 @@ class TabmangmentPopup {
                                 }
                             }
                         } catch (apiError) {
-                            // API failed, will use userData fallback
                         }
 
-                        // IMMEDIATE PRO ACTIVATION with REAL billing date
                         await chrome.storage.local.set({
                             isPremium: true,
                             subscriptionActive: true,
@@ -4979,7 +4775,6 @@ class TabmangmentPopup {
                             isAdmin: billingData.isAdmin || false
                         });
 
-                        // Immediate UI update
                         this.isPremium = true;
                         await this.render();
                         this.updateUIForProUser();
@@ -4994,7 +4789,6 @@ class TabmangmentPopup {
                     }
                 }
             } catch (error) {
-                // localStorage error, continue to check chrome.storage
             }
 
             const localStatus = await chrome.storage.local.get(['isPremium', 'subscriptionActive', 'planType', 'subscriptionId', 'payment_success']);
@@ -5012,8 +4806,6 @@ class TabmangmentPopup {
                 }
             }
 
-            // REMOVED: API call to /status endpoint (no longer exists)
-            // Storage is the source of truth - updated by dashboard and webhooks
 
             if (localStatus.isPremium && localStatus.subscriptionActive) {
                 return {
@@ -5036,13 +4828,10 @@ class TabmangmentPopup {
         }
     }
 
-    // Simple subscription check with real billing date sync
     async checkSubscriptionStatusBackground() {
         try {
-            // Get cached premium status first
             const cached = await chrome.storage.local.get(['isPremium', 'planType', 'subscriptionActive']);
 
-            // If user has email, fetch REAL billing data from API
             if (this.userEmail) {
                 try {
                     const backendUrl = await this.getBackendUrl();
@@ -5060,7 +4849,6 @@ class TabmangmentPopup {
                             const data = await response.json();
 
                             if (data.success && data.isPro) {
-                                // Update with REAL billing date from Stripe/Database
                                 await chrome.storage.local.set({
                                     isPremium: true,
                                     subscriptionActive: true,
@@ -5075,12 +4863,10 @@ class TabmangmentPopup {
                                 });
                                 this.isPremium = true;
 
-                                // Update UI with Pro features
                                 this.removeAllProBadges();
                                 this.updateUIForProUser();
                                 this.renderSubscriptionPlan();
                             } else if (data.success && !data.isPro) {
-                                // User no longer has Pro
                                 await chrome.storage.local.set({
                                     isPremium: false,
                                     subscriptionActive: false,
@@ -5094,11 +4880,9 @@ class TabmangmentPopup {
                         }
                     }
                 } catch (apiError) {
-                    // API failed, use cached data
                 }
             }
 
-            // Check for refunds
             const refundCheck = await chrome.storage.local.get(['refundProcessed', 'subscriptionRefunded']);
             if (refundCheck.refundProcessed || refundCheck.subscriptionRefunded) {
                 await chrome.storage.local.set({
@@ -5107,7 +4891,7 @@ class TabmangmentPopup {
                     planType: 'free'
                 });
                 this.isPremium = false;
-                this.render(); // Re-render to show free tier
+                this.render();
             }
         } catch (error) {
         }
@@ -5123,11 +4907,9 @@ class TabmangmentPopup {
                 }
             }
         } catch (error) {
-            // Silent fail
         }
     }
 
-    // Simple Pro activation
     async activateProFeatures() {
         try {
             const userEmail = await this.getUserEmail();
@@ -5146,19 +4928,16 @@ class TabmangmentPopup {
             await this.render();
             this.updateUIForProUser();
         } catch (error) {
-            // Silent fail
         }
     }
 
     async autoCheckPaymentCompletion() {
         try {
 
-            // Check ALL tabs for payment confirmation (both active and inactive)
             const tabs = await chrome.tabs.query({});
 
             for (const tab of tabs) {
                 if (tab.url) {
-                    // Check if any open tab contains payment confirmation
                     const url = tab.url.toLowerCase();
                     const hasPaymentUrl = (
                         url.includes('success') ||
@@ -5172,7 +4951,6 @@ class TabmangmentPopup {
 
 
                     if (hasPaymentUrl) {
-                        // Try to get page content using Manifest V3 API
                         try {
                             const results = await chrome.scripting.executeScript({
                                 target: { tabId: tab.id },
@@ -5195,14 +4973,12 @@ class TabmangmentPopup {
 
 
                                 if (hasPaymentContent) {
-                                    // Auto-activate Pro features
                                     const userEmail = await this.getUserEmail();
                                     await this.activateProForPayment(userEmail);
                                     return;
                                 }
                             }
                         } catch (e) {
-                            // Fallback: if this looks like a payment page, try activating anyway
                             if (url.includes('sites.google.com') || url.includes('thank') || url.includes('success')) {
                                 const userEmail = await this.getUserEmail();
                                 await this.activateProForPayment(userEmail);
@@ -5218,14 +4994,11 @@ class TabmangmentPopup {
         }
     }
 
-    // Activate Pro features after detecting payment
     async activateProForPayment(userEmail) {
         try {
 
-            // Check if user is already Pro - don't spam notifications
             const currentStatus = await chrome.storage.local.get(['isPremium', 'proWelcomeShown']);
 
-            // If already Pro, just update UI silently
             if (currentStatus.isPremium) {
                 this.isPremium = true;
                 await this.render();
@@ -5234,7 +5007,6 @@ class TabmangmentPopup {
                 return true;
             }
 
-            // User is newly becoming Pro
             const shouldShowNotification = !currentStatus.proWelcomeShown;
 
             const proData = {
@@ -5250,19 +5022,17 @@ class TabmangmentPopup {
                 paymentDetected: true,
                 autoActivated: true,
                 detectionMethod: 'popup_scan',
-                proWelcomeShown: true  // Mark as shown immediately
+                proWelcomeShown: true
             };
 
             await chrome.storage.local.set(proData);
 
             this.isPremium = true;
 
-            // Force UI updates
             await this.render();
             this.updateUIForProUser();
             await this.renderSubscriptionPlan();
 
-            // Notification removed - no spam
 
             if (this.showMessage) {
                 this.showMessage('🎉 Pro features activated! Payment detected.', 'success');
@@ -5276,8 +5046,6 @@ class TabmangmentPopup {
 
     async getUserEmail() {
         try {
-            // CRITICAL: Check if user already has a real email from web login
-            // NEVER overwrite a real email with a fallback!
             const stored = await chrome.storage.local.get(['userEmail']);
             if (stored.userEmail &&
                 !stored.userEmail.startsWith('fallback_') &&
@@ -5285,21 +5053,17 @@ class TabmangmentPopup {
                 return stored.userEmail;
             }
 
-            // Initialize email detector if not already done
             if (!this.emailDetector) {
                 this.emailDetector = new EmailDetector();
             }
 
-            // Use the enhanced email detection
             const email = await this.emailDetector.detectUserEmail();
 
             if (email) {
                 return email;
             } else {
-                // Generate a unique user identifier for Chrome Web Store users
                 const uniqueUserId = 'user_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
 
-                // Store this unique ID for future use and tracking
                 await chrome.storage.local.set({
                     userEmail: uniqueUserId,
                     detectedEmail: uniqueUserId,
@@ -5311,7 +5075,6 @@ class TabmangmentPopup {
                 return uniqueUserId;
             }
         } catch (error) {
-            // CRITICAL: Before generating fallback, check if real email exists
             const stored = await chrome.storage.local.get(['userEmail']);
             if (stored.userEmail &&
                 !stored.userEmail.startsWith('fallback_') &&
@@ -5319,7 +5082,6 @@ class TabmangmentPopup {
                 return stored.userEmail;
             }
 
-            // Generate fallback unique ID instead of prompting
             const fallbackId = 'fallback_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
             await chrome.storage.local.set({
                 userEmail: fallbackId,
@@ -5352,7 +5114,6 @@ class TabmangmentPopup {
                 return;
             }
 
-            // Check localStorage for Pro status (set by dashboard)
             let isPro = false;
             let userData = null;
 
@@ -5363,16 +5124,13 @@ class TabmangmentPopup {
                     isPro = userData.isPro === true || userData.plan === 'pro';
                 }
             } catch (e) {
-                // localStorage error
             }
 
-            // Fallback to chrome.storage
             if (!isPro) {
                 isPro = stored.isPremium === true || stored.planType === 'pro' || stored.subscriptionActive === true;
             }
 
             if (isPro) {
-                // User has active Pro subscription
                 await chrome.storage.local.set({
                     hasProPlan: true,
                     isPremium: true,
@@ -5388,12 +5146,10 @@ class TabmangmentPopup {
                 this.isPremium = true;
                 this.updateUIForProUser();
 
-                // Show subscription info in UI
                 if (userData) {
                     this.updateSubscriptionInfo(userData);
                 }
             } else {
-                // Not Pro - set to free
                 await chrome.storage.local.set({
                     hasProPlan: false,
                     isPremium: false,
@@ -5406,19 +5162,16 @@ class TabmangmentPopup {
                 this.isPremium = false;
             }
         } catch (error) {
-            // On error, check chrome.storage for existing Pro status
             const fallback = await chrome.storage.local.get(['isPremium']);
             this.isPremium = fallback.isPremium === true;
         }
     }
 
-    // Update subscription info in UI
     updateSubscriptionInfo(data) {
         if (data.currentPeriodEnd) {
             const endDate = new Date(data.currentPeriodEnd);
             const daysLeft = Math.ceil((endDate - new Date()) / (1000 * 60 * 60 * 24));
 
-            // Store for display in subscription plan section
             this.subscriptionInfo = {
                 status: data.subscriptionStatus,
                 currentPeriodEnd: data.currentPeriodEnd,
@@ -5429,35 +5182,19 @@ class TabmangmentPopup {
         }
     }
 
-    // Auto-refresh subscription status every 5 minutes
-    // DISABLED: Storage is now source of truth, not API
-    // Only webhooks should update subscription status
     startSubscriptionStatusRefresh() {
-        // if (this.statusRefreshInterval) {
-        //     clearInterval(this.statusRefreshInterval);
-        // }
 
-        // this.statusRefreshInterval = setInterval(async () => {
-        //     await this.checkAndApplySubscriptionStatus();
-        //     // Re-render if the user is viewing the popup
-        //     if (document.visibilityState === 'visible') {
-        //         await this.renderSubscriptionPlan();
-        //     }
-        // }, 5 * 60 * 1000); // 5 minutes
     }
     async upgradeToProPlan() {
         try {
-            // IMPORTANT: Check if already Pro - don't show welcome again
             const currentStatus = await chrome.storage.local.get(['isPremium', 'hasProPlan', 'proWelcomeShown']);
 
-            // If already Pro, just update UI silently (no notification)
             if (currentStatus.isPremium || currentStatus.hasProPlan) {
                 this.isPremium = true;
                 this.updateUIForProUser();
-                return; // Don't show welcome message again
+                return;
             }
 
-            // User is newly upgrading to Pro
             const shouldShowWelcome = !currentStatus.proWelcomeShown;
 
             await chrome.storage.local.set({
@@ -5467,14 +5204,13 @@ class TabmangmentPopup {
                 planType: 'pro',
                 proUpgradedAt: new Date().toISOString(),
                 proFeatures: ['unlimited_tabs', 'advanced_management', 'premium_themes'],
-                proWelcomeShown: true  // Mark as shown to prevent spam
+                proWelcomeShown: true
             });
 
             await chrome.storage.local.remove(['expecting_payment', 'payment_success']);
 
             this.isPremium = true;
 
-            // Welcome notification removed - no spam
             this.updateUIForProUser();
 
             const paymentBtn = document.getElementById('payment-completion-btn');
@@ -5488,7 +5224,6 @@ class TabmangmentPopup {
         }
     }
     async showProSuccessMessage() {
-        // Function disabled - no notifications/modals
         return;
     }
     async updateUIForProUser() {
@@ -5522,11 +5257,9 @@ class TabmangmentPopup {
 
         this.removeAllProBadges();
 
-        // Hide PRO badges for premium users
         this.updatePremiumUI();
     }
     async updateUIForFreeUser() {
-        // Show upgrade buttons
         const upgradeButtons = document.querySelectorAll('#tab-limit-upgrade-btn, #premium-upgrade');
         upgradeButtons.forEach(btn => {
             if (btn) {
@@ -5534,7 +5267,6 @@ class TabmangmentPopup {
             }
         });
 
-        // Reset premium button to upgrade state
         const premiumBtn = document.getElementById('premium-btn');
         const premiumBtnText = document.getElementById('premium-btn-text');
         if (premiumBtn && premiumBtnText) {
@@ -5548,18 +5280,15 @@ class TabmangmentPopup {
             });
         }
 
-        // Update plan indicator to show free plan
         const planIndicator = document.getElementById('plan-indicator');
         if (planIndicator) {
             planIndicator.className = 'plan-indicator free-plan';
             planIndicator.innerHTML = '<div class="plan-badge">FREE PLAN</div><div class="plan-description">Limited to 10 tabs</div>';
         }
 
-        // Add pro badges back to locked features
         this.removeAllProBadges();
         this.addProBadgesToLockedFeatures();
 
-        // Show PRO badges for free users
         this.updatePremiumUI();
     }
     async updatePlanIndicator() {
@@ -5577,7 +5306,6 @@ class TabmangmentPopup {
                     year: 'numeric'
                 });
 
-                // Check if subscription is being cancelled
                 if (subData.subscriptionStatus === 'cancelling') {
                     billingInfo = `Ends ${formattedDate}`;
                 } else {
@@ -5672,10 +5400,8 @@ class TabmangmentPopup {
                 this.paymentStatusCacheTime = now;
                 return result;
             }
-            // NEW: Check localStorage (set by dashboard) instead of making API calls
             let isPro = false;
 
-            // Check localStorage first
             try {
                 const storedUserData = localStorage.getItem('tabmangment_user');
                 if (storedUserData) {
@@ -5683,10 +5409,8 @@ class TabmangmentPopup {
                     isPro = userData.isPro === true || userData.plan === 'pro';
                 }
             } catch (e) {
-                // Fall through to chrome.storage
             }
 
-            // Fallback to chrome.storage
             const localSub = await chrome.storage.local.get(['stripePaymentCompleted', 'isPremium', 'isPro', 'planType']);
             if (!isPro) {
                 isPro = localSub.stripePaymentCompleted || localSub.isPremium || localSub.isPro || localSub.planType === 'pro';
@@ -5732,20 +5456,16 @@ class TabmangmentPopup {
             const now = Date.now();
             const subscriptionType = subscriptionData.subscription_type || 'monthly';
 
-            // Check if user is admin
             const stored = await chrome.storage.local.get(['isAdmin', 'planType']);
             const isAdmin = stored.isAdmin || stored.planType === 'admin';
 
             let nextBillingDate = subscriptionData.next_billing_date;
 
-            // For admin users, set a far-future date to prevent recalculation
             if (isAdmin) {
-                // Set billing date to 100 years in the future for admins
                 const farFuture = new Date();
                 farFuture.setFullYear(farFuture.getFullYear() + 100);
                 nextBillingDate = farFuture.getTime();
             } else if (!nextBillingDate || nextBillingDate <= now) {
-                // For regular users, only recalculate if missing or expired
                 nextBillingDate = this.calculateNextBillingDate(subscriptionType, now);
             }
 
@@ -6081,8 +5801,6 @@ class TabmangmentPopup {
     }
     async openStripeBillingPortal() {
         try {
-            // Redirect to dashboard where user can click "Manage Subscription"
-            // This is more reliable than calling API from extension
             await chrome.tabs.create({
                 url: `${CONFIG.WEB.DASHBOARD_URL}`,
                 active: true
@@ -6427,7 +6145,6 @@ Thank you!`);
                 upgradeBtn.disabled = true;
             }
 
-            // Redirect to user dashboard subscription page
             await chrome.tabs.create({
                 url: `${CONFIG.WEB.DASHBOARD_URL}#subscription`,
                 active: true
@@ -6839,8 +6556,6 @@ Thank you!`);
         }
     }
     getSafeFaviconUrl(faviconUrl) {
-        // Return the actual favicon URL if available, otherwise use local icon
-        // Note: Some external favicons may trigger CORS console errors, but they're harmless
         return faviconUrl || 'icons/icon-16.png';
     }
     async syncWithBrowserTabs(realTabs) {
@@ -7712,47 +7427,34 @@ Thank you!`);
 let popup;
 if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', async () => {
-        // Apply theme FIRST before creating popup
         await applyStoredTheme();
 
         popup = new TabmangmentPopup();
         window.popup = popup;
 
-        // Start dashboard sync immediately after instance creation
-        // (prototype methods are now available)
         if (typeof popup.startDashboardSync === 'function') {
             popup.startDashboardSync();
         }
 
-        // DISABLED: checkAndApplyProStatus creates fallback emails that overwrite real logins
-        // await popup.checkAndApplyProStatus();
     });
 } else {
-    // Apply theme FIRST before creating popup
     applyStoredTheme();
 
     popup = new TabmangmentPopup();
     window.popup = popup;
 
-    // Start dashboard sync immediately after instance creation
-    // (prototype methods are now available)
     if (typeof popup.startDashboardSync === 'function') {
         popup.startDashboardSync();
     }
 
-    // DISABLED: checkAndApplyProStatus creates fallback emails that overwrite real logins
-    // popup.checkAndApplyProStatus();
 }
 window.addEventListener('beforeunload', () => {
     if (popup) {
         popup.stopRealTimeUpdates();
     }
 });
-// Dashboard sync functionality for TabmangmentPopup
 
-// Add dashboard sync methods to the prototype
 TabmangmentPopup.prototype.startDashboardSync = function() {
-    // Listen for messages from dashboard
     if (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.onMessage) {
         chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
             if (message.type === 'SUBSCRIPTION_UPDATE') {
@@ -7766,25 +7468,20 @@ TabmangmentPopup.prototype.startDashboardSync = function() {
         });
     }
 
-    // Check for dashboard sync data in localStorage periodically
     setInterval(() => {
         this.checkDashboardSyncData();
-    }, 10000); // Check every 10 seconds
+    }, 10000);
 
-    // Also send stats to dashboard
     setInterval(() => {
         this.sendStatsToLocalStorage();
-    }, 30000); // Send stats every 30 seconds
+    }, 30000);
 };
 
 TabmangmentPopup.prototype.handleDashboardSync = async function(message) {
     try {
         if (message.user && message.user.email) {
-            // Update extension with dashboard data
             const userData = message.user;
 
-            // CRITICAL: Dashboard is the source of truth - ALWAYS sync plan status
-            // This allows downgrading from Pro to Free when subscription is cancelled
             const newPlanStatus = userData.isPro || false;
 
             await chrome.storage.local.set({
@@ -7798,12 +7495,10 @@ TabmangmentPopup.prototype.handleDashboardSync = async function(message) {
 
             this.isPremium = newPlanStatus;
 
-            // Update UI
             await this.render();
             if (this.isPremium) {
                 this.updateUIForProUser();
             } else {
-                // Update UI for free user
                 this.updateUIForFreeUser();
             }
             await this.renderSubscriptionPlan();
@@ -7819,7 +7514,6 @@ TabmangmentPopup.prototype.handleUserLogin = async function(message) {
         const userData = message.userData;
         const token = message.token;
 
-        // Save user data to chrome.storage
         await chrome.storage.local.set({
             userEmail: userData.email,
             userName: userData.name || userData.email.split('@')[0],
@@ -7831,15 +7525,12 @@ TabmangmentPopup.prototype.handleUserLogin = async function(message) {
         });
 
 
-        // Update popup state
         this.userEmail = userData.email;
         this.userName = userData.name || userData.email.split('@')[0];
         this.isPremium = userData.isPro || false;
 
-        // Hide login screen and show main UI
         this.hideLoginScreen();
 
-        // Re-initialize the extension with authenticated state
         await this.loadData();
         await this.render();
 
@@ -7854,10 +7545,8 @@ TabmangmentPopup.prototype.checkDashboardSyncData = function() {
             const data = JSON.parse(syncData);
             const now = Date.now();
 
-            // Only process if data is recent (less than 1 minute old)
             if (data.timestamp && (now - data.timestamp) < 60000) {
                 this.handleDashboardSync(data);
-                // Clear the sync data after processing
                 localStorage.removeItem('dashboardSyncData');
             }
         }
@@ -7867,15 +7556,12 @@ TabmangmentPopup.prototype.checkDashboardSyncData = function() {
 
 TabmangmentPopup.prototype.sendStatsToLocalStorage = async function() {
     try {
-        // Get current tab statistics
         const tabs = await chrome.tabs.query({});
         const managedTabs = this.tabs ? this.tabs.length : 0;
         const activeTimers = Object.keys(this.tabTimers || {}).length;
 
-        // Calculate memory saved (estimate)
-        const memorySavedMB = Math.max(0, (tabs.length - managedTabs) * 50); // Estimate 50MB per tab
+        const memorySavedMB = Math.max(0, (tabs.length - managedTabs) * 50);
 
-        // Calculate focus score based on managed vs total tabs
         const focusScore = tabs.length > 0 ? Math.round((managedTabs / tabs.length) * 100) : 100;
 
         const stats = {
@@ -7886,84 +7572,65 @@ TabmangmentPopup.prototype.sendStatsToLocalStorage = async function() {
             lastUpdated: Date.now()
         };
 
-        // Store stats for dashboard to read
         localStorage.setItem('extensionStats', JSON.stringify(stats));
 
     } catch (error) {
     }
 };
 
-// ========== THEME APPLICATION FUNCTIONALITY ==========
 
 /**
  * Apply stored theme from localStorage to popup
  */
 async function applyStoredTheme() {
     try {
-        // Get theme config from chrome.storage.local (shared across extension)
         const stored = await chrome.storage.local.get(['themeConfig', 'activeTheme']);
 
         if (!stored.themeConfig) {
-            // No theme set, use defaults
             return;
         }
 
-        // Apply theme to popup
         applyThemeToPopup(stored.themeConfig);
 
     } catch (error) {
-        // Error loading theme - silently fail
     }
 }
 
 /**
  * Apply theme configuration to popup elements
  */
-// Calculate luminance of a color to determine if it's light or dark (WCAG 2.1 formula)
 function getColorLuminance(hexColor) {
-    // Remove # if present
     let hex = hexColor.replace('#', '');
 
-    // Handle 3-digit hex codes by expanding them to 6 digits
     if (hex.length === 3) {
         hex = hex[0] + hex[0] + hex[1] + hex[1] + hex[2] + hex[2];
     }
 
-    // Convert to RGB (0-1 range)
     let r = parseInt(hex.substr(0, 2), 16) / 255;
     let g = parseInt(hex.substr(2, 2), 16) / 255;
     let b = parseInt(hex.substr(4, 2), 16) / 255;
 
-    // Apply gamma correction (sRGB to linear RGB)
     r = r <= 0.03928 ? r / 12.92 : Math.pow((r + 0.055) / 1.055, 2.4);
     g = g <= 0.03928 ? g / 12.92 : Math.pow((g + 0.055) / 1.055, 2.4);
     b = b <= 0.03928 ? b / 12.92 : Math.pow((b + 0.055) / 1.055, 2.4);
 
-    // Calculate relative luminance using WCAG formula
     const luminance = 0.2126 * r + 0.7152 * g + 0.0722 * b;
 
     return luminance;
 }
 
-// Get contrasting text color based on background
 function getContrastingTextColor(backgroundColor) {
     const luminance = getColorLuminance(backgroundColor);
 
-    // If background is light (luminance > 0.5), use dark text
-    // If background is dark (luminance <= 0.5), use light text
     return luminance > 0.5 ? '#1e293b' : '#ffffff';
 }
 
-// Get secondary text color (slightly transparent)
 function getSecondaryTextColor(backgroundColor) {
     const luminance = getColorLuminance(backgroundColor);
 
-    // If background is light, use dark gray
-    // If background is dark, use light gray
     return luminance > 0.5 ? '#64748b' : '#94a3b8';
 }
 
-// Calculate WCAG contrast ratio between two colors
 function getContrastRatio(color1, color2) {
     const lum1 = getColorLuminance(color1);
     const lum2 = getColorLuminance(color2);
@@ -7974,28 +7641,22 @@ function getContrastRatio(color1, color2) {
     return (lighter + 0.05) / (darker + 0.05);
 }
 
-// Check if text color has sufficient contrast with background (WCAG AA: 4.5:1)
 function hasGoodContrast(textColor, backgroundColor, minRatio = 4.5) {
     try {
         const ratio = getContrastRatio(textColor, backgroundColor);
         return ratio >= minRatio;
     } catch (error) {
-        // If error in calculation, assume bad contrast
         return false;
     }
 }
 
-// Helper function to convert hex to RGB
 function hexToRgb(hex) {
-    // Remove # if present
     hex = hex.replace('#', '');
 
-    // Handle 3-digit hex
     if (hex.length === 3) {
         hex = hex[0] + hex[0] + hex[1] + hex[1] + hex[2] + hex[2];
     }
 
-    // Parse hex values
     const r = parseInt(hex.substr(0, 2), 16);
     const g = parseInt(hex.substr(2, 2), 16);
     const b = parseInt(hex.substr(4, 2), 16);
@@ -8007,7 +7668,6 @@ function hexToRgb(hex) {
     return { r, g, b };
 }
 
-// Load and apply custom theme from storage
 async function loadAndApplyTheme() {
     try {
         const { activeTheme, themeConfig } = await chrome.storage.local.get(['activeTheme', 'themeConfig']);
@@ -8016,7 +7676,6 @@ async function loadAndApplyTheme() {
             applyThemeToPopup(themeConfig);
         }
     } catch (error) {
-        // Error loading theme - silently fail
     }
 }
 
@@ -8036,82 +7695,61 @@ async function loadAndApplyTheme() {
  */
 function applyThemeToPopup(theme) {
     try {
-        // Auto-calculate contrasting text colors based on ACTUAL backgrounds
         const bgColor = theme.primaryColor || '#667eea';
         const accentColor = theme.accentColor || '#8b5cf6';
 
-        // Calculate light accent background for tabs (if not provided)
         let tabItemBg = theme.backgroundColor;
 
-        // If no backgroundColor provided, or if it's white, use light accent color
         if (!tabItemBg || tabItemBg === 'rgba(255, 255, 255, 0.95)' || tabItemBg === '#ffffff') {
-            // Create light accent background: 8% opacity of accent color
             const accentRgb = hexToRgb(accentColor);
             tabItemBg = accentRgb
                 ? `rgba(${accentRgb.r}, ${accentRgb.g}, ${accentRgb.b}, 0.08)`
-                : 'rgba(139, 92, 246, 0.08)'; // Fallback
+                : 'rgba(139, 92, 246, 0.08)';
         }
 
-        // Extract solid color from rgba/rgb if needed
         let tabItemBgHex;
         if (tabItemBg.startsWith('rgba') || tabItemBg.startsWith('rgb')) {
-            // For transparent backgrounds, check against body gradient background
-            // Use primary color as reference since tabs appear on gradient background
             tabItemBgHex = bgColor;
         } else if (tabItemBg.startsWith('#')) {
-            // Direct hex color
             tabItemBgHex = tabItemBg;
         } else {
-            // Fallback
             tabItemBgHex = bgColor;
         }
 
-        // Calculate auto-contrast text colors for tab items
         const autoTabItemTextColor = getContrastingTextColor(tabItemBgHex);
         const autoTabItemSecondaryTextColor = getSecondaryTextColor(tabItemBgHex);
 
-        // CRITICAL: Validate user's text color against tab background
-        // If user provided a text color, check if it has sufficient contrast with tab background
         let tabItemTextColor;
         let tabItemSecondaryTextColor;
 
         if (theme.textColor && hasGoodContrast(theme.textColor, tabItemBgHex)) {
-            // User's color has good contrast - use it for tabs
             tabItemTextColor = theme.textColor;
-            tabItemSecondaryTextColor = `${theme.textColor}cc`; // Add opacity
+            tabItemSecondaryTextColor = `${theme.textColor}cc`;
         } else {
-            // User's color has poor contrast or not provided - use auto-calculated
             tabItemTextColor = autoTabItemTextColor;
             tabItemSecondaryTextColor = autoTabItemSecondaryTextColor;
 
-            // Log warning if user's color was rejected
             if (theme.textColor) {
                 console.warn(`Theme text color ${theme.textColor} has insufficient contrast with tab background ${tabItemBgHex}. Using auto-calculated color ${tabItemTextColor} instead.`);
             }
         }
 
-        // Calculate text colors for STAT CARDS (white background)
         const statCardTextColor = getContrastingTextColor('#ffffff');
         const statCardSecondaryTextColor = getSecondaryTextColor('#ffffff');
 
-        // General UI text colors (for elements on gradient background)
         const primaryTextColor = theme.textColor || getContrastingTextColor(bgColor);
-        const secondaryTextColor = theme.textColor ? `${theme.textColor}cc` : getSecondaryTextColor(bgColor); // Add opacity to user's color
+        const secondaryTextColor = theme.textColor ? `${theme.textColor}cc` : getSecondaryTextColor(bgColor);
 
-        // Create style element for theme
         const themeStyle = document.createElement('style');
         themeStyle.id = 'custom-theme-styles';
 
-        // Remove existing theme styles
         const existingStyle = document.getElementById('custom-theme-styles');
         if (existingStyle) {
             existingStyle.remove();
         }
 
-        // Build CSS based on theme config
         let css = '';
 
-        // Background gradient for main content and loader (NOT body - each section has its own)
         if (theme.bgType === 'gradient' || !theme.bgType) {
             css += `
                 .popup-main-content {
@@ -8145,7 +7783,6 @@ function applyThemeToPopup(theme) {
             `;
         }
 
-        // Font family - Apply to ALL text elements
         if (theme.fontFamily) {
             css += `
                 body,
@@ -8170,7 +7807,6 @@ function applyThemeToPopup(theme) {
             `;
         }
 
-        // Font size - Apply to body and key elements
         if (theme.fontSize) {
             css += `
                 body {
@@ -8188,7 +7824,6 @@ function applyThemeToPopup(theme) {
             `;
         }
 
-        // Button and UI element colors
         css += `
             .header-btn.premium-btn {
                 background: linear-gradient(135deg, ${theme.primaryColor} 0%, ${theme.secondaryColor} 100%) !important;
@@ -8670,7 +8305,6 @@ function applyThemeToPopup(theme) {
             }
         `;
 
-        // Animations
         if (theme.animationsEnabled) {
             const animationDuration = theme.animationSpeed || '300ms';
 
@@ -8721,27 +8355,22 @@ function applyThemeToPopup(theme) {
         document.head.appendChild(themeStyle);
 
     } catch (error) {
-        // Error applying theme - silently fail
     }
 }
 
-// Listen for theme changes from dashboard via chrome.runtime messages
 if (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.onMessage) {
     chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         if (message.type === 'THEME_UPDATE') {
-            // Theme was changed in dashboard, apply it
             if (message.themeConfig) {
-                // Save to chrome.storage.local (shared across extension)
                 chrome.storage.local.set({
                     activeTheme: message.themeName,
                     themeConfig: message.themeConfig
                 }, () => {
-                    // Apply immediately
                     applyThemeToPopup(message.themeConfig);
                     sendResponse({ status: 'Theme applied and saved' });
                 });
             }
         }
-        return true; // Required for async sendResponse
+        return true;
     });
 }

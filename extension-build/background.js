@@ -466,7 +466,7 @@ class TabManager {
                 },
                 userEmail: email,
                 paymentInitiated: Date.now(),
-                proWelcomeShown: true  
+                proWelcomeShown: true
             });
 
             await this.checkAndActivateSubscription(email);
@@ -641,18 +641,15 @@ class TabManager {
                         break;
                     }
 
-                    // Preserve theme settings and bookmarks across logout
                     const allData = await chrome.storage.local.get(null);
                     const dataToPreserve = {};
 
-                    // Preserve all bookmarks
                     Object.keys(allData).forEach(key => {
                         if (key.startsWith('bookmarks_')) {
                             dataToPreserve[key] = allData[key];
                         }
                     });
 
-                    // Preserve theme settings
                     if (allData.themeConfig) {
                         dataToPreserve.themeConfig = allData.themeConfig;
                     }
@@ -662,7 +659,6 @@ class TabManager {
 
                     await chrome.storage.local.clear();
 
-                    // Restore preserved data
                     if (Object.keys(dataToPreserve).length > 0) {
                         await chrome.storage.local.set(dataToPreserve);
                     }
@@ -837,11 +833,11 @@ class TabManager {
             const autoClosedToday = tabsClosedToday[today] || 0;
 
             const totalClosed = storage.tabsClosedAuto || 0;
-            const memorySaved = Math.round(totalClosed * 75); 
+            const memorySaved = Math.round(totalClosed * 75);
 
             return {
-                totalTabs: validTabs.length, 
-                autoClosed: autoClosedToday, 
+                totalTabs: validTabs.length,
+                autoClosed: autoClosedToday,
                 memorySaved: memorySaved,
                 activeTabs: validTabs.filter(tab => tab.active).length,
                 scheduledTabs: trackedTabs.filter(tab => tab.timerActive && tab.autoCloseTime).length,
@@ -871,9 +867,9 @@ class TabManager {
                 subscriptionStatus: message.status,
                 planType: message.plan || (message.isPro ? 'pro' : 'free'),
                 lastSyncTime: now,
-                currentPeriodEnd: message.currentPeriodEnd, 
-                subscriptionExpiry: message.currentPeriodEnd || (now + (365 * 24 * 60 * 60 * 1000)), 
-                nextBillingDate: message.currentPeriodEnd || (now + (30 * 24 * 60 * 60 * 1000)), 
+                currentPeriodEnd: message.currentPeriodEnd,
+                subscriptionExpiry: message.currentPeriodEnd || (now + (365 * 24 * 60 * 60 * 1000)),
+                nextBillingDate: message.currentPeriodEnd || (now + (30 * 24 * 60 * 60 * 1000)),
                 subscriptionDate: now,
                 subscriptionType: 'monthly',
                 paymentConfirmed: true
@@ -1009,7 +1005,7 @@ class TabManager {
                     if (currentTime >= autoCloseTime) {
                         try {
                             if (!tabInfo.protected) {
-                                await this.closeTab(tabId, true); 
+                                await this.closeTab(tabId, true);
                             }
                         } catch (error) {
                         }
@@ -1028,7 +1024,7 @@ class TabManager {
                 tabInfo.timer = setTimeout(async () => {
                     try {
                         if (!tabInfo.protected) {
-                            await this.closeTab(tabId, true); 
+                            await this.closeTab(tabId, true);
                         }
                     } catch (error) {
                     }
@@ -1073,14 +1069,14 @@ class TabManager {
     startAutoCloseMonitoring() {
         setInterval(async () => {
             await this.checkAndCloseInactiveTabs();
-        }, 5 * 60 * 1000); 
+        }, 5 * 60 * 1000);
     }
 
     async checkAndCloseInactiveTabs() {
         try {
             const storage = await chrome.storage.local.get(['isPro', 'isPremium', 'autoCloseTime']);
             const isPro = storage.isPro || storage.isPremium || false;
-            const autoCloseTime = storage.autoCloseTime || 60; 
+            const autoCloseTime = storage.autoCloseTime || 60;
 
             if (!isPro) {
                 return;
@@ -1088,7 +1084,7 @@ class TabManager {
 
             const allTabs = await chrome.tabs.query({});
             const now = Date.now();
-            const autoCloseThreshold = autoCloseTime * 60 * 1000; 
+            const autoCloseThreshold = autoCloseTime * 60 * 1000;
             const tabsToClose = [];
 
             for (const tab of allTabs) {
@@ -1109,7 +1105,7 @@ class TabManager {
 
             if (tabsToClose.length > 0) {
                 for (const tabId of tabsToClose) {
-                    await this.closeTab(tabId, true); 
+                    await this.closeTab(tabId, true);
                 }
 
                 const newStorage = await chrome.storage.local.get(['totalTabsClosed']);
@@ -2056,7 +2052,7 @@ TabManager.prototype.getSmartTabsData = async function() {
     try {
         const allTabs = await chrome.tabs.query({});
         const now = Date.now();
-        const inactiveThreshold = 30 * 60 * 1000; 
+        const inactiveThreshold = 30 * 60 * 1000;
 
         let inactiveTabs = 0;
         let estimatedMemory = 0;
@@ -2140,7 +2136,7 @@ TabManager.prototype.cleanInactiveTabs = async function() {
     try {
         const allTabs = await chrome.tabs.query({});
         const now = Date.now();
-        const inactiveThreshold = 30 * 60 * 1000; 
+        const inactiveThreshold = 30 * 60 * 1000;
         const tabsToClose = [];
 
         for (const tab of allTabs) {
@@ -2168,7 +2164,7 @@ TabManager.prototype.cleanInactiveTabs = async function() {
 
         return {
             count: tabsToClose.length,
-            memorySaved: tabsToClose.length * 15 
+            memorySaved: tabsToClose.length * 15
         };
     } catch (error) {
         return { count: 0, memorySaved: 0 };
