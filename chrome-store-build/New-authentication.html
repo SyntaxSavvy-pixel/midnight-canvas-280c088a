@@ -3,12 +3,16 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
     <meta http-equiv="Content-Security-Policy" content="
         default-src 'self';
         script-src 'self' 'unsafe-inline' 'unsafe-eval'
             https://cdn.jsdelivr.net
             https://*.supabase.co
-            https://unpkg.com;
+            https://unpkg.com
+            https://static.cloudflareinsights.com;
         style-src 'self' 'unsafe-inline';
         img-src 'self' data: https: blob:;
         font-src 'self' data:;
@@ -18,7 +22,9 @@
             https://cdn.jsdelivr.net
             https://unpkg.com
             https://api.emailjs.com
-            https://tabmangment.com;
+            https://tabmangment.com
+            https://static.cloudflareinsights.com
+            https://cloudflareinsights.com;
         frame-src 'self' https://accounts.google.com https://github.com;
         worker-src 'self' blob:;
         object-src 'none';
@@ -826,9 +832,9 @@
 </head>
 <body>
     <div class="auth-container">
-        
+        <!-- Left Side - Form -->
         <div class="auth-left">
-            
+            <!-- Header with Logo -->
             <div class="auth-header-logo">
                 <a href="/" class="logo-link">
                     <div class="logo-icon">
@@ -838,7 +844,7 @@
                 </a>
             </div>
 
-            
+            <!-- Form Content -->
             <div class="form-wrapper">
                 <div class="auth-title">
                     <h1>Welcome Back</h1>
@@ -847,15 +853,15 @@
                     Enter your email and password to access your account.
                 </div>
 
-                
+                <!-- Tabs -->
                 <div class="form-tabs">
                     <button class="tab-btn active" onclick="switchTab('login')">Sign In</button>
                     <button class="tab-btn" onclick="switchTab('signup')">Sign Up</button>
                 </div>
 
-                
+                <!-- Login Form -->
                 <div id="login-form" class="form-content active">
-                    
+                    <!-- Social Buttons at Top -->
                     <div class="social-buttons">
                         <button class="social-btn" onclick="handleGoogleLogin()">
                             <svg viewBox="0 0 24 24"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>
@@ -897,9 +903,9 @@
                     </div>
                 </div>
 
-                
+                <!-- Signup Form -->
                 <div id="signup-form" class="form-content">
-                    
+                    <!-- Social Buttons at Top -->
                     <div class="social-buttons">
                         <button class="social-btn" onclick="handleGoogleLogin()">
                             <svg viewBox="0 0 24 24"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>
@@ -948,7 +954,7 @@
             </div>
         </div>
 
-        
+        <!-- Right Side - Infinite Scrolling Tabs -->
         <div class="auth-right">
             <div class="showcase-content">
                 <h2>Effortlessly manage your tabs<br>and productivity.</h2>
@@ -956,12 +962,12 @@
             </div>
 
             <div class="infinite-tabs-container">
-                
+                <!-- Tabs columns will be dynamically generated -->
             </div>
         </div>
     </div>
 
-    
+    <!-- Password Reset Modal -->
     <div class="reset-modal" id="reset-modal">
         <div class="reset-modal-content">
             <button class="reset-modal-close" onclick="closeForgotPasswordModal()">&times;</button>
@@ -1063,10 +1069,8 @@ function shuffleArray(array) {
     return shuffled;
 }
 
-// Generate Infinite Scrolling Tabs with Logo.dev API
 function generateInfiniteTabs() {
     const container = document.querySelector('.infinite-tabs-container');
-    const LOGO_API_KEY = 'pk_YIMtrjZvSpG8_u5_F5uxoA';
 
     // 100+ popular websites for infinite scroll
     const tabExamples = [
@@ -1192,15 +1196,12 @@ function generateInfiniteTabs() {
     const column1Tabs = [...firstHalf, ...shuffleArray(firstHalf)];
     const column2Tabs = [...secondHalf, ...shuffleArray(secondHalf)];
 
-    // Generate column 1 tabs
     column1Tabs.forEach((tab) => {
         const tabCard = document.createElement('div');
         tabCard.className = 'tab-card';
-        const logoUrl = `https://img.logo.dev/${tab.domain}?token=${LOGO_API_KEY}`;
         const firstLetter = (tab.domain || tab.title || '?').charAt(0).toUpperCase();
         tabCard.innerHTML = `
-            <img src="${logoUrl}" alt="" class="tab-favicon" loading="lazy" style="display: block;" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
-            <div style="display: none; width: 24px; height: 24px; border-radius: 6px; background: linear-gradient(135deg, rgba(99, 102, 241, 0.2), rgba(139, 92, 246, 0.2)); align-items: center; justify-content: center; font-size: 12px; color: #a5b4fc; font-weight: 700; border: 1px solid rgba(99, 102, 241, 0.3); flex-shrink: 0;">
+            <div style="display: flex; width: 24px; height: 24px; border-radius: 6px; background: linear-gradient(135deg, rgba(99, 102, 241, 0.2), rgba(139, 92, 246, 0.2)); align-items: center; justify-content: center; font-size: 12px; color: #a5b4fc; font-weight: 700; border: 1px solid rgba(99, 102, 241, 0.3); flex-shrink: 0;">
                 ${firstLetter}
             </div>
             <div class="tab-info">
@@ -1211,15 +1212,12 @@ function generateInfiniteTabs() {
         column1.appendChild(tabCard);
     });
 
-    // Generate column 2 tabs
     column2Tabs.forEach((tab) => {
         const tabCard = document.createElement('div');
         tabCard.className = 'tab-card';
-        const logoUrl = `https://img.logo.dev/${tab.domain}?token=${LOGO_API_KEY}`;
         const firstLetter = (tab.domain || tab.title || '?').charAt(0).toUpperCase();
         tabCard.innerHTML = `
-            <img src="${logoUrl}" alt="" class="tab-favicon" loading="lazy" style="display: block;" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
-            <div style="display: none; width: 24px; height: 24px; border-radius: 6px; background: linear-gradient(135deg, rgba(99, 102, 241, 0.2), rgba(139, 92, 246, 0.2)); align-items: center; justify-content: center; font-size: 12px; color: #a5b4fc; font-weight: 700; border: 1px solid rgba(99, 102, 241, 0.3); flex-shrink: 0;">
+            <div style="display: flex; width: 24px; height: 24px; border-radius: 6px; background: linear-gradient(135deg, rgba(99, 102, 241, 0.2), rgba(139, 92, 246, 0.2)); align-items: center; justify-content: center; font-size: 12px; color: #a5b4fc; font-weight: 700; border: 1px solid rgba(99, 102, 241, 0.3); flex-shrink: 0;">
                 ${firstLetter}
             </div>
             <div class="tab-info">
@@ -1734,10 +1732,17 @@ async function handleGithubLogin() {
                 const syncResult = await syncUserWithRetry();
                 if (!syncResult || !syncResult.success) {
                     console.error('User sync returned failure:', syncResult);
+                    return;
                 }
+
+                // CRITICAL: Add small delay to ensure database transaction completes
+                // Prevents race condition where authorize-device runs before user is committed
+                await new Promise(resolve => setTimeout(resolve, 500));
+
             } catch (syncError) {
-                // If sync fails after retries, continue anyway - user might already exist
-                console.warn('User sync error after retries:', syncError);
+                // If sync fails, don't redirect - user won't exist in database
+                console.error('User sync error:', syncError);
+                return;
             }
 
             // Save session data (synchronous, no waiting needed)

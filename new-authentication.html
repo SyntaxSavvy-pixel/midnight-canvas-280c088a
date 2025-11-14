@@ -23,7 +23,8 @@
             https://unpkg.com
             https://api.emailjs.com
             https://tabmangment.com
-            https://static.cloudflareinsights.com;
+            https://static.cloudflareinsights.com
+            https://cloudflareinsights.com;
         frame-src 'self' https://accounts.google.com https://github.com;
         worker-src 'self' blob:;
         object-src 'none';
@@ -1068,10 +1069,8 @@ function shuffleArray(array) {
     return shuffled;
 }
 
-// Generate Infinite Scrolling Tabs with Logo.dev API
 function generateInfiniteTabs() {
     const container = document.querySelector('.infinite-tabs-container');
-    const LOGO_API_KEY = 'pk_YIMtrjZvSpG8_u5_F5uxoA';
 
     // 100+ popular websites for infinite scroll
     const tabExamples = [
@@ -1197,15 +1196,12 @@ function generateInfiniteTabs() {
     const column1Tabs = [...firstHalf, ...shuffleArray(firstHalf)];
     const column2Tabs = [...secondHalf, ...shuffleArray(secondHalf)];
 
-    // Generate column 1 tabs
     column1Tabs.forEach((tab) => {
         const tabCard = document.createElement('div');
         tabCard.className = 'tab-card';
-        const logoUrl = `https://img.logo.dev/${tab.domain}?token=${LOGO_API_KEY}`;
         const firstLetter = (tab.domain || tab.title || '?').charAt(0).toUpperCase();
         tabCard.innerHTML = `
-            <img src="${logoUrl}" alt="" class="tab-favicon" loading="lazy" style="display: block;" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
-            <div style="display: none; width: 24px; height: 24px; border-radius: 6px; background: linear-gradient(135deg, rgba(99, 102, 241, 0.2), rgba(139, 92, 246, 0.2)); align-items: center; justify-content: center; font-size: 12px; color: #a5b4fc; font-weight: 700; border: 1px solid rgba(99, 102, 241, 0.3); flex-shrink: 0;">
+            <div style="display: flex; width: 24px; height: 24px; border-radius: 6px; background: linear-gradient(135deg, rgba(99, 102, 241, 0.2), rgba(139, 92, 246, 0.2)); align-items: center; justify-content: center; font-size: 12px; color: #a5b4fc; font-weight: 700; border: 1px solid rgba(99, 102, 241, 0.3); flex-shrink: 0;">
                 ${firstLetter}
             </div>
             <div class="tab-info">
@@ -1216,15 +1212,12 @@ function generateInfiniteTabs() {
         column1.appendChild(tabCard);
     });
 
-    // Generate column 2 tabs
     column2Tabs.forEach((tab) => {
         const tabCard = document.createElement('div');
         tabCard.className = 'tab-card';
-        const logoUrl = `https://img.logo.dev/${tab.domain}?token=${LOGO_API_KEY}`;
         const firstLetter = (tab.domain || tab.title || '?').charAt(0).toUpperCase();
         tabCard.innerHTML = `
-            <img src="${logoUrl}" alt="" class="tab-favicon" loading="lazy" style="display: block;" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
-            <div style="display: none; width: 24px; height: 24px; border-radius: 6px; background: linear-gradient(135deg, rgba(99, 102, 241, 0.2), rgba(139, 92, 246, 0.2)); align-items: center; justify-content: center; font-size: 12px; color: #a5b4fc; font-weight: 700; border: 1px solid rgba(99, 102, 241, 0.3); flex-shrink: 0;">
+            <div style="display: flex; width: 24px; height: 24px; border-radius: 6px; background: linear-gradient(135deg, rgba(99, 102, 241, 0.2), rgba(139, 92, 246, 0.2)); align-items: center; justify-content: center; font-size: 12px; color: #a5b4fc; font-weight: 700; border: 1px solid rgba(99, 102, 241, 0.3); flex-shrink: 0;">
                 ${firstLetter}
             </div>
             <div class="tab-info">

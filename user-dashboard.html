@@ -7299,21 +7299,10 @@
                 const ctx = document.getElementById('usage-chart');
                 if (!ctx) return;
 
-                // Create labels with favicons using Logo.dev API
-                const LOGO_API_KEY = 'pk_YIMtrjZvSpG8_u5_F5uxoA';
                 const chartLabels = analyticsData.domains.map((domain, index) => {
-                    // Get clean domain name (remove www., http://, etc.)
                     const cleanDomain = domain.replace(/^(https?:\/\/)?(www\.)?/, '').split('/')[0];
-                    const title = analyticsData.titles?.[index] || domain;
-
-                    // Return just the title/domain for now - we'll add icons via plugin
+                    const title = analyticsData.titles?.[index] || cleanDomain;
                     return title.length > 30 ? title.substring(0, 30) + '...' : title;
-                });
-
-                // Store favicons for later use
-                window.chartFavicons = analyticsData.domains.map(domain => {
-                    const cleanDomain = domain.replace(/^(https?:\/\/)?(www\.)?/, '').split('/')[0];
-                    return `https://img.logo.dev/${cleanDomain}?token=${LOGO_API_KEY}&size=32`;
                 });
 
                 // Create horizontal bar chart
@@ -7575,22 +7564,11 @@
             try {
                 const analyticsData = await getMonthlyAnalytics();
 
-                // Update labels with titles
-                const LOGO_API_KEY = 'pk_YIMtrjZvSpG8_u5_F5uxoA';
                 const chartLabels = analyticsData.domains.map((domain, index) => {
                     const cleanDomain = domain.replace(/^(https?:\/\/)?(www\.)?/, '').split('/')[0];
-                    const title = analyticsData.titles?.[index] || domain;
+                    const title = analyticsData.titles?.[index] || cleanDomain;
                     return title.length > 30 ? title.substring(0, 30) + '...' : title;
                 });
-
-                // Update favicons
-                window.chartFavicons = analyticsData.domains.map(domain => {
-                    const cleanDomain = domain.replace(/^(https?:\/\/)?(www\.)?/, '').split('/')[0];
-                    return `https://img.logo.dev/${cleanDomain}?token=${LOGO_API_KEY}&size=32`;
-                });
-
-                // Clear cached favicon images when updating
-                window.faviconImages = {};
 
                 usageChart.data.labels = chartLabels;
                 usageChart.data.datasets[0].data = analyticsData.hours;

@@ -81,7 +81,7 @@
   },
   
   "content_security_policy": {
-    "extension_pages": "script-src 'self' 'wasm-unsafe-eval'; object-src 'self'; connect-src 'self' https://buy.stripe.com https://*.netlify.app https://tabmangment.com https://api.emailjs.com https://billing.stripe.com https://js.stripe.com https://www.googleapis.com https://*.supabase.co wss://*.supabase.co https://api.perplexity.ai;"
+    "extension_pages": "script-src 'self' 'wasm-unsafe-eval'; object-src 'self'; connect-src 'self' https://buy.stripe.com https://*.netlify.app https://tabmangment.com https://api.emailjs.com https://billing.stripe.com https://js.stripe.com https://www.googleapis.com https://*.supabase.co wss://*.supabase.co https://api.perplexity.ai https://cloudflareinsights.com https://static.cloudflareinsights.com;"
   },
 
   "web_accessible_resources": [
