@@ -81,18 +81,28 @@ export async function onRequestPost(context) {
         }
 
         // Make request to Perplexity API with server-side key
-        const perplexityResponse = await fetch('https://api.perplexity.ai/search', {
+        const perplexityResponse = await fetch('https://api.perplexity.ai/chat/completions', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
                 'Authorization': `Bearer ${env.PERPLEXITY_API_KEY}`
             },
             body: JSON.stringify({
-                model: 'sonar',
-                query: query,
-                max_tokens: 25000,
+                model: 'llama-3.1-sonar-small-128k-online',
+                messages: [
+                    {
+                        role: 'system',
+                        content: 'You are a helpful search assistant. Provide concise, accurate answers with relevant information.'
+                    },
+                    {
+                        role: 'user',
+                        content: query
+                    }
+                ],
+                max_tokens: 1000,
                 temperature: 0.2,
                 top_p: 0.9,
+                return_citations: true,
                 search_domain_filter: [],
                 return_images: false,
                 return_related_questions: false,
@@ -113,7 +123,21 @@ export async function onRequestPost(context) {
             });
         }
 
-        const searchResults = await perplexityResponse.json();
+        const perplexityData = await perplexityResponse.json();
+
+        // Transform Perplexity response to expected format
+        const content = perplexityData.choices?.[0]?.message?.content || '';
+        const citations = perplexityData.citations || [];
+
+        // Format as search results
+        const searchResults = {
+            results: [{
+                title: query,
+                snippet: content,
+                url: citations[0] || 'https://www.perplexity.ai',
+                citations: citations
+            }]
+        };
 
         // Increment search count via existing endpoint
         await fetch('https://tabmangment.com/api/increment-search', {
