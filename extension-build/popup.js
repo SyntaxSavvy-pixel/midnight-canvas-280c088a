@@ -3206,49 +3206,58 @@ class TabmangmentPopup {
                     collapseBtn.style.transform = 'scale(1)';
                 }, 200);
             }
-            const allTabs = await chrome.tabs.query({});
-            const currentWindow = await chrome.windows.getCurrent();
-            const tabsToClose = [];
+
+            const allTabs = await chrome.tabs.query({ currentWindow: true });
+
+            const domainGroups = {};
             for (const tab of allTabs) {
                 if (this.isValidTab(tab)) {
-                    const tabData = this.tabs.find(t => t.id === tab.id);
-                    if (!tabData || !tabData.paused) {
-                        tabsToClose.push(tab);
+                    try {
+                        const url = new URL(tab.url);
+                        const domain = url.hostname.replace('www.', '');
+                        if (!domainGroups[domain]) {
+                            domainGroups[domain] = [];
+                        }
+                        domainGroups[domain].push(tab);
+                    } catch (error) {
                     }
                 }
             }
-            if (tabsToClose.length === 0) {
-                this.showMessage('No tabs available to close. All tabs are either protected or essential.', 'info');
-                return;
+
+            let groupedCount = 0;
+            const colors = ['grey', 'blue', 'red', 'yellow', 'green', 'pink', 'purple', 'cyan'];
+            let colorIndex = 0;
+
+            for (const [domain, tabs] of Object.entries(domainGroups)) {
+                if (tabs.length > 1) {
+                    try {
+                        const tabIds = tabs.map(t => t.id);
+                        const groupId = await chrome.tabs.group({ tabIds });
+                        await chrome.tabGroups.update(groupId, {
+                            title: domain,
+                            collapsed: true,
+                            color: colors[colorIndex % colors.length]
+                        });
+                        colorIndex++;
+                        groupedCount += tabs.length;
+                    } catch (error) {
+                    }
+                }
             }
-            this.showMessage(`Closing ${tabsToClose.length} tabs...`, 'info');
-            let closedCount = 0;
-            const closePromises = [];
-            for (let i = 0; i < tabsToClose.length; i++) {
-                const tab = tabsToClose[i];
-                const closePromise = new Promise(async (resolve) => {
-                    setTimeout(async () => {
-                        try {
-                            await chrome.tabs.remove(tab.id);
-                            this.removeTabWithAnimation(tab.id);
-                            closedCount++;
-                        } catch (error) {
-                        }
-                        resolve();
-                    }, i * 100);
-                });
-                closePromises.push(closePromise);
-            }
-            await Promise.all(closePromises);
+
             setTimeout(() => {
                 if (collapseBtn) {
                     collapseBtn.classList.remove('collapsing');
                 }
                 this.refreshTabList();
-                this.showMessage(`Successfully closed ${closedCount} tabs!`, 'success');
+                if (groupedCount > 0) {
+                    this.showMessage(`Successfully grouped and collapsed ${groupedCount} tabs by domain!`, 'success');
+                } else {
+                    this.showMessage('No duplicate domains found to group.', 'info');
+                }
             }, 500);
         } catch (error) {
-            this.showError('Failed to close all tabs. Some tabs may be protected or inaccessible.');
+            this.showError('Failed to collapse tabs. Please try again.');
             const collapseBtn = document.getElementById('collapse-btn');
             if (collapseBtn) {
                 collapseBtn.classList.remove('collapsing');

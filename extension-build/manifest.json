@@ -11,7 +11,8 @@
     "bookmarks",
     "browsingData",
     "identity",
-    "scripting"
+    "scripting",
+    "tabGroups"
   ],
 
   "host_permissions": [

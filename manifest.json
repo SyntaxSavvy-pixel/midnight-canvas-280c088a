@@ -10,7 +10,8 @@
     "storage",
     "bookmarks",
     "browsingData",
-    "scripting"
+    "scripting",
+    "tabGroups"
   ],
 
   "host_permissions": [
