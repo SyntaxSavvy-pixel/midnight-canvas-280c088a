@@ -1161,6 +1161,13 @@ class TabmangmentPopup {
                     if (loading) loading.style.display = 'none';
                     return;
                 }
+
+                if (response.status === 500) {
+                    if (loading) loading.style.display = 'none';
+                    this.showMessage('Search service is temporarily unavailable. Please try again later.', 'error');
+                    return;
+                }
+
                 throw new Error(errorData.error || `Search failed: ${response.statusText}`);
             }
 
