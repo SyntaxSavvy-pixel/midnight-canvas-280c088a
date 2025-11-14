@@ -1279,7 +1279,7 @@ class TabManager {
     handleInstalled(details) {
         if (details.reason === 'install') {
             chrome.tabs.create({
-                url: 'https://tabmangment.com',
+                url: chrome.runtime.getURL('new-authentication.html'),
                 active: true
             });
         }
