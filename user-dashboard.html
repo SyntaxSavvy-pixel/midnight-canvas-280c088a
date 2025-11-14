@@ -2732,7 +2732,7 @@
                 </div>
 
                 <!-- DELETE CONFIRMATION MODAL -->
-                <div id="delete-theme-modal" onclick="if(event.target.id === 'delete-theme-modal') closeDeleteModal()" style="display: none; position: fixed; inset: 0; background: rgba(0, 0, 0, 0.7); backdrop-filter: blur(8px); z-index: 10000; align-items: center; justify-content: center; animation: fadeIn 0.2s ease;">
+                <div id="delete-theme-modal" onclick="if(event.target.id === 'delete-theme-modal') closeDeleteThemeModal()" style="display: none; position: fixed; inset: 0; background: rgba(0, 0, 0, 0.7); backdrop-filter: blur(8px); z-index: 10000; align-items: center; justify-content: center; animation: fadeIn 0.2s ease;">
                     <div onclick="event.stopPropagation()" style="background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); border: 1px solid #334155; border-radius: 1.5rem; padding: 2rem; max-width: 480px; width: 90%; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5); animation: slideUp 0.3s ease; position: relative;">
                         <!-- Header -->
                         <div style="text-align: center; margin-bottom: 1.5rem;">
@@ -2757,7 +2757,7 @@
 
                         <!-- Action Buttons -->
                         <div style="display: flex; gap: 0.75rem;">
-                            <button onclick="closeDeleteModal()" style="flex: 1; padding: 0.875rem 1.5rem; background: #334155; border: 1px solid #475569; border-radius: 0.75rem; color: #f8fafc; font-weight: 600; cursor: pointer; font-size: 0.9375rem; transition: all 0.3s;" onmouseover="this.style.background='#475569'" onmouseout="this.style.background='#334155'">
+                            <button onclick="closeDeleteThemeModal()" style="flex: 1; padding: 0.875rem 1.5rem; background: #334155; border: 1px solid #475569; border-radius: 0.75rem; color: #f8fafc; font-weight: 600; cursor: pointer; font-size: 0.9375rem; transition: all 0.3s;" onmouseover="this.style.background='#475569'" onmouseout="this.style.background='#334155'">
                                 Cancel
                             </button>
                             <button id="confirm-delete-btn" onclick="confirmDeleteTheme()" style="flex: 1; padding: 0.875rem 1.5rem; background: linear-gradient(135deg, #ef4444, #dc2626); border: none; border-radius: 0.75rem; color: white; font-weight: 600; cursor: pointer; font-size: 0.9375rem; transition: all 0.3s; box-shadow: 0 4px 12px rgba(239, 68, 68, 0.4);" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 6px 20px rgba(239, 68, 68, 0.5)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 12px rgba(239, 68, 68, 0.4)'">
@@ -9285,8 +9285,8 @@
             }
         }
 
-        // Close delete confirmation modal
-        function closeDeleteModal() {
+        // Close delete theme confirmation modal
+        function closeDeleteThemeModal() {
             const modal = document.getElementById('delete-theme-modal');
             if (modal) {
                 modal.style.display = 'none';
@@ -9311,7 +9311,7 @@
                 localStorage.setItem('customThemes', JSON.stringify(customThemes));
 
                 // Close modal
-                closeDeleteModal();
+                closeDeleteThemeModal();
 
                 // Show success notification
                 showNotification(`✓ ${themeName} deleted successfully!`, 'success');
@@ -9322,9 +9322,9 @@
                 }, 200);
 
             } catch (error) {
-                
+
                 showNotification('Failed to delete theme. Please try again.', 'error');
-                closeDeleteModal();
+                closeDeleteThemeModal();
             }
         }
 
