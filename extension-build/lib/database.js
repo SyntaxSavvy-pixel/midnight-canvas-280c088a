@@ -1,11 +1,6 @@
-// Simple database operations for production
-// This version works without external dependencies
 
-// In-memory storage for development
-// In production, replace with Vercel KV or Supabase
 let memoryDB = new Map();
 
-// User data structure
 const USER_SCHEMA = {
   email: '',
   userId: '',
@@ -20,12 +15,10 @@ const USER_SCHEMA = {
   lastFailedPaymentAt: null
 };
 
-// Save or create user
 export async function saveUser(userData) {
   try {
     const userId = userData.userId || userData.email;
 
-    // For production with Vercel KV:
     if (process.env.KV_REST_API_URL && process.env.KV_REST_API_TOKEN) {
       const { kv } = await import('@vercel/kv');
       const user = { ...USER_SCHEMA, ...userData, userId, updatedAt: new Date().toISOString() };
@@ -36,7 +29,6 @@ export async function saveUser(userData) {
       return user;
     }
 
-    // Fallback to memory storage (development)
     const user = {
       ...USER_SCHEMA,
       ...userData,
@@ -56,10 +48,8 @@ export async function saveUser(userData) {
   }
 }
 
-// Get user by ID or email
 export async function getUser(identifier) {
   try {
-    // For production with Vercel KV:
     if (process.env.KV_REST_API_URL && process.env.KV_REST_API_TOKEN) {
       const { kv } = await import('@vercel/kv');
       const user = await kv.get(`user:${identifier}`);
@@ -69,7 +59,6 @@ export async function getUser(identifier) {
       return null;
     }
 
-    // Fallback to memory storage (development)
     const user = memoryDB.get(`user:${identifier}`);
     if (user) {
       return user;
@@ -82,7 +71,6 @@ export async function getUser(identifier) {
   }
 }
 
-// Update user data
 export async function updateUser(identifier, updates) {
   try {
     const existingUser = await getUser(identifier);
@@ -97,7 +85,6 @@ export async function updateUser(identifier, updates) {
       updatedAt: new Date().toISOString()
     };
 
-    // For production with Vercel KV:
     if (process.env.KV_REST_API_URL && process.env.KV_REST_API_TOKEN) {
       const { kv } = await import('@vercel/kv');
       await kv.set(`user:${identifier}`, updatedUser);
@@ -107,7 +94,6 @@ export async function updateUser(identifier, updates) {
       return updatedUser;
     }
 
-    // Fallback to memory storage (development)
     memoryDB.set(`user:${identifier}`, updatedUser);
     if (existingUser.email && existingUser.email !== identifier) {
       memoryDB.set(`user:${existingUser.email}`, updatedUser);
@@ -120,13 +106,11 @@ export async function updateUser(identifier, updates) {
   }
 }
 
-// Delete user (GDPR compliance)
 export async function deleteUser(identifier) {
   try {
     const user = await getUser(identifier);
 
     if (user) {
-      // For production with Vercel KV:
       if (process.env.KV_REST_API_URL && process.env.KV_REST_API_TOKEN) {
         const { kv } = await import('@vercel/kv');
         await kv.del(`user:${identifier}`);
@@ -136,7 +120,6 @@ export async function deleteUser(identifier) {
         return;
       }
 
-      // Fallback to memory storage (development)
       memoryDB.delete(`user:${identifier}`);
       if (user.email && user.email !== identifier) {
         memoryDB.delete(`user:${user.email}`);
@@ -149,10 +132,8 @@ export async function deleteUser(identifier) {
   }
 }
 
-// Get all users (admin function)
 export async function getAllUsers() {
   try {
-    // For production with Vercel KV:
     if (process.env.KV_REST_API_URL && process.env.KV_REST_API_TOKEN) {
       const { kv } = await import('@vercel/kv');
       const keys = await kv.keys('user:*');
@@ -161,7 +142,6 @@ export async function getAllUsers() {
       for (const key of keys) {
         const userData = await kv.get(key);
         if (userData && userData.email) {
-          // Avoid duplicates (since we store by both email and userId)
           const exists = users.find(u => u.email === userData.email);
           if (!exists) {
             users.push(userData);
@@ -172,11 +152,9 @@ export async function getAllUsers() {
       return users;
     }
 
-    // Fallback to memory storage (development)
     const users = [];
     for (const [key, userData] of memoryDB) {
       if (key.startsWith('user:') && userData.email) {
-        // Avoid duplicates
         const exists = users.find(u => u.email === userData.email);
         if (!exists) {
           users.push(userData);
@@ -191,10 +169,8 @@ export async function getAllUsers() {
   }
 }
 
-// Track user activity
 export async function trackActivity(email, activityType, data = {}) {
   try {
-    // For production with Vercel KV:
     if (process.env.KV_REST_API_URL && process.env.KV_REST_API_TOKEN) {
       const { kv } = await import('@vercel/kv');
       const activityKey = `activity:${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
@@ -208,7 +184,6 @@ export async function trackActivity(email, activityType, data = {}) {
 
       await kv.set(activityKey, activity);
 
-      // Also update user's last activity
       const user = await getUser(email);
       if (user) {
         await updateUser(email, {
@@ -222,7 +197,6 @@ export async function trackActivity(email, activityType, data = {}) {
   }
 }
 
-// Check user subscription status
 export async function checkUserStatus(userIdentifier) {
   try {
     const user = await getUser(userIdentifier);
@@ -236,13 +210,11 @@ export async function checkUserStatus(userIdentifier) {
       };
     }
 
-    // Check if subscription is still valid
     if (user.isPro && user.currentPeriodEnd) {
       const now = new Date();
       const periodEnd = new Date(user.currentPeriodEnd);
 
       if (now > periodEnd && user.subscriptionStatus !== 'active') {
-        // Subscription expired
         await updateUser(userIdentifier, {
           isPro: false,
           status: 'expired'
@@ -275,10 +247,8 @@ export async function checkUserStatus(userIdentifier) {
   }
 }
 
-// Get recent activities (admin function)
 export async function getRecentActivities(limit = 50) {
   try {
-    // For production with Vercel KV:
     if (process.env.KV_REST_API_URL && process.env.KV_REST_API_TOKEN) {
       const { kv } = await import('@vercel/kv');
       const keys = await kv.keys('activity:*');
@@ -291,7 +261,6 @@ export async function getRecentActivities(limit = 50) {
         }
       }
 
-      // Sort by timestamp (newest first)
       activities.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
 
       return activities.slice(0, limit);

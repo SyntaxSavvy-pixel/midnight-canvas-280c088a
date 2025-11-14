@@ -32,12 +32,4 @@ export const CONFIG = {
 
 export const MANIFEST_URLS = {
     HOST_PERMISSIONS: [
-        "https://buy.stripe.com/*",
-        `${API_BASE_URL}/*`,
-        "https://api.emailjs.com/*",
-        "https://billing.stripe.com/*",
-        "https://www.googleapis.com/*",
-        "https://api.perplexity.ai/*"
-    ],
-    CONNECT_SRC: `'self' https://buy.stripe.com ${API_BASE_URL} https://api.emailjs.com https://billing.stripe.com https://api.perplexity.ai`
-};
+        "https://buy.stripe.com

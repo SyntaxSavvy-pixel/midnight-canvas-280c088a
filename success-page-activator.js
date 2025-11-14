@@ -1,10 +1,7 @@
-// Success page activator - Runs on Stripe success pages to trigger Pro activation
-// This handles immediate activation when users complete payment
 
 (function() {
   'use strict';
 
-  // Only run on payment success pages
   const url = window.location.href.toLowerCase();
   const isSuccessPage = (
     url.includes('success') ||
@@ -27,7 +24,6 @@
 
     async init() {
       try {
-        // Small delay to let page load
         setTimeout(() => {
           this.activateProFeatures();
         }, 2000);
@@ -37,17 +33,14 @@
 
     async activateProFeatures() {
       try {
-        // Get payment details from URL parameters
         const urlParams = new URLSearchParams(window.location.search);
         const sessionId = urlParams.get('session_id');
         const email = urlParams.get('email') || urlParams.get('customer_email');
         const userSession = urlParams.get('user_session');
 
 
-        // Store activation data for extension to pick up
         this.storeActivationData(email, sessionId, userSession);
 
-        // Notify extension directly if possible
         this.notifyExtension(email, sessionId, userSession);
 
 
@@ -57,7 +50,6 @@
 
     storeActivationData(email, sessionId, userSession) {
       try {
-        // Store in localStorage for extension to pick up
         const activationData = {
           email: email,
           sessionId: sessionId,
@@ -70,10 +62,8 @@
 
         localStorage.setItem('tabmangment_payment_success', JSON.stringify(activationData));
 
-        // Also try sessionStorage
         sessionStorage.setItem('tabmangment_payment_success', JSON.stringify(activationData));
 
-        // Store in multiple keys for better detection
         localStorage.setItem('tabmangment_user_email', email || '');
         localStorage.setItem('tabmangment_stripe_session', sessionId || '');
         localStorage.setItem('tabmangment_user_session', userSession || '');
@@ -84,9 +74,7 @@
 
     notifyExtension(email, sessionId, userSession) {
       try {
-        // Try multiple methods to notify the extension
 
-        // Method 1: Chrome extension messaging (if available)
         if (typeof chrome !== 'undefined' && chrome.runtime) {
           chrome.runtime.sendMessage({
             type: 'PAYMENT_SUCCESS',
@@ -96,7 +84,6 @@
           });
         }
 
-        // Method 2: PostMessage to opener window
         if (window.opener && !window.opener.closed) {
           window.opener.postMessage({
             type: 'TABMANGMENT_PAYMENT_SUCCESS',
@@ -106,7 +93,6 @@
           }, '*');
         }
 
-        // Method 3: BroadcastChannel
         try {
           const bc = new BroadcastChannel('tabmangment_payment');
           bc.postMessage({
@@ -127,7 +113,6 @@
 
     async alternativeActivation() {
       try {
-        // Try to detect email from page content
         const pageText = document.body.textContent;
         const emailMatch = pageText.match(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/);
 
@@ -139,7 +124,6 @@
           return;
         }
 
-        // If no email found, still try to notify extension
         this.notifyExtension('unknown@payment.success', 'unknown_session', null);
         this.storeActivationData('unknown@payment.success', 'unknown_session', null);
 
@@ -148,7 +132,6 @@
     }
   }
 
-  // Initialize the activator
   new SuccessPageActivator();
 
 })();

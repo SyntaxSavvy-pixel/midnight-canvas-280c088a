@@ -1,5 +1,3 @@
-// Database operations using Supabase
-// Path: /lib/database.js
 
 import { createClient } from '@supabase/supabase-js';
 
@@ -8,46 +6,9 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SERVICE_KEY
 );
 
-/*
-First, create this table in Supabase:
 
-CREATE TABLE users (
-  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-  user_id TEXT UNIQUE NOT NULL,
-  email TEXT UNIQUE NOT NULL,
-  is_pro BOOLEAN DEFAULT false,
-  subscription_status TEXT DEFAULT 'free',
-  stripe_customer_id TEXT,
-  stripe_subscription_id TEXT,
-  current_period_end TIMESTAMPTZ,
-  created_at TIMESTAMPTZ DEFAULT NOW(),
-  updated_at TIMESTAMPTZ DEFAULT NOW(),
-  last_payment_at TIMESTAMPTZ,
-  last_failed_payment_at TIMESTAMPTZ
-);
 
--- Add indexes for performance
-CREATE INDEX idx_users_user_id ON users(user_id);
-CREATE INDEX idx_users_email ON users(email);
-CREATE INDEX idx_users_is_pro ON users(is_pro);
-CREATE INDEX idx_users_subscription_status ON users(subscription_status);
 
--- Add updated_at trigger
-CREATE OR REPLACE FUNCTION update_updated_at_column()
-RETURNS TRIGGER AS $$
-BEGIN
-    NEW.updated_at = NOW();
-    RETURN NEW;
-END;
-$$ language 'plpgsql';
-
-CREATE TRIGGER update_users_updated_at
-  BEFORE UPDATE ON users
-  FOR EACH ROW
-  EXECUTE FUNCTION update_updated_at_column();
-*/
-
-// Save or create user
 export async function saveUser(userData) {
   try {
     const { data, error } = await supabase
@@ -75,7 +36,6 @@ export async function saveUser(userData) {
   }
 }
 
-// Get user by ID or email
 export async function getUser(identifier) {
   try {
     const { data, error } = await supabase
@@ -84,7 +44,7 @@ export async function getUser(identifier) {
       .or(`user_id.eq.${identifier},email.eq.${identifier}`)
       .single();
 
-    if (error && error.code !== 'PGRST116') { // PGRST116 = not found
+    if (error && error.code !== 'PGRST116') {
       throw error;
     }
 
@@ -93,7 +53,6 @@ export async function getUser(identifier) {
     }
 
 
-    // Convert to camelCase for consistency
     return {
       userId: data.user_id,
       email: data.email,
@@ -113,10 +72,8 @@ export async function getUser(identifier) {
   }
 }
 
-// Update user data
 export async function updateUser(identifier, updates) {
   try {
-    // Convert camelCase to snake_case for database
     const dbUpdates = {};
     if (updates.isPro !== undefined) dbUpdates.is_pro = updates.isPro;
     if (updates.subscriptionStatus) dbUpdates.subscription_status = updates.subscriptionStatus;
@@ -142,7 +99,6 @@ export async function updateUser(identifier, updates) {
   }
 }
 
-// Get all Pro users (for analytics)
 export async function getProUsers() {
   try {
     const { data, error } = await supabase
@@ -159,7 +115,6 @@ export async function getProUsers() {
   }
 }
 
-// Get subscription analytics
 export async function getSubscriptionStats() {
   try {
     const { data, error } = await supabase
@@ -183,7 +138,6 @@ export async function getSubscriptionStats() {
   }
 }
 
-// Delete user (GDPR compliance)
 export async function deleteUser(identifier) {
   try {
     const { error } = await supabase

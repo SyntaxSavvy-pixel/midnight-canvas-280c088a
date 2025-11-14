@@ -54,7 +54,7 @@
 }
 
 html {
-    
+
     border-radius: 20px !important;
     overflow: hidden !important;
     background: transparent !important;
@@ -71,7 +71,7 @@ body {
     min-height: 520px;
     max-height: 640px;
     font-family: var(--font-family);
-    
+
     background: none !important;
     color: var(--slate-800);
     overflow-x: hidden;
@@ -84,7 +84,7 @@ body {
     position: relative;
     margin: 0;
     padding: 0;
-    
+
     border-radius: 20px !important;
     overflow: hidden !important;
 }
@@ -105,10 +105,10 @@ body.search-active {
     max-height: 640px;
     overflow-y: auto;
     overflow-x: hidden;
-    
+
     background: #ffffff;
     position: relative;
-    
+
     margin: 0 !important;
     padding: 0 !important;
 }
@@ -3056,7 +3056,7 @@ body.search-active.has-search-results .search-focus-message {
     width: 0;
     min-height: 100vh; 
     height: 100%;
-    
+
     background: linear-gradient(180deg,
         rgba(30, 30, 30, 0.98) 0%,
         rgba(20, 20, 20, 0.98) 100%) !important;
@@ -3073,7 +3073,7 @@ body.search-active.has-search-results .search-focus-message {
     flex-shrink: 0;
     overflow: hidden;
     opacity: 0;
-    
+
     margin: 0 !important;
     padding: 0 !important;
 }
@@ -3083,7 +3083,7 @@ body.search-active.has-search-results .search-focus-message {
     width: 320px;
     opacity: 1;
     position: relative;
-    
+
     margin: 0 !important;
 }
 
@@ -3112,7 +3112,7 @@ body.search-active.has-search-results .search-focus-message {
 .search-panel-title {
     font-size: 14px;
     font-weight: 700;
-    
+
     color: rgba(255, 255, 255, 0.95) !important;
     display: flex;
     align-items: center;
@@ -3122,7 +3122,7 @@ body.search-active.has-search-results .search-focus-message {
 }
 
 .search-panel-title svg {
-    
+
     color: #3b82f6 !important;
     width: 18px;
     height: 18px;
@@ -3154,7 +3154,7 @@ body.search-active.has-search-results .search-focus-message {
     transform: translateY(-50%);
     width: 18px;
     height: 18px;
-    
+
     color: rgba(156, 163, 175, 0.8) !important;
     pointer-events: none;
     flex-shrink: 0;
@@ -3167,9 +3167,9 @@ body.search-active.has-search-results .search-focus-message {
     border-radius: 12px;
     font-size: 13px;
     font-family: var(--font-family);
-    
+
     background: rgba(255, 255, 255, 0.05) !important;
-    
+
     color: rgba(255, 255, 255, 0.95) !important;
     transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
     box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.2);
@@ -3177,7 +3177,7 @@ body.search-active.has-search-results .search-focus-message {
 
 .search-input:focus {
     outline: none;
-    
+
     border-color: #3b82f6 !important;
     background: rgba(255, 255, 255, 0.08) !important;
     box-shadow:
@@ -3187,7 +3187,7 @@ body.search-active.has-search-results .search-focus-message {
 }
 
 .search-input::placeholder {
-    
+
     color: rgba(156, 163, 175, 0.7) !important;
 }
 
@@ -3201,7 +3201,7 @@ body.search-active.has-search-results .search-focus-message {
     border-radius: 8px;
     background: rgba(255, 255, 255, 0.08) !important;
     border: 1px solid rgba(255, 255, 255, 0.1) !important;
-    
+
     color: rgba(156, 163, 175, 0.9) !important;
     cursor: pointer;
     display: flex;
@@ -3308,7 +3308,7 @@ body.search-active.has-search-results .search-focus-message {
 
 .search-empty-state svg {
     margin-bottom: 20px;
-    
+
     color: rgba(156, 163, 175, 0.4) !important;
     opacity: 1;
 }
@@ -3316,7 +3316,7 @@ body.search-active.has-search-results .search-focus-message {
 .search-empty-state p {
     font-size: 16px;
     font-weight: 700;
-    
+
     color: rgba(255, 255, 255, 0.95) !important;
     margin: 0 0 8px 0;
     letter-spacing: -0.01em;
@@ -3324,7 +3324,7 @@ body.search-active.has-search-results .search-focus-message {
 
 .search-empty-state span {
     font-size: 13px;
-    
+
     color: rgba(156, 163, 175, 0.8) !important;
     line-height: 1.6;
 }
@@ -3337,7 +3337,7 @@ body.search-active.has-search-results .search-focus-message {
     border-radius: 10px;
     font-size: 12px;
     font-weight: 600;
-    
+
     color: #3b82f6 !important;
     backdrop-filter: blur(10px);
 }
@@ -3478,7 +3478,7 @@ body.search-active.has-search-results .search-focus-message {
 .loading-spinner {
     width: 44px;
     height: 44px;
-    
+
     border: 4px solid rgba(59, 130, 246, 0.15) !important;
     border-top-color: #3b82f6 !important;
     border-radius: 50%;
@@ -3493,7 +3493,7 @@ body.search-active.has-search-results .search-focus-message {
     margin-top: 18px;
     font-size: 14px;
     font-weight: 600;
-    
+
     color: rgba(255, 255, 255, 0.9) !important;
     letter-spacing: -0.01em;
 }

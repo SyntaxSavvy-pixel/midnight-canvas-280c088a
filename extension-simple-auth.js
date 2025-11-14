@@ -1,5 +1,3 @@
-// Simple authentication sync for extension
-// This replaces the complex authentication system with a simple flow
 
 class SimpleAuth {
     constructor() {
@@ -13,25 +11,18 @@ class SimpleAuth {
 
     async init() {
 
-        // Check if we have stored user email
         await this.loadStoredAuth();
 
-        // Set up message listeners
         this.setupMessageListeners();
 
-        // Check user plan if we have an email
         if (this.userEmail) {
             await this.checkUserPlan();
         }
 
-        // Set up periodic plan checks (every 5 minutes)
         this.startPeriodicPlanCheck();
     }
 
     startPeriodicPlanCheck() {
-        // Disabled periodic plan checks - storage is now the source of truth
-        // Only Stripe webhooks should update subscription status
-        // This prevents flickering and race conditions with payment processing
     }
 
     async loadStoredAuth() {
@@ -43,8 +34,6 @@ class SimpleAuth {
                     this.userEmail = result.userEmail;
                     this.isLoggedIn = true;
 
-                    // CRITICAL FIX: Load cached Pro status on initialization
-                    // This ensures popup shows correct Pro status immediately without waiting for API calls
                     this.isPro = result.isPremium || result.isPro || result.subscriptionActive || false;
                 }
             }
@@ -56,18 +45,16 @@ class SimpleAuth {
         if (chrome && chrome.runtime) {
             chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
                 this.handleMessage(message, sender, sendResponse);
-                return true; // Keep channel open for async response
+                return true;
             });
         }
     }
 
     async handleMessage(message, sender, sendResponse) {
-        // Ignore messages without a type
         if (!message || !message.type) {
-            return; // Silently ignore empty messages
+            return;
         }
 
-        // Ignore RESPONSE messages - they're for the dashboard
         if (message.type === 'RESPONSE' || message.type === 'TABMANGMENT_RESPONSE') {
             return;
         }
@@ -101,7 +88,6 @@ class SimpleAuth {
                 break;
 
             case 'USER_LOGIN':
-                // Dashboard is syncing real user email to replace fallback
                 if (message.email) {
                     await this.handleUserLogin({
                         email: message.email,
@@ -119,7 +105,6 @@ class SimpleAuth {
                 break;
 
             default:
-                // Only log unknown messages that aren't internal Chrome messages
                 if (!message.type || !message.type.startsWith('_')) {
                 }
                 sendResponse({ success: false, message: 'Unknown message type' });
@@ -127,7 +112,6 @@ class SimpleAuth {
     }
 
     async handleUserLogin(user, token) {
-        // Validate user object exists
         if (!user || typeof user !== 'object') {
             return;
         }
@@ -135,7 +119,6 @@ class SimpleAuth {
         this.userEmail = user.email;
         this.isLoggedIn = true;
 
-        // Store in extension storage
         if (chrome && chrome.storage) {
             await chrome.storage.local.set({
                 userEmail: user.email,
@@ -145,7 +128,6 @@ class SimpleAuth {
             });
         }
 
-        // Check their plan status
         await this.checkUserPlan();
 
     }
@@ -156,18 +138,14 @@ class SimpleAuth {
         }
 
         try {
-            // FIRST: If using fallback email, set to free
             if (this.userEmail.startsWith('fallback_')) {
                 this.isPro = false;
                 await this.deactivateProFeatures();
                 return;
             }
 
-            // NEW: Get plan status from localStorage (set by dashboard)
-            // This avoids 404 errors from old API endpoints
             let isPro = false;
 
-            // Check localStorage (dashboard saves here)
             try {
                 const storedUserData = localStorage.getItem('tabmangment_user');
                 if (storedUserData) {
@@ -175,16 +153,13 @@ class SimpleAuth {
                     isPro = userData.isPro === true || userData.plan === 'pro';
                 }
             } catch (e) {
-                // If localStorage fails, check chrome.storage
             }
 
-            // Fallback to chrome.storage
             if (!isPro && chrome && chrome.storage) {
                 const cachedStatus = await chrome.storage.local.get(['isPremium', 'isPro', 'subscriptionActive', 'planType']);
                 isPro = cachedStatus && (cachedStatus.isPremium || cachedStatus.isPro || cachedStatus.subscriptionActive);
             }
 
-            // Set Pro status based on stored data
             if (isPro) {
                 this.isPro = true;
                 await this.activateProFeatures();
@@ -194,7 +169,6 @@ class SimpleAuth {
             }
 
         } catch (error) {
-            // On error, fallback to chrome.storage
             if (chrome && chrome.storage) {
                 const cachedStatus = await chrome.storage.local.get(['isPremium', 'isPro', 'subscriptionActive', 'planType']);
                 if (cachedStatus && (cachedStatus.isPremium || cachedStatus.isPro || cachedStatus.subscriptionActive)) {
@@ -252,7 +226,6 @@ class SimpleAuth {
 
     }
 
-    // Public methods
     getUserEmail() {
         return this.userEmail;
     }
@@ -271,13 +244,11 @@ class SimpleAuth {
     }
 }
 
-// Initialize when script loads
 let simpleAuth = null;
 
 if (typeof chrome !== 'undefined' && chrome.runtime) {
     simpleAuth = new SimpleAuth();
 
-    // Global functions for extension to use
     window.openLoginPage = () => simpleAuth?.openLoginPage();
     window.getUserEmail = () => simpleAuth?.getUserEmail();
     window.isLoggedIn = () => simpleAuth?.isUserLoggedIn();
