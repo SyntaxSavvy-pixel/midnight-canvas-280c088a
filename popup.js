@@ -794,6 +794,11 @@ class TabmangmentPopup {
     }
 
     setupSearchPanel() {
+        if (this._searchPanelInitialized) {
+            return;
+        }
+        this._searchPanelInitialized = true;
+
         const searchBtn = document.getElementById('search-btn');
         const searchSection = document.getElementById('search-section');
         const tabsContainer = document.getElementById('tabs-container');
@@ -873,8 +878,9 @@ class TabmangmentPopup {
 
             searchInput.addEventListener('keypress', (e) => {
                 if (e.key === 'Enter') {
+                    e.preventDefault();
                     const query = e.target.value.trim();
-                    if (query) {
+                    if (query && !this._searchInProgress) {
                         this.performAISearch(query);
                     }
                 }
@@ -1105,9 +1111,16 @@ class TabmangmentPopup {
     }
 
     async performAISearch(query, isRefresh = false) {
+        if (this._searchInProgress) {
+            return;
+        }
+
+        this._searchInProgress = true;
+
         const { canSearch } = await this.checkSearchUsage();
 
         if (!canSearch) {
+            this._searchInProgress = false;
             this.showSearchLimitModal();
             await this.updateSearchUsageDisplay();
             return;
@@ -1208,6 +1221,8 @@ class TabmangmentPopup {
                     </div>
                 `;
             }
+        } finally {
+            this._searchInProgress = false;
         }
     }
 
