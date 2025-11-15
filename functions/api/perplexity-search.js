@@ -145,29 +145,49 @@ export async function onRequestPost(context) {
         const content = perplexityData.choices?.[0]?.message?.content || '';
         const citations = perplexityData.citations || [];
 
-        // Create individual result items from citations
+        // Filter out video URLs and low-quality sources
+        const videoPatterns = ['youtube.com', 'youtu.be', 'vimeo.com', 'tiktok.com', 'instagram.com/reel'];
+        const filteredCitations = citations.filter(citation => {
+            try {
+                const url = new URL(citation);
+                return !videoPatterns.some(pattern => url.hostname.includes(pattern));
+            } catch (e) {
+                return false;
+            }
+        });
+
+        // Create individual result items
         const results = [];
 
-        // First result: AI summary
+        // First result: AI answer (full content, not truncated)
         if (content) {
             results.push({
-                title: query,
-                snippet: content.substring(0, 300) + (content.length > 300 ? '...' : ''),
-                url: 'https://www.perplexity.ai',
-                type: 'ai-summary'
+                title: '✨ AI Answer',
+                snippet: content,
+                url: 'https://www.perplexity.ai/search?q=' + encodeURIComponent(query),
+                type: 'ai-answer'
             });
         }
 
-        // Additional results from citations (up to 9 more for total of 10)
-        if (citations.length > 0) {
-            citations.slice(0, 9).forEach((citation, index) => {
+        // Additional results from filtered citations (up to 9 more)
+        if (filteredCitations.length > 0) {
+            filteredCitations.slice(0, 9).forEach((citation, index) => {
                 try {
                     const urlObj = new URL(citation);
+                    const hostname = urlObj.hostname.replace('www.', '');
+
+                    // Create a nice title from the hostname
+                    const domainParts = hostname.split('.');
+                    const mainDomain = domainParts.length > 1
+                        ? domainParts[domainParts.length - 2]
+                        : domainParts[0];
+                    const capitalizedDomain = mainDomain.charAt(0).toUpperCase() + mainDomain.slice(1);
+
                     results.push({
-                        title: urlObj.hostname.replace('www.', '') || `Source ${index + 1}`,
-                        snippet: `Reference from ${urlObj.hostname}`,
+                        title: `📄 ${capitalizedDomain}`,
+                        snippet: `Read more at ${hostname}`,
                         url: citation,
-                        type: 'citation'
+                        type: 'source'
                     });
                 } catch (e) {
                     // Skip invalid URLs
@@ -178,10 +198,10 @@ export async function onRequestPost(context) {
         // Format as search results
         const searchResults = {
             results: results.length > 0 ? results : [{
-                title: query,
-                snippet: content || 'No results found',
+                title: 'No results found',
+                snippet: 'Try a different search query',
                 url: 'https://www.perplexity.ai',
-                type: 'fallback'
+                type: 'empty'
             }]
         };
 

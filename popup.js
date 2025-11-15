@@ -1239,31 +1239,48 @@ class TabmangmentPopup {
 
         document.body.classList.add('has-search-results');
 
-        results.forEach(result => {
+        results.forEach((result, index) => {
             const resultItem = document.createElement('div');
-            resultItem.className = 'search-result-item';
+            const isAIAnswer = result.type === 'ai-answer';
+
+            resultItem.className = isAIAnswer ? 'search-result-item ai-answer-result' : 'search-result-item';
             resultItem.dataset.url = result.url;
 
-            let displayText = '';
-            try {
-                const urlObj = new URL(result.url);
-                displayText = urlObj.hostname.replace('www.', '');
-            } catch (e) {
-                displayText = result.url;
+            if (isAIAnswer) {
+                // AI Answer - show full content prominently
+                resultItem.innerHTML = `
+                    <div class="search-result-title">${this.escapeHtml(result.title)}</div>
+                    <div class="ai-answer-content">${this.escapeHtml(result.snippet)}</div>
+                    <div class="ai-answer-footer">
+                        <span>Powered by Perplexity AI</span>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+                            <polyline points="9 18 15 12 9 6"></polyline>
+                        </svg>
+                    </div>
+                `;
+            } else {
+                // Source link - traditional result
+                let displayText = '';
+                try {
+                    const urlObj = new URL(result.url);
+                    displayText = urlObj.hostname.replace('www.', '');
+                } catch (e) {
+                    displayText = result.url;
+                }
+
+                const description = result.snippet || result.description || displayText;
+
+                resultItem.innerHTML = `
+                    <div class="search-result-title">${this.escapeHtml(result.title)}</div>
+                    <div class="search-result-url">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path>
+                            <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path>
+                        </svg>
+                        ${this.escapeHtml(description)}
+                    </div>
+                `;
             }
-
-            const description = result.snippet || result.description || displayText;
-
-            resultItem.innerHTML = `
-                <div class="search-result-title">${this.escapeHtml(result.title)}</div>
-                <div class="search-result-url">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path>
-                        <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path>
-                    </svg>
-                    ${this.escapeHtml(description)}
-                </div>
-            `;
 
             resultItem.addEventListener('click', () => {
                 chrome.tabs.create({ url: result.url });
