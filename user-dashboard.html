@@ -8514,14 +8514,25 @@
             }
         }
 
-        // Load active theme and mark it - FIXED with null checks and proper timing
-        async function loadActiveTheme() {
+        // Load active theme and mark it - FIXED with optional parameter to avoid DB race conditions
+        async function loadActiveTheme(forceThemeName = null) {
             try {
-                const prefs = await getUserPreferences();
-                let themeName = prefs?.active_theme || 'lightMinimal';
+                let themeName;
+
+                // If theme name is provided directly, use it (avoids DB fetch race condition)
+                if (forceThemeName) {
+                    themeName = forceThemeName;
+                    console.log(`Using provided theme name: ${themeName}`);
+                } else {
+                    // Otherwise fetch from database
+                    const prefs = await getUserPreferences();
+                    themeName = prefs?.active_theme || 'lightMinimal';
+                    console.log(`Fetched theme from DB: ${themeName}`);
+                }
 
                 // If stored theme doesn't exist (old theme name), fall back to lightMinimal
                 if (!presetThemes[themeName] && themeName !== 'custom') {
+                    console.warn(`Theme ${themeName} not found, falling back to lightMinimal`);
                     themeName = 'lightMinimal';
                     await saveActiveTheme(themeName);
                 }
@@ -8530,6 +8541,13 @@
                 requestAnimationFrame(() => {
                     // Mark the active theme with proper null checks
                     const themeCards = document.querySelectorAll('.theme-card');
+
+                    if (themeCards.length === 0) {
+                        console.warn('No theme cards found in DOM!');
+                        return;
+                    }
+
+                    let foundActiveCard = false;
 
                     themeCards.forEach(card => {
                         const badge = card.querySelector('.active-theme');
@@ -8543,16 +8561,20 @@
                         // Show badge for active theme, hide for others
                         if (card.dataset.theme === themeName) {
                             badge.style.display = 'block';
-                            // Also add active class to card for additional styling if needed
                             card.classList.add('theme-active');
+                            foundActiveCard = true;
+                            console.log(`✓ Marked theme as active: ${themeName}`);
                         } else {
                             badge.style.display = 'none';
                             card.classList.remove('theme-active');
                         }
                     });
 
-                    // Log for debugging (can be removed in production)
-                    console.log(`Active theme marked: ${themeName}, found ${themeCards.length} theme cards`);
+                    if (!foundActiveCard) {
+                        console.error(`Failed to find card for theme: ${themeName}`);
+                    }
+
+                    console.log(`Active theme: ${themeName}, Cards: ${themeCards.length}, Found: ${foundActiveCard}`);
                 });
             } catch (error) {
                 console.error('Error loading active theme:', error);
@@ -8591,7 +8613,8 @@
                 localStorage.setItem('themeConfig', JSON.stringify(theme));
 
                 // Save theme to database for persistence
-                await saveActiveTheme(themeName, theme);
+                const saveSuccess = await saveActiveTheme(themeName, theme);
+                console.log(`Theme saved to DB: ${saveSuccess ? 'SUCCESS' : 'FAILED'}`);
 
                 // Send theme to extension via content script bridge
                 window.postMessage({
@@ -8601,8 +8624,9 @@
                     themeConfig: theme
                 }, '*');
 
-                // Update UI to show active theme
-                await loadActiveTheme();
+                // Update UI to show active theme - CRITICAL FIX: Pass theme name directly
+                // This avoids race condition with database fetch
+                await loadActiveTheme(themeName);
 
                 // Show success message
                 showNotification(`${theme.name} theme applied successfully!`, 'success');
@@ -9160,8 +9184,8 @@
                     themeConfig: customTheme
                 }, '*');
 
-                // Update UI
-                await loadActiveTheme();
+                // Update UI - FIXED: Pass 'custom' directly to avoid DB race condition
+                await loadActiveTheme('custom');
 
                 showNotification('✓ Custom theme applied! Check the preview above.', 'success');
 
@@ -9309,8 +9333,8 @@
                 // Also try chrome runtime messaging if available
                 sendThemeToExtension('custom', theme);
 
-                // Update UI to show active state
-                await loadActiveTheme();
+                // Update UI to show active state - FIXED: Pass 'custom' directly
+                await loadActiveTheme('custom');
 
                 showNotification(`✓ ${theme.name} applied successfully!`, 'success');
 
