@@ -816,6 +816,7 @@ class TabmangmentPopup {
             if (chatSection) chatSection.style.display = 'flex';
             if (tabsContainer) tabsContainer.style.display = 'none';
             if (chatBtn) chatBtn.classList.add('active');
+            await this.updateChatUsageDisplay();
             setTimeout(() => {
                 if (chatInput) chatInput.focus();
             }, 100);
@@ -1356,6 +1357,45 @@ class TabmangmentPopup {
 
         // Show empty state
         if (emptyState) emptyState.style.display = 'flex';
+    }
+
+    async updateChatUsageDisplay() {
+        const usageBadge = document.getElementById('chat-usage-badge');
+        const usageCount = usageBadge?.querySelector('.usage-count');
+        if (!usageBadge || !usageCount) return;
+
+        const { count, canSearch, isAdmin } = await this.checkSearchUsage();
+
+        if (isAdmin) {
+            usageCount.innerHTML = '👑 Unlimited messages';
+            usageBadge.style.background = 'rgba(251, 191, 36, 0.1)';
+            usageBadge.style.borderColor = 'rgba(251, 191, 36, 0.3)';
+            usageBadge.style.color = '#FCD34D';
+        } else if (this.isPremium) {
+            usageCount.innerHTML = '✨ Unlimited messages';
+            usageBadge.style.background = 'rgba(59, 130, 246, 0.1)';
+            usageBadge.style.borderColor = 'rgba(59, 130, 246, 0.2)';
+            usageBadge.style.color = '#60A5FA';
+        } else {
+            const remaining = 5 - count;
+            if (remaining > 0) {
+                usageCount.innerHTML = `${remaining} ${remaining === 1 ? 'message' : 'messages'} remaining`;
+                if (remaining <= 2) {
+                    usageBadge.style.background = 'rgba(251, 146, 60, 0.1)';
+                    usageBadge.style.borderColor = 'rgba(251, 146, 60, 0.2)';
+                    usageBadge.style.color = '#FB923C';
+                } else {
+                    usageBadge.style.background = 'rgba(59, 130, 246, 0.1)';
+                    usageBadge.style.borderColor = 'rgba(59, 130, 246, 0.2)';
+                    usageBadge.style.color = '#60A5FA';
+                }
+            } else {
+                usageCount.innerHTML = '🔒 Limit reached - Upgrade to Pro';
+                usageBadge.style.background = 'rgba(239, 68, 68, 0.1)';
+                usageBadge.style.borderColor = 'rgba(239, 68, 68, 0.2)';
+                usageBadge.style.color = '#EF4444';
+            }
+        }
     }
 
     setupControlButtons() {
