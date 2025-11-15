@@ -799,102 +799,92 @@ class TabmangmentPopup {
         }
         this._searchPanelInitialized = true;
 
-        const searchBtn = document.getElementById('search-btn');
-        const searchSection = document.getElementById('search-section');
+        const chatBtn = document.getElementById('chat-btn');
+        const chatSection = document.getElementById('ai-chat-section');
         const tabsContainer = document.getElementById('tabs-container');
-        const searchInput = document.getElementById('search-input');
-        const searchClearBtn = document.getElementById('search-clear-btn');
+        const chatInput = document.getElementById('chat-input');
         const collapseBtn = document.getElementById('collapse-btn');
         const bookmarkBtn = document.getElementById('bookmark-all-btn');
 
         const showTabsView = () => {
-            if (searchSection) searchSection.style.display = 'none';
+            if (chatSection) chatSection.style.display = 'none';
             if (tabsContainer) tabsContainer.style.display = 'block';
-            if (searchBtn) searchBtn.classList.remove('active');
-            if (searchInput) searchInput.value = '';
-            if (searchClearBtn) searchClearBtn.style.display = 'none';
-            this.clearSearchResults();
+            if (chatBtn) chatBtn.classList.remove('active');
         };
 
-        const showSearchView = async () => {
-            if (searchSection) searchSection.style.display = 'block';
+        const showChatView = async () => {
+            if (chatSection) chatSection.style.display = 'flex';
             if (tabsContainer) tabsContainer.style.display = 'none';
-            if (searchBtn) searchBtn.classList.add('active');
-            await this.updateSearchUsageDisplay();
+            if (chatBtn) chatBtn.classList.add('active');
             setTimeout(() => {
-                if (searchInput) searchInput.focus();
+                if (chatInput) chatInput.focus();
             }, 100);
         };
 
-        if (searchBtn) {
-            searchBtn.addEventListener('click', async () => {
-                const isSearchActive = searchSection && searchSection.style.display !== 'none';
+        if (chatBtn) {
+            chatBtn.addEventListener('click', async () => {
+                const isChatActive = chatSection && chatSection.style.display !== 'none';
 
-                if (isSearchActive) {
+                if (isChatActive) {
                     showTabsView();
                 } else {
-                    await showSearchView();
+                    await showChatView();
                 }
             });
         }
 
         this.showTabsView = showTabsView;
-        this.showSearchView = showSearchView;
+        this.showChatView = showChatView;
 
-        const refreshBtn = document.getElementById('search-refresh-btn');
-        const clearResultsBtn = document.getElementById('search-clear-results-btn');
+        // Chat functionality - will be implemented with Claude/Perplexity API
+        const chatSendBtn = document.getElementById('chat-send-btn');
+        const clearChatBtn = document.getElementById('clear-chat-btn');
 
-        if (refreshBtn) {
-            refreshBtn.addEventListener('click', () => {
-                const currentQuery = searchInput ? searchInput.value.trim() : '';
-                if (currentQuery) {
-                    this.performAISearch(currentQuery, true);
-                }
-            });
-        }
-
-        if (clearResultsBtn) {
-            clearResultsBtn.addEventListener('click', () => {
-                if (searchInput) {
-                    searchInput.value = '';
-                    searchInput.focus();
-                }
-                this.clearSearchResults();
-            });
-        }
-
-        if (searchInput) {
-            searchInput.addEventListener('input', (e) => {
-                const query = e.target.value;
-
-                if (searchClearBtn) {
-                    searchClearBtn.style.display = query ? 'flex' : 'none';
-                }
-
-                if (!query.trim()) {
-                    this.clearSearchResults();
-                }
+        // Enable/disable send button based on input
+        if (chatInput && chatSendBtn) {
+            chatInput.addEventListener('input', () => {
+                const hasText = chatInput.value.trim().length > 0;
+                chatSendBtn.disabled = !hasText;
             });
 
-            searchInput.addEventListener('keypress', (e) => {
-                if (e.key === 'Enter') {
+            // Send on Enter (Shift+Enter for new line)
+            chatInput.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
                     e.preventDefault();
-                    const query = e.target.value.trim();
-                    if (query && !this._searchInProgress) {
-                        this.performAISearch(query);
+                    if (chatInput.value.trim() && !chatSendBtn.disabled) {
+                        this.sendChatMessage(chatInput.value.trim());
+                        chatInput.value = '';
+                        chatSendBtn.disabled = true;
+                        // Auto-resize textarea back to 1 row
+                        chatInput.rows = 1;
                     }
                 }
             });
+
+            // Auto-resize textarea
+            chatInput.addEventListener('input', () => {
+                chatInput.style.height = 'auto';
+                chatInput.style.height = chatInput.scrollHeight + 'px';
+            });
         }
 
-        if (searchClearBtn) {
-            searchClearBtn.addEventListener('click', () => {
-                if (searchInput) {
-                    searchInput.value = '';
-                    searchInput.focus();
+        // Send button click
+        if (chatSendBtn) {
+            chatSendBtn.addEventListener('click', () => {
+                if (chatInput && chatInput.value.trim()) {
+                    this.sendChatMessage(chatInput.value.trim());
+                    chatInput.value = '';
+                    chatSendBtn.disabled = true;
+                    chatInput.rows = 1;
+                    chatInput.style.height = 'auto';
                 }
-                searchClearBtn.style.display = 'none';
-                this.clearSearchResults();
+            });
+        }
+
+        // Clear chat button
+        if (clearChatBtn) {
+            clearChatBtn.addEventListener('click', () => {
+                this.clearChat();
             });
         }
     }
@@ -1294,6 +1284,78 @@ class TabmangmentPopup {
         const div = document.createElement('div');
         div.textContent = text;
         return div.innerHTML;
+    }
+
+    async sendChatMessage(message) {
+        const chatMessages = document.getElementById('chat-messages');
+        const emptyState = document.getElementById('chat-empty-state');
+        const typingIndicator = document.getElementById('typing-indicator');
+
+        if (!chatMessages) return;
+
+        // Hide empty state
+        if (emptyState) emptyState.style.display = 'none';
+
+        // Add user message
+        this.addChatMessage('user', message);
+
+        // Show typing indicator
+        if (typingIndicator) typingIndicator.style.display = 'flex';
+
+        // TODO: Replace with actual API call (Claude or Perplexity)
+        // For now, show a placeholder response
+        setTimeout(() => {
+            if (typingIndicator) typingIndicator.style.display = 'none';
+            this.addChatMessage('ai', 'AI chat functionality will be connected to Claude or Perplexity API. This is a placeholder response.');
+        }, 1500);
+    }
+
+    addChatMessage(type, text) {
+        const chatMessages = document.getElementById('chat-messages');
+        if (!chatMessages) return;
+
+        const messageDiv = document.createElement('div');
+        messageDiv.className = `chat-message ${type}`;
+
+        const now = new Date();
+        const timeString = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+
+        if (type === 'user') {
+            messageDiv.innerHTML = `
+                <div class="message-content">
+                    <div class="message-bubble">${this.escapeHtml(text)}</div>
+                    <div class="message-time">${timeString}</div>
+                </div>
+                <div class="message-avatar user-avatar">You</div>
+            `;
+        } else {
+            messageDiv.innerHTML = `
+                <div class="message-avatar ai-avatar">AI</div>
+                <div class="message-content">
+                    <div class="message-bubble">${this.escapeHtml(text)}</div>
+                    <div class="message-time">${timeString}</div>
+                </div>
+            `;
+        }
+
+        chatMessages.appendChild(messageDiv);
+
+        // Scroll to bottom
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+    }
+
+    clearChat() {
+        const chatMessages = document.getElementById('chat-messages');
+        const emptyState = document.getElementById('chat-empty-state');
+
+        if (!chatMessages) return;
+
+        // Remove all message elements
+        const messages = chatMessages.querySelectorAll('.chat-message');
+        messages.forEach(msg => msg.remove());
+
+        // Show empty state
+        if (emptyState) emptyState.style.display = 'flex';
     }
 
     setupControlButtons() {
