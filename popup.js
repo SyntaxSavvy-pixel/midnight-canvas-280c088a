@@ -807,24 +807,65 @@ class TabmangmentPopup {
         const bookmarkBtn = document.getElementById('bookmark-all-btn');
 
         const showTabsView = () => {
-            if (chatSection) chatSection.style.display = 'none';
-            if (tabsContainer) tabsContainer.style.display = 'block';
+            // Reset to tabs view if in bookmarks
+            if (this.currentView === 'bookmarks') {
+                this.currentView = 'tabs';
+                // Re-render tabs content
+                setTimeout(() => this.render(), 10);
+            }
+
+            // Fade out chat
+            if (chatSection) {
+                chatSection.classList.remove('active');
+                setTimeout(() => {
+                    chatSection.style.display = 'none';
+                }, 300);
+            }
+
+            // Fade in tabs
+            if (tabsContainer) {
+                tabsContainer.style.display = 'block';
+                setTimeout(() => tabsContainer.classList.add('active'), 10);
+            }
+
             if (chatBtn) chatBtn.classList.remove('active');
         };
 
         const showChatView = async () => {
-            if (chatSection) chatSection.style.display = 'flex';
-            if (tabsContainer) tabsContainer.style.display = 'none';
+            // If in bookmarks view, switch back to tabs first
+            if (this.currentView === 'bookmarks') {
+                this.currentView = 'tabs';
+            }
+
+            // Fade out tabs
+            if (tabsContainer) {
+                tabsContainer.classList.remove('active');
+                setTimeout(() => {
+                    tabsContainer.style.display = 'none';
+                }, 300);
+            }
+
+            // Fade in chat
+            if (chatSection) {
+                chatSection.style.display = 'flex';
+                setTimeout(() => chatSection.classList.add('active'), 10);
+            }
+
             if (chatBtn) chatBtn.classList.add('active');
             await this.updateChatUsageDisplay();
             setTimeout(() => {
                 if (chatInput) chatInput.focus();
-            }, 100);
+            }, 350);
         };
+
+        // Initialize tabs as active on load
+        if (tabsContainer) {
+            tabsContainer.classList.add('active');
+        }
 
         if (chatBtn) {
             chatBtn.addEventListener('click', async () => {
-                const isChatActive = chatSection && chatSection.style.display !== 'none';
+                const isChatActive = chatSection && chatSection.classList.contains('active');
 
                 if (isChatActive) {
                     showTabsView();
@@ -1428,18 +1469,31 @@ class TabmangmentPopup {
                     return;
                 }
 
-                // Close chat section if active
-                const chatSection = document.getElementById('ai-chat-section');
-                const isChatActive = chatSection && chatSection.style.display !== 'none';
-
-                if (isChatActive && this.showTabsView) {
-                    this.showTabsView();
-                }
-
+                // Toggle behavior
                 if (this.currentView === 'bookmarks') {
+                    // Currently in bookmarks, switch back to tabs
                     this.currentView = 'tabs';
-                    this.render();
+                    const tabsContainer = document.getElementById('tabs-container');
+                    const chatSection = document.getElementById('ai-chat-section');
+
+                    // Ensure chat is closed
+                    if (chatSection && chatSection.classList.contains('active')) {
+                        chatSection.classList.remove('active');
+                        setTimeout(() => {
+                            chatSection.style.display = 'none';
+                        }, 300);
+                    }
+
+                    // Fade out and re-render tabs
+                    if (tabsContainer) {
+                        tabsContainer.classList.remove('active');
+                        setTimeout(() => {
+                            this.render();
+                            setTimeout(() => tabsContainer.classList.add('active'), 10);
+                        }, 300);
+                    }
                 } else {
+                    // Switch to bookmarks view
                     this.showBookmarkMenu();
                 }
             });
@@ -3477,17 +3531,36 @@ class TabmangmentPopup {
         }
     }
     showBookmarkMenu() {
-        this.currentView = 'bookmarks';
-        this.renderBookmarksView();
+        const chatSection = document.getElementById('ai-chat-section');
+        const tabsContainer = document.getElementById('tabs-container');
+
+        // Fade out chat if active
+        if (chatSection && chatSection.classList.contains('active')) {
+            chatSection.classList.remove('active');
+            setTimeout(() => {
+                chatSection.style.display = 'none';
+            }, 300);
+        }
+
+        // Ensure tabs container is visible and fade out briefly
+        if (tabsContainer) {
+            tabsContainer.classList.remove('active');
+            setTimeout(() => {
+                this.currentView = 'bookmarks';
+                this.renderBookmarksView();
+                // Fade back in with bookmarks content
+                setTimeout(() => tabsContainer.classList.add('active'), 10);
+            }, 300);
+        }
     }
     async renderBookmarksView() {
         const container = document.getElementById('tabs-container');
         if (!container) return;
-        container.style.transition = 'all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)';
-        container.style.opacity = '0';
-        container.style.transform = 'translateY(10px)';
-        setTimeout(async () => {
-            try {
+
+        // Ensure tabs container is visible
+        container.style.display = 'block';
+
+        try {
                 const bookmarkKey = await this.getUserBookmarkKey();
                 const result = await chrome.storage.local.get([bookmarkKey, 'themeConfig']);
                 const bookmarks = result[bookmarkKey] || [];
@@ -3705,8 +3778,6 @@ class TabmangmentPopup {
                 container.innerHTML = bookmarksHTML;
                 this.attachBookmarkListeners();
                 setTimeout(() => this.handleFaviconErrors(), 100);
-                container.style.opacity = '1';
-                container.style.transform = 'translateY(0)';
             } catch (error) {
                 console.error('Error rendering bookmarks:', error);
                 console.error('Error stack:', error.stack);
@@ -3721,10 +3792,7 @@ class TabmangmentPopup {
                         <p class="empty-description">Unable to load your saved bookmarks. Check console for details.</p>
                     </div>
                 `;
-                container.style.opacity = '1';
-                container.style.transform = 'translateY(0)';
             }
-        }, 150);
     }
     renderBookmarksList(bookmarks, themeGradient = 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)') {
         if (bookmarks.length === 0) {

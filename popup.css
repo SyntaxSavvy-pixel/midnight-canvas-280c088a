@@ -30,9 +30,9 @@
     --font-weight-semibold: 600;
     --font-weight-bold: 700;
 
-    --border-radius: 12px;
-    --border-radius-sm: 8px;
-    --border-radius-xs: 6px;
+    --border-radius: 0px;
+    --border-radius-sm: 0px;
+    --border-radius-xs: 0px;
     --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
     --shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
     --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
@@ -54,8 +54,7 @@
 }
 
 html {
-
-    border-radius: 20px !important;
+    border-radius: 0 !important;
     overflow: hidden !important;
     background: transparent !important;
 }
@@ -85,7 +84,7 @@ body {
     margin: 0;
     padding: 0;
 
-    border-radius: 20px !important;
+    border-radius: 0 !important;
     overflow: hidden !important;
 }
 
@@ -3891,6 +3890,22 @@ body.search-active {
 /* ===================================
    AI CHAT INTERFACE - CLEAN DESIGN
    =================================== */
+
+/* Smooth View Transitions */
+#tabs-container,
+.ai-chat-section {
+    opacity: 0;
+    transform: translateY(10px);
+    transition: opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+                transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    will-change: opacity, transform;
+}
+
+#tabs-container.active,
+.ai-chat-section.active {
+    opacity: 1;
+    transform: translateY(0);
+}
 
 .ai-chat-section {
     display: flex;
