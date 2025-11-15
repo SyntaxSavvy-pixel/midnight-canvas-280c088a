@@ -145,13 +145,43 @@ export async function onRequestPost(context) {
         const content = perplexityData.choices?.[0]?.message?.content || '';
         const citations = perplexityData.citations || [];
 
+        // Create individual result items from citations
+        const results = [];
+
+        // First result: AI summary
+        if (content) {
+            results.push({
+                title: query,
+                snippet: content.substring(0, 300) + (content.length > 300 ? '...' : ''),
+                url: 'https://www.perplexity.ai',
+                type: 'ai-summary'
+            });
+        }
+
+        // Additional results from citations (up to 9 more for total of 10)
+        if (citations.length > 0) {
+            citations.slice(0, 9).forEach((citation, index) => {
+                try {
+                    const urlObj = new URL(citation);
+                    results.push({
+                        title: urlObj.hostname.replace('www.', '') || `Source ${index + 1}`,
+                        snippet: `Reference from ${urlObj.hostname}`,
+                        url: citation,
+                        type: 'citation'
+                    });
+                } catch (e) {
+                    // Skip invalid URLs
+                }
+            });
+        }
+
         // Format as search results
         const searchResults = {
-            results: [{
+            results: results.length > 0 ? results : [{
                 title: query,
-                snippet: content,
-                url: citations[0] || 'https://www.perplexity.ai',
-                citations: citations
+                snippet: content || 'No results found',
+                url: 'https://www.perplexity.ai',
+                type: 'fallback'
             }]
         };
 
