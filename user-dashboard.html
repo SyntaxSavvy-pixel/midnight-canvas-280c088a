@@ -1337,10 +1337,18 @@
             cursor: pointer;
             font-weight: 600;
             font-size: 0.9375rem;
-            transition: all 0.3s;
+            /* Optimized: Only transition specific properties instead of 'all' */
+            transition: background-color 0.2s cubic-bezier(0.4, 0, 0.2, 1),
+                        color 0.2s cubic-bezier(0.4, 0, 0.2, 1),
+                        border-bottom-color 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            will-change: background-color, color;
             display: flex;
             align-items: center;
             gap: 0.5rem;
+        }
+
+        .theme-tab-btn:not(:hover):not(.active) {
+            will-change: auto; /* Reset will-change when not active/hovered */
         }
 
         .theme-tab-btn:hover {
@@ -1361,10 +1369,20 @@
 
         .theme-tab-content {
             display: none;
+            opacity: 0;
+            transform: translateY(10px);
         }
 
         .theme-tab-content.active {
             display: block;
+            animation: fadeInContent 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+        }
+
+        @keyframes fadeInContent {
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
         }
 
         /* Themes Grid */
@@ -8223,23 +8241,37 @@
             await applyTheme(themeName);
         }
 
-        // Theme tab switching
-        document.querySelectorAll('.theme-tab-btn').forEach(btn => {
-            btn.addEventListener('click', function() {
+        // Theme tab switching - OPTIMIZED for performance
+        // Cache DOM queries outside event handler to avoid repeated querySelectorAll
+        const themeTabButtons = document.querySelectorAll('.theme-tab-btn');
+        const themeTabContents = document.querySelectorAll('.theme-tab-content');
+        const themeTabsContainer = document.querySelector('[style*="border-bottom"]'); // Container with theme tabs
+
+        // Use event delegation for better performance
+        if (themeTabsContainer) {
+            themeTabsContainer.addEventListener('click', function(e) {
+                const clickedBtn = e.target.closest('.theme-tab-btn');
+                if (!clickedBtn) return;
+
                 // PRO FEATURE: Check if custom themes tab requires Pro
-                if (this.dataset.tab === 'custom' && !userData.isPro) {
+                if (clickedBtn.dataset.tab === 'custom' && !userData.isPro) {
                     showCustomThemeUpgradeModal();
                     return;
                 }
 
-                // Switch tabs
-                document.querySelectorAll('.theme-tab-btn').forEach(b => b.classList.remove('active'));
-                document.querySelectorAll('.theme-tab-content').forEach(c => c.classList.remove('active'));
+                // Use requestAnimationFrame to batch visual updates and prevent layout thrashing
+                requestAnimationFrame(() => {
+                    // Remove active class from all buttons and contents
+                    themeTabButtons.forEach(b => b.classList.remove('active'));
+                    themeTabContents.forEach(c => c.classList.remove('active'));
 
-                this.classList.add('active');
-                document.getElementById(`${this.dataset.tab}-themes-tab`).classList.add('active');
+                    // Add active class to clicked button and corresponding content
+                    clickedBtn.classList.add('active');
+                    const targetTab = document.getElementById(`${clickedBtn.dataset.tab}-themes-tab`);
+                    if (targetTab) targetTab.classList.add('active');
+                });
             });
-        });
+        }
 
         // Show Custom Theme Upgrade Modal (navigates to subscription page)
         function showCustomThemeUpgradeModal() {
@@ -8371,12 +8403,18 @@
         }
 
         function closeCustomThemeEditor() {
-            // Switch back to preset themes tab
-            document.querySelectorAll('.theme-tab-btn').forEach(b => b.classList.remove('active'));
-            document.querySelectorAll('.theme-tab-content').forEach(c => c.classList.remove('active'));
+            // Switch back to preset themes tab - OPTIMIZED
+            requestAnimationFrame(() => {
+                // Use cached elements from above
+                themeTabButtons.forEach(b => b.classList.remove('active'));
+                themeTabContents.forEach(c => c.classList.remove('active'));
 
-            document.querySelector('.theme-tab-btn[data-tab="preset"]').classList.add('active');
-            document.getElementById('preset-themes-tab').classList.add('active');
+                const presetBtn = document.querySelector('.theme-tab-btn[data-tab="preset"]');
+                const presetTab = document.getElementById('preset-themes-tab');
+
+                if (presetBtn) presetBtn.classList.add('active');
+                if (presetTab) presetTab.classList.add('active');
+            });
         }
 
         // Initialize Pro state for custom themes
