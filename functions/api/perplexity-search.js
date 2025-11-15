@@ -54,13 +54,23 @@ export async function onRequestPost(context) {
         }
 
         // Check user's search usage limits via existing endpoint
-        const usageCheckUrl = new URL('https://tabmangment.com/api/check-search-usage');
-        usageCheckUrl.searchParams.append('email', userEmail);
-
-        const usageResponse = await fetch(usageCheckUrl.toString());
+        const usageResponse = await fetch('https://tabmangment.com/api/check-search-usage', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ email: userEmail })
+        });
 
         if (!usageResponse.ok) {
-            return new Response(JSON.stringify({ error: 'Failed to verify search limits' }), {
+            console.error('Usage check failed:', {
+                status: usageResponse.status,
+                email: userEmail
+            });
+            return new Response(JSON.stringify({
+                error: 'Failed to verify search limits',
+                details: `Usage check returned ${usageResponse.status}`
+            }), {
                 status: 500,
                 headers: { ...corsHeaders, 'Content-Type': 'application/json' }
             });
@@ -68,7 +78,8 @@ export async function onRequestPost(context) {
 
         const usageData = await usageResponse.json();
 
-        if (usageData.limitReached) {
+        // Check if user has reached their search limit (canSearch = false means limit reached)
+        if (!usageData.canSearch) {
             return new Response(JSON.stringify({
                 error: 'Search limit reached',
                 limitReached: true,
@@ -88,7 +99,7 @@ export async function onRequestPost(context) {
                 'Authorization': `Bearer ${env.PERPLEXITY_API_KEY}`
             },
             body: JSON.stringify({
-                model: 'sonar',
+                model: 'sonar-pro',
                 messages: [
                     {
                         role: 'system',
@@ -103,11 +114,9 @@ export async function onRequestPost(context) {
                 temperature: 0.2,
                 top_p: 0.9,
                 return_citations: true,
-                search_domain_filter: [],
                 return_images: false,
                 return_related_questions: false,
                 search_recency_filter: 'month',
-                top_k: 0,
                 stream: false,
                 presence_penalty: 0,
                 frequency_penalty: 1
@@ -116,8 +125,15 @@ export async function onRequestPost(context) {
 
         if (!perplexityResponse.ok) {
             const errorText = await perplexityResponse.text();
-            console.error('Perplexity API error:', errorText);
-            return new Response(JSON.stringify({ error: 'Search service unavailable' }), {
+            console.error('Perplexity API error:', {
+                status: perplexityResponse.status,
+                statusText: perplexityResponse.statusText,
+                body: errorText
+            });
+            return new Response(JSON.stringify({
+                error: 'Search service unavailable',
+                details: `API returned ${perplexityResponse.status}: ${perplexityResponse.statusText}`
+            }), {
                 status: 500,
                 headers: { ...corsHeaders, 'Content-Type': 'application/json' }
             });
@@ -160,10 +176,15 @@ export async function onRequestPost(context) {
         });
 
     } catch (error) {
-        console.error('Perplexity search error:', error);
+        console.error('Perplexity search error:', {
+            message: error.message,
+            stack: error.stack,
+            name: error.name
+        });
         return new Response(JSON.stringify({
             error: 'Internal server error',
-            message: error.message
+            message: error.message,
+            type: error.name
         }), {
             status: 500,
             headers: { ...corsHeaders, 'Content-Type': 'application/json' }
