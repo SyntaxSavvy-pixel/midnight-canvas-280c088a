@@ -1428,10 +1428,11 @@ class TabmangmentPopup {
                     return;
                 }
 
-                const searchSection = document.getElementById('search-section');
-                const isSearchActive = searchSection && searchSection.style.display !== 'none';
+                // Close chat section if active
+                const chatSection = document.getElementById('ai-chat-section');
+                const isChatActive = chatSection && chatSection.style.display !== 'none';
 
-                if (isSearchActive && this.showTabsView) {
+                if (isChatActive && this.showTabsView) {
                     this.showTabsView();
                 }
 
