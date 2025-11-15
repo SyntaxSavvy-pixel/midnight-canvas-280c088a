@@ -4081,6 +4081,13 @@ body.search-active {
     color: white;
 }
 
+.avatar-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 8px;
+}
+
 .message-content {
     flex: 1;
     max-width: 85%;
