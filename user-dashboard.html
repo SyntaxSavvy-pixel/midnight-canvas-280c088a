@@ -1438,6 +1438,21 @@
             opacity: 1;
         }
 
+        /* Active theme visual indicator - ADDED */
+        .theme-card.theme-active {
+            border-color: rgba(16, 185, 129, 0.5);
+            box-shadow:
+                0 8px 32px rgba(16, 185, 129, 0.4),
+                0 4px 12px rgba(0, 0, 0, 0.3),
+                0 0 0 2px rgba(16, 185, 129, 0.3),
+                inset 0 1px 0 rgba(255, 255, 255, 0.1);
+        }
+
+        .theme-card.theme-active::before {
+            background: linear-gradient(90deg, transparent, rgba(16, 185, 129, 0.5), transparent);
+            opacity: 1;
+        }
+
         .theme-preview {
             height: 200px;
             padding: 1.25rem;
@@ -8134,8 +8149,8 @@
             }
         };
 
-        // Dynamic Theme Card Generation
-        function renderThemeCards() {
+        // Dynamic Theme Card Generation - FIXED with proper async handling
+        async function renderThemeCards() {
             const themesGrid = document.getElementById('themes-grid');
             if (!themesGrid) return;
 
@@ -8219,8 +8234,10 @@
                 feather.replace();
             }
 
-            // Load and mark active theme
-            loadActiveTheme();
+            // Wait for DOM to be fully updated, then mark active theme
+            // Use setTimeout to ensure all cards are rendered and badges exist
+            await new Promise(resolve => setTimeout(resolve, 50));
+            await loadActiveTheme();
         }
 
         // Handle theme application with Pro gating
@@ -8417,10 +8434,10 @@
             });
         }
 
-        // Initialize Pro state for custom themes
-        function initializeThemesPage() {
-            // Render theme cards dynamically
-            renderThemeCards();
+        // Initialize Pro state for custom themes - FIXED with proper async
+        async function initializeThemesPage() {
+            // Render theme cards dynamically and wait for completion
+            await renderThemeCards();
 
             // PRO GATING: Show/hide custom theme editor based on Pro status
             const proGate = document.getElementById('custom-theme-pro-gate');
@@ -8443,11 +8460,10 @@
             // Load saved draft theme if exists (auto-restore)
             loadCustomThemeDraft();
 
-            // Load and display active theme (also called by renderThemeCards, but safe to call twice)
-            loadActiveTheme();
-
             // Load saved custom themes
             loadSavedCustomThemes();
+
+            // Note: loadActiveTheme() is now called inside renderThemeCards() for proper timing
         }
 
         // Load custom theme draft from localStorage
@@ -8498,7 +8514,7 @@
             }
         }
 
-        // Load active theme and mark it
+        // Load active theme and mark it - FIXED with null checks and proper timing
         async function loadActiveTheme() {
             try {
                 const prefs = await getUserPreferences();
@@ -8510,17 +8526,36 @@
                     await saveActiveTheme(themeName);
                 }
 
-                // Mark the active theme
-                document.querySelectorAll('.theme-card').forEach(card => {
-                    const badge = card.querySelector('.active-theme');
-                    if (card.dataset.theme === themeName) {
-                        badge.style.display = 'block';
-                    } else {
-                        badge.style.display = 'none';
-                    }
+                // Use requestAnimationFrame to ensure DOM is fully rendered
+                requestAnimationFrame(() => {
+                    // Mark the active theme with proper null checks
+                    const themeCards = document.querySelectorAll('.theme-card');
+
+                    themeCards.forEach(card => {
+                        const badge = card.querySelector('.active-theme');
+
+                        // CRITICAL FIX: Add null check for badge
+                        if (!badge) {
+                            console.warn('Active theme badge not found for card:', card.dataset.theme);
+                            return;
+                        }
+
+                        // Show badge for active theme, hide for others
+                        if (card.dataset.theme === themeName) {
+                            badge.style.display = 'block';
+                            // Also add active class to card for additional styling if needed
+                            card.classList.add('theme-active');
+                        } else {
+                            badge.style.display = 'none';
+                            card.classList.remove('theme-active');
+                        }
+                    });
+
+                    // Log for debugging (can be removed in production)
+                    console.log(`Active theme marked: ${themeName}, found ${themeCards.length} theme cards`);
                 });
             } catch (error) {
-                // Error loading active theme
+                console.error('Error loading active theme:', error);
             }
         }
 
