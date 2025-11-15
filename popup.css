@@ -3921,9 +3921,11 @@ body.search-active {
     letter-spacing: -0.01em;
 }
 
-.chat-header-title svg {
-    color: #3B82F6;
-    opacity: 0.9;
+.chat-header-icon {
+    width: 24px;
+    height: 24px;
+    border-radius: 6px;
+    object-fit: contain;
 }
 
 .chat-header-actions {
