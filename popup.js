@@ -40,7 +40,8 @@ CURRENT DATE: ${new Date().toLocaleDateString('en-US', { year: 'numeric', month:
 You have tools available to help users:
 
 **Web & Search:**
-- search_web: For general web searches and product discovery. Will intelligently route to review sites and retailer pages based on query.
+- research_product: Research products and find actual product page URLs (use this for ALL product queries)
+- search_web: General Google search for non-product queries only
 - open_url: Open specific websites/product pages in new tabs
 - get_weather: Get current weather for any location
 
@@ -61,26 +62,32 @@ You have tools available to help users:
 
 You are an AI-powered productivity assistant that helps users manage tabs efficiently. You can analyze their browsing patterns, suggest optimizations, and proactively help them stay organized.
 
-CRITICAL - PRODUCT RECOMMENDATIONS (${new Date().getFullYear()}):
-When users ask about products (e.g., "best gaming keyboard", "what chair should I buy"):
+CRITICAL - PRODUCT RESEARCH (${new Date().getFullYear()}):
+When users ask about products (e.g., "best gaming keyboard", "best monitor", "Pokemon card"):
 
-1. **Provide Specific Recommendations**: Give 2-3 specific product names with brief reasons
-   - Example: "The Keychron Q1 Pro and Logitech MX Keys are top mechanical keyboards in ${new Date().getFullYear()}"
+1. **Use research_product tool FIRST** - This searches the web and finds actual product pages with URLs
+   - DO NOT use search_web for products - it only opens search results
+   - research_product returns real product information with direct purchase links
 
-2. **Always Use Current Year**: Reference ${new Date().getFullYear()} models and reviews, NOT outdated years like 2024
+2. **Read the research results** - Extract the top 1-2 product names and their direct URLs
 
-3. **Open Actual Product Pages**: After recommending, use search_web to find and open product pages/reviews
-   - The tool will automatically search for "${new Date().getFullYear()} reviews" and top-rated products
-   - It will open review sites (like Wirecutter, RTINGS) and retailer pages with actual products
+3. **Open ONLY actual product pages** using open_url tool:
+   - Open the specific product page (Amazon listing, eBay item, etc.)
+   - Maximum 1-2 tabs - only the BEST products
+   - NOT search results, NOT homepages, ONLY direct product URLs
 
-4. **Global Coverage**: Recommend products available worldwide, not just US-specific retailers
-
-5. **Be Proactive**: Don't just list products - actually search and open pages so users can see prices, reviews, and buy
+4. **Tell user what you found**:
+   - "I found the [Product Name] - opening the product page now"
+   - Be specific about what product you're showing them
 
 Example interaction:
-User: "What's the best gaming chair?"
-You: "For ${new Date().getFullYear()}, the Secretlab Titan Evo and Herman Miller Vantum are top-rated gaming chairs. Let me find the latest reviews and product pages for you."
-[Call search_web with "best gaming chair ${new Date().getFullYear()}"]
+User: "What's the best gaming monitor?"
+You: [Call research_product with "best gaming monitor ${new Date().getFullYear()}"]
+You: [Read results, extract product URL]
+You: "I found the ASUS ROG Swift is the top-rated gaming monitor for ${new Date().getFullYear()}. Opening the product page on Amazon now."
+You: [Call open_url with the actual Amazon product URL]
+
+NEVER open multiple search result tabs. ONLY open 1-2 specific product pages with direct buy links.
 
 IMPORTANT USAGE:
 - When user says "set a timer for THIS tab" or "bookmark THIS tab", first use get_active_tab to get the current tab, then use the appropriate tool
@@ -1611,14 +1618,28 @@ Use this information when relevant to provide accurate, time-aware responses.`;
     getToolDefinitions() {
         return [
             {
-                name: 'search_web',
-                description: `Search the web intelligently based on query type. For product queries, automatically adds ${new Date().getFullYear()} and opens review sites (Wirecutter, RTINGS, etc.) plus retailer pages with actual products. For general queries, uses Google search. IMPORTANT: When searching for products, the query should include the product name (e.g., "best gaming chair" or "Keychron Q1 keyboard"). The tool will handle adding the current year and finding authoritative sources.`,
+                name: 'research_product',
+                description: `Research products using web search to find actual product pages with direct purchase links. Returns specific product names, descriptions, prices, and most importantly - the actual product page URLs (Amazon, eBay, retailer sites, etc.). Use this for ANY product query. Do NOT use search_web for products - only use this tool.`,
                 input_schema: {
                     type: 'object',
                     properties: {
                         query: {
                             type: 'string',
-                            description: `The search query. For products, just include the product name and descriptors (e.g., "best gaming chair", "buy mechanical keyboard"). The tool automatically adds ${new Date().getFullYear()} for product searches.`
+                            description: `What product to research (e.g., "best gaming monitor", "legendary Pokemon card", "office chair"). The tool will search the web and return actual product information with direct URLs.`
+                        }
+                    },
+                    required: ['query']
+                }
+            },
+            {
+                name: 'search_web',
+                description: `General web search using Google. Opens a Google search tab. DO NOT use this for product queries - use research_product instead. Only use this for general information searches (e.g., "how to install Node.js", "what is quantum computing").`,
+                input_schema: {
+                    type: 'object',
+                    properties: {
+                        query: {
+                            type: 'string',
+                            description: `The general search query (NOT for products).`
                         }
                     },
                     required: ['query']
@@ -1822,6 +1843,9 @@ Use this information when relevant to provide accurate, time-aware responses.`;
         }
 
         switch (toolName) {
+            case 'research_product':
+                return await this.toolResearchProduct(input.query);
+
             case 'search_web':
                 return await this.toolSearchWeb(input.query);
 
@@ -1863,130 +1887,91 @@ Use this information when relevant to provide accurate, time-aware responses.`;
         }
     }
 
-    async toolSearchWeb(query) {
+    async toolResearchProduct(query) {
         try {
             const currentYear = new Date().getFullYear();
-            const lowerQuery = query.toLowerCase();
 
-            // Detect product/shopping keywords
-            const shoppingKeywords = ['best', 'buy', 'purchase', 'cheap', 'price', 'review', 'reviews', 'vs', 'comparison', 'top', 'recommended'];
-            const isProductQuery = shoppingKeywords.some(keyword => lowerQuery.includes(keyword));
+            // Add current year to query for latest products
+            const searchQuery = `${query} ${currentYear} best buy where`;
 
-            const urls = [];
-            let message;
+            console.log('Researching product:', searchQuery);
 
-            if (isProductQuery) {
-                // Extract clean product name
-                let productName = query;
-
-                // Remove year references from query (we'll add current year)
-                productName = productName.replace(/\b(20\d{2}|${currentYear})\b/gi, '').trim();
-
-                // Build search query with current year
-                const searchQuery = `${productName} ${currentYear}`;
-                const encodedQuery = encodeURIComponent(searchQuery);
-                const encodedProductName = encodeURIComponent(productName);
-
-                // STRATEGY 1: Open authoritative review sites first (these have actual product recommendations)
-                // These sites actually test products and link to where you can buy them
-
-                // Wirecutter (NYTimes) - Gold standard for product reviews
-                urls.push(`https://www.google.com/search?q=site:nytimes.com/wirecutter+${encodedQuery}`);
-
-                // RTINGS - Excellent for monitors, TVs, headphones
-                if (lowerQuery.includes('monitor') || lowerQuery.includes('tv') || lowerQuery.includes('headphone') || lowerQuery.includes('keyboard') || lowerQuery.includes('mouse')) {
-                    urls.push(`https://www.google.com/search?q=site:rtings.com+${encodedQuery}`);
-                }
-
-                // TechRadar - Good for tech products
-                if (lowerQuery.includes('gaming') || lowerQuery.includes('laptop') || lowerQuery.includes('phone') || lowerQuery.includes('tech') || lowerQuery.includes('computer')) {
-                    urls.push(`https://www.google.com/search?q=site:techradar.com+${encodedQuery}+buying+guide`);
-                }
-
-                // STRATEGY 2: Open Google Shopping with filters for high-rated products
-                // This shows actual products with prices, not just search results
-                urls.push(`https://www.google.com/search?q=${encodedQuery}&tbm=shop&tbs=mr:1,sales:1`);
-
-                // STRATEGY 3: Reddit recommendations (real users, recent discussions)
-                urls.push(`https://www.google.com/search?q=site:reddit.com+${encodedQuery}+recommendation`);
-
-                // STRATEGY 4: Smart retailer selection based on product category
-                const retailerUrl = this.getSmartRetailerUrl(lowerQuery, encodedProductName, currentYear);
-                if (retailerUrl) {
-                    urls.push(retailerUrl);
-                }
-
-                // Open all tabs (first one active)
-                urls.forEach((url, index) => {
-                    chrome.tabs.create({ url: url, active: index === 0 });
-                });
-
-                message = `🔍 Searching for ${productName} (${currentYear} reviews, product pages, and recommendations)`;
-
-                return {
-                    success: true,
-                    message: message,
-                    urls: urls,
+            // Call Perplexity API for product research
+            const response = await fetch(CONFIG.PERPLEXITY.SEARCH_URL, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
                     query: searchQuery,
-                    is_shopping: true,
-                    year: currentYear
-                };
-            } else {
-                // Regular Google search for non-product queries
-                const searchUrl = `https://www.google.com/search?q=${encodeURIComponent(query)}`;
-                chrome.tabs.create({ url: searchUrl, active: true });
+                    country: CONFIG.PERPLEXITY.COUNTRY || 'US'
+                })
+            });
 
-                return {
-                    success: true,
-                    message: `🔍 Searching for: ${query}`,
-                    search_url: searchUrl,
-                    query: query,
-                    is_shopping: false
-                };
+            if (!response.ok) {
+                throw new Error(`Perplexity API error: ${response.status}`);
             }
+
+            const data = await response.json();
+
+            // Extract the response text and citations/URLs
+            const resultText = data.answer || data.text || data.result || '';
+            const citations = data.citations || data.urls || [];
+
+            // Format the results for the AI to read
+            let formattedResults = `Product Research Results for "${query}":\n\n`;
+            formattedResults += resultText + '\n\n';
+
+            if (citations.length > 0) {
+                formattedResults += 'Direct Product Links:\n';
+                citations.forEach((citation, index) => {
+                    if (typeof citation === 'string') {
+                        formattedResults += `${index + 1}. ${citation}\n`;
+                    } else if (citation.url) {
+                        formattedResults += `${index + 1}. ${citation.title || 'Product'}: ${citation.url}\n`;
+                    }
+                });
+            }
+
+            console.log('Product research results:', formattedResults);
+
+            return {
+                success: true,
+                results: formattedResults,
+                citations: citations,
+                query: query,
+                year: currentYear,
+                message: `Found product information for ${query}. Extract the top 1-2 product URLs from the citations and use open_url to open them.`
+            };
+
+        } catch (error) {
+            console.error('Product research error:', error);
+
+            // Fallback: Return a helpful message telling AI to use search instead
+            return {
+                success: false,
+                error: error.message,
+                fallback_message: `Product research API unavailable. You can tell the user about products from your knowledge, or use search_web as a last resort.`
+            };
+        }
+    }
+
+    async toolSearchWeb(query) {
+        try {
+            // Simple Google search - no fancy multi-tab stuff
+            const searchUrl = `https://www.google.com/search?q=${encodeURIComponent(query)}`;
+            chrome.tabs.create({ url: searchUrl, active: true });
+
+            return {
+                success: true,
+                message: `🔍 Searching for: ${query}`,
+                search_url: searchUrl,
+                query: query
+            };
         } catch (error) {
             console.error('Search error:', error);
             return { success: false, error: error.message };
         }
-    }
-
-    // Helper function to intelligently select retailer based on product category and region
-    getSmartRetailerUrl(lowerQuery, encodedProductName, currentYear) {
-        // Global retailers (available worldwide or with international sites)
-
-        // Amazon - Global (has .com, .co.uk, .de, .fr, .jp, etc.)
-        // Use .com as default, it redirects to local Amazon if needed
-        if (lowerQuery.includes('book') || lowerQuery.includes('general')) {
-            return `https://www.amazon.com/s?k=${encodedProductName}+${currentYear}`;
-        }
-
-        // Tech/Electronics - Newegg, B&H Photo (US), Currys (UK), MediaMarkt (EU)
-        if (lowerQuery.includes('computer') || lowerQuery.includes('laptop') || lowerQuery.includes('pc') || lowerQuery.includes('gaming')) {
-            return `https://www.newegg.com/p/pl?d=${encodedProductName}`;
-        }
-
-        // Gaming - Best Buy, GameStop
-        if (lowerQuery.includes('gaming') || lowerQuery.includes('console') || lowerQuery.includes('video game')) {
-            return `https://www.bestbuy.com/site/searchpage.jsp?st=${encodedProductName}`;
-        }
-
-        // Furniture - Wayfair (US/CA), IKEA (Global)
-        if (lowerQuery.includes('furniture') || lowerQuery.includes('chair') || lowerQuery.includes('desk') || lowerQuery.includes('table')) {
-            return `https://www.wayfair.com/keyword.php?keyword=${encodedProductName}`;
-        }
-
-        // Fashion/Clothing - ASOS (Global), Zara (Global), H&M (Global)
-        if (lowerQuery.includes('clothing') || lowerQuery.includes('fashion') || lowerQuery.includes('shoes') || lowerQuery.includes('apparel')) {
-            return `https://www.asos.com/search/?q=${encodedProductName}`;
-        }
-
-        // Home/Kitchen - Target (US), Argos (UK), Amazon
-        if (lowerQuery.includes('kitchen') || lowerQuery.includes('home') || lowerQuery.includes('appliance')) {
-            return `https://www.amazon.com/s?k=${encodedProductName}+${currentYear}`;
-        }
-
-        // Default: Amazon (best global coverage, shows actual product pages)
-        return `https://www.amazon.com/s?k=${encodedProductName}+${currentYear}&rh=p_72:1249901011`; // 4+ star filter
     }
 
     async toolOpenUrl(url, description) {
