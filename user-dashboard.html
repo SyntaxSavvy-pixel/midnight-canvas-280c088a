@@ -2700,7 +2700,7 @@
                 </div>
 
                 <!-- Theme Tabs -->
-                <div style="display: flex; gap: 1rem; margin-bottom: 2rem; border-bottom: 1px solid #334155; padding-bottom: 1rem;">
+                <div id="theme-tabs-container" style="display: flex; gap: 1rem; margin-bottom: 2rem; border-bottom: 1px solid #334155; padding-bottom: 1rem;">
                     <button class="theme-tab-btn active" data-tab="preset">
                         <i data-feather="grid"></i>
                         Preset Themes
@@ -8895,7 +8895,13 @@
         // Cache DOM queries outside event handler to avoid repeated querySelectorAll
         const themeTabButtons = document.querySelectorAll('.theme-tab-btn');
         const themeTabContents = document.querySelectorAll('.theme-tab-content');
-        const themeTabsContainer = document.querySelector('[style*="border-bottom"]'); // Container with theme tabs
+        const themeTabsContainer = document.getElementById('theme-tabs-container');
+
+        console.log('Theme tabs setup:', {
+            buttons: themeTabButtons.length,
+            contents: themeTabContents.length,
+            container: themeTabsContainer ? 'found' : 'NOT FOUND'
+        });
 
         // Use event delegation for better performance
         if (themeTabsContainer) {
