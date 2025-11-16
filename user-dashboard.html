@@ -4633,6 +4633,90 @@
             }
         }
 
+        // ========== ADMIN FEATURES SETUP (Must be before initDashboard) ==========
+
+        // Admin email (hardcoded for security)
+        const ADMIN_EMAIL = 'selfshios@gmail.com';
+
+        // Check if user is admin and show admin features
+        async function checkAndShowAdminFeatures(userEmail) {
+            // If no email provided, try to get it from localStorage
+            if (!userEmail) {
+                const storedData = localStorage.getItem('tabmangment_user');
+                if (storedData) {
+                    try {
+                        const parsed = JSON.parse(storedData);
+                        userEmail = parsed.email;
+                        console.log('🔄 No email provided, retrieved from localStorage:', userEmail);
+                    } catch (e) {
+                        console.error('❌ Error parsing localStorage:', e);
+                    }
+                }
+            }
+            console.log('═══════════════════════════════════════════════════════════');
+            console.log('🔍 CHECK ADMIN FEATURES FUNCTION CALLED!');
+            console.log('═══════════════════════════════════════════════════════════');
+            console.log('🔍 Received email:', userEmail);
+            console.log('🔍 Email type:', typeof userEmail);
+            console.log('🔍 Email is null?', userEmail === null);
+            console.log('🔍 Email is undefined?', userEmail === undefined);
+            console.log('🔑 Admin email configured as:', ADMIN_EMAIL);
+
+            // Also log what's in localStorage for debugging
+            const storedData = localStorage.getItem('tabmangment_user');
+            if (storedData) {
+                try {
+                    const parsed = JSON.parse(storedData);
+                    console.log('💾 localStorage email:', parsed.email);
+                    console.log('💾 localStorage provider:', parsed.provider);
+                } catch (e) {
+                    console.error('❌ Error parsing localStorage:', e);
+                }
+            } else {
+                console.log('⚠️ No tabmangment_user in localStorage!');
+            }
+
+            // Normalize emails for comparison (trim and lowercase)
+            const normalizedUserEmail = userEmail?.trim().toLowerCase();
+            const normalizedAdminEmail = ADMIN_EMAIL.trim().toLowerCase();
+
+            console.log('📧 Normalized user email:', normalizedUserEmail);
+            console.log('📧 Normalized admin email:', normalizedAdminEmail);
+            console.log('📧 Are they equal?', normalizedUserEmail === normalizedAdminEmail);
+
+            if (normalizedUserEmail === normalizedAdminEmail) {
+                console.log('🎉🎉🎉 ADMIN MATCH FOUND! 🎉🎉🎉');
+
+                // Show User Feedback nav item (merged Reviews + Contact Messages)
+                const feedbackNav = document.getElementById('admin-feedback-nav');
+                console.log('🔍 Looking for User Feedback nav (#admin-feedback-nav)...');
+                console.log('🔍 Feedback nav element:', feedbackNav);
+                console.log('🔍 Feedback nav exists?', feedbackNav !== null);
+
+                if (feedbackNav) {
+                    console.log('🔍 Current display style:', feedbackNav.style.display);
+                    feedbackNav.style.display = 'block';
+                    console.log('✅ Set display to: block');
+                    console.log('🔍 New display style:', feedbackNav.style.display);
+                    console.log('✅ Admin User Feedback nav displayed!');
+                } else {
+                    console.error('❌ User Feedback nav element NOT FOUND in DOM!');
+                    console.error('❌ Element with id="admin-feedback-nav" does not exist!');
+                }
+
+                console.log('✅ ADMIN FEATURES FULLY ENABLED for:', userEmail);
+                console.log('🎯 You should see: User Feedback in sidebar');
+                console.log('═══════════════════════════════════════════════════════════');
+            } else {
+                console.log('❌ NOT ADMIN - Email mismatch');
+                console.log('❌ User:', normalizedUserEmail);
+                console.log('❌ Admin:', normalizedAdminEmail);
+                console.log('═══════════════════════════════════════════════════════════');
+            }
+        }
+
+        // ========== END ADMIN FEATURES SETUP ==========
+
         // Initialize dashboard
         async function initDashboard() {
             // DEBUG: Confirm dashboard initialization started
@@ -8035,6 +8119,36 @@
                     showPage(page);
                 }
             });
+
+            // AUTO-CHECK ADMIN FEATURES ON PAGE LOAD
+            // This ensures admin sections appear automatically without manual debugAdmin() call
+            setTimeout(() => {
+                const storedUserData = localStorage.getItem('tabmangment_user');
+                if (storedUserData) {
+                    try {
+                        const parsed = JSON.parse(storedUserData);
+                        if (parsed.email) {
+                            console.log('🔄 Auto-checking admin features for:', parsed.email);
+                            checkAndShowAdminFeatures(parsed.email);
+                        }
+                    } catch (e) {
+                        console.error('Error parsing user data:', e);
+                    }
+                }
+            }, 1000); // Wait 1 second to ensure everything is loaded
+
+            // Backup check after 3 seconds
+            setTimeout(() => {
+                const storedUserData = localStorage.getItem('tabmangment_user');
+                if (storedUserData) {
+                    try {
+                        const parsed = JSON.parse(storedUserData);
+                        if (parsed.email) {
+                            checkAndShowAdminFeatures(parsed.email);
+                        }
+                    } catch (e) {}
+                }
+            }, 3000);
         });
 
         // Add CSS animation for notifications
@@ -8062,85 +8176,8 @@
 
         // ========== ADMIN REVIEWS FUNCTIONALITY ==========
 
-        // Admin email (hardcoded for security)
-        const ADMIN_EMAIL = 'selfshios@gmail.com';
-
-        // Check if user is admin and show admin features
-        async function checkAndShowAdminFeatures(userEmail) {
-            // If no email provided, try to get it from localStorage
-            if (!userEmail) {
-                const storedData = localStorage.getItem('tabmangment_user');
-                if (storedData) {
-                    try {
-                        const parsed = JSON.parse(storedData);
-                        userEmail = parsed.email;
-                        console.log('🔄 No email provided, retrieved from localStorage:', userEmail);
-                    } catch (e) {
-                        console.error('❌ Error parsing localStorage:', e);
-                    }
-                }
-            }
-            console.log('═══════════════════════════════════════════════════════════');
-            console.log('🔍 CHECK ADMIN FEATURES FUNCTION CALLED!');
-            console.log('═══════════════════════════════════════════════════════════');
-            console.log('🔍 Received email:', userEmail);
-            console.log('🔍 Email type:', typeof userEmail);
-            console.log('🔍 Email is null?', userEmail === null);
-            console.log('🔍 Email is undefined?', userEmail === undefined);
-            console.log('🔑 Admin email configured as:', ADMIN_EMAIL);
-
-            // Also log what's in localStorage for debugging
-            const storedData = localStorage.getItem('tabmangment_user');
-            if (storedData) {
-                try {
-                    const parsed = JSON.parse(storedData);
-                    console.log('💾 localStorage email:', parsed.email);
-                    console.log('💾 localStorage provider:', parsed.provider);
-                } catch (e) {
-                    console.error('❌ Error parsing localStorage:', e);
-                }
-            } else {
-                console.log('⚠️ No tabmangment_user in localStorage!');
-            }
-
-            // Normalize emails for comparison (trim and lowercase)
-            const normalizedUserEmail = userEmail?.trim().toLowerCase();
-            const normalizedAdminEmail = ADMIN_EMAIL.trim().toLowerCase();
-
-            console.log('📧 Normalized user email:', normalizedUserEmail);
-            console.log('📧 Normalized admin email:', normalizedAdminEmail);
-            console.log('📧 Are they equal?', normalizedUserEmail === normalizedAdminEmail);
-
-            if (normalizedUserEmail === normalizedAdminEmail) {
-                console.log('🎉🎉🎉 ADMIN MATCH FOUND! 🎉🎉🎉');
-
-                // Show User Feedback nav item (merged Reviews + Contact Messages)
-                const feedbackNav = document.getElementById('admin-feedback-nav');
-                console.log('🔍 Looking for User Feedback nav (#admin-feedback-nav)...');
-                console.log('🔍 Feedback nav element:', feedbackNav);
-                console.log('🔍 Feedback nav exists?', feedbackNav !== null);
-
-                if (feedbackNav) {
-                    console.log('🔍 Current display style:', feedbackNav.style.display);
-                    feedbackNav.style.display = 'block';
-                    console.log('✅ Set display to: block');
-                    console.log('🔍 New display style:', feedbackNav.style.display);
-                    console.log('✅ Admin User Feedback nav displayed!');
-                } else {
-                    console.error('❌ User Feedback nav element NOT FOUND in DOM!');
-                    console.error('❌ Element with id="admin-feedback-nav" does not exist!');
-                }
-
-                console.log('✅ ADMIN FEATURES FULLY ENABLED for:', userEmail);
-                console.log('🎯 You should see: User Feedback in sidebar');
-                console.log('═══════════════════════════════════════════════════════════');
-            } else {
-                console.log('❌ NOT ADMIN - Email mismatch');
-                console.log('❌ User:', normalizedUserEmail);
-                console.log('❌ Admin:', normalizedAdminEmail);
-                console.log('═══════════════════════════════════════════════════════════');
-            }
-        }
+        // NOTE: Admin function is now defined earlier in the file (before initDashboard)
+        // to ensure it's available when called during initialization
 
         // Expose function globally for manual testing
         window.testAdminCheck = checkAndShowAdminFeatures;
