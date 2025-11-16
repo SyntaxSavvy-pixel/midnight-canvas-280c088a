@@ -1,0 +1,483 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>We're Sorry to See You Go - Tabmangment</title>
+    <link rel="icon" type="image/x-icon" href="icons/icon-48.png">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem;
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* Animated background circles */
+        body::before,
+        body::after {
+            content: '';
+            position: absolute;
+            border-radius: 50%;
+            opacity: 0.1;
+            animation: float 20s infinite ease-in-out;
+        }
+
+        body::before {
+            width: 500px;
+            height: 500px;
+            background: white;
+            top: -250px;
+            right: -250px;
+            animation-delay: 0s;
+        }
+
+        body::after {
+            width: 300px;
+            height: 300px;
+            background: white;
+            bottom: -150px;
+            left: -150px;
+            animation-delay: 2s;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0px) translateX(0px); }
+            50% { transform: translateY(-30px) translateX(30px); }
+        }
+
+        .container {
+            max-width: 600px;
+            width: 100%;
+            background: white;
+            border-radius: 24px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            padding: 3rem;
+            position: relative;
+            z-index: 1;
+            animation: slideIn 0.5s ease;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 2.5rem;
+        }
+
+        .logo {
+            width: 64px;
+            height: 64px;
+            margin: 0 auto 1.5rem;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+        }
+
+        .logo img {
+            width: 40px;
+            height: 40px;
+        }
+
+        h1 {
+            font-size: 1.75rem;
+            font-weight: 700;
+            color: #1e293b;
+            margin-bottom: 0.5rem;
+        }
+
+        .subtitle {
+            color: #64748b;
+            font-size: 1rem;
+            line-height: 1.6;
+        }
+
+        .form-group {
+            margin-bottom: 2rem;
+        }
+
+        label {
+            display: block;
+            font-weight: 600;
+            color: #334155;
+            margin-bottom: 0.75rem;
+            font-size: 0.9375rem;
+        }
+
+        textarea,
+        input[type="text"] {
+            width: 100%;
+            padding: 1rem;
+            border: 2px solid #e2e8f0;
+            border-radius: 12px;
+            font-family: inherit;
+            font-size: 0.9375rem;
+            color: #1e293b;
+            transition: all 0.3s ease;
+            resize: vertical;
+        }
+
+        textarea:focus,
+        input[type="text"]:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        textarea {
+            min-height: 120px;
+        }
+
+        .improvement-input {
+            opacity: 0.7;
+        }
+
+        .improvement-input:focus {
+            opacity: 1;
+        }
+
+        /* Rating Section */
+        .rating-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 1.5rem;
+        }
+
+        .rating-circles {
+            display: flex;
+            gap: 0.75rem;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .rating-circle {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            border: 2px solid #e2e8f0;
+            background: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            color: #64748b;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+        }
+
+        .rating-circle:hover {
+            border-color: #667eea;
+            transform: scale(1.1);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.2);
+        }
+
+        .rating-circle.selected {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-color: #667eea;
+            color: white;
+            transform: scale(1.15);
+            box-shadow: 0 6px 16px rgba(102, 126, 234, 0.4);
+        }
+
+        .rating-label {
+            display: flex;
+            justify-content: space-between;
+            width: 100%;
+            max-width: 540px;
+            font-size: 0.875rem;
+            color: #64748b;
+            margin-top: -0.5rem;
+        }
+
+        .submit-btn {
+            width: 100%;
+            padding: 1rem;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+            margin-top: 1rem;
+        }
+
+        .submit-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .submit-btn:active {
+            transform: translateY(0);
+        }
+
+        .submit-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .success-message {
+            display: none;
+            text-align: center;
+            padding: 2rem;
+            animation: fadeIn 0.5s ease;
+        }
+
+        .success-message.show {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .success-icon {
+            width: 80px;
+            height: 80px;
+            margin: 0 auto 1.5rem;
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            animation: scaleIn 0.5s ease;
+        }
+
+        @keyframes scaleIn {
+            from { transform: scale(0); }
+            to { transform: scale(1); }
+        }
+
+        .success-icon svg {
+            width: 40px;
+            height: 40px;
+            stroke: white;
+            stroke-width: 3;
+        }
+
+        .success-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #1e293b;
+            margin-bottom: 0.5rem;
+        }
+
+        .success-text {
+            color: #64748b;
+            line-height: 1.6;
+            margin-bottom: 1.5rem;
+        }
+
+        .back-btn {
+            display: inline-block;
+            padding: 0.75rem 1.5rem;
+            background: #f1f5f9;
+            color: #334155;
+            text-decoration: none;
+            border-radius: 8px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .back-btn:hover {
+            background: #e2e8f0;
+        }
+
+        @media (max-width: 640px) {
+            .container {
+                padding: 2rem 1.5rem;
+            }
+
+            h1 {
+                font-size: 1.5rem;
+            }
+
+            .rating-circle {
+                width: 44px;
+                height: 44px;
+                font-size: 0.875rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="logo">
+                <img src="icons/icon-48.png" alt="Tabmangment">
+            </div>
+            <h1>We're Sorry to See You Go</h1>
+            <p class="subtitle">Your feedback helps us improve Tabmangment for everyone. Please take a moment to share your thoughts.</p>
+        </div>
+
+        <form id="feedback-form">
+            <div class="form-group">
+                <label for="reason">What is the reason for uninstalling?</label>
+                <textarea
+                    id="reason"
+                    placeholder="Please share why you're removing Tabmangment..."
+                    required
+                ></textarea>
+            </div>
+
+            <div class="form-group">
+                <label for="improvement">What is one thing we can improve on?</label>
+                <textarea
+                    id="improvement"
+                    class="improvement-input"
+                    placeholder="Any suggestions would be greatly appreciated..."
+                ></textarea>
+            </div>
+
+            <div class="form-group">
+                <label>How would you rate your experience?</label>
+                <div class="rating-container">
+                    <div class="rating-circles" id="rating-circles">
+                        <div class="rating-circle" data-rating="1">1</div>
+                        <div class="rating-circle" data-rating="2">2</div>
+                        <div class="rating-circle" data-rating="3">3</div>
+                        <div class="rating-circle" data-rating="4">4</div>
+                        <div class="rating-circle" data-rating="5">5</div>
+                        <div class="rating-circle" data-rating="6">6</div>
+                        <div class="rating-circle" data-rating="7">7</div>
+                        <div class="rating-circle" data-rating="8">8</div>
+                        <div class="rating-circle" data-rating="9">9</div>
+                        <div class="rating-circle" data-rating="10">10</div>
+                    </div>
+                    <div class="rating-label">
+                        <span>Poor</span>
+                        <span>Excellent</span>
+                    </div>
+                </div>
+            </div>
+
+            <button type="submit" class="submit-btn" id="submit-btn">
+                Submit Feedback
+            </button>
+        </form>
+
+        <div class="success-message" id="success-message">
+            <div class="success-icon">
+                <svg viewBox="0 0 24 24" fill="none">
+                    <path d="M20 6L9 17l-5-5" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+            </div>
+            <h2 class="success-title">Thank You!</h2>
+            <p class="success-text">Your feedback has been received and will help us make Tabmangment better. We appreciate you taking the time to share your thoughts.</p>
+            <a href="https://tabmangment.com" class="back-btn">Visit Our Website</a>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script>
+        // Initialize Supabase
+        const supabaseUrl = 'https://lroqzrcorgohhidzuymv.supabase.co';
+        const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imxyb3F6cmNvcmdvaGhpZHp1eW12Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzQ2NDUzNjIsImV4cCI6MjA1MDIyMTM2Mn0.0BKHPkR6xSNAjEe1vp0dDx34hZ-pzqo1eXlf7SLzqYU';
+        const { createClient } = supabase;
+        const supabaseClient = createClient(supabaseUrl, supabaseKey);
+
+        let selectedRating = null;
+
+        // Rating selection
+        const ratingCircles = document.querySelectorAll('.rating-circle');
+        ratingCircles.forEach(circle => {
+            circle.addEventListener('click', function() {
+                // Remove selected class from all circles
+                ratingCircles.forEach(c => c.classList.remove('selected'));
+
+                // Add selected class to clicked circle
+                this.classList.add('selected');
+                selectedRating = parseInt(this.dataset.rating);
+            });
+        });
+
+        // Form submission
+        const form = document.getElementById('feedback-form');
+        const submitBtn = document.getElementById('submit-btn');
+        const successMessage = document.getElementById('success-message');
+
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const reason = document.getElementById('reason').value.trim();
+            const improvement = document.getElementById('improvement').value.trim();
+
+            if (!reason) {
+                alert('Please provide a reason for uninstalling.');
+                return;
+            }
+
+            if (selectedRating === null) {
+                alert('Please rate your experience.');
+                return;
+            }
+
+            // Disable submit button
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Submitting...';
+
+            try {
+                // Save feedback to Supabase
+                const { data, error } = await supabaseClient
+                    .from('uninstall_feedback')
+                    .insert([
+                        {
+                            reason: reason,
+                            improvement: improvement || null,
+                            rating: selectedRating,
+                            submitted_at: new Date().toISOString(),
+                            user_agent: navigator.userAgent
+                        }
+                    ]);
+
+                if (error) {
+                    console.error('Error saving feedback:', error);
+                    alert('Failed to submit feedback. Please try again.');
+                    submitBtn.disabled = false;
+                    submitBtn.textContent = 'Submit Feedback';
+                    return;
+                }
+
+                // Show success message
+                form.style.display = 'none';
+                successMessage.classList.add('show');
+
+            } catch (error) {
+                console.error('Error:', error);
+                alert('An error occurred. Please try again.');
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Submit Feedback';
+            }
+        });
+    </script>
+</body>
+</html>

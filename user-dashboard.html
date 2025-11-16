@@ -2154,6 +2154,13 @@
                         <span class="nav-text">Themes</span>
                     </a>
                 </li>
+                <!-- ADMIN ONLY: Reviews Section -->
+                <li class="nav-item" id="admin-reviews-nav" style="display: none;">
+                    <a href="#" class="nav-link" data-page="reviews">
+                        <i data-feather="message-square"></i>
+                        <span class="nav-text">Reviews</span>
+                    </a>
+                </li>
             </ul>
         </nav>
 
@@ -3020,6 +3027,64 @@
                 </div>
 
 
+            </div>
+
+            <!-- ADMIN ONLY: Reviews Page -->
+            <div class="page-content" id="reviews-page" style="display: none;">
+                <div class="page-header">
+                    <h1 class="page-title">📝 User Reviews & Feedback</h1>
+                    <p class="page-subtitle">Uninstall feedback from users who removed the extension</p>
+                </div>
+
+                <!-- Stats Overview -->
+                <div class="stats-grid" style="margin-bottom: 2rem;">
+                    <div class="stat-card">
+                        <div class="stat-icon" style="background: rgba(239, 68, 68, 0.2);">
+                            <i data-feather="x-circle" style="color: #ef4444;"></i>
+                        </div>
+                        <div class="stat-content">
+                            <div class="stat-value" id="total-reviews">0</div>
+                            <div class="stat-label">Total Reviews</div>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon" style="background: rgba(251, 191, 36, 0.2);">
+                            <i data-feather="star" style="color: #fbbf24;"></i>
+                        </div>
+                        <div class="stat-content">
+                            <div class="stat-value" id="avg-rating">0.0</div>
+                            <div class="stat-label">Average Rating</div>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon" style="background: rgba(59, 130, 246, 0.2);">
+                            <i data-feather="calendar" style="color: #3b82f6;"></i>
+                        </div>
+                        <div class="stat-content">
+                            <div class="stat-value" id="recent-count">0</div>
+                            <div class="stat-label">This Week</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Reviews List -->
+                <div class="card">
+                    <div style="margin-bottom: 1.5rem; display: flex; justify-content: space-between; align-items: center;">
+                        <h2 class="card-title">Recent Feedback</h2>
+                        <button class="card-action" id="refresh-reviews-btn">
+                            <i data-feather="refresh-cw"></i>
+                            Refresh
+                        </button>
+                    </div>
+
+                    <div id="reviews-container">
+                        <!-- Reviews will be loaded here -->
+                        <div style="text-align: center; padding: 3rem; color: #64748b;">
+                            <i data-feather="loader" style="width: 48px; height: 48px; margin-bottom: 1rem; animation: spin 1s linear infinite;"></i>
+                            <p>Loading reviews...</p>
+                        </div>
+                    </div>
+                </div>
             </div>
         </main>
     </div>
@@ -4757,6 +4822,9 @@
 
             // Start subscription status monitoring
             startSubscriptionStatusRefresh();
+
+            // ADMIN ONLY: Show Reviews nav and load reviews if admin
+            checkAndShowAdminFeatures(userEmail);
         }
 
         // Smart Dashboard Functions
@@ -5560,6 +5628,9 @@
             } else if (pageId === 'settings') {
                 // Reload settings when settings page shown
                 loadUserSettings();
+            } else if (pageId === 'reviews') {
+                // Load reviews when reviews page shown (admin only)
+                loadUninstallReviews();
             }
         }
 
@@ -7851,6 +7922,156 @@
         //         updateStats(message.data);
         //     }
         // });
+
+        // ========== ADMIN REVIEWS FUNCTIONALITY ==========
+
+        // Admin email (hardcoded for security)
+        const ADMIN_EMAIL = 'selfshious@gmail.com';
+
+        // Check if user is admin and show admin features
+        async function checkAndShowAdminFeatures(userEmail) {
+            if (userEmail === ADMIN_EMAIL) {
+                // Show Reviews nav item
+                const reviewsNav = document.getElementById('admin-reviews-nav');
+                if (reviewsNav) {
+                    reviewsNav.style.display = 'block';
+                }
+
+                console.log('✅ Admin features enabled for:', userEmail);
+            }
+        }
+
+        // Load uninstall reviews (admin only)
+        async function loadUninstallReviews() {
+            const reviewsContainer = document.getElementById('reviews-container');
+
+            try {
+                // Fetch reviews from Supabase
+                const { data: reviews, error } = await supabaseClient
+                    .from('uninstall_feedback')
+                    .select('*')
+                    .order('submitted_at', { ascending: false })
+                    .limit(50);
+
+                if (error) {
+                    console.error('Error loading reviews:', error);
+                    reviewsContainer.innerHTML = `
+                        <div style="text-align: center; padding: 3rem; color: #ef4444;">
+                            <i data-feather="alert-circle" style="width: 48px; height: 48px; margin-bottom: 1rem;"></i>
+                            <p>Failed to load reviews</p>
+                        </div>
+                    `;
+                    if (typeof feather !== 'undefined') feather.replace();
+                    return;
+                }
+
+                // Update stats
+                updateReviewsStats(reviews);
+
+                // Render reviews
+                if (!reviews || reviews.length === 0) {
+                    reviewsContainer.innerHTML = `
+                        <div style="text-align: center; padding: 3rem; color: #64748b;">
+                            <i data-feather="inbox" style="width: 48px; height: 48px; margin-bottom: 1rem;"></i>
+                            <p>No reviews yet</p>
+                        </div>
+                    `;
+                    if (typeof feather !== 'undefined') feather.replace();
+                    return;
+                }
+
+                // Render review cards
+                reviewsContainer.innerHTML = reviews.map(review => {
+                    const date = new Date(review.submitted_at);
+                    const formattedDate = date.toLocaleDateString('en-US', {
+                        month: 'short',
+                        day: 'numeric',
+                        year: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                    });
+
+                    // Rating stars
+                    const stars = Array.from({length: 10}, (_, i) => {
+                        const filled = i < review.rating;
+                        return `<div class="rating-star ${filled ? 'filled' : ''}" style="width: 24px; height: 24px; border-radius: 50%; ${filled ? 'background: #fbbf24;' : 'background: #334155;'} display: flex; align-items: center; justify-content: center; color: ${filled ? '#0f172a' : '#64748b'}; font-weight: 700; font-size: 0.75rem;">${i + 1}</div>`;
+                    }).join('');
+
+                    return `
+                        <div class="review-card" style="background: rgba(30, 41, 59, 0.6); border: 1px solid rgba(99, 102, 241, 0.2); border-radius: 12px; padding: 1.5rem; margin-bottom: 1rem; backdrop-filter: blur(10px);">
+                            <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 1rem;">
+                                <div>
+                                    <div style="display: flex; gap: 0.5rem; margin-bottom: 0.5rem;">
+                                        ${stars}
+                                    </div>
+                                    <div style="font-size: 0.875rem; color: #94a3b8;">${formattedDate}</div>
+                                </div>
+                                <div style="background: ${review.rating >= 7 ? 'rgba(16, 185, 129, 0.2)' : review.rating >= 4 ? 'rgba(251, 191, 36, 0.2)' : 'rgba(239, 68, 68, 0.2)'}; color: ${review.rating >= 7 ? '#10b981' : review.rating >= 4 ? '#fbbf24' : '#ef4444'}; padding: 0.375rem 0.75rem; border-radius: 8px; font-weight: 600; font-size: 0.875rem;">
+                                    ${review.rating}/10
+                                </div>
+                            </div>
+                            <div style="margin-bottom: 1rem;">
+                                <div style="color: #cbd5e1; font-weight: 600; margin-bottom: 0.5rem; font-size: 0.875rem;">Reason for uninstalling:</div>
+                                <div style="color: #f8fafc; line-height: 1.6;">${escapeHtml(review.reason)}</div>
+                            </div>
+                            ${review.improvement ? `
+                            <div>
+                                <div style="color: #cbd5e1; font-weight: 600; margin-bottom: 0.5rem; font-size: 0.875rem;">Suggestions for improvement:</div>
+                                <div style="color: #f8fafc; line-height: 1.6;">${escapeHtml(review.improvement)}</div>
+                            </div>
+                            ` : ''}
+                        </div>
+                    `;
+                }).join('');
+
+                if (typeof feather !== 'undefined') feather.replace();
+
+            } catch (error) {
+                console.error('Error in loadUninstallReviews:', error);
+                reviewsContainer.innerHTML = `
+                    <div style="text-align: center; padding: 3rem; color: #ef4444;">
+                        <i data-feather="alert-circle" style="width: 48px; height: 48px; margin-bottom: 1rem;"></i>
+                        <p>An error occurred</p>
+                    </div>
+                `;
+                if (typeof feather !== 'undefined') feather.replace();
+            }
+        }
+
+        // Update review stats
+        function updateReviewsStats(reviews) {
+            if (!reviews || reviews.length === 0) return;
+
+            // Total reviews
+            document.getElementById('total-reviews').textContent = reviews.length;
+
+            // Average rating
+            const avgRating = reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length;
+            document.getElementById('avg-rating').textContent = avgRating.toFixed(1);
+
+            // This week count
+            const oneWeekAgo = new Date();
+            oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
+            const thisWeekCount = reviews.filter(r => new Date(r.submitted_at) > oneWeekAgo).length;
+            document.getElementById('recent-count').textContent = thisWeekCount;
+        }
+
+        // HTML escape helper
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // Refresh reviews button handler
+        document.addEventListener('DOMContentLoaded', () => {
+            const refreshBtn = document.getElementById('refresh-reviews-btn');
+            if (refreshBtn) {
+                refreshBtn.addEventListener('click', () => {
+                    loadUninstallReviews();
+                });
+            }
+        });
 
         // ========== THEMES FUNCTIONALITY ==========
 
