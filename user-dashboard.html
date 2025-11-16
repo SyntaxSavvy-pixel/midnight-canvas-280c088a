@@ -7930,14 +7930,29 @@
 
         // Check if user is admin and show admin features
         async function checkAndShowAdminFeatures(userEmail) {
-            if (userEmail === ADMIN_EMAIL) {
+            console.log('🔍 Checking admin status for email:', userEmail);
+            console.log('🔑 Admin email configured as:', ADMIN_EMAIL);
+
+            // Normalize emails for comparison (trim and lowercase)
+            const normalizedUserEmail = userEmail?.trim().toLowerCase();
+            const normalizedAdminEmail = ADMIN_EMAIL.trim().toLowerCase();
+
+            console.log('📧 Normalized user email:', normalizedUserEmail);
+            console.log('📧 Normalized admin email:', normalizedAdminEmail);
+
+            if (normalizedUserEmail === normalizedAdminEmail) {
                 // Show Reviews nav item
                 const reviewsNav = document.getElementById('admin-reviews-nav');
                 if (reviewsNav) {
                     reviewsNav.style.display = 'block';
+                    console.log('✅ Admin Reviews nav displayed!');
+                } else {
+                    console.error('❌ Reviews nav element not found!');
                 }
 
                 console.log('✅ Admin features enabled for:', userEmail);
+            } else {
+                console.log('❌ Not admin. User:', normalizedUserEmail, 'Admin:', normalizedAdminEmail);
             }
         }
 
