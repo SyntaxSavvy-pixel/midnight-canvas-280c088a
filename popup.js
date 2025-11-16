@@ -38,7 +38,7 @@ const CONFIG = {
 You have tools available to help users:
 
 **Web & Search:**
-- search_web: Search Google for information
+- search_web: Smart search that detects product queries and shows actual shopping results (e.g., "best gaming chair" opens Google Shopping with product links)
 - open_url: Open websites in new tabs
 - get_weather: Get current weather for any location
 
@@ -1591,13 +1591,13 @@ Use this information when relevant to provide accurate, time-aware responses.`;
         return [
             {
                 name: 'search_web',
-                description: 'Search the web using Google and return top results. Use this when the user asks to find or search for something online.',
+                description: 'Search the web using Google. Automatically detects product/shopping queries (best gaming chair, buy laptop, etc.) and uses Google Shopping to show actual product links. For regular queries, uses standard Google search. Always opens results in a new tab.',
                 input_schema: {
                     type: 'object',
                     properties: {
                         query: {
                             type: 'string',
-                            description: 'The search query'
+                            description: 'The search query (e.g., "best gaming chair 2024", "buy mechanical keyboard")'
                         }
                     },
                     required: ['query']
@@ -1844,15 +1844,39 @@ Use this information when relevant to provide accurate, time-aware responses.`;
 
     async toolSearchWeb(query) {
         try {
-            // Use Google search and parse results
-            const searchUrl = `https://www.google.com/search?q=${encodeURIComponent(query)}`;
+            // Detect if this is a product/shopping query
+            const shoppingKeywords = ['best', 'buy', 'purchase', 'cheap', 'price', 'review', 'vs', 'comparison',
+                                      'gaming', 'laptop', 'phone', 'chair', 'desk', 'monitor', 'keyboard',
+                                      'mouse', 'headset', 'camera', 'watch', 'shoes', 'clothes'];
 
-            // Return search URL - we'll open it for the user
+            const isProductQuery = shoppingKeywords.some(keyword =>
+                query.toLowerCase().includes(keyword)
+            );
+
+            let searchUrl;
+            let message;
+
+            if (isProductQuery) {
+                // Use Google Shopping for product queries - shows actual products
+                searchUrl = `https://www.google.com/search?q=${encodeURIComponent(query)}&tbm=shop`;
+                message = `🛍️ Found shopping results for: ${query}`;
+
+                // Also open the first few product results
+                chrome.tabs.create({ url: searchUrl, active: true });
+            } else {
+                // Regular Google search for non-product queries
+                searchUrl = `https://www.google.com/search?q=${encodeURIComponent(query)}`;
+                message = `🔍 Found search results for: ${query}`;
+
+                chrome.tabs.create({ url: searchUrl, active: true });
+            }
+
             return {
                 success: true,
-                message: `Found search results for: ${query}`,
+                message: message,
                 search_url: searchUrl,
-                query: query
+                query: query,
+                is_shopping: isProductQuery
             };
         } catch (error) {
             return { success: false, error: error.message };
