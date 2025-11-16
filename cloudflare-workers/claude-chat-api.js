@@ -10,85 +10,100 @@
  *    - Name: ANTHROPIC_API_KEY
  *    - Value: Your Claude API key from https://console.anthropic.com
  * 6. Deploy
- * 7. Set up route: https://tabmangment.com/api/claude-chat → claude-chat-api worker
  */
 
-addEventListener('fetch', event => {
-    event.respondWith(handleRequest(event.request));
-});
+export default {
+    async fetch(request, env, ctx) {
+        // CORS headers
+        const corsHeaders = {
+            'Access-Control-Allow-Origin': '*',
+            'Access-Control-Allow-Methods': 'POST, OPTIONS',
+            'Access-Control-Allow-Headers': 'Content-Type',
+        };
 
-async function handleRequest(request) {
-    // CORS headers
-    const corsHeaders = {
-        'Access-Control-Allow-Origin': '*',
-        'Access-Control-Allow-Methods': 'POST, OPTIONS',
-        'Access-Control-Allow-Headers': 'Content-Type',
-    };
+        // Handle CORS preflight
+        if (request.method === 'OPTIONS') {
+            return new Response(null, { headers: corsHeaders });
+        }
 
-    // Handle CORS preflight
-    if (request.method === 'OPTIONS') {
-        return new Response(null, { headers: corsHeaders });
-    }
-
-    // Only allow POST
-    if (request.method !== 'POST') {
-        return new Response('Method not allowed', {
-            status: 405,
-            headers: corsHeaders
-        });
-    }
-
-    try {
-        // Parse request body
-        const body = await request.json();
-        const { messages, model, max_tokens, system, userEmail } = body;
-
-        // Validate required fields
-        if (!messages || !Array.isArray(messages)) {
-            return new Response(JSON.stringify({
-                error: 'Messages array is required'
-            }), {
-                status: 400,
-                headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        // Only allow POST
+        if (request.method !== 'POST') {
+            return new Response('Method not allowed', {
+                status: 405,
+                headers: corsHeaders
             });
         }
 
-        // Call Claude API
-        const claudeResponse = await fetch('https://api.anthropic.com/v1/messages', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'x-api-key': ANTHROPIC_API_KEY,
-                'anthropic-version': '2023-06-01'
-            },
-            body: JSON.stringify({
-                model: model || 'claude-3-5-sonnet-20241022',
-                max_tokens: max_tokens || 1024,
-                system: system || 'You are a helpful AI assistant.',
-                messages: messages
-            })
-        });
+        try {
+            // Parse request body
+            const body = await request.json();
+            const { messages, model, max_tokens, system, userEmail } = body;
 
-        if (!claudeResponse.ok) {
-            const errorText = await claudeResponse.text();
-            throw new Error(`Claude API error: ${claudeResponse.status} - ${errorText}`);
+            // Validate required fields
+            if (!messages || !Array.isArray(messages)) {
+                return new Response(JSON.stringify({
+                    error: 'Messages array is required'
+                }), {
+                    status: 400,
+                    headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+                });
+            }
+
+            // Check if API key is set
+            if (!env.ANTHROPIC_API_KEY) {
+                return new Response(JSON.stringify({
+                    error: 'API key not configured',
+                    message: 'ANTHROPIC_API_KEY environment variable is not set'
+                }), {
+                    status: 500,
+                    headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+                });
+            }
+
+            // Call Claude API
+            const claudeResponse = await fetch('https://api.anthropic.com/v1/messages', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'x-api-key': env.ANTHROPIC_API_KEY,
+                    'anthropic-version': '2023-06-01'
+                },
+                body: JSON.stringify({
+                    model: model || 'claude-3-5-sonnet-20241022',
+                    max_tokens: max_tokens || 1024,
+                    system: system || 'You are a helpful AI assistant.',
+                    messages: messages
+                })
+            });
+
+            if (!claudeResponse.ok) {
+                const errorText = await claudeResponse.text();
+                return new Response(JSON.stringify({
+                    error: 'Claude API error',
+                    status: claudeResponse.status,
+                    message: errorText
+                }), {
+                    status: claudeResponse.status,
+                    headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+                });
+            }
+
+            const data = await claudeResponse.json();
+
+            // Return Claude's response
+            return new Response(JSON.stringify(data), {
+                status: 200,
+                headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+            });
+
+        } catch (error) {
+            return new Response(JSON.stringify({
+                error: 'Internal server error',
+                message: error.message
+            }), {
+                status: 500,
+                headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+            });
         }
-
-        const data = await claudeResponse.json();
-
-        // Return Claude's response
-        return new Response(JSON.stringify(data), {
-            status: 200,
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-        });
-
-    } catch (error) {
-        return new Response(JSON.stringify({
-            error: 'Internal server error',
-            message: error.message
-        }), {
-            status: 500,
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-        });
     }
-}
+};
