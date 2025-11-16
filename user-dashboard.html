@@ -4654,6 +4654,13 @@
                     const parsedData = JSON.parse(storedUserData);
                     userEmail = parsedData.email;
 
+                    // DEBUG: Log stored user data
+                    console.log('📦 STORED USER DATA:', storedUserData);
+                    console.log('📦 PARSED DATA:', parsedData);
+                    console.log('📧 EXTRACTED EMAIL:', userEmail);
+                    console.log('📧 EMAIL TYPE:', typeof userEmail);
+                    console.log('👤 PROVIDER:', parsedData.provider);
+
                     // Load user ID (critical for restore/delete functions)
                     if (parsedData.id) {
                         userData.id = parsedData.id;
@@ -8032,6 +8039,19 @@
 
         // Check if user is admin and show admin features
         async function checkAndShowAdminFeatures(userEmail) {
+            // If no email provided, try to get it from localStorage
+            if (!userEmail) {
+                const storedData = localStorage.getItem('tabmangment_user');
+                if (storedData) {
+                    try {
+                        const parsed = JSON.parse(storedData);
+                        userEmail = parsed.email;
+                        console.log('🔄 No email provided, retrieved from localStorage:', userEmail);
+                    } catch (e) {
+                        console.error('❌ Error parsing localStorage:', e);
+                    }
+                }
+            }
             console.log('═══════════════════════════════════════════════════════════');
             console.log('🔍 CHECK ADMIN FEATURES FUNCTION CALLED!');
             console.log('═══════════════════════════════════════════════════════════');
@@ -8040,6 +8060,20 @@
             console.log('🔍 Email is null?', userEmail === null);
             console.log('🔍 Email is undefined?', userEmail === undefined);
             console.log('🔑 Admin email configured as:', ADMIN_EMAIL);
+
+            // Also log what's in localStorage for debugging
+            const storedData = localStorage.getItem('tabmangment_user');
+            if (storedData) {
+                try {
+                    const parsed = JSON.parse(storedData);
+                    console.log('💾 localStorage email:', parsed.email);
+                    console.log('💾 localStorage provider:', parsed.provider);
+                } catch (e) {
+                    console.error('❌ Error parsing localStorage:', e);
+                }
+            } else {
+                console.log('⚠️ No tabmangment_user in localStorage!');
+            }
 
             // Normalize emails for comparison (trim and lowercase)
             const normalizedUserEmail = userEmail?.trim().toLowerCase();
@@ -8099,6 +8133,54 @@
                 console.log('═══════════════════════════════════════════════════════════');
             }
         }
+
+        // Expose function globally for manual testing
+        window.testAdminCheck = checkAndShowAdminFeatures;
+        window.ADMIN_EMAIL = ADMIN_EMAIL;
+
+        // Manual test function you can call from console
+        window.debugAdmin = function() {
+            console.log('🧪 MANUAL ADMIN DEBUG TEST');
+            console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+
+            // Get stored user data
+            const storedData = localStorage.getItem('tabmangment_user');
+            console.log('📦 Raw localStorage data:', storedData);
+
+            if (storedData) {
+                try {
+                    const parsed = JSON.parse(storedData);
+                    console.log('📦 Parsed user data:', parsed);
+                    console.log('📧 Email:', parsed.email);
+                    console.log('👤 Name:', parsed.name);
+                    console.log('🔑 Provider:', parsed.provider);
+                    console.log('🎯 Admin email to match:', ADMIN_EMAIL);
+                    console.log('✅ Do they match?', parsed.email?.trim().toLowerCase() === ADMIN_EMAIL.trim().toLowerCase());
+                } catch (e) {
+                    console.error('❌ Parse error:', e);
+                }
+            } else {
+                console.log('⚠️ No user data in localStorage!');
+            }
+
+            // Check DOM elements
+            console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+            console.log('🔍 Checking DOM elements...');
+            const reviewsNav = document.getElementById('admin-reviews-nav');
+            const contactNav = document.getElementById('admin-contact-nav');
+            console.log('📋 Reviews nav exists:', reviewsNav !== null);
+            console.log('📋 Contact nav exists:', contactNav !== null);
+            if (reviewsNav) console.log('📋 Reviews nav display:', reviewsNav.style.display);
+            if (contactNav) console.log('📋 Contact nav display:', contactNav.style.display);
+
+            console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+            console.log('🧪 Now calling checkAndShowAdminFeatures()...');
+            checkAndShowAdminFeatures();
+        };
+
+        console.log('🔧 DEBUG TOOLS AVAILABLE:');
+        console.log('   Type: debugAdmin()         - Run complete admin debug test');
+        console.log('   Type: testAdminCheck()     - Test admin check function');
 
         // Load uninstall reviews (admin only)
         async function loadUninstallReviews() {
