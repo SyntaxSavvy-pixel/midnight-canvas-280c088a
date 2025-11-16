@@ -28,6 +28,12 @@ const CONFIG = {
     SUPABASE: {
         URL: 'https://voislxlhfepnllamagxm.supabase.co',
         ANON_KEY: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZvaXNseGxoZmVwbmxsYW1hZ3htIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTkwMTI4MDcsImV4cCI6MjA3NDU4ODgwN30.mDdMdGg4JAInS7kXNL6-edvRaQ_mVuMGRjU7rX-hMCM'
+    },
+    CLAUDE: {
+        CHAT_URL: 'https://tabmangment.com/api/claude-chat',
+        MODEL: 'claude-3-5-sonnet-20241022',
+        MAX_TOKENS: 1024,
+        SYSTEM_PROMPT: 'You are a helpful AI assistant for Tabmangment, a tab management Chrome extension. Help users with their questions concisely and friendly. Keep responses short and to the point.'
     }
 };
 
@@ -1349,12 +1355,65 @@ class TabmangmentPopup {
         // Show typing indicator
         if (typingIndicator) typingIndicator.style.display = 'flex';
 
-        // TODO: Replace with actual API call (Claude or Perplexity)
-        // For now, show a placeholder response
-        setTimeout(() => {
+        try {
+            // Build conversation history
+            if (!this.chatHistory) {
+                this.chatHistory = [];
+            }
+
+            this.chatHistory.push({
+                role: 'user',
+                content: message
+            });
+
+            // Call Claude API through backend proxy
+            const response = await fetch(CONFIG.CLAUDE.CHAT_URL, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    messages: this.chatHistory,
+                    model: CONFIG.CLAUDE.MODEL,
+                    max_tokens: CONFIG.CLAUDE.MAX_TOKENS,
+                    system: CONFIG.CLAUDE.SYSTEM_PROMPT,
+                    userEmail: this.userEmail || 'anonymous'
+                })
+            });
+
+            if (!response.ok) {
+                throw new Error(`API error: ${response.status}`);
+            }
+
+            const data = await response.json();
+
+            // Hide typing indicator
             if (typingIndicator) typingIndicator.style.display = 'none';
-            this.addChatMessage('ai', 'AI chat functionality will be connected to Claude or Perplexity API. This is a placeholder response.');
-        }, 1500);
+
+            // Extract Claude's response
+            const aiResponse = data.content?.[0]?.text || data.message || 'Sorry, I could not generate a response.';
+
+            // Add to chat history
+            this.chatHistory.push({
+                role: 'assistant',
+                content: aiResponse
+            });
+
+            // Keep only last 10 messages to avoid token limits
+            if (this.chatHistory.length > 20) {
+                this.chatHistory = this.chatHistory.slice(-20);
+            }
+
+            // Display AI response
+            this.addChatMessage('ai', aiResponse);
+
+        } catch (error) {
+            // Hide typing indicator
+            if (typingIndicator) typingIndicator.style.display = 'none';
+
+            // Show error message
+            this.addChatMessage('ai', 'Sorry, I encountered an error. Please try again later.');
+        }
     }
 
     addChatMessage(type, text) {
@@ -1411,6 +1470,9 @@ class TabmangmentPopup {
         // Remove all message elements
         const messages = chatMessages.querySelectorAll('.chat-message');
         messages.forEach(msg => msg.remove());
+
+        // Clear conversation history
+        this.chatHistory = [];
 
         // Show empty state
         if (emptyState) emptyState.style.display = 'flex';
