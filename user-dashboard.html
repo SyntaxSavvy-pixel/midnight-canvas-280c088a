@@ -8904,7 +8904,7 @@
                 if (!clickedBtn) return;
 
                 // PRO FEATURE: Check if custom themes tab requires Pro
-                if (clickedBtn.dataset.tab === 'custom' && !userData.isPro) {
+                if (clickedBtn.dataset.tab === 'custom' && !userData.isPro && userData.plan !== 'pro') {
                     showCustomThemeUpgradeModal();
                     return;
                 }
