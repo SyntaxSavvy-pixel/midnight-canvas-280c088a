@@ -2154,18 +2154,11 @@
                         <span class="nav-text">Themes</span>
                     </a>
                 </li>
-                <!-- ADMIN ONLY: Reviews Section -->
-                <li class="nav-item" id="admin-reviews-nav" style="display: none;">
-                    <a href="#" class="nav-link" data-page="reviews">
-                        <i data-feather="message-square"></i>
-                        <span class="nav-text">Reviews</span>
-                    </a>
-                </li>
-                <!-- ADMIN ONLY: Contact Messages Section -->
-                <li class="nav-item" id="admin-contact-nav" style="display: none;">
-                    <a href="#" class="nav-link" data-page="contact-messages">
-                        <i data-feather="mail"></i>
-                        <span class="nav-text">Contact Messages</span>
+                <!-- ADMIN ONLY: User Feedback Section (Merged Reviews + Contact Messages) -->
+                <li class="nav-item" id="admin-feedback-nav" style="display: none;">
+                    <a href="#" class="nav-link" data-page="user-feedback">
+                        <i data-feather="message-circle"></i>
+                        <span class="nav-text">User Feedback</span>
                     </a>
                 </li>
             </ul>
@@ -3037,116 +3030,127 @@
             </div>
 
             <!-- ADMIN ONLY: Reviews Page -->
-            <div class="page-content" id="reviews-page" style="display: none;">
+            <!-- ADMIN ONLY: Unified User Feedback Page -->
+            <div class="page-content" id="user-feedback-page" style="display: none;">
                 <div class="page-header">
-                    <h1 class="page-title">📝 User Reviews & Feedback</h1>
-                    <p class="page-subtitle">Uninstall feedback from users who removed the extension</p>
+                    <h1 class="page-title">💬 User Feedback</h1>
+                    <p class="page-subtitle">Uninstall feedback and contact messages from your users</p>
                 </div>
 
-                <!-- Stats Overview -->
-                <div class="stats-grid" style="margin-bottom: 2rem;">
-                    <div class="stat-card">
-                        <div class="stat-icon" style="background: rgba(239, 68, 68, 0.2);">
-                            <i data-feather="x-circle" style="color: #ef4444;"></i>
-                        </div>
-                        <div class="stat-content">
-                            <div class="stat-value" id="total-reviews">0</div>
-                            <div class="stat-label">Total Reviews</div>
-                        </div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-icon" style="background: rgba(251, 191, 36, 0.2);">
-                            <i data-feather="star" style="color: #fbbf24;"></i>
-                        </div>
-                        <div class="stat-content">
-                            <div class="stat-value" id="avg-rating">0.0</div>
-                            <div class="stat-label">Average Rating</div>
-                        </div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-icon" style="background: rgba(59, 130, 246, 0.2);">
-                            <i data-feather="calendar" style="color: #3b82f6;"></i>
-                        </div>
-                        <div class="stat-content">
-                            <div class="stat-value" id="recent-count">0</div>
-                            <div class="stat-label">This Week</div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Reviews List -->
-                <div class="card">
-                    <div style="margin-bottom: 1.5rem; display: flex; justify-content: space-between; align-items: center;">
-                        <h2 class="card-title">Recent Feedback</h2>
-                        <button class="card-action" id="refresh-reviews-btn">
-                            <i data-feather="refresh-cw"></i>
-                            Refresh
+                <!-- Tab Navigation -->
+                <div style="margin-bottom: 2rem; border-bottom: 2px solid #1e293b;">
+                    <div style="display: flex; gap: 0;">
+                        <button class="feedback-tab active" data-tab="uninstall" style="flex: 1; padding: 1rem; background: transparent; border: none; border-bottom: 3px solid #667eea; color: #667eea; font-weight: 600; cursor: pointer; transition: all 0.3s ease;">
+                            📝 Uninstall Feedback
+                        </button>
+                        <button class="feedback-tab" data-tab="contact" style="flex: 1; padding: 1rem; background: transparent; border: none; border-bottom: 3px solid transparent; color: #64748b; font-weight: 600; cursor: pointer; transition: all 0.3s ease;">
+                            📧 Contact Messages
                         </button>
                     </div>
+                </div>
 
-                    <div id="reviews-container">
-                        <!-- Reviews will be loaded here -->
-                        <div style="text-align: center; padding: 3rem; color: #64748b;">
-                            <i data-feather="loader" style="width: 48px; height: 48px; margin-bottom: 1rem; animation: spin 1s linear infinite;"></i>
-                            <p>Loading reviews...</p>
+                <!-- Uninstall Feedback Tab -->
+                <div id="uninstall-tab-content" class="tab-content" style="display: block;">
+                    <!-- Stats Overview -->
+                    <div class="stats-grid" style="margin-bottom: 2rem;">
+                        <div class="stat-card">
+                            <div class="stat-icon" style="background: rgba(239, 68, 68, 0.2);">
+                                <i data-feather="x-circle" style="color: #ef4444;"></i>
+                            </div>
+                            <div class="stat-content">
+                                <div class="stat-value" id="total-reviews">0</div>
+                                <div class="stat-label">Total Reviews</div>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon" style="background: rgba(251, 191, 36, 0.2);">
+                                <i data-feather="star" style="color: #fbbf24;"></i>
+                            </div>
+                            <div class="stat-content">
+                                <div class="stat-value" id="avg-rating">0.0</div>
+                                <div class="stat-label">Average Rating</div>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon" style="background: rgba(59, 130, 246, 0.2);">
+                                <i data-feather="calendar" style="color: #3b82f6;"></i>
+                            </div>
+                            <div class="stat-content">
+                                <div class="stat-value" id="recent-count">0</div>
+                                <div class="stat-label">This Week</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Reviews List -->
+                    <div class="card">
+                        <div style="margin-bottom: 1.5rem; display: flex; justify-content: space-between; align-items: center;">
+                            <h2 class="card-title">Recent Feedback</h2>
+                            <button class="card-action" id="refresh-reviews-btn">
+                                <i data-feather="refresh-cw"></i>
+                                Refresh
+                            </button>
+                        </div>
+
+                        <div id="reviews-container">
+                            <!-- Reviews will be loaded here -->
+                            <div style="text-align: center; padding: 3rem; color: #64748b;">
+                                <i data-feather="loader" style="width: 48px; height: 48px; margin-bottom: 1rem; animation: spin 1s linear infinite;"></i>
+                                <p>Loading reviews...</p>
+                            </div>
                         </div>
                     </div>
                 </div>
-            </div>
 
-            <!-- ADMIN ONLY: Contact Messages Page -->
-            <div class="page-content" id="contact-messages-page" style="display: none;">
-                <div class="page-header">
-                    <h1 class="page-title">💬 Contact Messages</h1>
-                    <p class="page-subtitle">Support requests from users via the contact form</p>
-                </div>
-
-                <!-- Stats Overview -->
-                <div class="stats-grid" style="margin-bottom: 2rem;">
-                    <div class="stat-card">
-                        <div class="stat-icon" style="background: rgba(59, 130, 246, 0.2);">
-                            <i data-feather="mail" style="color: #3b82f6;"></i>
+                <!-- Contact Messages Tab -->
+                <div id="contact-tab-content" class="tab-content" style="display: none;">
+                    <!-- Stats Overview -->
+                    <div class="stats-grid" style="margin-bottom: 2rem;">
+                        <div class="stat-card">
+                            <div class="stat-icon" style="background: rgba(59, 130, 246, 0.2);">
+                                <i data-feather="mail" style="color: #3b82f6;"></i>
+                            </div>
+                            <div class="stat-content">
+                                <div class="stat-value" id="total-messages">0</div>
+                                <div class="stat-label">Total Messages</div>
+                            </div>
                         </div>
-                        <div class="stat-content">
-                            <div class="stat-value" id="total-messages">0</div>
-                            <div class="stat-label">Total Messages</div>
+                        <div class="stat-card">
+                            <div class="stat-icon" style="background: rgba(16, 185, 129, 0.2);">
+                                <i data-feather="inbox" style="color: #10b981;"></i>
+                            </div>
+                            <div class="stat-content">
+                                <div class="stat-value" id="unread-messages">0</div>
+                                <div class="stat-label">Unread</div>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon" style="background: rgba(251, 191, 36, 0.2);">
+                                <i data-feather="clock" style="color: #fbbf24;"></i>
+                            </div>
+                            <div class="stat-content">
+                                <div class="stat-value" id="today-messages">0</div>
+                                <div class="stat-label">Today</div>
+                            </div>
                         </div>
                     </div>
-                    <div class="stat-card">
-                        <div class="stat-icon" style="background: rgba(16, 185, 129, 0.2);">
-                            <i data-feather="check-circle" style="color: #10b981;"></i>
-                        </div>
-                        <div class="stat-content">
-                            <div class="stat-value" id="unread-messages">0</div>
-                            <div class="stat-label">Unread</div>
-                        </div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-icon" style="background: rgba(251, 191, 36, 0.2);">
-                            <i data-feather="clock" style="color: #fbbf24;"></i>
-                        </div>
-                        <div class="stat-content">
-                            <div class="stat-value" id="today-messages">0</div>
-                            <div class="stat-label">Today</div>
-                        </div>
-                    </div>
-                </div>
 
-                <!-- Messages List -->
-                <div class="card">
-                    <div style="margin-bottom: 1.5rem; display: flex; justify-content: space-between; align-items: center;">
-                        <h2 class="card-title">Recent Messages</h2>
-                        <button class="card-action" id="refresh-messages-btn">
-                            <i data-feather="refresh-cw"></i>
-                            Refresh
-                        </button>
-                    </div>
+                    <!-- Messages List -->
+                    <div class="card">
+                        <div style="margin-bottom: 1.5rem; display: flex; justify-content: space-between; align-items: center;">
+                            <h2 class="card-title">Recent Messages</h2>
+                            <button class="card-action" id="refresh-contact-btn">
+                                <i data-feather="refresh-cw"></i>
+                                Refresh
+                            </button>
+                        </div>
 
-                    <div id="messages-container">
-                        <!-- Messages will be loaded here -->
-                        <div style="text-align: center; padding: 3rem; color: #64748b;">
-                            <i data-feather="loader" style="width: 48px; height: 48px; margin-bottom: 1rem; animation: spin 1s linear infinite;"></i>
-                            <p>Loading messages...</p>
+                        <div id="messages-container">
+                            <!-- Messages will be loaded here -->
+                            <div style="text-align: center; padding: 3rem; color: #64748b;">
+                                <i data-feather="loader" style="width: 48px; height: 48px; margin-bottom: 1rem; animation: spin 1s linear infinite;"></i>
+                                <p>Loading messages...</p>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -5734,14 +5738,36 @@
             } else if (pageId === 'settings') {
                 // Reload settings when settings page shown
                 loadUserSettings();
-            } else if (pageId === 'reviews') {
-                // Load reviews when reviews page shown (admin only)
+            } else if (pageId === 'user-feedback') {
+                // Load both uninstall reviews and contact messages (admin only)
                 loadUninstallReviews();
-            } else if (pageId === 'contact-messages') {
-                // Load contact messages when contact messages page shown (admin only)
                 loadContactMessages();
             }
         }
+
+        // Tab switching for User Feedback page
+        document.addEventListener('DOMContentLoaded', () => {
+            const feedbackTabs = document.querySelectorAll('.feedback-tab');
+            feedbackTabs.forEach(tab => {
+                tab.addEventListener('click', function() {
+                    const tabName = this.getAttribute('data-tab');
+
+                    // Update tab styles
+                    feedbackTabs.forEach(t => {
+                        t.style.borderBottomColor = 'transparent';
+                        t.style.color = '#64748b';
+                        t.classList.remove('active');
+                    });
+                    this.style.borderBottomColor = '#667eea';
+                    this.style.color = '#667eea';
+                    this.classList.add('active');
+
+                    // Show/hide tab content
+                    document.getElementById('uninstall-tab-content').style.display = tabName === 'uninstall' ? 'block' : 'none';
+                    document.getElementById('contact-tab-content').style.display = tabName === 'contact' ? 'block' : 'none';
+                });
+            });
+        });
 
         // Event listeners for navigation
         document.querySelectorAll('.nav-link').forEach(link => {
@@ -8086,45 +8112,25 @@
             if (normalizedUserEmail === normalizedAdminEmail) {
                 console.log('🎉🎉🎉 ADMIN MATCH FOUND! 🎉🎉🎉');
 
-                // ALERT to make it super obvious
-                alert('🎉 ADMIN DETECTED!\nEmail: ' + userEmail + '\nAdmin sections should now appear!');
+                // Show User Feedback nav item (merged Reviews + Contact Messages)
+                const feedbackNav = document.getElementById('admin-feedback-nav');
+                console.log('🔍 Looking for User Feedback nav (#admin-feedback-nav)...');
+                console.log('🔍 Feedback nav element:', feedbackNav);
+                console.log('🔍 Feedback nav exists?', feedbackNav !== null);
 
-                // Show Reviews nav item
-                const reviewsNav = document.getElementById('admin-reviews-nav');
-                console.log('🔍 Looking for Reviews nav (#admin-reviews-nav)...');
-                console.log('🔍 Reviews nav element:', reviewsNav);
-                console.log('🔍 Reviews nav exists?', reviewsNav !== null);
-
-                if (reviewsNav) {
-                    console.log('🔍 Current display style:', reviewsNav.style.display);
-                    reviewsNav.style.display = 'block';
+                if (feedbackNav) {
+                    console.log('🔍 Current display style:', feedbackNav.style.display);
+                    feedbackNav.style.display = 'block';
                     console.log('✅ Set display to: block');
-                    console.log('🔍 New display style:', reviewsNav.style.display);
-                    console.log('✅ Admin Reviews nav displayed!');
+                    console.log('🔍 New display style:', feedbackNav.style.display);
+                    console.log('✅ Admin User Feedback nav displayed!');
                 } else {
-                    console.error('❌ Reviews nav element NOT FOUND in DOM!');
-                    console.error('❌ Element with id="admin-reviews-nav" does not exist!');
-                }
-
-                // Show Contact Messages nav item
-                const contactNav = document.getElementById('admin-contact-nav');
-                console.log('🔍 Looking for Contact Messages nav (#admin-contact-nav)...');
-                console.log('🔍 Contact nav element:', contactNav);
-                console.log('🔍 Contact nav exists?', contactNav !== null);
-
-                if (contactNav) {
-                    console.log('🔍 Current display style:', contactNav.style.display);
-                    contactNav.style.display = 'block';
-                    console.log('✅ Set display to: block');
-                    console.log('🔍 New display style:', contactNav.style.display);
-                    console.log('✅ Admin Contact Messages nav displayed!');
-                } else {
-                    console.error('❌ Contact Messages nav element NOT FOUND in DOM!');
-                    console.error('❌ Element with id="admin-contact-nav" does not exist!');
+                    console.error('❌ User Feedback nav element NOT FOUND in DOM!');
+                    console.error('❌ Element with id="admin-feedback-nav" does not exist!');
                 }
 
                 console.log('✅ ADMIN FEATURES FULLY ENABLED for:', userEmail);
-                console.log('🎯 You should see: Reviews & Contact Messages in sidebar');
+                console.log('🎯 You should see: User Feedback in sidebar');
                 console.log('═══════════════════════════════════════════════════════════');
             } else {
                 console.log('❌ NOT ADMIN - Email mismatch');
@@ -8166,12 +8172,9 @@
             // Check DOM elements
             console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
             console.log('🔍 Checking DOM elements...');
-            const reviewsNav = document.getElementById('admin-reviews-nav');
-            const contactNav = document.getElementById('admin-contact-nav');
-            console.log('📋 Reviews nav exists:', reviewsNav !== null);
-            console.log('📋 Contact nav exists:', contactNav !== null);
-            if (reviewsNav) console.log('📋 Reviews nav display:', reviewsNav.style.display);
-            if (contactNav) console.log('📋 Contact nav display:', contactNav.style.display);
+            const feedbackNav = document.getElementById('admin-feedback-nav');
+            console.log('📋 User Feedback nav exists:', feedbackNav !== null);
+            if (feedbackNav) console.log('📋 User Feedback nav display:', feedbackNav.style.display);
 
             console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
             console.log('🧪 Now calling checkAndShowAdminFeatures()...');
@@ -8304,16 +8307,15 @@
             return div.innerHTML;
         }
 
-        // Refresh reviews button handler
+        // Refresh button handlers (set up after DOM loads)
         document.addEventListener('DOMContentLoaded', () => {
-            const refreshBtn = document.getElementById('refresh-reviews-btn');
-            if (refreshBtn) {
-                refreshBtn.addEventListener('click', () => {
+            const refreshReviewsBtn = document.getElementById('refresh-reviews-btn');
+            if (refreshReviewsBtn) {
+                refreshReviewsBtn.addEventListener('click', () => {
                     loadUninstallReviews();
                 });
             }
 
-            // Refresh contact messages button handler
             const refreshContactBtn = document.getElementById('refresh-contact-btn');
             if (refreshContactBtn) {
                 refreshContactBtn.addEventListener('click', () => {

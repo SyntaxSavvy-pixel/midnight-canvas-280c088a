@@ -24,6 +24,10 @@ const CONFIG = {
         STATUS_CHECK_INTERVAL: 300000,
         CACHE_TIMEOUT: 2000,
         SYNC_INTERVAL: 30000
+    },
+    SUPABASE: {
+        URL: 'https://voislxlhfepnllamagxm.supabase.co',
+        ANON_KEY: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZvaXNseGxoZmVwbmxsYW1hZ3htIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTkwMTI4MDcsImV4cCI6MjA3NDU4ODgwN30.mDdMdGg4JAInS7kXNL6-edvRaQ_mVuMGRjU7rX-hMCM'
     }
 };
 
@@ -53,6 +57,11 @@ class TabmangmentPopup {
 
             this.tabTimers = {};
             this.timerIntervals = {};
+
+            // Initialize Supabase client
+            this.supabaseClient = null;
+            this.initializeSupabase();
+
             this.init();
 
         } catch (error) {
@@ -622,6 +631,15 @@ class TabmangmentPopup {
             publicKey: 'LMg-8FsdXe2umT-av'
         };
         this.emailJSReady = true;
+    }
+    initializeSupabase() {
+        try {
+            const { createClient } = supabase;
+            this.supabaseClient = createClient(CONFIG.SUPABASE.URL, CONFIG.SUPABASE.ANON_KEY);
+            console.log('✅ Supabase client initialized for contact messages');
+        } catch (error) {
+            console.error('❌ Failed to initialize Supabase:', error);
+        }
     }
     setupEventListeners() {
         const contactBtn = document.getElementById('contact-btn');
@@ -1667,27 +1685,42 @@ class TabmangmentPopup {
         const submitText = submitBtn.querySelector('.contact-submit-text');
 
         const formData = {
-            user_name: document.getElementById('contact-name').value.trim(),
-            user_email: document.getElementById('contact-email').value.trim(),
+            name: document.getElementById('contact-name').value.trim(),
+            email: document.getElementById('contact-email').value.trim(),
             subject: document.getElementById('contact-subject').value.trim(),
-            message: document.getElementById('contact-message').value.trim(),
-            timestamp: new Date().toLocaleString(),
-            extension_version: chrome.runtime.getManifest().version
+            message: document.getElementById('contact-message').value.trim()
         };
+
         try {
-            if (!this.emailJSReady) {
-                throw new Error('EmailJS not initialized. Please wait a moment and try again.');
-            }
-            if (!formData.user_name || !formData.user_email || !formData.subject || !formData.message) {
+            if (!formData.name || !formData.email || !formData.subject || !formData.message) {
                 throw new Error('Please fill in all required fields.');
             }
+
             submitBtn.disabled = true;
             submitText.innerHTML = '<div class="contact-loading"><div class="contact-spinner"></div><span>Sending...</span></div>';
-            const response = await this.sendEmailViaAPI(formData);
+
+            // Save to Supabase database
+            const { data, error } = await this.supabaseClient
+                .from('contact_messages')
+                .insert([{
+                    name: formData.name,
+                    email: formData.email,
+                    subject: formData.subject,
+                    message: formData.message,
+                    user_agent: navigator.userAgent,
+                    created_at: new Date().toISOString()
+                }]);
+
+            if (error) {
+                console.error('Supabase error:', error);
+                throw new Error('Failed to send message. Please try again or email selfshios@gmail.com directly.');
+            }
+
             this.showMessage('Message sent successfully! I will get back to you soon.', 'success');
             this.hideContactModal();
         } catch (error) {
-            this.openEmailFallback(formData);
+            console.error('Contact form error:', error);
+            this.showError(error.message || 'Failed to send message. Please try again.');
         } finally {
             submitBtn.disabled = false;
             submitText.textContent = 'Send Message';
