@@ -2161,6 +2161,13 @@
                         <span class="nav-text">Reviews</span>
                     </a>
                 </li>
+                <!-- ADMIN ONLY: Contact Messages Section -->
+                <li class="nav-item" id="admin-contact-nav" style="display: none;">
+                    <a href="#" class="nav-link" data-page="contact-messages">
+                        <i data-feather="mail"></i>
+                        <span class="nav-text">Contact Messages</span>
+                    </a>
+                </li>
             </ul>
         </nav>
 
@@ -3082,6 +3089,64 @@
                         <div style="text-align: center; padding: 3rem; color: #64748b;">
                             <i data-feather="loader" style="width: 48px; height: 48px; margin-bottom: 1rem; animation: spin 1s linear infinite;"></i>
                             <p>Loading reviews...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ADMIN ONLY: Contact Messages Page -->
+            <div class="page-content" id="contact-messages-page" style="display: none;">
+                <div class="page-header">
+                    <h1 class="page-title">💬 Contact Messages</h1>
+                    <p class="page-subtitle">Support requests from users via the contact form</p>
+                </div>
+
+                <!-- Stats Overview -->
+                <div class="stats-grid" style="margin-bottom: 2rem;">
+                    <div class="stat-card">
+                        <div class="stat-icon" style="background: rgba(59, 130, 246, 0.2);">
+                            <i data-feather="mail" style="color: #3b82f6;"></i>
+                        </div>
+                        <div class="stat-content">
+                            <div class="stat-value" id="total-messages">0</div>
+                            <div class="stat-label">Total Messages</div>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon" style="background: rgba(16, 185, 129, 0.2);">
+                            <i data-feather="check-circle" style="color: #10b981;"></i>
+                        </div>
+                        <div class="stat-content">
+                            <div class="stat-value" id="unread-messages">0</div>
+                            <div class="stat-label">Unread</div>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon" style="background: rgba(251, 191, 36, 0.2);">
+                            <i data-feather="clock" style="color: #fbbf24;"></i>
+                        </div>
+                        <div class="stat-content">
+                            <div class="stat-value" id="today-messages">0</div>
+                            <div class="stat-label">Today</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Messages List -->
+                <div class="card">
+                    <div style="margin-bottom: 1.5rem; display: flex; justify-content: space-between; align-items: center;">
+                        <h2 class="card-title">Recent Messages</h2>
+                        <button class="card-action" id="refresh-messages-btn">
+                            <i data-feather="refresh-cw"></i>
+                            Refresh
+                        </button>
+                    </div>
+
+                    <div id="messages-container">
+                        <!-- Messages will be loaded here -->
+                        <div style="text-align: center; padding: 3rem; color: #64748b;">
+                            <i data-feather="loader" style="width: 48px; height: 48px; margin-bottom: 1rem; animation: spin 1s linear infinite;"></i>
+                            <p>Loading messages...</p>
                         </div>
                     </div>
                 </div>
@@ -4566,6 +4631,10 @@
 
         // Initialize dashboard
         async function initDashboard() {
+            // DEBUG: Confirm dashboard initialization started
+            console.log('🚀 INIT DASHBOARD STARTED');
+            console.log('🚀 Timestamp:', new Date().toISOString());
+
             // Stripe price IDs are already configured above
 
             // Check authentication (with SINGLE retry for OAuth redirects)
@@ -4824,7 +4893,37 @@
             startSubscriptionStatusRefresh();
 
             // ADMIN ONLY: Show Reviews nav and load reviews if admin
-            checkAndShowAdminFeatures(userEmail);
+            console.log('🎯 ABOUT TO CHECK ADMIN FEATURES');
+            console.log('🎯 User Email:', userEmail);
+            console.log('🎯 User Email Type:', typeof userEmail);
+
+            // Call immediately with try-catch
+            try {
+                console.log('🎯 Calling checkAndShowAdminFeatures (immediate)');
+                await checkAndShowAdminFeatures(userEmail);
+            } catch (error) {
+                console.error('❌ Error in checkAndShowAdminFeatures (immediate):', error);
+            }
+
+            // Also call after a delay to ensure DOM is ready
+            setTimeout(async () => {
+                try {
+                    console.log('🎯 Calling checkAndShowAdminFeatures (500ms delay)');
+                    await checkAndShowAdminFeatures(userEmail);
+                } catch (error) {
+                    console.error('❌ Error in checkAndShowAdminFeatures (500ms):', error);
+                }
+            }, 500);
+
+            // And call after a longer delay as backup
+            setTimeout(async () => {
+                try {
+                    console.log('🎯 Calling checkAndShowAdminFeatures (2000ms delay)');
+                    await checkAndShowAdminFeatures(userEmail);
+                } catch (error) {
+                    console.error('❌ Error in checkAndShowAdminFeatures (2000ms):', error);
+                }
+            }, 2000);
         }
 
         // Smart Dashboard Functions
@@ -5631,6 +5730,9 @@
             } else if (pageId === 'reviews') {
                 // Load reviews when reviews page shown (admin only)
                 loadUninstallReviews();
+            } else if (pageId === 'contact-messages') {
+                // Load contact messages when contact messages page shown (admin only)
+                loadContactMessages();
             }
         }
 
@@ -7930,7 +8032,13 @@
 
         // Check if user is admin and show admin features
         async function checkAndShowAdminFeatures(userEmail) {
-            console.log('🔍 Checking admin status for email:', userEmail);
+            console.log('═══════════════════════════════════════════════════════════');
+            console.log('🔍 CHECK ADMIN FEATURES FUNCTION CALLED!');
+            console.log('═══════════════════════════════════════════════════════════');
+            console.log('🔍 Received email:', userEmail);
+            console.log('🔍 Email type:', typeof userEmail);
+            console.log('🔍 Email is null?', userEmail === null);
+            console.log('🔍 Email is undefined?', userEmail === undefined);
             console.log('🔑 Admin email configured as:', ADMIN_EMAIL);
 
             // Normalize emails for comparison (trim and lowercase)
@@ -7939,20 +8047,56 @@
 
             console.log('📧 Normalized user email:', normalizedUserEmail);
             console.log('📧 Normalized admin email:', normalizedAdminEmail);
+            console.log('📧 Are they equal?', normalizedUserEmail === normalizedAdminEmail);
 
             if (normalizedUserEmail === normalizedAdminEmail) {
+                console.log('🎉🎉🎉 ADMIN MATCH FOUND! 🎉🎉🎉');
+
+                // ALERT to make it super obvious
+                alert('🎉 ADMIN DETECTED!\nEmail: ' + userEmail + '\nAdmin sections should now appear!');
+
                 // Show Reviews nav item
                 const reviewsNav = document.getElementById('admin-reviews-nav');
+                console.log('🔍 Looking for Reviews nav (#admin-reviews-nav)...');
+                console.log('🔍 Reviews nav element:', reviewsNav);
+                console.log('🔍 Reviews nav exists?', reviewsNav !== null);
+
                 if (reviewsNav) {
+                    console.log('🔍 Current display style:', reviewsNav.style.display);
                     reviewsNav.style.display = 'block';
+                    console.log('✅ Set display to: block');
+                    console.log('🔍 New display style:', reviewsNav.style.display);
                     console.log('✅ Admin Reviews nav displayed!');
                 } else {
-                    console.error('❌ Reviews nav element not found!');
+                    console.error('❌ Reviews nav element NOT FOUND in DOM!');
+                    console.error('❌ Element with id="admin-reviews-nav" does not exist!');
                 }
 
-                console.log('✅ Admin features enabled for:', userEmail);
+                // Show Contact Messages nav item
+                const contactNav = document.getElementById('admin-contact-nav');
+                console.log('🔍 Looking for Contact Messages nav (#admin-contact-nav)...');
+                console.log('🔍 Contact nav element:', contactNav);
+                console.log('🔍 Contact nav exists?', contactNav !== null);
+
+                if (contactNav) {
+                    console.log('🔍 Current display style:', contactNav.style.display);
+                    contactNav.style.display = 'block';
+                    console.log('✅ Set display to: block');
+                    console.log('🔍 New display style:', contactNav.style.display);
+                    console.log('✅ Admin Contact Messages nav displayed!');
+                } else {
+                    console.error('❌ Contact Messages nav element NOT FOUND in DOM!');
+                    console.error('❌ Element with id="admin-contact-nav" does not exist!');
+                }
+
+                console.log('✅ ADMIN FEATURES FULLY ENABLED for:', userEmail);
+                console.log('🎯 You should see: Reviews & Contact Messages in sidebar');
+                console.log('═══════════════════════════════════════════════════════════');
             } else {
-                console.log('❌ Not admin. User:', normalizedUserEmail, 'Admin:', normalizedAdminEmail);
+                console.log('❌ NOT ADMIN - Email mismatch');
+                console.log('❌ User:', normalizedUserEmail);
+                console.log('❌ Admin:', normalizedAdminEmail);
+                console.log('═══════════════════════════════════════════════════════════');
             }
         }
 
@@ -8086,7 +8230,139 @@
                     loadUninstallReviews();
                 });
             }
+
+            // Refresh contact messages button handler
+            const refreshContactBtn = document.getElementById('refresh-contact-btn');
+            if (refreshContactBtn) {
+                refreshContactBtn.addEventListener('click', () => {
+                    loadContactMessages();
+                });
+            }
         });
+
+        // ========== CONTACT MESSAGES FUNCTIONALITY ==========
+
+        // Load contact messages (admin only)
+        async function loadContactMessages() {
+            console.log('📬 Loading contact messages...');
+            const messagesContainer = document.getElementById('messages-container');
+
+            try {
+                // Fetch contact messages from Supabase
+                const { data: messages, error } = await supabaseClient
+                    .from('contact_messages')
+                    .select('*')
+                    .order('created_at', { ascending: false })
+                    .limit(100);
+
+                if (error) {
+                    console.error('Error loading contact messages:', error);
+                    messagesContainer.innerHTML = `
+                        <div style="text-align: center; padding: 3rem; color: #ef4444;">
+                            <i data-feather="alert-circle" style="width: 48px; height: 48px; margin-bottom: 1rem;"></i>
+                            <p>Failed to load contact messages</p>
+                            <p style="font-size: 0.875rem; color: #94a3b8; margin-top: 0.5rem;">Make sure the contact_messages table exists in Supabase</p>
+                        </div>
+                    `;
+                    if (typeof feather !== 'undefined') feather.replace();
+                    return;
+                }
+
+                console.log('✅ Loaded', messages.length, 'contact messages');
+
+                // Update stats
+                updateContactStats(messages);
+
+                if (!messages || messages.length === 0) {
+                    messagesContainer.innerHTML = `
+                        <div style="text-align: center; padding: 3rem; color: #64748b;">
+                            <i data-feather="inbox" style="width: 48px; height: 48px; margin-bottom: 1rem;"></i>
+                            <p>No contact messages yet</p>
+                        </div>
+                    `;
+                    if (typeof feather !== 'undefined') feather.replace();
+                    return;
+                }
+
+                // Render messages
+                messagesContainer.innerHTML = messages.map(message => {
+                    const date = new Date(message.created_at);
+                    const formattedDate = date.toLocaleDateString('en-US', {
+                        month: 'short',
+                        day: 'numeric',
+                        year: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                    });
+
+                    return `
+                        <div class="message-card" style="background: white; border-radius: 12px; padding: 1.5rem; margin-bottom: 1rem; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+                            <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 1rem;">
+                                <div>
+                                    <div style="font-weight: 600; color: #1e293b; margin-bottom: 0.25rem;">
+                                        ${escapeHtml(message.name || 'Anonymous')}
+                                    </div>
+                                    <div style="font-size: 0.875rem; color: #64748b;">
+                                        ${escapeHtml(message.email || 'No email provided')}
+                                    </div>
+                                </div>
+                                <div style="font-size: 0.75rem; color: #94a3b8;">
+                                    ${formattedDate}
+                                </div>
+                            </div>
+
+                            ${message.subject ? `
+                            <div style="margin-bottom: 0.75rem;">
+                                <div style="font-weight: 600; color: #334155; font-size: 0.9375rem;">
+                                    ${escapeHtml(message.subject)}
+                                </div>
+                            </div>
+                            ` : ''}
+
+                            <div style="color: #475569; line-height: 1.6; white-space: pre-wrap;">
+                                ${escapeHtml(message.message || '')}
+                            </div>
+
+                            ${message.user_agent ? `
+                            <div style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid #e2e8f0; font-size: 0.75rem; color: #94a3b8;">
+                                ${escapeHtml(message.user_agent)}
+                            </div>
+                            ` : ''}
+                        </div>
+                    `;
+                }).join('');
+
+            } catch (error) {
+                console.error('Error:', error);
+                messagesContainer.innerHTML = `
+                    <div style="text-align: center; padding: 3rem; color: #ef4444;">
+                        <i data-feather="alert-circle" style="width: 48px; height: 48px; margin-bottom: 1rem;"></i>
+                        <p>An error occurred</p>
+                    </div>
+                `;
+                if (typeof feather !== 'undefined') feather.replace();
+            }
+        }
+
+        // Update contact message stats
+        function updateContactStats(messages) {
+            if (!messages) messages = [];
+
+            // Total messages
+            const totalEl = document.getElementById('total-messages');
+            if (totalEl) totalEl.textContent = messages.length;
+
+            // Unread count (for now, all are considered "read" since we don't have a read status)
+            const unreadEl = document.getElementById('unread-messages');
+            if (unreadEl) unreadEl.textContent = '0';
+
+            // Today's count
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            const todayCount = messages.filter(m => new Date(m.created_at) >= today).length;
+            const todayEl = document.getElementById('today-messages');
+            if (todayEl) todayEl.textContent = todayCount;
+        }
 
         // ========== THEMES FUNCTIONALITY ==========
 
