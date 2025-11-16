@@ -30,7 +30,7 @@ const CONFIG = {
         ANON_KEY: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZvaXNseGxoZmVwbmxsYW1hZ3htIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTkwMTI4MDcsImV4cCI6MjA3NDU4ODgwN30.mDdMdGg4JAInS7kXNL6-edvRaQ_mVuMGRjU7rX-hMCM'
     },
     CLAUDE: {
-        CHAT_URL: 'https://tabmangment.com/api/claude-chat',
+        CHAT_URL: 'https://claude-chat-api.selfshios.workers.dev',
         MODEL: 'claude-3-5-sonnet-20241022',
         MAX_TOKENS: 1024,
         SYSTEM_PROMPT: 'You are a helpful AI assistant for Tabmangment, a tab management Chrome extension. Help users with their questions concisely and friendly. Keep responses short and to the point.'
