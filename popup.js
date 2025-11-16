@@ -35,11 +35,13 @@ const CONFIG = {
         MAX_TOKENS: 2048,
         SYSTEM_PROMPT: `You are an AI assistant for Tabmangment, a Chrome extension that helps users manage browser tabs.
 
+CURRENT DATE: ${new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })} (${new Date().getFullYear()})
+
 You have tools available to help users:
 
 **Web & Search:**
-- search_web: Smart search that detects product queries and shows actual shopping results (e.g., "best gaming chair" opens Google Shopping with product links)
-- open_url: Open websites in new tabs
+- search_web: For general web searches and product discovery. Will intelligently route to review sites and retailer pages based on query.
+- open_url: Open specific websites/product pages in new tabs
 - get_weather: Get current weather for any location
 
 **Tab Management:**
@@ -59,7 +61,26 @@ You have tools available to help users:
 
 You are an AI-powered productivity assistant that helps users manage tabs efficiently. You can analyze their browsing patterns, suggest optimizations, and proactively help them stay organized.
 
-You are context-aware and know the current date, time, and can access weather information.
+CRITICAL - PRODUCT RECOMMENDATIONS (${new Date().getFullYear()}):
+When users ask about products (e.g., "best gaming keyboard", "what chair should I buy"):
+
+1. **Provide Specific Recommendations**: Give 2-3 specific product names with brief reasons
+   - Example: "The Keychron Q1 Pro and Logitech MX Keys are top mechanical keyboards in ${new Date().getFullYear()}"
+
+2. **Always Use Current Year**: Reference ${new Date().getFullYear()} models and reviews, NOT outdated years like 2024
+
+3. **Open Actual Product Pages**: After recommending, use search_web to find and open product pages/reviews
+   - The tool will automatically search for "${new Date().getFullYear()} reviews" and top-rated products
+   - It will open review sites (like Wirecutter, RTINGS) and retailer pages with actual products
+
+4. **Global Coverage**: Recommend products available worldwide, not just US-specific retailers
+
+5. **Be Proactive**: Don't just list products - actually search and open pages so users can see prices, reviews, and buy
+
+Example interaction:
+User: "What's the best gaming chair?"
+You: "For ${new Date().getFullYear()}, the Secretlab Titan Evo and Herman Miller Vantum are top-rated gaming chairs. Let me find the latest reviews and product pages for you."
+[Call search_web with "best gaming chair ${new Date().getFullYear()}"]
 
 IMPORTANT USAGE:
 - When user says "set a timer for THIS tab" or "bookmark THIS tab", first use get_active_tab to get the current tab, then use the appropriate tool
@@ -1591,13 +1612,13 @@ Use this information when relevant to provide accurate, time-aware responses.`;
         return [
             {
                 name: 'search_web',
-                description: 'Search the web using Google. Automatically detects product/shopping queries (best gaming chair, buy laptop, etc.) and uses Google Shopping to show actual product links. For regular queries, uses standard Google search. Always opens results in a new tab.',
+                description: `Search the web intelligently based on query type. For product queries, automatically adds ${new Date().getFullYear()} and opens review sites (Wirecutter, RTINGS, etc.) plus retailer pages with actual products. For general queries, uses Google search. IMPORTANT: When searching for products, the query should include the product name (e.g., "best gaming chair" or "Keychron Q1 keyboard"). The tool will handle adding the current year and finding authoritative sources.`,
                 input_schema: {
                     type: 'object',
                     properties: {
                         query: {
                             type: 'string',
-                            description: 'The search query (e.g., "best gaming chair 2024", "buy mechanical keyboard")'
+                            description: `The search query. For products, just include the product name and descriptors (e.g., "best gaming chair", "buy mechanical keyboard"). The tool automatically adds ${new Date().getFullYear()} for product searches.`
                         }
                     },
                     required: ['query']
@@ -1844,96 +1865,128 @@ Use this information when relevant to provide accurate, time-aware responses.`;
 
     async toolSearchWeb(query) {
         try {
+            const currentYear = new Date().getFullYear();
             const lowerQuery = query.toLowerCase();
 
             // Detect product/shopping keywords
-            const shoppingKeywords = ['best', 'buy', 'purchase', 'cheap', 'price', 'review', 'vs', 'comparison'];
+            const shoppingKeywords = ['best', 'buy', 'purchase', 'cheap', 'price', 'review', 'reviews', 'vs', 'comparison', 'top', 'recommended'];
             const isProductQuery = shoppingKeywords.some(keyword => lowerQuery.includes(keyword));
 
-            // Detect specific retailer preferences
-            const amazonKeywords = ['amazon', 'prime'];
-            const walmartKeywords = ['walmart'];
-            const targetKeywords = ['target'];
-            const bestbuyKeywords = ['best buy', 'bestbuy'];
-
-            let searchUrl;
-            let message;
             const urls = [];
+            let message;
 
             if (isProductQuery) {
-                // Extract product name (remove shopping keywords)
-                let productQuery = query;
-                shoppingKeywords.forEach(keyword => {
-                    productQuery = productQuery.replace(new RegExp(`\\b${keyword}\\b`, 'gi'), '').trim();
-                });
+                // Extract clean product name
+                let productName = query;
 
-                // Determine which retailer to use
-                if (amazonKeywords.some(k => lowerQuery.includes(k))) {
-                    // Direct Amazon search - opens product listings
-                    searchUrl = `https://www.amazon.com/s?k=${encodeURIComponent(productQuery)}`;
-                    message = `🛒 Opening Amazon products for: ${productQuery}`;
-                } else if (walmartKeywords.some(k => lowerQuery.includes(k))) {
-                    searchUrl = `https://www.walmart.com/search?q=${encodeURIComponent(productQuery)}`;
-                    message = `🛒 Opening Walmart products for: ${productQuery}`;
-                } else if (targetKeywords.some(k => lowerQuery.includes(k))) {
-                    searchUrl = `https://www.target.com/s?searchTerm=${encodeURIComponent(productQuery)}`;
-                    message = `🛒 Opening Target products for: ${productQuery}`;
-                } else if (bestbuyKeywords.some(k => lowerQuery.includes(k))) {
-                    searchUrl = `https://www.bestbuy.com/site/searchpage.jsp?st=${encodeURIComponent(productQuery)}`;
-                    message = `🛒 Opening Best Buy products for: ${productQuery}`;
-                } else {
-                    // Smart default: Open multiple top retailers for comparison
-                    const cleanQuery = encodeURIComponent(productQuery);
+                // Remove year references from query (we'll add current year)
+                productName = productName.replace(/\b(20\d{2}|${currentYear})\b/gi, '').trim();
 
-                    // Amazon (usually has everything)
-                    urls.push(`https://www.amazon.com/s?k=${cleanQuery}`);
+                // Build search query with current year
+                const searchQuery = `${productName} ${currentYear}`;
+                const encodedQuery = encodeURIComponent(searchQuery);
+                const encodedProductName = encodeURIComponent(productName);
 
-                    // For specific product categories, add specialized sites
-                    if (lowerQuery.includes('gaming') || lowerQuery.includes('computer') || lowerQuery.includes('tech')) {
-                        urls.push(`https://www.bestbuy.com/site/searchpage.jsp?st=${cleanQuery}`);
-                    }
+                // STRATEGY 1: Open authoritative review sites first (these have actual product recommendations)
+                // These sites actually test products and link to where you can buy them
 
-                    if (lowerQuery.includes('furniture') || lowerQuery.includes('chair') || lowerQuery.includes('desk')) {
-                        urls.push(`https://www.wayfair.com/keyword.php?keyword=${cleanQuery}`);
-                    }
+                // Wirecutter (NYTimes) - Gold standard for product reviews
+                urls.push(`https://www.google.com/search?q=site:nytimes.com/wirecutter+${encodedQuery}`);
 
-                    searchUrl = urls[0]; // Primary URL for return
-                    message = `🛒 Opening ${urls.length} retailer${urls.length > 1 ? 's' : ''} for: ${productQuery}`;
-
-                    // Open all tabs
-                    urls.forEach((url, index) => {
-                        chrome.tabs.create({ url: url, active: index === 0 });
-                    });
-
-                    return {
-                        success: true,
-                        message: message,
-                        search_url: searchUrl,
-                        urls: urls,
-                        query: productQuery,
-                        is_shopping: true
-                    };
+                // RTINGS - Excellent for monitors, TVs, headphones
+                if (lowerQuery.includes('monitor') || lowerQuery.includes('tv') || lowerQuery.includes('headphone') || lowerQuery.includes('keyboard') || lowerQuery.includes('mouse')) {
+                    urls.push(`https://www.google.com/search?q=site:rtings.com+${encodedQuery}`);
                 }
 
-                // Single retailer search
-                chrome.tabs.create({ url: searchUrl, active: true });
+                // TechRadar - Good for tech products
+                if (lowerQuery.includes('gaming') || lowerQuery.includes('laptop') || lowerQuery.includes('phone') || lowerQuery.includes('tech') || lowerQuery.includes('computer')) {
+                    urls.push(`https://www.google.com/search?q=site:techradar.com+${encodedQuery}+buying+guide`);
+                }
+
+                // STRATEGY 2: Open Google Shopping with filters for high-rated products
+                // This shows actual products with prices, not just search results
+                urls.push(`https://www.google.com/search?q=${encodedQuery}&tbm=shop&tbs=mr:1,sales:1`);
+
+                // STRATEGY 3: Reddit recommendations (real users, recent discussions)
+                urls.push(`https://www.google.com/search?q=site:reddit.com+${encodedQuery}+recommendation`);
+
+                // STRATEGY 4: Smart retailer selection based on product category
+                const retailerUrl = this.getSmartRetailerUrl(lowerQuery, encodedProductName, currentYear);
+                if (retailerUrl) {
+                    urls.push(retailerUrl);
+                }
+
+                // Open all tabs (first one active)
+                urls.forEach((url, index) => {
+                    chrome.tabs.create({ url: url, active: index === 0 });
+                });
+
+                message = `🔍 Searching for ${productName} (${currentYear} reviews, product pages, and recommendations)`;
+
+                return {
+                    success: true,
+                    message: message,
+                    urls: urls,
+                    query: searchQuery,
+                    is_shopping: true,
+                    year: currentYear
+                };
             } else {
                 // Regular Google search for non-product queries
-                searchUrl = `https://www.google.com/search?q=${encodeURIComponent(query)}`;
-                message = `🔍 Found search results for: ${query}`;
+                const searchUrl = `https://www.google.com/search?q=${encodeURIComponent(query)}`;
                 chrome.tabs.create({ url: searchUrl, active: true });
-            }
 
-            return {
-                success: true,
-                message: message,
-                search_url: searchUrl,
-                query: query,
-                is_shopping: isProductQuery
-            };
+                return {
+                    success: true,
+                    message: `🔍 Searching for: ${query}`,
+                    search_url: searchUrl,
+                    query: query,
+                    is_shopping: false
+                };
+            }
         } catch (error) {
+            console.error('Search error:', error);
             return { success: false, error: error.message };
         }
+    }
+
+    // Helper function to intelligently select retailer based on product category and region
+    getSmartRetailerUrl(lowerQuery, encodedProductName, currentYear) {
+        // Global retailers (available worldwide or with international sites)
+
+        // Amazon - Global (has .com, .co.uk, .de, .fr, .jp, etc.)
+        // Use .com as default, it redirects to local Amazon if needed
+        if (lowerQuery.includes('book') || lowerQuery.includes('general')) {
+            return `https://www.amazon.com/s?k=${encodedProductName}+${currentYear}`;
+        }
+
+        // Tech/Electronics - Newegg, B&H Photo (US), Currys (UK), MediaMarkt (EU)
+        if (lowerQuery.includes('computer') || lowerQuery.includes('laptop') || lowerQuery.includes('pc') || lowerQuery.includes('gaming')) {
+            return `https://www.newegg.com/p/pl?d=${encodedProductName}`;
+        }
+
+        // Gaming - Best Buy, GameStop
+        if (lowerQuery.includes('gaming') || lowerQuery.includes('console') || lowerQuery.includes('video game')) {
+            return `https://www.bestbuy.com/site/searchpage.jsp?st=${encodedProductName}`;
+        }
+
+        // Furniture - Wayfair (US/CA), IKEA (Global)
+        if (lowerQuery.includes('furniture') || lowerQuery.includes('chair') || lowerQuery.includes('desk') || lowerQuery.includes('table')) {
+            return `https://www.wayfair.com/keyword.php?keyword=${encodedProductName}`;
+        }
+
+        // Fashion/Clothing - ASOS (Global), Zara (Global), H&M (Global)
+        if (lowerQuery.includes('clothing') || lowerQuery.includes('fashion') || lowerQuery.includes('shoes') || lowerQuery.includes('apparel')) {
+            return `https://www.asos.com/search/?q=${encodedProductName}`;
+        }
+
+        // Home/Kitchen - Target (US), Argos (UK), Amazon
+        if (lowerQuery.includes('kitchen') || lowerQuery.includes('home') || lowerQuery.includes('appliance')) {
+            return `https://www.amazon.com/s?k=${encodedProductName}+${currentYear}`;
+        }
+
+        // Default: Amazon (best global coverage, shows actual product pages)
+        return `https://www.amazon.com/s?k=${encodedProductName}+${currentYear}&rh=p_72:1249901011`; // 4+ star filter
     }
 
     async toolOpenUrl(url, description) {
