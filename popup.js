@@ -1844,30 +1844,83 @@ Use this information when relevant to provide accurate, time-aware responses.`;
 
     async toolSearchWeb(query) {
         try {
-            // Detect if this is a product/shopping query
-            const shoppingKeywords = ['best', 'buy', 'purchase', 'cheap', 'price', 'review', 'vs', 'comparison',
-                                      'gaming', 'laptop', 'phone', 'chair', 'desk', 'monitor', 'keyboard',
-                                      'mouse', 'headset', 'camera', 'watch', 'shoes', 'clothes'];
+            const lowerQuery = query.toLowerCase();
 
-            const isProductQuery = shoppingKeywords.some(keyword =>
-                query.toLowerCase().includes(keyword)
-            );
+            // Detect product/shopping keywords
+            const shoppingKeywords = ['best', 'buy', 'purchase', 'cheap', 'price', 'review', 'vs', 'comparison'];
+            const isProductQuery = shoppingKeywords.some(keyword => lowerQuery.includes(keyword));
+
+            // Detect specific retailer preferences
+            const amazonKeywords = ['amazon', 'prime'];
+            const walmartKeywords = ['walmart'];
+            const targetKeywords = ['target'];
+            const bestbuyKeywords = ['best buy', 'bestbuy'];
 
             let searchUrl;
             let message;
+            const urls = [];
 
             if (isProductQuery) {
-                // Use Google Shopping for product queries - shows actual products
-                searchUrl = `https://www.google.com/search?q=${encodeURIComponent(query)}&tbm=shop`;
-                message = `🛍️ Found shopping results for: ${query}`;
+                // Extract product name (remove shopping keywords)
+                let productQuery = query;
+                shoppingKeywords.forEach(keyword => {
+                    productQuery = productQuery.replace(new RegExp(`\\b${keyword}\\b`, 'gi'), '').trim();
+                });
 
-                // Also open the first few product results
+                // Determine which retailer to use
+                if (amazonKeywords.some(k => lowerQuery.includes(k))) {
+                    // Direct Amazon search - opens product listings
+                    searchUrl = `https://www.amazon.com/s?k=${encodeURIComponent(productQuery)}`;
+                    message = `🛒 Opening Amazon products for: ${productQuery}`;
+                } else if (walmartKeywords.some(k => lowerQuery.includes(k))) {
+                    searchUrl = `https://www.walmart.com/search?q=${encodeURIComponent(productQuery)}`;
+                    message = `🛒 Opening Walmart products for: ${productQuery}`;
+                } else if (targetKeywords.some(k => lowerQuery.includes(k))) {
+                    searchUrl = `https://www.target.com/s?searchTerm=${encodeURIComponent(productQuery)}`;
+                    message = `🛒 Opening Target products for: ${productQuery}`;
+                } else if (bestbuyKeywords.some(k => lowerQuery.includes(k))) {
+                    searchUrl = `https://www.bestbuy.com/site/searchpage.jsp?st=${encodeURIComponent(productQuery)}`;
+                    message = `🛒 Opening Best Buy products for: ${productQuery}`;
+                } else {
+                    // Smart default: Open multiple top retailers for comparison
+                    const cleanQuery = encodeURIComponent(productQuery);
+
+                    // Amazon (usually has everything)
+                    urls.push(`https://www.amazon.com/s?k=${cleanQuery}`);
+
+                    // For specific product categories, add specialized sites
+                    if (lowerQuery.includes('gaming') || lowerQuery.includes('computer') || lowerQuery.includes('tech')) {
+                        urls.push(`https://www.bestbuy.com/site/searchpage.jsp?st=${cleanQuery}`);
+                    }
+
+                    if (lowerQuery.includes('furniture') || lowerQuery.includes('chair') || lowerQuery.includes('desk')) {
+                        urls.push(`https://www.wayfair.com/keyword.php?keyword=${cleanQuery}`);
+                    }
+
+                    searchUrl = urls[0]; // Primary URL for return
+                    message = `🛒 Opening ${urls.length} retailer${urls.length > 1 ? 's' : ''} for: ${productQuery}`;
+
+                    // Open all tabs
+                    urls.forEach((url, index) => {
+                        chrome.tabs.create({ url: url, active: index === 0 });
+                    });
+
+                    return {
+                        success: true,
+                        message: message,
+                        search_url: searchUrl,
+                        urls: urls,
+                        query: productQuery,
+                        is_shopping: true
+                    };
+                }
+
+                // Single retailer search
                 chrome.tabs.create({ url: searchUrl, active: true });
             } else {
                 // Regular Google search for non-product queries
                 searchUrl = `https://www.google.com/search?q=${encodeURIComponent(query)}`;
                 message = `🔍 Found search results for: ${query}`;
-
                 chrome.tabs.create({ url: searchUrl, active: true });
             }
 
