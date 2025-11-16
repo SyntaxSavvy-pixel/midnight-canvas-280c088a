@@ -5711,6 +5711,7 @@
             // Hide all pages
             document.querySelectorAll('.page-content').forEach(page => {
                 page.classList.remove('active');
+                page.style.display = 'none'; // Explicitly hide with inline style
             });
 
             // Remove active from all nav links
@@ -5724,6 +5725,7 @@
                 return;
             }
             pageElement.classList.add('active');
+            pageElement.style.display = 'block'; // Explicitly show with inline style
 
             // Activate nav link (with error handling)
             const navLink = document.querySelector(`[data-page="${pageId}"]`);
