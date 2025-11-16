@@ -8903,11 +8903,18 @@
                 const clickedBtn = e.target.closest('.theme-tab-btn');
                 if (!clickedBtn) return;
 
+                console.log('Theme tab clicked:', clickedBtn.dataset.tab);
+                console.log('User Pro status:', userData.isPro, 'Plan:', userData.plan);
+
                 // PRO FEATURE: Check if custom themes tab requires Pro
-                if (clickedBtn.dataset.tab === 'custom' && !userData.isPro && userData.plan !== 'pro') {
+                const isProUser = userData.isPro || userData.plan === 'pro';
+                if (clickedBtn.dataset.tab === 'custom' && !isProUser) {
+                    console.log('Showing upgrade modal - user is not Pro');
                     showCustomThemeUpgradeModal();
                     return;
                 }
+
+                console.log('Switching to tab:', clickedBtn.dataset.tab);
 
                 // Use requestAnimationFrame to batch visual updates and prevent layout thrashing
                 requestAnimationFrame(() => {
@@ -8918,9 +8925,17 @@
                     // Add active class to clicked button and corresponding content
                     clickedBtn.classList.add('active');
                     const targetTab = document.getElementById(`${clickedBtn.dataset.tab}-themes-tab`);
-                    if (targetTab) targetTab.classList.add('active');
+                    console.log('Target tab element:', targetTab);
+                    if (targetTab) {
+                        targetTab.classList.add('active');
+                        console.log('Tab activated:', targetTab.id);
+                    } else {
+                        console.error('Target tab not found:', `${clickedBtn.dataset.tab}-themes-tab`);
+                    }
                 });
             });
+        } else {
+            console.error('Theme tabs container not found!');
         }
 
         // Show Custom Theme Upgrade Modal (navigates to subscription page)
