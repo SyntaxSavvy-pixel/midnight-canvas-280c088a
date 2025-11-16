@@ -4270,7 +4270,7 @@ Use this information when relevant to provide accurate, time-aware responses.`;
                 </p>
                 <div style="display: flex; gap: 8px;">
                     <button id="tab-limit-close-some" style="background: rgba(255, 255, 255, 0.9); color: #92400e; border: 1px solid rgba(146, 64, 14, 0.3); padding: 8px 12px; border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: 500; margin-right: 8px; transition: all 0.2s ease;">Close Extra Tabs</button>
-                    <button id="tab-limit-upgrade-btn" style="background: linear-gradient(135deg, #d97706, #ea580c); color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: 600; box-shadow: 0 2px 8px rgba(217, 119, 6, 0.3); transition: all 0.2s ease;">Upgrade to Pro - $4.99/month</button>
+                    <button id="tab-limit-upgrade-btn" style="background: linear-gradient(135deg, #d97706, #ea580c); color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: 600; box-shadow: 0 2px 8px rgba(217, 119, 6, 0.3); transition: all 0.2s ease;">Upgrade to Pro - $1.87/month</button>
                 </div>
             </div>
         `;
@@ -5659,7 +5659,7 @@ Use this information when relevant to provide accurate, time-aware responses.`;
                     <div style="color: #4b5563;">• Priority support</div>
                 </div>
                 <div style="background: #eff6ff; border-radius: 6px; padding: 12px; margin-bottom: 16px; text-align: center;">
-                    <div style="font-size: 16px; font-weight: 600; color: #1d4ed8; margin-bottom: 2px;">$4.99/month</div>
+                    <div style="font-size: 16px; font-weight: 600; color: #1d4ed8; margin-bottom: 2px;">$1.87/month</div>
                     <div style="font-size: 11px; color: #64748b;">Cancel anytime</div>
                 </div>
                 <div style="display: flex; flex-direction: column; gap: 8px;">
@@ -7570,7 +7570,7 @@ Thank you!`);
                         <span style="color: #0369a1; font-weight: 600; font-size: 14px;">🎯 Your Pro Subscription</span>
                     </div>
                     <div style="color: #0c4a6e; font-size: 13px; line-height: 1.4;">
-                        • $4.99/month recurring billing<br>
+                        • $1.87/month recurring billing<br>
                         • Cancel anytime with one click<br>
                         • Download invoices and receipts<br>
                         • Update payment methods securely
@@ -7624,7 +7624,7 @@ Thank you!`);
     }
     async handleDirectUpgrade() {
         const upgradeBtn = document.getElementById('tab-limit-upgrade-btn');
-        let originalText = 'Upgrade to Pro - $4.99/month';
+        let originalText = 'Upgrade to Pro - $1.87/month';
         try {
             if (upgradeBtn) {
                 originalText = upgradeBtn.innerHTML;
