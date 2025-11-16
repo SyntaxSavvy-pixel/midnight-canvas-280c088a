@@ -13,7 +13,7 @@
  */
 
 export default {
-    async fetch(request, env, ctx) {
+    async fetch(request, env) {
         // CORS headers
         const corsHeaders = {
             'Access-Control-Allow-Origin': '*',
@@ -26,7 +26,7 @@ export default {
             return new Response(null, { headers: corsHeaders });
         }
 
-        // Only allow POST
+        // Accept POST at any path (root or with trailing slash)
         if (request.method !== 'POST') {
             return new Response('Method not allowed', {
                 status: 405,
