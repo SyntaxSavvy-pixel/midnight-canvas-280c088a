@@ -4647,71 +4647,22 @@
                     try {
                         const parsed = JSON.parse(storedData);
                         userEmail = parsed.email;
-                        console.log('🔄 No email provided, retrieved from localStorage:', userEmail);
                     } catch (e) {
-                        console.error('❌ Error parsing localStorage:', e);
+                        // Silent error handling
                     }
                 }
-            }
-            console.log('═══════════════════════════════════════════════════════════');
-            console.log('🔍 CHECK ADMIN FEATURES FUNCTION CALLED!');
-            console.log('═══════════════════════════════════════════════════════════');
-            console.log('🔍 Received email:', userEmail);
-            console.log('🔍 Email type:', typeof userEmail);
-            console.log('🔍 Email is null?', userEmail === null);
-            console.log('🔍 Email is undefined?', userEmail === undefined);
-            console.log('🔑 Admin email configured as:', ADMIN_EMAIL);
-
-            // Also log what's in localStorage for debugging
-            const storedData = localStorage.getItem('tabmangment_user');
-            if (storedData) {
-                try {
-                    const parsed = JSON.parse(storedData);
-                    console.log('💾 localStorage email:', parsed.email);
-                    console.log('💾 localStorage provider:', parsed.provider);
-                } catch (e) {
-                    console.error('❌ Error parsing localStorage:', e);
-                }
-            } else {
-                console.log('⚠️ No tabmangment_user in localStorage!');
             }
 
             // Normalize emails for comparison (trim and lowercase)
             const normalizedUserEmail = userEmail?.trim().toLowerCase();
             const normalizedAdminEmail = ADMIN_EMAIL.trim().toLowerCase();
 
-            console.log('📧 Normalized user email:', normalizedUserEmail);
-            console.log('📧 Normalized admin email:', normalizedAdminEmail);
-            console.log('📧 Are they equal?', normalizedUserEmail === normalizedAdminEmail);
-
             if (normalizedUserEmail === normalizedAdminEmail) {
-                console.log('🎉🎉🎉 ADMIN MATCH FOUND! 🎉🎉🎉');
-
                 // Show User Feedback nav item (merged Reviews + Contact Messages)
                 const feedbackNav = document.getElementById('admin-feedback-nav');
-                console.log('🔍 Looking for User Feedback nav (#admin-feedback-nav)...');
-                console.log('🔍 Feedback nav element:', feedbackNav);
-                console.log('🔍 Feedback nav exists?', feedbackNav !== null);
-
                 if (feedbackNav) {
-                    console.log('🔍 Current display style:', feedbackNav.style.display);
                     feedbackNav.style.display = 'block';
-                    console.log('✅ Set display to: block');
-                    console.log('🔍 New display style:', feedbackNav.style.display);
-                    console.log('✅ Admin User Feedback nav displayed!');
-                } else {
-                    console.error('❌ User Feedback nav element NOT FOUND in DOM!');
-                    console.error('❌ Element with id="admin-feedback-nav" does not exist!');
                 }
-
-                console.log('✅ ADMIN FEATURES FULLY ENABLED for:', userEmail);
-                console.log('🎯 You should see: User Feedback in sidebar');
-                console.log('═══════════════════════════════════════════════════════════');
-            } else {
-                console.log('❌ NOT ADMIN - Email mismatch');
-                console.log('❌ User:', normalizedUserEmail);
-                console.log('❌ Admin:', normalizedAdminEmail);
-                console.log('═══════════════════════════════════════════════════════════');
             }
         }
 
@@ -4720,8 +4671,6 @@
         // Initialize dashboard
         async function initDashboard() {
             // DEBUG: Confirm dashboard initialization started
-            console.log('🚀 INIT DASHBOARD STARTED');
-            console.log('🚀 Timestamp:', new Date().toISOString());
 
             // Stripe price IDs are already configured above
 
@@ -4743,11 +4692,6 @@
                     userEmail = parsedData.email;
 
                     // DEBUG: Log stored user data
-                    console.log('📦 STORED USER DATA:', storedUserData);
-                    console.log('📦 PARSED DATA:', parsedData);
-                    console.log('📧 EXTRACTED EMAIL:', userEmail);
-                    console.log('📧 EMAIL TYPE:', typeof userEmail);
-                    console.log('👤 PROVIDER:', parsedData.provider);
 
                     // Load user ID (critical for restore/delete functions)
                     if (parsedData.id) {
@@ -4868,17 +4812,14 @@
                                 showDeviceLimitWarning(authResult.deviceCount, authResult.maxDevices, userData.isPro);
                             } else {
                                 // FIX: Show error if authorization failed for other reasons
-                                console.warn('Device authorization failed:', authResult.error || 'Unknown error');
                             }
                         } else {
                             // Device authorized successfully - load devices immediately
                             loadUserDevices().catch(err => {
-                                console.error('Failed to load devices:', err);
                             });
                         }
                     } catch (error) {
                         // FIX: Log authorization errors instead of swallowing them
-                        console.error('Device authorization error:', error);
                     }
                 })(),
 
@@ -4988,35 +4929,26 @@
             startSubscriptionStatusRefresh();
 
             // ADMIN ONLY: Show Reviews nav and load reviews if admin
-            console.log('🎯 ABOUT TO CHECK ADMIN FEATURES');
-            console.log('🎯 User Email:', userEmail);
-            console.log('🎯 User Email Type:', typeof userEmail);
 
             // Call immediately with try-catch
             try {
-                console.log('🎯 Calling checkAndShowAdminFeatures (immediate)');
                 await checkAndShowAdminFeatures(userEmail);
             } catch (error) {
-                console.error('❌ Error in checkAndShowAdminFeatures (immediate):', error);
             }
 
             // Also call after a delay to ensure DOM is ready
             setTimeout(async () => {
                 try {
-                    console.log('🎯 Calling checkAndShowAdminFeatures (500ms delay)');
                     await checkAndShowAdminFeatures(userEmail);
                 } catch (error) {
-                    console.error('❌ Error in checkAndShowAdminFeatures (500ms):', error);
                 }
             }, 500);
 
             // And call after a longer delay as backup
             setTimeout(async () => {
                 try {
-                    console.log('🎯 Calling checkAndShowAdminFeatures (2000ms delay)');
                     await checkAndShowAdminFeatures(userEmail);
                 } catch (error) {
-                    console.error('❌ Error in checkAndShowAdminFeatures (2000ms):', error);
                 }
             }, 2000);
         }
@@ -6132,7 +6064,6 @@
 
                 if (!response.ok) {
                     const errorData = await response.json().catch(() => ({}));
-                    console.error('Checkout error:', errorData);
                     throw new Error(errorData.error || 'Failed to create checkout session');
                 }
 
@@ -6146,7 +6077,6 @@
                 }
 
             } catch (error) {
-                console.error('Checkout failed:', error);
                 alert('Failed to start checkout: ' + (error.message || 'Please try again or contact support.'));
 
                 // Reset button state
@@ -8128,11 +8058,9 @@
                     try {
                         const parsed = JSON.parse(storedUserData);
                         if (parsed.email) {
-                            console.log('🔄 Auto-checking admin features for:', parsed.email);
                             checkAndShowAdminFeatures(parsed.email);
                         }
                     } catch (e) {
-                        console.error('Error parsing user data:', e);
                     }
                 }
             }, 1000); // Wait 1 second to ensure everything is loaded
@@ -8185,44 +8113,24 @@
 
         // Manual test function you can call from console
         window.debugAdmin = function() {
-            console.log('🧪 MANUAL ADMIN DEBUG TEST');
-            console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
 
             // Get stored user data
             const storedData = localStorage.getItem('tabmangment_user');
-            console.log('📦 Raw localStorage data:', storedData);
 
             if (storedData) {
                 try {
                     const parsed = JSON.parse(storedData);
-                    console.log('📦 Parsed user data:', parsed);
-                    console.log('📧 Email:', parsed.email);
-                    console.log('👤 Name:', parsed.name);
-                    console.log('🔑 Provider:', parsed.provider);
-                    console.log('🎯 Admin email to match:', ADMIN_EMAIL);
-                    console.log('✅ Do they match?', parsed.email?.trim().toLowerCase() === ADMIN_EMAIL.trim().toLowerCase());
                 } catch (e) {
-                    console.error('❌ Parse error:', e);
                 }
             } else {
-                console.log('⚠️ No user data in localStorage!');
             }
 
             // Check DOM elements
-            console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-            console.log('🔍 Checking DOM elements...');
             const feedbackNav = document.getElementById('admin-feedback-nav');
-            console.log('📋 User Feedback nav exists:', feedbackNav !== null);
-            if (feedbackNav) console.log('📋 User Feedback nav display:', feedbackNav.style.display);
 
-            console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-            console.log('🧪 Now calling checkAndShowAdminFeatures()...');
             checkAndShowAdminFeatures();
         };
 
-        console.log('🔧 DEBUG TOOLS AVAILABLE:');
-        console.log('   Type: debugAdmin()         - Run complete admin debug test');
-        console.log('   Type: testAdminCheck()     - Test admin check function');
 
         // Load uninstall reviews (admin only)
         async function loadUninstallReviews() {
@@ -8237,7 +8145,6 @@
                     .limit(50);
 
                 if (error) {
-                    console.error('Error loading reviews:', error);
                     reviewsContainer.innerHTML = `
                         <div style="text-align: center; padding: 3rem; color: #ef4444;">
                             <i data-feather="alert-circle" style="width: 48px; height: 48px; margin-bottom: 1rem;"></i>
@@ -8333,7 +8240,6 @@
                 if (typeof feather !== 'undefined') feather.replace();
 
             } catch (error) {
-                console.error('Error in loadUninstallReviews:', error);
                 reviewsContainer.innerHTML = `
                     <div style="text-align: center; padding: 3rem; color: #ef4444;">
                         <i data-feather="alert-circle" style="width: 48px; height: 48px; margin-bottom: 1rem;"></i>
@@ -8390,7 +8296,6 @@
 
         // Load contact messages (admin only)
         async function loadContactMessages() {
-            console.log('📬 Loading contact messages...');
             const messagesContainer = document.getElementById('messages-container');
 
             try {
@@ -8402,7 +8307,6 @@
                     .limit(100);
 
                 if (error) {
-                    console.error('Error loading contact messages:', error);
                     messagesContainer.innerHTML = `
                         <div style="text-align: center; padding: 3rem; color: #ef4444;">
                             <i data-feather="alert-circle" style="width: 48px; height: 48px; margin-bottom: 1rem;"></i>
@@ -8414,7 +8318,6 @@
                     return;
                 }
 
-                console.log('✅ Loaded', messages.length, 'contact messages');
 
                 // Update stats
                 updateContactStats(messages);
@@ -8502,7 +8405,6 @@
                 });
 
             } catch (error) {
-                console.error('Error:', error);
                 messagesContainer.innerHTML = `
                     <div style="text-align: center; padding: 3rem; color: #ef4444;">
                         <i data-feather="alert-circle" style="width: 48px; height: 48px; margin-bottom: 1rem;"></i>
@@ -8538,7 +8440,6 @@
         // Delete uninstall review
         async function deleteReview(reviewId) {
             try {
-                console.log('🗑️ Deleting review:', reviewId);
 
                 // Delete from Supabase
                 const { error } = await supabaseClient
@@ -8547,18 +8448,15 @@
                     .eq('id', reviewId);
 
                 if (error) {
-                    console.error('Error deleting review:', error);
                     alert('Failed to delete review. Please try again.');
                     return;
                 }
 
-                console.log('✅ Review deleted successfully');
 
                 // Reload reviews to update the UI
                 await loadUninstallReviews();
 
             } catch (error) {
-                console.error('Error in deleteReview:', error);
                 alert('An error occurred while deleting the review.');
             }
         }
@@ -8566,7 +8464,6 @@
         // Delete contact message
         async function deleteContactMessage(messageId) {
             try {
-                console.log('🗑️ Deleting message:', messageId);
 
                 // Delete from Supabase
                 const { error } = await supabaseClient
@@ -8575,18 +8472,15 @@
                     .eq('id', messageId);
 
                 if (error) {
-                    console.error('Error deleting message:', error);
                     alert('Failed to delete message. Please try again.');
                     return;
                 }
 
-                console.log('✅ Message deleted successfully');
 
                 // Reload messages to update the UI
                 await loadContactMessages();
 
             } catch (error) {
-                console.error('Error in deleteContactMessage:', error);
                 alert('An error occurred while deleting the message.');
             }
         }
@@ -9261,17 +9155,14 @@
                 // If theme name is provided directly, use it (avoids DB fetch race condition)
                 if (forceThemeName) {
                     themeName = forceThemeName;
-                    console.log(`Using provided theme name: ${themeName}`);
                 } else {
                     // Otherwise fetch from database
                     const prefs = await getUserPreferences();
                     themeName = prefs?.active_theme || 'lightMinimal';
-                    console.log(`Fetched theme from DB: ${themeName}`);
                 }
 
                 // If stored theme doesn't exist (old theme name), fall back to lightMinimal
                 if (!presetThemes[themeName] && themeName !== 'custom') {
-                    console.warn(`Theme ${themeName} not found, falling back to lightMinimal`);
                     themeName = 'lightMinimal';
                     await saveActiveTheme(themeName);
                 }
@@ -9282,7 +9173,6 @@
                     const themeCards = document.querySelectorAll('.theme-card');
 
                     if (themeCards.length === 0) {
-                        console.warn('No theme cards found in DOM!');
                         return;
                     }
 
@@ -9293,7 +9183,6 @@
 
                         // CRITICAL FIX: Add null check for badge
                         if (!badge) {
-                            console.warn('Active theme badge not found for card:', card.dataset.theme);
                             return;
                         }
 
@@ -9302,7 +9191,6 @@
                             badge.style.display = 'block';
                             card.classList.add('theme-active');
                             foundActiveCard = true;
-                            console.log(`✓ Marked theme as active: ${themeName}`);
                         } else {
                             badge.style.display = 'none';
                             card.classList.remove('theme-active');
@@ -9310,13 +9198,10 @@
                     });
 
                     if (!foundActiveCard) {
-                        console.error(`Failed to find card for theme: ${themeName}`);
                     }
 
-                    console.log(`Active theme: ${themeName}, Cards: ${themeCards.length}, Found: ${foundActiveCard}`);
                 });
             } catch (error) {
-                console.error('Error loading active theme:', error);
             }
         }
 
@@ -9353,7 +9238,6 @@
 
                 // Save theme to database for persistence
                 const saveSuccess = await saveActiveTheme(themeName, theme);
-                console.log(`Theme saved to DB: ${saveSuccess ? 'SUCCESS' : 'FAILED'}`);
 
                 // Send theme to extension via content script bridge
                 window.postMessage({

@@ -31,11 +31,17 @@ FOR INSERT
 TO anon, authenticated
 WITH CHECK (true);
 
--- Policy: Allow authenticated users to read their own feedback
--- (Admin will use service role key which bypasses RLS)
+-- Policy: Allow authenticated users to read all feedback
 CREATE POLICY "Allow authenticated read on uninstall_feedback"
 ON uninstall_feedback
 FOR SELECT
+TO authenticated
+USING (true);
+
+-- Policy: Allow authenticated users to delete feedback (admin only via client-side check)
+CREATE POLICY "Allow authenticated delete on uninstall_feedback"
+ON uninstall_feedback
+FOR DELETE
 TO authenticated
 USING (true);
 
@@ -43,6 +49,7 @@ USING (true);
 GRANT INSERT ON uninstall_feedback TO anon;
 GRANT INSERT ON uninstall_feedback TO authenticated;
 GRANT SELECT ON uninstall_feedback TO authenticated;
+GRANT DELETE ON uninstall_feedback TO authenticated;
 
 -- Verify table was created
 SELECT

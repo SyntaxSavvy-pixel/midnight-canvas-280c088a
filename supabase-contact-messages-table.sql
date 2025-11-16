@@ -32,10 +32,16 @@ TO anon, authenticated
 WITH CHECK (true);
 
 -- Policy: Allow authenticated users to read all messages
--- (Admin will use service role key which bypasses RLS)
 CREATE POLICY "Allow authenticated read on contact_messages"
 ON contact_messages
 FOR SELECT
+TO authenticated
+USING (true);
+
+-- Policy: Allow authenticated users to delete messages (admin only via client-side check)
+CREATE POLICY "Allow authenticated delete on contact_messages"
+ON contact_messages
+FOR DELETE
 TO authenticated
 USING (true);
 
@@ -43,6 +49,7 @@ USING (true);
 GRANT INSERT ON contact_messages TO anon;
 GRANT INSERT ON contact_messages TO authenticated;
 GRANT SELECT ON contact_messages TO authenticated;
+GRANT DELETE ON contact_messages TO authenticated;
 
 -- Verify table was created
 SELECT
