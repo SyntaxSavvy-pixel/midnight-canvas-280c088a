@@ -37,7 +37,7 @@ export default {
         try {
             // Parse request body
             const body = await request.json();
-            const { messages, model, max_tokens, system, userEmail } = body;
+            const { messages, model, max_tokens, system, userEmail, tools } = body;
 
             // Validate required fields
             if (!messages || !Array.isArray(messages)) {
@@ -61,6 +61,18 @@ export default {
             }
 
             // Call Claude API
+            const requestBody = {
+                model: model || 'claude-sonnet-4-20250514',
+                max_tokens: max_tokens || 1024,
+                system: system || 'You are a helpful AI assistant.',
+                messages: messages
+            };
+
+            // Add tools if provided
+            if (tools && Array.isArray(tools) && tools.length > 0) {
+                requestBody.tools = tools;
+            }
+
             const claudeResponse = await fetch('https://api.anthropic.com/v1/messages', {
                 method: 'POST',
                 headers: {
@@ -68,12 +80,7 @@ export default {
                     'x-api-key': env.ANTHROPIC_API_KEY,
                     'anthropic-version': '2023-06-01'
                 },
-                body: JSON.stringify({
-                    model: model || 'claude-3-5-sonnet-20241022',
-                    max_tokens: max_tokens || 1024,
-                    system: system || 'You are a helpful AI assistant.',
-                    messages: messages
-                })
+                body: JSON.stringify(requestBody)
             });
 
             if (!claudeResponse.ok) {
