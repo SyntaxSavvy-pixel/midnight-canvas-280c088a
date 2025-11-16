@@ -1,0 +1,13 @@
+name = "serpapi-search-worker"
+main = "serpapi-search-worker.js"
+compatibility_date = "2024-01-01"
+
+# Environment variables (set these in Cloudflare Dashboard for security)
+# OR use: wrangler secret put SERPAPI_KEY
+# [vars]
+# SERPAPI_KEY = "YOUR_KEY_HERE" # DO NOT commit this!
+
+# Routes - Update with your actual domain
+# routes = [
+#   { pattern = "tabmangment.com/api/serpapi-search", zone_name = "tabmangment.com" }
+# ]

@@ -14,6 +14,12 @@ const CONFIG = {
         MAX_TOKENS_PER_PAGE: 2048,
         COUNTRY: 'US'
     },
+    SERPAPI: {
+        // TODO: Update this URL after deploying the Cloudflare Worker
+        // See cloudflare-workers/DEPLOYMENT.md for instructions
+        SEARCH_URL: 'https://serpapi-search-worker.YOUR-SUBDOMAIN.workers.dev',
+        // Or use custom domain: 'https://tabmangment.com/api/serpapi-search'
+    },
     WEB: {
         AUTH_URL: 'https://tabmangment.com/new-authentication',
         DASHBOARD_URL: 'https://tabmangment.com/user-dashboard.html'
@@ -1892,66 +1898,71 @@ Use this information when relevant to provide accurate, time-aware responses.`;
             const currentYear = new Date().getFullYear();
 
             // Add current year to query for latest products
-            const searchQuery = `${query} ${currentYear} best buy where`;
+            const searchQuery = `${query} ${currentYear}`;
 
-            console.log('Researching product:', searchQuery);
+            console.log('Researching product with SerpAPI:', searchQuery);
 
-            // Call Perplexity API for product research
-            const response = await fetch(CONFIG.PERPLEXITY.SEARCH_URL, {
+            // Call SerpAPI via secure Cloudflare Worker
+            const response = await fetch(CONFIG.SERPAPI.SEARCH_URL, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
                 },
                 body: JSON.stringify({
-                    query: searchQuery,
-                    country: CONFIG.PERPLEXITY.COUNTRY || 'US'
+                    query: searchQuery
                 })
             });
 
             if (!response.ok) {
-                throw new Error(`Perplexity API error: ${response.status}`);
+                throw new Error(`SerpAPI Worker error: ${response.status}`);
             }
 
             const data = await response.json();
 
-            // Extract the response text and citations/URLs
-            const resultText = data.answer || data.text || data.result || '';
-            const citations = data.citations || data.urls || [];
-
-            // Format the results for the AI to read
-            let formattedResults = `Product Research Results for "${query}":\n\n`;
-            formattedResults += resultText + '\n\n';
-
-            if (citations.length > 0) {
-                formattedResults += 'Direct Product Links:\n';
-                citations.forEach((citation, index) => {
-                    if (typeof citation === 'string') {
-                        formattedResults += `${index + 1}. ${citation}\n`;
-                    } else if (citation.url) {
-                        formattedResults += `${index + 1}. ${citation.title || 'Product'}: ${citation.url}\n`;
-                    }
-                });
+            if (!data.success) {
+                throw new Error(data.error || 'SerpAPI request failed');
             }
 
-            console.log('Product research results:', formattedResults);
+            // SerpAPI returns actual product data with URLs
+            const products = data.products || [];
+            const formattedResults = data.results || '';
+
+            console.log('SerpAPI product results:', {
+                productCount: products.length,
+                products: products.map(p => ({ title: p.title, link: p.link }))
+            });
+
+            // Build response for AI
+            let aiMessage = `Found ${products.length} products for "${query}".\n\n`;
+
+            if (products.length > 0) {
+                aiMessage += 'Here are the top product URLs to open:\n';
+                products.slice(0, 2).forEach((product, index) => {
+                    aiMessage += `${index + 1}. ${product.title} - ${product.link}\n`;
+                    aiMessage += `   Price: ${product.price || 'N/A'} | Rating: ${product.rating || 'N/A'}\n`;
+                });
+                aiMessage += `\nUse open_url to open the top 1-2 product links above.`;
+            } else {
+                aiMessage += 'No products found. Try a different search term.';
+            }
 
             return {
                 success: true,
                 results: formattedResults,
-                citations: citations,
+                products: products,
                 query: query,
                 year: currentYear,
-                message: `Found product information for ${query}. Extract the top 1-2 product URLs from the citations and use open_url to open them.`
+                message: aiMessage
             };
 
         } catch (error) {
             console.error('Product research error:', error);
 
-            // Fallback: Return a helpful message telling AI to use search instead
+            // Fallback: Return a helpful message
             return {
                 success: false,
                 error: error.message,
-                fallback_message: `Product research API unavailable. You can tell the user about products from your knowledge, or use search_web as a last resort.`
+                fallback_message: `Product search unavailable (${error.message}). You can tell the user about products from your knowledge, or use search_web as a last resort.`
             };
         }
     }
