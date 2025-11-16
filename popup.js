@@ -58,10 +58,6 @@ class TabmangmentPopup {
             this.tabTimers = {};
             this.timerIntervals = {};
 
-            // Initialize Supabase client
-            this.supabaseClient = null;
-            this.initializeSupabase();
-
             this.init();
 
         } catch (error) {
@@ -631,15 +627,6 @@ class TabmangmentPopup {
             publicKey: 'LMg-8FsdXe2umT-av'
         };
         this.emailJSReady = true;
-    }
-    initializeSupabase() {
-        try {
-            const { createClient } = supabase;
-            this.supabaseClient = createClient(CONFIG.SUPABASE.URL, CONFIG.SUPABASE.ANON_KEY);
-            console.log('✅ Supabase client initialized for contact messages');
-        } catch (error) {
-            console.error('❌ Failed to initialize Supabase:', error);
-        }
     }
     setupEventListeners() {
         const contactBtn = document.getElementById('contact-btn');
@@ -1699,20 +1686,28 @@ class TabmangmentPopup {
             submitBtn.disabled = true;
             submitText.innerHTML = '<div class="contact-loading"><div class="contact-spinner"></div><span>Sending...</span></div>';
 
-            // Save to Supabase database
-            const { data, error } = await this.supabaseClient
-                .from('contact_messages')
-                .insert([{
+            // Save to Supabase database using direct HTTP request
+            const response = await fetch(`${CONFIG.SUPABASE.URL}/rest/v1/contact_messages`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'apikey': CONFIG.SUPABASE.ANON_KEY,
+                    'Authorization': `Bearer ${CONFIG.SUPABASE.ANON_KEY}`,
+                    'Prefer': 'return=minimal'
+                },
+                body: JSON.stringify({
                     name: formData.name,
                     email: formData.email,
                     subject: formData.subject,
                     message: formData.message,
                     user_agent: navigator.userAgent,
                     created_at: new Date().toISOString()
-                }]);
+                })
+            });
 
-            if (error) {
-                console.error('Supabase error:', error);
+            if (!response.ok) {
+                const errorText = await response.text();
+                console.error('Supabase error:', response.status, errorText);
                 throw new Error('Failed to send message. Please try again or email selfshios@gmail.com directly.');
             }
 
