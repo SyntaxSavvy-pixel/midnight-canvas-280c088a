@@ -14,6 +14,14 @@ const CONFIG = {
         MAX_TOKENS_PER_PAGE: 2048,
         COUNTRY: 'US'
     },
+    SERPAPI: {
+        // Enhanced SerpAPI Worker - 10x Smarter Search
+        SEARCH_URL: 'https://serpapi-search-worker.selfshios.workers.dev',
+        // Advanced features: real-time tracking, deal detection, smart recommendations
+        MAX_RESULTS: 10,
+        INCLUDE_SPECS: true,
+        TRACK_PRICES: true
+    },
     WEB: {
         AUTH_URL: 'https://tabmangment.com/new-authentication',
         DASHBOARD_URL: 'https://tabmangment.com/user-dashboard.html'
@@ -24,6 +32,95 @@ const CONFIG = {
         STATUS_CHECK_INTERVAL: 300000,
         CACHE_TIMEOUT: 2000,
         SYNC_INTERVAL: 30000
+    },
+    SUPABASE: {
+        URL: 'https://voislxlhfepnllamagxm.supabase.co',
+        ANON_KEY: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZvaXNseGxoZmVwbmxsYW1hZ3htIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTkwMTI4MDcsImV4cCI6MjA3NDU4ODgwN30.mDdMdGg4JAInS7kXNL6-edvRaQ_mVuMGRjU7rX-hMCM'
+    },
+    CLAUDE: {
+        CHAT_URL: 'https://claude-chat-api.selfshios.workers.dev',
+        MODEL: 'claude-sonnet-4-20250514',
+        MAX_TOKENS: 2048,
+        SYSTEM_PROMPT: `You are an AI assistant for Tabmangment, a Chrome extension that helps users manage browser tabs.
+
+CURRENT DATE: ${new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })} (${new Date().getFullYear()})
+
+You have tools available to help users:
+
+**Web & Search:**
+- research_product: Research products and find actual product page URLs (use this for ALL product queries)
+- search_web: General Google search for non-product queries only
+- open_url: Open specific websites/product pages in new tabs
+- get_weather: Get current weather for any location
+
+**Tab Management:**
+- get_current_tabs: List all open tabs
+- search_tabs: Find specific tabs by keyword
+- get_active_tab: Get the currently focused tab (use when user says "this tab" or "current tab")
+- close_tab: Close specific tabs
+
+**Tab Features:**
+- set_tab_timer: Set auto-close timer on a tab (accepts duration in minutes)
+- remove_tab_timer: Remove/cancel an existing timer from a tab
+- bookmark_tab: Bookmark/save a tab to favorites
+
+**AI-Powered Insights & Productivity:**
+- get_tab_insights: Analyze user's tabs and provide intelligent insights about patterns, categories, and productivity tips
+- suggest_tab_cleanup: Suggest which tabs to close, bookmark, or organize based on intelligent analysis
+
+You are an AI-powered productivity assistant that helps users manage tabs efficiently. You can analyze their browsing patterns, suggest optimizations, and proactively help them stay organized.
+
+CRITICAL - ENHANCED PRODUCT RESEARCH (${new Date().getFullYear()}):
+When users ask about products, you have access to a 10X SMARTER AI-powered product research system with:
+- Real-time price tracking & comparison
+- Deal detection & recommendations
+- Quality scoring & review analysis
+- Smart recommendations (Best Value, Top Rated, Budget Pick)
+- Product specifications & availability tracking
+
+**How to use research_product (REQUIRED for ALL product queries):**
+
+1. **Call research_product FIRST** with the product query
+   - Returns: Top recommendations, deals, price analysis, quality scores
+   - Includes: Real product URLs, prices, ratings, reviews
+   - Smart AI analyzes quality, value, and finds best deals
+
+2. **Present AI recommendations** to the user:
+   - Tell them the TOP RATED product (highest rating + reviews)
+   - Tell them the BEST VALUE product (quality/price ratio)
+   - Tell them about any HOT DEALS found
+   - Include prices and ratings in your response
+
+3. **Open 1-2 BEST product pages** using open_url:
+   - Open the Top Rated OR Best Value product link
+   - Maximum 2 tabs total - only the very best options
+   - Use actual product URLs from the recommendations
+
+4. **Explain what you found**:
+   - "I found the [Product Name] rated [X]★ with [Y] reviews"
+   - "Best value: [Product] at [Price]"
+   - "Opening the top product page now"
+
+Example interaction:
+User: "What's the best gaming monitor?"
+You: [Call research_product with "best gaming monitor"]
+You: "I found the ASUS ROG Swift PG279QM - rated 4.7★ with 2,847 reviews. It's the top-rated gaming monitor for ${new Date().getFullYear()}.
+
+      🏆 Top Rated: ASUS ROG Swift - $699
+      💎 Best Value: LG UltraGear - $449
+
+      Opening the ASUS product page now."
+You: [Call open_url with the ASUS Amazon URL]
+
+NEVER use search_web for products. ALWAYS use research_product for intelligent product research.
+
+IMPORTANT USAGE:
+- When user says "set a timer for THIS tab" or "bookmark THIS tab", first use get_active_tab to get the current tab, then use the appropriate tool
+- For timer durations: convert user input to minutes (e.g., "5 minutes" = 5, "1 hour" = 60, "30 seconds" = 0.5)
+- Use the tools directly via tool calls. DO NOT write out function call syntax or XML
+- Be proactive: search, open pages, set timers, bookmark tabs - take action instead of just explaining
+
+When users ask you to find something, use your tools to search and open relevant pages for them, then give a brief, friendly summary.`
     }
 };
 
@@ -53,6 +150,7 @@ class TabmangmentPopup {
 
             this.tabTimers = {};
             this.timerIntervals = {};
+
             this.init();
 
         } catch (error) {
@@ -67,6 +165,8 @@ class TabmangmentPopup {
         try {
             this.setupEventListeners();
 
+            // Load persistent chat history from storage
+            await this.loadChatHistory();
 
             const isAuthenticated = await this.checkAuthentication();
 
@@ -799,102 +899,202 @@ class TabmangmentPopup {
         }
         this._searchPanelInitialized = true;
 
-        const searchBtn = document.getElementById('search-btn');
-        const searchSection = document.getElementById('search-section');
+        const chatBtn = document.getElementById('chat-btn');
+        const chatSection = document.getElementById('ai-chat-section');
         const tabsContainer = document.getElementById('tabs-container');
-        const searchInput = document.getElementById('search-input');
-        const searchClearBtn = document.getElementById('search-clear-btn');
+        const chatInput = document.getElementById('chat-input');
         const collapseBtn = document.getElementById('collapse-btn');
         const bookmarkBtn = document.getElementById('bookmark-all-btn');
 
         const showTabsView = () => {
-            if (searchSection) searchSection.style.display = 'none';
-            if (tabsContainer) tabsContainer.style.display = 'block';
-            if (searchBtn) searchBtn.classList.remove('active');
-            if (searchInput) searchInput.value = '';
-            if (searchClearBtn) searchClearBtn.style.display = 'none';
-            this.clearSearchResults();
+            // Reset to tabs view if in bookmarks
+            if (this.currentView === 'bookmarks') {
+                this.currentView = 'tabs';
+                // Re-render tabs content
+                setTimeout(() => this.render(), 10);
+            }
+
+            // Fade out chat
+            if (chatSection) {
+                chatSection.classList.remove('active');
+                setTimeout(() => {
+                    chatSection.style.display = 'none';
+                }, 300);
+            }
+
+            // Fade in tabs
+            if (tabsContainer) {
+                tabsContainer.style.display = 'block';
+                setTimeout(() => tabsContainer.classList.add('active'), 10);
+            }
+
+            if (chatBtn) chatBtn.classList.remove('active');
         };
 
-        const showSearchView = async () => {
-            if (searchSection) searchSection.style.display = 'block';
-            if (tabsContainer) tabsContainer.style.display = 'none';
-            if (searchBtn) searchBtn.classList.add('active');
-            await this.updateSearchUsageDisplay();
+        const showChatView = async () => {
+            // If in bookmarks view, switch back to tabs first
+            if (this.currentView === 'bookmarks') {
+                this.currentView = 'tabs';
+            }
+
+            // Fade out tabs
+            if (tabsContainer) {
+                tabsContainer.classList.remove('active');
+                setTimeout(() => {
+                    tabsContainer.style.display = 'none';
+                }, 300);
+            }
+
+            // Fade in chat
+            if (chatSection) {
+                chatSection.style.display = 'flex';
+                setTimeout(() => chatSection.classList.add('active'), 10);
+            }
+
+            if (chatBtn) chatBtn.classList.add('active');
+            await this.updateChatUsageDisplay();
             setTimeout(() => {
-                if (searchInput) searchInput.focus();
-            }, 100);
+                if (chatInput) chatInput.focus();
+            }, 350);
         };
 
-        if (searchBtn) {
-            searchBtn.addEventListener('click', async () => {
-                const isSearchActive = searchSection && searchSection.style.display !== 'none';
+        // Initialize tabs as active on load
+        if (tabsContainer) {
+            tabsContainer.classList.add('active');
+        }
 
-                if (isSearchActive) {
+        if (chatBtn) {
+            chatBtn.addEventListener('click', async () => {
+                const isChatActive = chatSection && chatSection.classList.contains('active');
+
+                if (isChatActive) {
                     showTabsView();
                 } else {
-                    await showSearchView();
+                    await showChatView();
                 }
             });
         }
 
         this.showTabsView = showTabsView;
-        this.showSearchView = showSearchView;
+        this.showChatView = showChatView;
 
-        const refreshBtn = document.getElementById('search-refresh-btn');
-        const clearResultsBtn = document.getElementById('search-clear-results-btn');
+        // Chat functionality - will be implemented with Claude/Perplexity API
+        const chatSendBtn = document.getElementById('chat-send-btn');
+        const clearChatBtn = document.getElementById('clear-chat-btn');
 
-        if (refreshBtn) {
-            refreshBtn.addEventListener('click', () => {
-                const currentQuery = searchInput ? searchInput.value.trim() : '';
-                if (currentQuery) {
-                    this.performAISearch(currentQuery, true);
-                }
-            });
-        }
+        // Get enhance button
+        const chatEnhanceBtn = document.getElementById('chat-enhance-btn');
 
-        if (clearResultsBtn) {
-            clearResultsBtn.addEventListener('click', () => {
-                if (searchInput) {
-                    searchInput.value = '';
-                    searchInput.focus();
-                }
-                this.clearSearchResults();
-            });
-        }
-
-        if (searchInput) {
-            searchInput.addEventListener('input', (e) => {
-                const query = e.target.value;
-
-                if (searchClearBtn) {
-                    searchClearBtn.style.display = query ? 'flex' : 'none';
-                }
-
-                if (!query.trim()) {
-                    this.clearSearchResults();
-                }
+        // Enable/disable send and enhance buttons based on input
+        if (chatInput && chatSendBtn) {
+            chatInput.addEventListener('input', () => {
+                const hasText = chatInput.value.trim().length > 0;
+                chatSendBtn.disabled = !hasText;
+                if (chatEnhanceBtn) chatEnhanceBtn.disabled = !hasText;
             });
 
-            searchInput.addEventListener('keypress', (e) => {
-                if (e.key === 'Enter') {
+            // Send on Enter (Shift+Enter for new line)
+            chatInput.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
                     e.preventDefault();
-                    const query = e.target.value.trim();
-                    if (query && !this._searchInProgress) {
-                        this.performAISearch(query);
+                    if (chatInput.value.trim() && !chatSendBtn.disabled) {
+                        this.sendChatMessage(chatInput.value.trim());
+                        chatInput.value = '';
+                        chatSendBtn.disabled = true;
                     }
                 }
             });
         }
 
-        if (searchClearBtn) {
-            searchClearBtn.addEventListener('click', () => {
-                if (searchInput) {
-                    searchInput.value = '';
-                    searchInput.focus();
+        // Send button click
+        if (chatSendBtn) {
+            chatSendBtn.addEventListener('click', () => {
+                if (chatInput && chatInput.value.trim()) {
+                    this.sendChatMessage(chatInput.value.trim());
+                    chatInput.value = '';
+                    chatSendBtn.disabled = true;
+                    if (chatEnhanceBtn) chatEnhanceBtn.disabled = true;
                 }
-                searchClearBtn.style.display = 'none';
-                this.clearSearchResults();
+            });
+        }
+
+        // Enhance button click
+        if (chatEnhanceBtn) {
+            chatEnhanceBtn.addEventListener('click', async () => {
+                if (chatInput && chatInput.value.trim()) {
+                    await this.enhancePrompt(chatInput);
+                }
+            });
+        }
+
+        // Clear chat button
+        if (clearChatBtn) {
+            clearChatBtn.addEventListener('click', () => {
+                this.clearChat();
+            });
+        }
+
+        // Link pill click handler (event delegation)
+        const chatMessages = document.getElementById('chat-messages');
+        if (chatMessages) {
+            chatMessages.addEventListener('click', (e) => {
+                const linkPill = e.target.closest('.link-pill');
+                if (linkPill) {
+                    const url = linkPill.dataset.url;
+                    const domain = linkPill.dataset.domain;
+                    this.showLinkPreview(url, domain);
+                }
+
+                // Suggestion chip click handler
+                const suggestionChip = e.target.closest('.suggestion-chip');
+                if (suggestionChip) {
+                    const prompt = suggestionChip.dataset.prompt;
+                    if (prompt && chatInput) {
+                        chatInput.value = prompt;
+                        chatInput.focus();
+                        chatSendBtn.disabled = false;
+                        if (chatEnhanceBtn) chatEnhanceBtn.disabled = false;
+
+                        // Auto-send the message
+                        this.sendChatMessage(prompt);
+                        chatInput.value = '';
+                        chatSendBtn.disabled = true;
+                        if (chatEnhanceBtn) chatEnhanceBtn.disabled = true;
+                    }
+                }
+            });
+        }
+
+        // Link preview modal handlers
+        const linkPreviewModal = document.getElementById('link-preview-modal');
+        const linkPreviewClose = document.getElementById('link-preview-close');
+        const linkPreviewCancel = document.getElementById('link-preview-cancel');
+        const linkPreviewOpen = document.getElementById('link-preview-open');
+
+        if (linkPreviewClose) {
+            linkPreviewClose.addEventListener('click', () => this.closeLinkPreview());
+        }
+
+        if (linkPreviewCancel) {
+            linkPreviewCancel.addEventListener('click', () => this.closeLinkPreview());
+        }
+
+        if (linkPreviewOpen) {
+            linkPreviewOpen.addEventListener('click', () => {
+                const url = linkPreviewOpen.dataset.url;
+                if (url) {
+                    chrome.tabs.create({ url: url });
+                    this.closeLinkPreview();
+                }
+            });
+        }
+
+        // Close modal on background click
+        if (linkPreviewModal) {
+            linkPreviewModal.addEventListener('click', (e) => {
+                if (e.target === linkPreviewModal) {
+                    this.closeLinkPreview();
+                }
             });
         }
     }
@@ -1239,31 +1439,48 @@ class TabmangmentPopup {
 
         document.body.classList.add('has-search-results');
 
-        results.forEach(result => {
+        results.forEach((result, index) => {
             const resultItem = document.createElement('div');
-            resultItem.className = 'search-result-item';
+            const isAIAnswer = result.type === 'ai-answer';
+
+            resultItem.className = isAIAnswer ? 'search-result-item ai-answer-result' : 'search-result-item';
             resultItem.dataset.url = result.url;
 
-            let displayText = '';
-            try {
-                const urlObj = new URL(result.url);
-                displayText = urlObj.hostname.replace('www.', '');
-            } catch (e) {
-                displayText = result.url;
+            if (isAIAnswer) {
+                // AI Answer - show full content prominently
+                resultItem.innerHTML = `
+                    <div class="search-result-title">${this.escapeHtml(result.title)}</div>
+                    <div class="ai-answer-content">${this.escapeHtml(result.snippet)}</div>
+                    <div class="ai-answer-footer">
+                        <span>Powered by Perplexity AI</span>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+                            <polyline points="9 18 15 12 9 6"></polyline>
+                        </svg>
+                    </div>
+                `;
+            } else {
+                // Source link - traditional result
+                let displayText = '';
+                try {
+                    const urlObj = new URL(result.url);
+                    displayText = urlObj.hostname.replace('www.', '');
+                } catch (e) {
+                    displayText = result.url;
+                }
+
+                const description = result.snippet || result.description || displayText;
+
+                resultItem.innerHTML = `
+                    <div class="search-result-title">${this.escapeHtml(result.title)}</div>
+                    <div class="search-result-url">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path>
+                            <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path>
+                        </svg>
+                        ${this.escapeHtml(description)}
+                    </div>
+                `;
             }
-
-            const description = result.snippet || result.description || displayText;
-
-            resultItem.innerHTML = `
-                <div class="search-result-title">${this.escapeHtml(result.title)}</div>
-                <div class="search-result-url">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path>
-                        <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path>
-                    </svg>
-                    ${this.escapeHtml(description)}
-                </div>
-            `;
 
             resultItem.addEventListener('click', () => {
                 chrome.tabs.create({ url: result.url });
@@ -1277,6 +1494,1546 @@ class TabmangmentPopup {
         const div = document.createElement('div');
         div.textContent = text;
         return div.innerHTML;
+    }
+
+    buildSystemPrompt() {
+        const now = new Date();
+        const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+        const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+
+        const dayName = days[now.getDay()];
+        const monthName = months[now.getMonth()];
+        const date = now.getDate();
+        const year = now.getFullYear();
+        const hours = now.getHours();
+        const minutes = now.getMinutes().toString().padStart(2, '0');
+        const ampm = hours >= 12 ? 'PM' : 'AM';
+        const displayHours = hours % 12 || 12;
+
+        return `${CONFIG.CLAUDE.SYSTEM_PROMPT}
+
+CURRENT CONTEXT:
+- Today is ${dayName}, ${monthName} ${date}, ${year}
+- Current time: ${displayHours}:${minutes} ${ampm}
+- Year: ${year}
+
+Use this information when relevant to provide accurate, time-aware responses.`;
+    }
+
+    async sendChatMessage(message) {
+        const chatMessages = document.getElementById('chat-messages');
+        const emptyState = document.getElementById('chat-empty-state');
+        const typingIndicator = document.getElementById('typing-indicator');
+
+        if (!chatMessages) return;
+
+        // Hide empty state
+        if (emptyState) emptyState.style.display = 'none';
+
+        // Add user message
+        this.addChatMessage('user', message);
+
+        // Show typing indicator
+        if (typingIndicator) typingIndicator.style.display = 'flex';
+
+        try {
+            // Build conversation history
+            if (!this.chatHistory) {
+                this.chatHistory = [];
+            }
+
+            this.chatHistory.push({
+                role: 'user',
+                content: message
+            });
+
+            // Save user message immediately (don't wait for AI response)
+            await this.saveChatHistory();
+
+            // Tool loop: keep calling Claude until we get a final response (no more tool uses)
+            let continueLoop = true;
+            let finalResponse = '';
+
+            while (continueLoop) {
+                // Call Claude API with tools
+                const response = await fetch(CONFIG.CLAUDE.CHAT_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        messages: this.chatHistory,
+                        model: CONFIG.CLAUDE.MODEL,
+                        max_tokens: CONFIG.CLAUDE.MAX_TOKENS,
+                        system: this.buildSystemPrompt(),
+                        userEmail: this.userEmail || 'anonymous',
+                        tools: this.getToolDefinitions()
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error(`API error: ${response.status}`);
+                }
+
+                const data = await response.json();
+
+                // Check if Claude wants to use any tools
+                const hasToolUse = data.content?.some(block => block.type === 'tool_use');
+
+                if (hasToolUse) {
+                    // Add Claude's response to history (with tool use)
+                    this.chatHistory.push({
+                        role: 'assistant',
+                        content: data.content
+                    });
+
+                    // Execute all tool uses and collect results
+                    const toolResults = [];
+                    for (const block of data.content) {
+                        if (block.type === 'tool_use') {
+                            const result = await this.executeTool(block.name, block.input);
+                            toolResults.push({
+                                type: 'tool_result',
+                                tool_use_id: block.id,
+                                content: JSON.stringify(result)
+                            });
+                        }
+                    }
+
+                    // Add tool results to history as a user message
+                    this.chatHistory.push({
+                        role: 'user',
+                        content: toolResults
+                    });
+
+                    // Continue loop to get Claude's response after using tools
+                } else {
+                    // No tool use - we have a final response
+                    continueLoop = false;
+
+                    // Extract text response
+                    finalResponse = data.content?.find(block => block.type === 'text')?.text ||
+                                  data.message ||
+                                  'Sorry, I could not generate a response.';
+
+                    // Add to chat history (just the text, not the content blocks)
+                    this.chatHistory.push({
+                        role: 'assistant',
+                        content: finalResponse
+                    });
+                }
+            }
+
+            // Hide typing indicator
+            if (typingIndicator) typingIndicator.style.display = 'none';
+
+            // Keep only last 20 messages to avoid token limits
+            if (this.chatHistory.length > 40) {
+                this.chatHistory = this.chatHistory.slice(-40);
+            }
+
+            // Display AI response with typing animation
+            await this.addChatMessage('ai', finalResponse, true);
+
+            // Save chat history to persistent storage
+            await this.saveChatHistory();
+
+        } catch (error) {
+            console.error('Chat error:', error);
+            // Hide typing indicator
+            if (typingIndicator) typingIndicator.style.display = 'none';
+
+            // Show error message
+            this.addChatMessage('ai', 'Sorry, I encountered an error. Please try again later.');
+
+            // Save even on error (to preserve user's message)
+            await this.saveChatHistory();
+        }
+    }
+
+    getToolDefinitions() {
+        return [
+            {
+                name: 'research_product',
+                description: `🔥 ENHANCED 10X SMARTER product research with AI-powered analysis. Returns:
+                - Top Recommendations (Top Rated, Best Value, Budget Pick)
+                - Hot Deals with price analysis
+                - Real-time quality scores (0-100)
+                - Review analysis & sentiment
+                - Price tracking & comparison
+                - Product specifications
+                - Direct purchase URLs to actual product pages
+
+                Use this for ANY product query (shopping, buying, comparing products). Returns intelligent recommendations with detailed analysis. Much better than basic search - includes deal detection, value scoring, and smart filtering.`,
+                input_schema: {
+                    type: 'object',
+                    properties: {
+                        query: {
+                            type: 'string',
+                            description: `Product to research (e.g., "best gaming monitor", "wireless headphones", "Pokemon card"). Returns AI-analyzed recommendations with prices, ratings, and direct product URLs.`
+                        }
+                    },
+                    required: ['query']
+                }
+            },
+            {
+                name: 'search_web',
+                description: `General web search using Google. Opens a Google search tab. DO NOT use this for product queries - use research_product instead. Only use this for general information searches (e.g., "how to install Node.js", "what is quantum computing").`,
+                input_schema: {
+                    type: 'object',
+                    properties: {
+                        query: {
+                            type: 'string',
+                            description: `The general search query (NOT for products).`
+                        }
+                    },
+                    required: ['query']
+                }
+            },
+            {
+                name: 'open_url',
+                description: 'Open a URL in a new browser tab. Use this when the user asks to open a specific website or when you want to show them a search result.',
+                input_schema: {
+                    type: 'object',
+                    properties: {
+                        url: {
+                            type: 'string',
+                            description: 'The complete URL to open (must include http:// or https://)'
+                        },
+                        description: {
+                            type: 'string',
+                            description: 'Optional description of what this URL is for'
+                        }
+                    },
+                    required: ['url']
+                }
+            },
+            {
+                name: 'get_current_tabs',
+                description: 'Get a list of all currently open browser tabs. Use this when the user asks about their open tabs or wants to organize/manage them.',
+                input_schema: {
+                    type: 'object',
+                    properties: {},
+                    required: []
+                }
+            },
+            {
+                name: 'search_tabs',
+                description: 'Search through currently open tabs by keyword. Use this when the user wants to find a specific tab.',
+                input_schema: {
+                    type: 'object',
+                    properties: {
+                        keyword: {
+                            type: 'string',
+                            description: 'The keyword to search for in tab titles and URLs'
+                        }
+                    },
+                    required: ['keyword']
+                }
+            },
+            {
+                name: 'close_tab',
+                description: 'Close a specific tab by its ID. Use this when the user asks to close a tab.',
+                input_schema: {
+                    type: 'object',
+                    properties: {
+                        tab_id: {
+                            type: 'number',
+                            description: 'The ID of the tab to close'
+                        }
+                    },
+                    required: ['tab_id']
+                }
+            },
+            {
+                name: 'get_weather',
+                description: 'Get current weather information for a location. Use this when the user asks about weather or if weather context would be helpful.',
+                input_schema: {
+                    type: 'object',
+                    properties: {
+                        location: {
+                            type: 'string',
+                            description: 'City name, zip code, or "current" to detect location automatically. Examples: "New York", "10001", "London", "current"'
+                        }
+                    },
+                    required: ['location']
+                }
+            },
+            {
+                name: 'get_active_tab',
+                description: 'Get the currently active/focused browser tab. Use this when the user says "this tab", "current tab", or wants to act on the tab they\'re viewing.',
+                input_schema: {
+                    type: 'object',
+                    properties: {},
+                    required: []
+                }
+            },
+            {
+                name: 'set_tab_timer',
+                description: 'Set an auto-close timer for a specific tab. The tab will automatically close after the specified time. Use when user wants to set a timer on any tab.',
+                input_schema: {
+                    type: 'object',
+                    properties: {
+                        tab_id: {
+                            type: 'number',
+                            description: 'The ID of the tab to set timer on'
+                        },
+                        duration: {
+                            type: 'number',
+                            description: 'Duration in minutes (e.g., 5, 10, 30, 60)'
+                        }
+                    },
+                    required: ['tab_id', 'duration']
+                }
+            },
+            {
+                name: 'bookmark_tab',
+                description: 'Bookmark/save a tab to favorites. Use when user wants to bookmark or save a tab for later.',
+                input_schema: {
+                    type: 'object',
+                    properties: {
+                        tab_id: {
+                            type: 'number',
+                            description: 'The ID of the tab to bookmark'
+                        }
+                    },
+                    required: ['tab_id']
+                }
+            },
+            {
+                name: 'remove_tab_timer',
+                description: 'Remove/cancel an existing auto-close timer from a tab. Use when user wants to cancel, remove, or clear a timer.',
+                input_schema: {
+                    type: 'object',
+                    properties: {
+                        tab_id: {
+                            type: 'number',
+                            description: 'The ID of the tab to remove timer from'
+                        }
+                    },
+                    required: ['tab_id']
+                }
+            },
+            {
+                name: 'get_tab_insights',
+                description: 'Get AI-powered insights about user\'s tabs including patterns, suggestions for organization, and productivity tips. Use when user asks about their tabs, wants organization help, or productivity insights.',
+                input_schema: {
+                    type: 'object',
+                    properties: {},
+                    required: []
+                }
+            },
+            {
+                name: 'suggest_tab_cleanup',
+                description: 'Analyze tabs and suggest which ones to close, bookmark, or organize. Use when user wants to clean up tabs or needs help organizing.',
+                input_schema: {
+                    type: 'object',
+                    properties: {},
+                    required: []
+                }
+            }
+        ];
+    }
+
+    // Security: Validate tool inputs
+    validateToolInput(toolName, input) {
+        // Validate tab_id if present
+        if (input.tab_id !== undefined) {
+            if (typeof input.tab_id !== 'number' || input.tab_id < 0 || !Number.isInteger(input.tab_id)) {
+                throw new Error('Invalid tab_id: must be a positive integer');
+            }
+        }
+
+        // Validate duration for timers
+        if (input.duration !== undefined) {
+            if (typeof input.duration !== 'number' || input.duration <= 0 || input.duration > 10080) { // Max 1 week
+                throw new Error('Invalid duration: must be between 1 and 10080 minutes');
+            }
+        }
+
+        // Validate query strings
+        if (input.query !== undefined) {
+            if (typeof input.query !== 'string' || input.query.length === 0 || input.query.length > 500) {
+                throw new Error('Invalid query: must be 1-500 characters');
+            }
+        }
+
+        // Validate URLs
+        if (input.url !== undefined) {
+            if (typeof input.url !== 'string' || input.url.length === 0 || input.url.length > 2048) {
+                throw new Error('Invalid URL: must be 1-2048 characters');
+            }
+            // Block dangerous protocols
+            const dangerousProtocols = ['javascript:', 'data:', 'file:', 'vbscript:'];
+            const lowerUrl = input.url.toLowerCase();
+            if (dangerousProtocols.some(proto => lowerUrl.startsWith(proto))) {
+                throw new Error('Invalid URL: protocol not allowed');
+            }
+        }
+
+        return true;
+    }
+
+    async executeTool(toolName, input) {
+        console.log(`Executing tool: ${toolName}`, input);
+
+        // Security: Validate inputs
+        try {
+            this.validateToolInput(toolName, input);
+        } catch (error) {
+            return {
+                success: false,
+                error: error.message
+            };
+        }
+
+        switch (toolName) {
+            case 'research_product':
+                return await this.toolResearchProduct(input.query);
+
+            case 'search_web':
+                return await this.toolSearchWeb(input.query);
+
+            case 'open_url':
+                return await this.toolOpenUrl(input.url, input.description);
+
+            case 'get_current_tabs':
+                return await this.toolGetCurrentTabs();
+
+            case 'search_tabs':
+                return await this.toolSearchTabs(input.keyword);
+
+            case 'close_tab':
+                return await this.toolCloseTab(input.tab_id);
+
+            case 'get_weather':
+                return await this.toolGetWeather(input.location);
+
+            case 'get_active_tab':
+                return await this.toolGetActiveTab();
+
+            case 'set_tab_timer':
+                return await this.toolSetTabTimer(input.tab_id, input.duration);
+
+            case 'bookmark_tab':
+                return await this.toolBookmarkTab(input.tab_id);
+
+            case 'remove_tab_timer':
+                return await this.toolRemoveTabTimer(input.tab_id);
+
+            case 'get_tab_insights':
+                return await this.toolGetTabInsights();
+
+            case 'suggest_tab_cleanup':
+                return await this.toolSuggestCleanup();
+
+            default:
+                return { error: `Unknown tool: ${toolName}` };
+        }
+    }
+
+    async toolResearchProduct(query) {
+        try {
+            const currentYear = new Date().getFullYear();
+
+            // Add current year to query for latest products
+            const searchQuery = `${query} ${currentYear}`;
+
+            console.log('🔍 ENHANCED Product Research:', searchQuery);
+
+            // Call Enhanced SerpAPI Worker with advanced features
+            const response = await fetch(CONFIG.SERPAPI.SEARCH_URL, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    query: searchQuery,
+                    maxResults: CONFIG.SERPAPI.MAX_RESULTS,
+                    includeSpecs: CONFIG.SERPAPI.INCLUDE_SPECS,
+                    trackPrices: CONFIG.SERPAPI.TRACK_PRICES,
+                    location: 'United States'
+                })
+            });
+
+            if (!response.ok) {
+                throw new Error(`Enhanced SerpAPI Worker error: ${response.status}`);
+            }
+
+            const data = await response.json();
+
+            if (!data.success) {
+                throw new Error(data.error || 'Product research failed');
+            }
+
+            console.log('✅ Enhanced Results:', {
+                products: data.products?.length || 0,
+                recommendations: data.recommendations,
+                deals: data.deals?.length || 0,
+                confidence: data.analysis?.confidence,
+                timestamp: data.timestamp
+            });
+
+            // Extract enhanced data
+            const products = data.products || [];
+            const recommendations = data.recommendations || {};
+            const deals = data.deals || [];
+            const analysis = data.analysis || {};
+            const formattedResults = data.results || '';
+
+            // Build SMART AI response with recommendations
+            let aiMessage = `🔍 **Enhanced Product Research** (${data.timestamp})\n\n`;
+            aiMessage += `Found ${products.length} products for "${query}" with ${analysis.confidence || 'medium'} confidence\n\n`;
+
+            // TOP RECOMMENDATIONS
+            if (recommendations.topRated || recommendations.bestValue || recommendations.budgetPick) {
+                aiMessage += `⭐ **SMART RECOMMENDATIONS:**\n\n`;
+
+                if (recommendations.topRated) {
+                    aiMessage += `🏆 **Top Rated:** ${recommendations.topRated.title}\n`;
+                    aiMessage += `   ${recommendations.topRated.reason}\n`;
+                    aiMessage += `   Price: ${recommendations.topRated.price}\n`;
+                    aiMessage += `   🔗 ${recommendations.topRated.link}\n\n`;
+                }
+
+                if (recommendations.bestValue) {
+                    aiMessage += `💎 **Best Value:** ${recommendations.bestValue.title}\n`;
+                    aiMessage += `   ${recommendations.bestValue.reason}\n`;
+                    aiMessage += `   Price: ${recommendations.bestValue.price}\n`;
+                    aiMessage += `   🔗 ${recommendations.bestValue.link}\n\n`;
+                }
+
+                if (recommendations.budgetPick) {
+                    aiMessage += `💰 **Budget Pick:** ${recommendations.budgetPick.title}\n`;
+                    aiMessage += `   ${recommendations.budgetPick.reason}\n`;
+                    aiMessage += `   Price: ${recommendations.budgetPick.price}\n`;
+                    aiMessage += `   🔗 ${recommendations.budgetPick.link}\n\n`;
+                }
+            }
+
+            // HOT DEALS
+            if (deals.length > 0) {
+                aiMessage += `🔥 **HOT DEALS DETECTED:**\n`;
+                deals.forEach((deal, i) => {
+                    aiMessage += `${i + 1}. ${deal.title}\n`;
+                    aiMessage += `   ${deal.dealType} | ${deal.rating}★ (${deal.reviews.toLocaleString()} reviews)\n`;
+                    aiMessage += `   ${deal.price} | 🔗 ${deal.link}\n\n`;
+                });
+            }
+
+            // PRODUCT INSIGHTS
+            if (analysis.averageRating || analysis.averagePrice) {
+                aiMessage += `📊 **INSIGHTS:**\n`;
+                aiMessage += `• Avg Rating: ${analysis.averageRating}★\n`;
+                aiMessage += `• Avg Price: ${analysis.averagePrice}\n`;
+                if (analysis.priceDistribution) {
+                    aiMessage += `• Price Range: $${analysis.priceDistribution.min?.toFixed(2)} - $${analysis.priceDistribution.max?.toFixed(2)}\n`;
+                }
+                aiMessage += `• Top-rated (4.5★+): ${analysis.topRatedCount || 0} products\n\n`;
+            }
+
+            // ACTION GUIDANCE
+            aiMessage += `💡 **ACTION:** Use open_url to open 1-2 of the recommended product links above.`;
+
+            return {
+                success: true,
+
+                // Enhanced data
+                products: products,
+                recommendations: recommendations,
+                deals: deals,
+                analysis: analysis,
+                metadata: data.metadata,
+
+                // Formatted text
+                results: formattedResults,
+                message: aiMessage,
+
+                // Context
+                query: query,
+                year: currentYear,
+                timestamp: data.timestamp
+            };
+
+        } catch (error) {
+            console.error('❌ Enhanced product research error:', error);
+
+            // Fallback: Return helpful error message
+            return {
+                success: false,
+                error: error.message,
+                fallback_message: `Enhanced product search is temporarily unavailable (${error.message}). Please try again or use general web search as a fallback.`
+            };
+        }
+    }
+
+    async toolSearchWeb(query) {
+        try {
+            // Simple Google search - no fancy multi-tab stuff
+            const searchUrl = `https://www.google.com/search?q=${encodeURIComponent(query)}`;
+            chrome.tabs.create({ url: searchUrl, active: true });
+
+            return {
+                success: true,
+                message: `🔍 Searching for: ${query}`,
+                search_url: searchUrl,
+                query: query
+            };
+        } catch (error) {
+            console.error('Search error:', error);
+            return { success: false, error: error.message };
+        }
+    }
+
+    async toolOpenUrl(url, description) {
+        try {
+            // Validate URL
+            if (!url.startsWith('http://') && !url.startsWith('https://')) {
+                url = 'https://' + url;
+            }
+
+            await chrome.tabs.create({ url: url, active: false });
+
+            return {
+                success: true,
+                message: `Opened ${description || url} in a new tab`,
+                url: url
+            };
+        } catch (error) {
+            return { success: false, error: error.message };
+        }
+    }
+
+    async toolGetCurrentTabs() {
+        try {
+            const tabs = await chrome.tabs.query({});
+            const validTabs = tabs.filter(tab => this.isValidTab(tab));
+
+            const tabList = validTabs.map(tab => ({
+                id: tab.id,
+                title: tab.title || 'Untitled',
+                url: tab.url,
+                active: tab.active
+            }));
+
+            return {
+                success: true,
+                tabs: tabList,
+                count: tabList.length
+            };
+        } catch (error) {
+            return { success: false, error: error.message };
+        }
+    }
+
+    async toolSearchTabs(keyword) {
+        try {
+            const tabs = await chrome.tabs.query({});
+            const validTabs = tabs.filter(tab => this.isValidTab(tab));
+
+            const searchLower = keyword.toLowerCase();
+            const matches = validTabs.filter(tab => {
+                const title = (tab.title || '').toLowerCase();
+                const url = (tab.url || '').toLowerCase();
+                return title.includes(searchLower) || url.includes(searchLower);
+            });
+
+            const matchList = matches.map(tab => ({
+                id: tab.id,
+                title: tab.title || 'Untitled',
+                url: tab.url
+            }));
+
+            return {
+                success: true,
+                matches: matchList,
+                count: matchList.length,
+                keyword: keyword
+            };
+        } catch (error) {
+            return { success: false, error: error.message };
+        }
+    }
+
+    async toolCloseTab(tabId) {
+        try {
+            await chrome.tabs.remove(parseInt(tabId));
+
+            return {
+                success: true,
+                message: `Closed tab ${tabId}`
+            };
+        } catch (error) {
+            return { success: false, error: error.message };
+        }
+    }
+
+    async toolGetWeather(location) {
+        try {
+            // Use wttr.in API - free, no API key needed
+            let weatherUrl;
+
+            if (location.toLowerCase() === 'current') {
+                // Auto-detect location
+                weatherUrl = 'https://wttr.in/?format=j1';
+            } else {
+                // Specific location
+                weatherUrl = `https://wttr.in/${encodeURIComponent(location)}?format=j1`;
+            }
+
+            const response = await fetch(weatherUrl);
+
+            if (!response.ok) {
+                return {
+                    success: false,
+                    error: 'Unable to fetch weather data'
+                };
+            }
+
+            const data = await response.json();
+            const current = data.current_condition[0];
+            const locationInfo = data.nearest_area[0];
+
+            return {
+                success: true,
+                location: `${locationInfo.areaName[0].value}, ${locationInfo.country[0].value}`,
+                temperature_f: current.temp_F,
+                temperature_c: current.temp_C,
+                condition: current.weatherDesc[0].value,
+                feels_like_f: current.FeelsLikeF,
+                feels_like_c: current.FeelsLikeC,
+                humidity: current.humidity,
+                wind_speed_mph: current.windspeedMiles,
+                wind_speed_kmph: current.windspeedKmph,
+                precipitation_mm: current.precipMM,
+                uv_index: current.uvIndex
+            };
+        } catch (error) {
+            return {
+                success: false,
+                error: error.message || 'Failed to get weather information'
+            };
+        }
+    }
+
+    async toolGetActiveTab() {
+        try {
+            const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
+
+            if (tabs.length === 0) {
+                return {
+                    success: false,
+                    error: 'No active tab found'
+                };
+            }
+
+            const tab = tabs[0];
+
+            return {
+                success: true,
+                tab: {
+                    id: tab.id,
+                    title: tab.title || 'Untitled',
+                    url: tab.url,
+                    favIconUrl: tab.favIconUrl
+                }
+            };
+        } catch (error) {
+            return {
+                success: false,
+                error: error.message
+            };
+        }
+    }
+
+    async toolSetTabTimer(tabId, duration) {
+        try {
+            // First, make sure we have the tab in our tabs array
+            let tab = this.tabs.find(t => t.id === tabId);
+
+            // If tab not found in our list, query it from Chrome and add it
+            if (!tab) {
+                const chromeTabs = await chrome.tabs.query({});
+                const chromeTab = chromeTabs.find(t => t.id === tabId);
+
+                if (!chromeTab) {
+                    return {
+                        success: false,
+                        error: 'Tab not found'
+                    };
+                }
+
+                // Add tab to our tabs array
+                tab = {
+                    id: chromeTab.id,
+                    title: chromeTab.title || 'Untitled',
+                    url: chromeTab.url,
+                    favIconUrl: chromeTab.favIconUrl,
+                    active: chromeTab.active
+                };
+                this.tabs.push(tab);
+            }
+
+            // Call the existing setTimer method
+            await this.setTimer(tabId, duration);
+
+            // Force a render to update the UI
+            await this.render();
+
+            return {
+                success: true,
+                message: `Timer set for ${duration} minute${duration !== 1 ? 's' : ''} on "${tab.title}"`,
+                tab_id: tabId,
+                duration_minutes: duration
+            };
+        } catch (error) {
+            console.error('Set timer error:', error);
+            return {
+                success: false,
+                error: error.message || 'Failed to set timer'
+            };
+        }
+    }
+
+    async toolBookmarkTab(tabId) {
+        try {
+            // Call the existing addToFavorites method
+            await this.addToFavorites(tabId);
+
+            const tab = this.tabs.find(t => t.id === tabId);
+            const tabTitle = tab ? tab.title : 'Tab';
+
+            return {
+                success: true,
+                message: `Bookmarked "${tabTitle}"`,
+                tab_id: tabId
+            };
+        } catch (error) {
+            return {
+                success: false,
+                error: error.message || 'Failed to bookmark tab'
+            };
+        }
+    }
+
+    async toolRemoveTabTimer(tabId) {
+        try {
+            const tab = this.tabs.find(t => t.id === tabId);
+            if (!tab) {
+                return {
+                    success: false,
+                    error: 'Tab not found'
+                };
+            }
+
+            const tabTitle = tab.title || 'Tab';
+
+            // Check if timer exists
+            if (!this.tabTimers[tabId] || !this.tabTimers[tabId].active) {
+                return {
+                    success: false,
+                    error: `No active timer found on "${tabTitle}"`
+                };
+            }
+
+            // Clear tab properties
+            tab.timerActive = false;
+            tab.autoCloseTime = null;
+            tab.timerDuration = null;
+            tab.timerStartTime = null;
+
+            // Delete from this.tabTimers
+            delete this.tabTimers[tabId];
+
+            // Clear the countdown interval
+            this.clearTimerInterval(tabId);
+
+            // Save to storage
+            await this.saveTimers();
+
+            // Send message to background script
+            try {
+                await chrome.runtime.sendMessage({
+                    action: 'clearTimer',
+                    tabId: tabId
+                });
+            } catch (error) {
+                // Background script might not be available
+            }
+
+            // Force UI update
+            await this.render();
+
+            return {
+                success: true,
+                message: `Timer removed from "${tabTitle}"`,
+                tab_id: tabId
+            };
+        } catch (error) {
+            console.error('Remove timer error:', error);
+            return {
+                success: false,
+                error: error.message || 'Failed to remove timer'
+            };
+        }
+    }
+
+    async toolGetTabInsights() {
+        try {
+            const tabs = await chrome.tabs.query({});
+            const validTabs = tabs.filter(tab => this.isValidTab(tab));
+
+            // Analyze tab patterns
+            const domains = {};
+            const categories = {
+                social: 0,
+                work: 0,
+                entertainment: 0,
+                shopping: 0,
+                news: 0,
+                development: 0,
+                other: 0
+            };
+
+            validTabs.forEach(tab => {
+                const domain = this.extractDomain(tab.url);
+                domains[domain] = (domains[domain] || 0) + 1;
+
+                // Categorize tab
+                const url = tab.url.toLowerCase();
+                if (url.includes('facebook') || url.includes('twitter') || url.includes('linkedin') || url.includes('instagram')) {
+                    categories.social++;
+                } else if (url.includes('docs.google') || url.includes('office') || url.includes('notion') || url.includes('slack')) {
+                    categories.work++;
+                } else if (url.includes('youtube') || url.includes('netflix') || url.includes('spotify')) {
+                    categories.entertainment++;
+                } else if (url.includes('amazon') || url.includes('ebay') || url.includes('shop')) {
+                    categories.shopping++;
+                } else if (url.includes('news') || url.includes('bbc') || url.includes('cnn')) {
+                    categories.news++;
+                } else if (url.includes('github') || url.includes('stackoverflow') || url.includes('dev')) {
+                    categories.development++;
+                } else {
+                    categories.other++;
+                }
+            });
+
+            // Find duplicates
+            const duplicateDomains = Object.entries(domains)
+                .filter(([domain, count]) => count > 1)
+                .sort((a, b) => b[1] - a[1])
+                .slice(0, 5);
+
+            // Count timers and bookmarks
+            const activeTimers = Object.keys(this.tabTimers || {}).length;
+            const bookmarkedCount = this.favorites ? this.favorites.length : 0;
+
+            // Generate insights
+            const insights = {
+                total_tabs: validTabs.length,
+                categories: categories,
+                duplicate_domains: duplicateDomains,
+                active_timers: activeTimers,
+                bookmarked_tabs: bookmarkedCount,
+                is_over_limit: !this.isPremium && validTabs.length > this.tabLimit,
+                suggestions: []
+            };
+
+            // Add suggestions based on analysis
+            if (duplicateDomains.length > 0) {
+                insights.suggestions.push(`You have multiple tabs from ${duplicateDomains[0][0]} (${duplicateDomains[0][1]} tabs). Consider consolidating them.`);
+            }
+
+            if (categories.social > 5) {
+                insights.suggestions.push(`You have ${categories.social} social media tabs open. Consider closing some to improve focus.`);
+            }
+
+            if (validTabs.length > 20 && activeTimers === 0) {
+                insights.suggestions.push('You have many tabs open but no timers set. Consider setting auto-close timers on tabs you don\'t need.');
+            }
+
+            if (bookmarkedCount === 0 && validTabs.length > 10) {
+                insights.suggestions.push('You haven\'t bookmarked any tabs yet. Bookmark important tabs to access them later.');
+            }
+
+            return {
+                success: true,
+                insights: insights
+            };
+        } catch (error) {
+            console.error('Get insights error:', error);
+            return {
+                success: false,
+                error: error.message || 'Failed to get insights'
+            };
+        }
+    }
+
+    async toolSuggestCleanup() {
+        try {
+            const tabs = await chrome.tabs.query({});
+            const validTabs = tabs.filter(tab => this.isValidTab(tab));
+
+            const suggestions = {
+                to_close: [],
+                to_bookmark: [],
+                to_set_timer: [],
+                to_group: []
+            };
+
+            // Track domain frequency
+            const domainGroups = {};
+
+            validTabs.forEach(tab => {
+                const domain = this.extractDomain(tab.url);
+                const url = tab.url.toLowerCase();
+
+                // Track for grouping
+                if (!domainGroups[domain]) {
+                    domainGroups[domain] = [];
+                }
+                domainGroups[domain].push({
+                    id: tab.id,
+                    title: tab.title || 'Untitled',
+                    url: tab.url
+                });
+
+                // Suggest closing empty tabs
+                if (this.isEmptyTabForDisplay(tab)) {
+                    suggestions.to_close.push({
+                        tab_id: tab.id,
+                        title: tab.title || 'New Tab',
+                        reason: 'Empty tab'
+                    });
+                }
+
+                // Suggest bookmarking work/important tabs
+                if (url.includes('docs.google') || url.includes('notion') || url.includes('github')) {
+                    const isBookmarked = this.favorites && this.favorites.some(fav => fav.url === tab.url);
+                    if (!isBookmarked) {
+                        suggestions.to_bookmark.push({
+                            tab_id: tab.id,
+                            title: tab.title || 'Untitled',
+                            reason: 'Important work tab'
+                        });
+                    }
+                }
+
+                // Suggest timers for social media
+                if (url.includes('facebook') || url.includes('twitter') || url.includes('youtube') || url.includes('instagram')) {
+                    const hasTimer = this.tabTimers && this.tabTimers[tab.id] && this.tabTimers[tab.id].active;
+                    if (!hasTimer) {
+                        suggestions.to_set_timer.push({
+                            tab_id: tab.id,
+                            title: tab.title || 'Untitled',
+                            reason: 'Social media - can be distracting',
+                            suggested_duration: 30
+                        });
+                    }
+                }
+            });
+
+            // Suggest grouping for duplicate domains
+            Object.entries(domainGroups).forEach(([domain, tabs]) => {
+                if (tabs.length > 2) {
+                    suggestions.to_group.push({
+                        domain: domain,
+                        count: tabs.length,
+                        tabs: tabs,
+                        reason: `Multiple tabs from ${domain}`
+                    });
+                }
+            });
+
+            return {
+                success: true,
+                suggestions: suggestions,
+                summary: `Found ${suggestions.to_close.length} tabs to close, ${suggestions.to_bookmark.length} to bookmark, ${suggestions.to_set_timer.length} needing timers, and ${suggestions.to_group.length} groups to organize.`
+            };
+        } catch (error) {
+            console.error('Suggest cleanup error:', error);
+            return {
+                success: false,
+                error: error.message || 'Failed to suggest cleanup'
+            };
+        }
+    }
+
+    parseMarkdown(text) {
+        // Simple markdown parser for chat messages
+        let html = this.escapeHtml(text);
+
+        // Code blocks (```code```)
+        html = html.replace(/```([\s\S]*?)```/g, '<pre><code>$1</code></pre>');
+
+        // Inline code (`code`)
+        html = html.replace(/`([^`]+)`/g, '<code>$1</code>');
+
+        // Bold (**text** or __text__)
+        html = html.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+        html = html.replace(/__(.+?)__/g, '<strong>$1</strong>');
+
+        // Italic (*text* or _text_)
+        html = html.replace(/\*(.+?)\*/g, '<em>$1</em>');
+        html = html.replace(/_(.+?)_/g, '<em>$1</em>');
+
+        // Convert URLs to link pills
+        html = this.convertUrlsToPills(html);
+
+        // Bullet lists (- item or * item)
+        html = html.replace(/^[\-\*]\s+(.+)$/gm, '<li>$1</li>');
+        html = html.replace(/(<li>.*<\/li>)/s, '<ul>$1</ul>');
+
+        // Numbered lists (1. item)
+        html = html.replace(/^\d+\.\s+(.+)$/gm, '<li>$1</li>');
+
+        // Line breaks
+        html = html.replace(/\n/g, '<br>');
+
+        return html;
+    }
+
+    convertUrlsToPills(html) {
+        // Match markdown links [text](url) and standalone URLs
+        const urlRegex = /\[([^\]]+)\]\(([^)]+)\)|https?:\/\/[^\s<]+/g;
+
+        return html.replace(urlRegex, (match, linkText, linkUrl) => {
+            let url, displayText;
+
+            if (linkUrl) {
+                // Markdown link [text](url)
+                url = linkUrl;
+                displayText = linkText;
+            } else {
+                // Standalone URL
+                url = match;
+                displayText = this.getUrlDisplayName(url);
+            }
+
+            const domain = this.extractDomain(url);
+            const favicon = `https://www.google.com/s2/favicons?domain=${domain}&sz=32`;
+
+            return `<button class="link-pill" data-url="${url}" data-domain="${domain}">
+                <img src="${favicon}" alt="${domain}" class="link-pill-favicon" onerror="this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22%23666%22><path d=%22M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z%22/></svg>'">
+                <span class="link-pill-text">${displayText}</span>
+            </button>`;
+        });
+    }
+
+    extractDomain(url) {
+        try {
+            const urlObj = new URL(url);
+            return urlObj.hostname.replace('www.', '');
+        } catch {
+            return url;
+        }
+    }
+
+    getUrlDisplayName(url) {
+        try {
+            const urlObj = new URL(url);
+            let domain = urlObj.hostname.replace('www.', '');
+
+            // Capitalize first letter of domain name
+            const name = domain.split('.')[0];
+            return name.charAt(0).toUpperCase() + name.slice(1);
+        } catch {
+            return url;
+        }
+    }
+
+    async addChatMessage(type, text, animate = false) {
+        const chatMessages = document.getElementById('chat-messages');
+        if (!chatMessages) return;
+
+        const messageDiv = document.createElement('div');
+        messageDiv.className = `chat-message ${type}`;
+
+        const now = new Date();
+        const timeString = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+
+        if (type === 'user') {
+            // Get user's profile image from header
+            const profileImage = document.getElementById('profile-image');
+            const userAvatarSrc = profileImage ? profileImage.src : 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%23cbd5e1"%3E%3Cpath d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08-1.29 1.94-3.5 3.22-6 3.22z"/%3E%3C/svg%3E';
+
+            messageDiv.innerHTML = `
+                <div class="message-content">
+                    <div class="message-bubble">${this.escapeHtml(text)}</div>
+                    <div class="message-time">${timeString}</div>
+                </div>
+                <div class="message-avatar user-avatar">
+                    <img src="${userAvatarSrc}" alt="You" class="avatar-image">
+                </div>
+            `;
+        } else {
+            // Use extension icon for AI
+            const extensionIcon = chrome.runtime.getURL('icons/icon-128.png');
+
+            const messageBubble = document.createElement('div');
+            messageBubble.className = 'message-bubble';
+
+            messageDiv.innerHTML = `
+                <div class="message-avatar ai-avatar">
+                    <img src="${extensionIcon}" alt="AI" class="avatar-image">
+                </div>
+                <div class="message-content">
+                    <div class="message-bubble"></div>
+                    <div class="message-time">${timeString}</div>
+                </div>
+            `;
+
+            chatMessages.appendChild(messageDiv);
+            const bubble = messageDiv.querySelector('.message-bubble');
+
+            // Typing animation for AI messages
+            if (animate) {
+                const parsedText = this.parseMarkdown(text);
+                await this.typeText(bubble, parsedText);
+            } else {
+                bubble.innerHTML = this.parseMarkdown(text);
+            }
+
+            // Scroll to bottom
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+            return;
+        }
+
+        chatMessages.appendChild(messageDiv);
+
+        // Scroll to bottom
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+    }
+
+    async typeText(element, html) {
+        // Create a temporary div to parse the HTML
+        const tempDiv = document.createElement('div');
+        tempDiv.innerHTML = html;
+
+        // Get plain text for typing simulation
+        const text = tempDiv.textContent || tempDiv.innerText;
+
+        let index = 0;
+        const speed = 15; // milliseconds per character
+
+        element.innerHTML = '';
+
+        return new Promise((resolve) => {
+            const typeChar = () => {
+                if (index < text.length) {
+                    // For typing effect, show plain text first
+                    element.textContent += text[index];
+                    index++;
+
+                    // Scroll to bottom
+                    const chatMessages = document.getElementById('chat-messages');
+                    if (chatMessages) chatMessages.scrollTop = chatMessages.scrollHeight;
+
+                    setTimeout(typeChar, speed);
+                } else {
+                    // Once done typing, replace with formatted HTML
+                    element.innerHTML = html;
+
+                    // Scroll to bottom one final time
+                    const chatMessages = document.getElementById('chat-messages');
+                    if (chatMessages) chatMessages.scrollTop = chatMessages.scrollHeight;
+
+                    resolve();
+                }
+            };
+
+            typeChar();
+        });
+    }
+
+    // PERSISTENT CHAT STORAGE - Load chat history from storage
+    async loadChatHistory() {
+        try {
+            console.log('💾 Loading chat history from storage...');
+            const result = await chrome.storage.local.get(['chatHistory', 'chatMessages']);
+
+            // Restore conversation history for AI (this MUST be restored for AI memory)
+            if (result.chatHistory && Array.isArray(result.chatHistory)) {
+                this.chatHistory = result.chatHistory;
+                console.log('✅ Loaded AI chat history:', this.chatHistory.length, 'messages');
+            } else {
+                this.chatHistory = [];
+                console.log('ℹ️ No existing chat history found');
+            }
+
+            // Restore visual chat messages in UI
+            if (result.chatMessages && Array.isArray(result.chatMessages) && result.chatMessages.length > 0) {
+                console.log('📝 Restoring', result.chatMessages.length, 'chat messages in UI...');
+
+                // Wait a bit to ensure DOM is fully ready
+                await new Promise(resolve => setTimeout(resolve, 100));
+
+                const chatMessagesContainer = document.getElementById('chat-messages');
+                const emptyState = document.getElementById('chat-empty-state');
+
+                if (!chatMessagesContainer) {
+                    console.warn('⚠️ Chat messages container not found - will restore when available');
+                    // Store for later restoration
+                    this._pendingMessages = result.chatMessages;
+                    return;
+                }
+
+                // Hide empty state
+                if (emptyState) emptyState.style.display = 'none';
+
+                // Restore each message WITHOUT animation (instant restore)
+                let restoredCount = 0;
+                let skippedCount = 0;
+                for (const msg of result.chatMessages) {
+                    // Validate message object
+                    if (msg && typeof msg === 'object' && msg.text && msg.text.trim() && msg.type) {
+                        console.log(`  ✅ Restoring ${msg.type} message: "${msg.text.substring(0, 50)}..."`);
+                        await this.addChatMessage(msg.type, msg.text, false);
+                        restoredCount++;
+                    } else {
+                        // Show detailed info about what's wrong
+                        const debugInfo = {
+                            hasObject: !!msg,
+                            type: msg?.type || 'missing',
+                            textLength: msg?.text?.length || 0,
+                            textPreview: msg?.text?.substring(0, 20) || 'empty',
+                            fullObject: msg
+                        };
+                        console.warn('  ⚠️ Skipping invalid message:', JSON.stringify(debugInfo, null, 2));
+                        skippedCount++;
+                    }
+                }
+
+                console.log(`✅ Restored ${restoredCount} messages, skipped ${skippedCount} invalid messages`);
+
+                // AUTO-CLEANUP: If we skipped any corrupted messages, clean storage
+                if (skippedCount > 0) {
+                    console.log('🔧 Auto-cleaning corrupted data from storage...');
+
+                    // Filter to only valid messages
+                    const cleanMessages = result.chatMessages.filter(msg =>
+                        msg && typeof msg === 'object' && msg.text && msg.text.trim() && msg.type
+                    );
+
+                    // Save cleaned data back to storage
+                    await chrome.storage.local.set({ chatMessages: cleanMessages });
+                    console.log(`✅ Auto-cleaned storage: ${cleanMessages.length} valid messages retained, ${skippedCount} corrupted messages removed`);
+                }
+
+                // Scroll to bottom after restoring all messages
+                chatMessagesContainer.scrollTop = chatMessagesContainer.scrollHeight;
+            } else {
+                console.log('ℹ️ No chat messages to restore');
+            }
+        } catch (error) {
+            console.error('❌ Error loading chat history:', error);
+            this.chatHistory = [];
+        }
+    }
+
+    // PERSISTENT CHAT STORAGE - Save chat history to storage
+    async saveChatHistory() {
+        try {
+            // Save AI conversation history
+            await chrome.storage.local.set({
+                chatHistory: this.chatHistory || []
+            });
+
+            // Save visual messages for UI restoration
+            const chatMessagesContainer = document.getElementById('chat-messages');
+            if (chatMessagesContainer) {
+                const messages = chatMessagesContainer.querySelectorAll('.chat-message');
+                console.log('📝 Found', messages.length, 'chat messages to save');
+
+                const chatMessages = Array.from(messages).map((msg, index) => {
+                    // Determine message type
+                    const isUser = msg.classList.contains('user-message') || msg.classList.contains('user');
+                    const type = isUser ? 'user' : 'ai';
+
+                    // Get text from message bubble (correct selector!)
+                    const bubble = msg.querySelector('.message-bubble');
+                    const text = bubble ? (bubble.textContent || bubble.innerText || '').trim() : '';
+
+                    console.log(`  [${index}] Type: ${type}, Text length: ${text.length}, Preview: "${text.substring(0, 50)}..."`);
+
+                    return { type, text };
+                }).filter(msg => msg.text.length > 0); // Only save messages with actual text
+
+                await chrome.storage.local.set({ chatMessages });
+                console.log('💾 Saved', chatMessages.length, 'messages to storage');
+            }
+        } catch (error) {
+            console.error('❌ Error saving chat history:', error);
+        }
+    }
+
+    clearChat() {
+        const chatMessages = document.getElementById('chat-messages');
+        const emptyState = document.getElementById('chat-empty-state');
+
+        if (!chatMessages) return;
+
+        // Remove all message elements
+        const messages = chatMessages.querySelectorAll('.chat-message');
+        messages.forEach(msg => msg.remove());
+
+        // Clear conversation history
+        this.chatHistory = [];
+
+        // Clear from persistent storage
+        chrome.storage.local.remove(['chatHistory', 'chatMessages'], () => {
+            console.log('🗑️ Chat history cleared from storage');
+        });
+
+        // Show empty state
+        if (emptyState) emptyState.style.display = 'flex';
+    }
+
+    async enhancePrompt(chatInput) {
+        const enhanceBtn = document.getElementById('chat-enhance-btn');
+        const originalText = chatInput.value.trim();
+
+        if (!originalText) return;
+
+        try {
+            // Disable buttons and add enhancing state
+            chatInput.disabled = true;
+            if (enhanceBtn) {
+                enhanceBtn.disabled = true;
+                enhanceBtn.classList.add('enhancing');
+            }
+
+            // Call Claude API to enhance the prompt
+            const response = await fetch(CONFIG.CLAUDE.CHAT_URL, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    messages: [{
+                        role: 'user',
+                        content: `Enhance and improve this prompt to be more clear, detailed, and effective. Keep the core intent but make it better. Only return the enhanced prompt, nothing else:\n\n"${originalText}"`
+                    }],
+                    model: CONFIG.CLAUDE.MODEL,
+                    max_tokens: 500,
+                    system: 'You are a prompt enhancement AI. Take user prompts and make them clearer, more detailed, and more effective while keeping their original intent. Return ONLY the enhanced prompt with no explanation or preamble.',
+                    userEmail: this.userEmail || 'anonymous'
+                })
+            });
+
+            if (!response.ok) {
+                throw new Error(`API error: ${response.status}`);
+            }
+
+            const data = await response.json();
+            const enhancedPrompt = data.content?.find(block => block.type === 'text')?.text ||
+                                  data.message ||
+                                  originalText;
+
+            // Update the input with enhanced prompt
+            chatInput.value = enhancedPrompt.trim();
+
+            // Trigger input event to enable buttons
+            chatInput.dispatchEvent(new Event('input'));
+
+        } catch (error) {
+            console.error('Prompt enhancement error:', error);
+            // Keep original text on error
+        } finally {
+            // Re-enable input
+            chatInput.disabled = false;
+            chatInput.focus();
+
+            // Remove enhancing state
+            if (enhanceBtn) {
+                enhanceBtn.classList.remove('enhancing');
+            }
+        }
+    }
+
+    showLinkPreview(url, domain) {
+        const modal = document.getElementById('link-preview-modal');
+        const favicon = document.getElementById('link-preview-favicon');
+        const title = document.getElementById('link-preview-title');
+        const urlDisplay = document.getElementById('link-preview-url');
+        const openBtn = document.getElementById('link-preview-open');
+
+        if (!modal) return;
+
+        // Set favicon
+        if (favicon) {
+            favicon.src = `https://www.google.com/s2/favicons?domain=${domain}&sz=32`;
+            favicon.alt = domain;
+        }
+
+        // Set title (capitalize first letter of domain)
+        if (title) {
+            const name = domain.split('.')[0];
+            title.textContent = name.charAt(0).toUpperCase() + name.slice(1);
+        }
+
+        // Set URL
+        if (urlDisplay) {
+            urlDisplay.textContent = url;
+        }
+
+        // Store URL in open button
+        if (openBtn) {
+            openBtn.dataset.url = url;
+        }
+
+        // Show modal
+        modal.style.display = 'flex';
+        setTimeout(() => modal.classList.add('active'), 10);
+    }
+
+    closeLinkPreview() {
+        const modal = document.getElementById('link-preview-modal');
+        if (!modal) return;
+
+        modal.classList.remove('active');
+        setTimeout(() => {
+            modal.style.display = 'none';
+        }, 200);
+    }
+
+    async updateChatUsageDisplay() {
+        const usageBadge = document.getElementById('chat-usage-badge');
+        const usageCount = usageBadge?.querySelector('.usage-count');
+        if (!usageBadge || !usageCount) return;
+
+        const { count, canSearch, isAdmin } = await this.checkSearchUsage();
+
+        if (isAdmin) {
+            usageCount.innerHTML = '👑 Unlimited messages';
+            usageBadge.style.background = 'rgba(251, 191, 36, 0.1)';
+            usageBadge.style.borderColor = 'rgba(251, 191, 36, 0.3)';
+            usageBadge.style.color = '#FCD34D';
+        } else if (this.isPremium) {
+            usageCount.innerHTML = '✨ Unlimited messages';
+            usageBadge.style.background = 'rgba(59, 130, 246, 0.1)';
+            usageBadge.style.borderColor = 'rgba(59, 130, 246, 0.2)';
+            usageBadge.style.color = '#60A5FA';
+        } else {
+            const remaining = 5 - count;
+            if (remaining > 0) {
+                usageCount.innerHTML = `${remaining} ${remaining === 1 ? 'message' : 'messages'} remaining`;
+                if (remaining <= 2) {
+                    usageBadge.style.background = 'rgba(251, 146, 60, 0.1)';
+                    usageBadge.style.borderColor = 'rgba(251, 146, 60, 0.2)';
+                    usageBadge.style.color = '#FB923C';
+                } else {
+                    usageBadge.style.background = 'rgba(59, 130, 246, 0.1)';
+                    usageBadge.style.borderColor = 'rgba(59, 130, 246, 0.2)';
+                    usageBadge.style.color = '#60A5FA';
+                }
+            } else {
+                usageCount.innerHTML = '🔒 Limit reached - Upgrade to Pro';
+                usageBadge.style.background = 'rgba(239, 68, 68, 0.1)';
+                usageBadge.style.borderColor = 'rgba(239, 68, 68, 0.2)';
+                usageBadge.style.color = '#EF4444';
+            }
+        }
     }
 
     setupControlButtons() {
@@ -1298,17 +3055,31 @@ class TabmangmentPopup {
                     return;
                 }
 
-                const searchSection = document.getElementById('search-section');
-                const isSearchActive = searchSection && searchSection.style.display !== 'none';
-
-                if (isSearchActive && this.showTabsView) {
-                    this.showTabsView();
-                }
-
+                // Toggle behavior
                 if (this.currentView === 'bookmarks') {
+                    // Currently in bookmarks, switch back to tabs
                     this.currentView = 'tabs';
-                    this.render();
+                    const tabsContainer = document.getElementById('tabs-container');
+                    const chatSection = document.getElementById('ai-chat-section');
+
+                    // Ensure chat is closed
+                    if (chatSection && chatSection.classList.contains('active')) {
+                        chatSection.classList.remove('active');
+                        setTimeout(() => {
+                            chatSection.style.display = 'none';
+                        }, 300);
+                    }
+
+                    // Fade out and re-render tabs
+                    if (tabsContainer) {
+                        tabsContainer.classList.remove('active');
+                        setTimeout(() => {
+                            this.render();
+                            setTimeout(() => tabsContainer.classList.add('active'), 10);
+                        }, 300);
+                    }
                 } else {
+                    // Switch to bookmarks view
                     this.showBookmarkMenu();
                 }
             });
@@ -1482,27 +3253,50 @@ class TabmangmentPopup {
         const submitText = submitBtn.querySelector('.contact-submit-text');
 
         const formData = {
-            user_name: document.getElementById('contact-name').value.trim(),
-            user_email: document.getElementById('contact-email').value.trim(),
+            name: document.getElementById('contact-name').value.trim(),
+            email: document.getElementById('contact-email').value.trim(),
             subject: document.getElementById('contact-subject').value.trim(),
-            message: document.getElementById('contact-message').value.trim(),
-            timestamp: new Date().toLocaleString(),
-            extension_version: chrome.runtime.getManifest().version
+            message: document.getElementById('contact-message').value.trim()
         };
+
         try {
-            if (!this.emailJSReady) {
-                throw new Error('EmailJS not initialized. Please wait a moment and try again.');
-            }
-            if (!formData.user_name || !formData.user_email || !formData.subject || !formData.message) {
+            if (!formData.name || !formData.email || !formData.subject || !formData.message) {
                 throw new Error('Please fill in all required fields.');
             }
+
             submitBtn.disabled = true;
             submitText.innerHTML = '<div class="contact-loading"><div class="contact-spinner"></div><span>Sending...</span></div>';
-            const response = await this.sendEmailViaAPI(formData);
+
+            // Save to Supabase database using direct HTTP request
+            const response = await fetch(`${CONFIG.SUPABASE.URL}/rest/v1/contact_messages`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'apikey': CONFIG.SUPABASE.ANON_KEY,
+                    'Authorization': `Bearer ${CONFIG.SUPABASE.ANON_KEY}`,
+                    'Prefer': 'return=minimal'
+                },
+                body: JSON.stringify({
+                    name: formData.name,
+                    email: formData.email,
+                    subject: formData.subject,
+                    message: formData.message,
+                    user_agent: navigator.userAgent,
+                    created_at: new Date().toISOString()
+                })
+            });
+
+            if (!response.ok) {
+                const errorText = await response.text();
+                console.error('Supabase error:', response.status, errorText);
+                throw new Error('Failed to send message. Please try again or email selfshios@gmail.com directly.');
+            }
+
             this.showMessage('Message sent successfully! I will get back to you soon.', 'success');
             this.hideContactModal();
         } catch (error) {
-            this.openEmailFallback(formData);
+            console.error('Contact form error:', error);
+            this.showError(error.message || 'Failed to send message. Please try again.');
         } finally {
             submitBtn.disabled = false;
             submitText.textContent = 'Send Message';
@@ -2828,7 +4622,7 @@ class TabmangmentPopup {
                 </p>
                 <div style="display: flex; gap: 8px;">
                     <button id="tab-limit-close-some" style="background: rgba(255, 255, 255, 0.9); color: #92400e; border: 1px solid rgba(146, 64, 14, 0.3); padding: 8px 12px; border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: 500; margin-right: 8px; transition: all 0.2s ease;">Close Extra Tabs</button>
-                    <button id="tab-limit-upgrade-btn" style="background: linear-gradient(135deg, #d97706, #ea580c); color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: 600; box-shadow: 0 2px 8px rgba(217, 119, 6, 0.3); transition: all 0.2s ease;">Upgrade to Pro - $4.99/month</button>
+                    <button id="tab-limit-upgrade-btn" style="background: linear-gradient(135deg, #d97706, #ea580c); color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: 600; box-shadow: 0 2px 8px rgba(217, 119, 6, 0.3); transition: all 0.2s ease;">Upgrade to Pro - $1.87/month</button>
                 </div>
             </div>
         `;
@@ -3346,17 +5140,36 @@ class TabmangmentPopup {
         }
     }
     showBookmarkMenu() {
-        this.currentView = 'bookmarks';
-        this.renderBookmarksView();
+        const chatSection = document.getElementById('ai-chat-section');
+        const tabsContainer = document.getElementById('tabs-container');
+
+        // Fade out chat if active
+        if (chatSection && chatSection.classList.contains('active')) {
+            chatSection.classList.remove('active');
+            setTimeout(() => {
+                chatSection.style.display = 'none';
+            }, 300);
+        }
+
+        // Ensure tabs container is visible and fade out briefly
+        if (tabsContainer) {
+            tabsContainer.classList.remove('active');
+            setTimeout(() => {
+                this.currentView = 'bookmarks';
+                this.renderBookmarksView();
+                // Fade back in with bookmarks content
+                setTimeout(() => tabsContainer.classList.add('active'), 10);
+            }, 300);
+        }
     }
     async renderBookmarksView() {
         const container = document.getElementById('tabs-container');
         if (!container) return;
-        container.style.transition = 'all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)';
-        container.style.opacity = '0';
-        container.style.transform = 'translateY(10px)';
-        setTimeout(async () => {
-            try {
+
+        // Ensure tabs container is visible
+        container.style.display = 'block';
+
+        try {
                 const bookmarkKey = await this.getUserBookmarkKey();
                 const result = await chrome.storage.local.get([bookmarkKey, 'themeConfig']);
                 const bookmarks = result[bookmarkKey] || [];
@@ -3574,8 +5387,6 @@ class TabmangmentPopup {
                 container.innerHTML = bookmarksHTML;
                 this.attachBookmarkListeners();
                 setTimeout(() => this.handleFaviconErrors(), 100);
-                container.style.opacity = '1';
-                container.style.transform = 'translateY(0)';
             } catch (error) {
                 console.error('Error rendering bookmarks:', error);
                 console.error('Error stack:', error.stack);
@@ -3590,10 +5401,7 @@ class TabmangmentPopup {
                         <p class="empty-description">Unable to load your saved bookmarks. Check console for details.</p>
                     </div>
                 `;
-                container.style.opacity = '1';
-                container.style.transform = 'translateY(0)';
             }
-        }, 150);
     }
     renderBookmarksList(bookmarks, themeGradient = 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)') {
         if (bookmarks.length === 0) {
@@ -4203,7 +6011,7 @@ class TabmangmentPopup {
                     <div style="color: #4b5563;">• Priority support</div>
                 </div>
                 <div style="background: #eff6ff; border-radius: 6px; padding: 12px; margin-bottom: 16px; text-align: center;">
-                    <div style="font-size: 16px; font-weight: 600; color: #1d4ed8; margin-bottom: 2px;">$4.99/month</div>
+                    <div style="font-size: 16px; font-weight: 600; color: #1d4ed8; margin-bottom: 2px;">$1.87/month</div>
                     <div style="font-size: 11px; color: #64748b;">Cancel anytime</div>
                 </div>
                 <div style="display: flex; flex-direction: column; gap: 8px;">
@@ -6114,7 +7922,7 @@ Thank you!`);
                         <span style="color: #0369a1; font-weight: 600; font-size: 14px;">🎯 Your Pro Subscription</span>
                     </div>
                     <div style="color: #0c4a6e; font-size: 13px; line-height: 1.4;">
-                        • $4.99/month recurring billing<br>
+                        • $1.87/month recurring billing<br>
                         • Cancel anytime with one click<br>
                         • Download invoices and receipts<br>
                         • Update payment methods securely
@@ -6168,7 +7976,7 @@ Thank you!`);
     }
     async handleDirectUpgrade() {
         const upgradeBtn = document.getElementById('tab-limit-upgrade-btn');
-        let originalText = 'Upgrade to Pro - $4.99/month';
+        let originalText = 'Upgrade to Pro - $1.87/month';
         try {
             if (upgradeBtn) {
                 originalText = upgradeBtn.innerHTML;
@@ -6447,6 +8255,17 @@ Thank you!`);
             tab.autoCloseTime = autoCloseTime;
             tab.timerDuration = milliseconds;
             tab.timerStartTime = Date.now();
+
+            // Update this.tabTimers for UI rendering
+            this.tabTimers[tabId] = {
+                active: true,
+                duration: milliseconds,
+                unit: unit,
+                endTime: autoCloseTime,
+                startTime: Date.now()
+            };
+            await this.saveTimers();
+
             try {
                 await chrome.runtime.sendMessage({
                     action: 'setTimer',
@@ -6466,7 +8285,7 @@ Thank you!`);
                 : `Timer set for ${value} ${unitText} (${this.formatTime(milliseconds)})`;
             this.showMessage(successMsg, 'success');
             await this.render();
-            this.startTimerCountdown();
+            this.startTimerCountdown(tabId);
         } catch (error) {
             this.showError('Failed to set timer');
         }

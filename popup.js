@@ -2806,6 +2806,20 @@ Use this information when relevant to provide accurate, time-aware responses.`;
 
                 console.log(`✅ Restored ${restoredCount} messages, skipped ${skippedCount} invalid messages`);
 
+                // AUTO-CLEANUP: If we skipped any corrupted messages, clean storage
+                if (skippedCount > 0) {
+                    console.log('🔧 Auto-cleaning corrupted data from storage...');
+
+                    // Filter to only valid messages
+                    const cleanMessages = result.chatMessages.filter(msg =>
+                        msg && typeof msg === 'object' && msg.text && msg.text.trim() && msg.type
+                    );
+
+                    // Save cleaned data back to storage
+                    await chrome.storage.local.set({ chatMessages: cleanMessages });
+                    console.log(`✅ Auto-cleaned storage: ${cleanMessages.length} valid messages retained, ${skippedCount} corrupted messages removed`);
+                }
+
                 // Scroll to bottom after restoring all messages
                 chatMessagesContainer.scrollTop = chatMessagesContainer.scrollHeight;
             } else {
