@@ -165,6 +165,8 @@ class TabmangmentPopup {
         try {
             this.setupEventListeners();
 
+            // Load persistent chat history from storage
+            await this.loadChatHistory();
 
             const isAuthenticated = await this.checkAuthentication();
 
@@ -1630,6 +1632,9 @@ Use this information when relevant to provide accurate, time-aware responses.`;
             // Display AI response with typing animation
             await this.addChatMessage('ai', finalResponse, true);
 
+            // Save chat history to persistent storage
+            await this.saveChatHistory();
+
         } catch (error) {
             console.error('Chat error:', error);
             // Hide typing indicator
@@ -1637,6 +1642,9 @@ Use this information when relevant to provide accurate, time-aware responses.`;
 
             // Show error message
             this.addChatMessage('ai', 'Sorry, I encountered an error. Please try again later.');
+
+            // Save even on error (to preserve user's message)
+            await this.saveChatHistory();
         }
     }
 
@@ -2735,6 +2743,68 @@ Use this information when relevant to provide accurate, time-aware responses.`;
         });
     }
 
+    // PERSISTENT CHAT STORAGE - Load chat history from storage
+    async loadChatHistory() {
+        try {
+            const result = await chrome.storage.local.get(['chatHistory', 'chatMessages']);
+
+            // Restore conversation history for AI
+            if (result.chatHistory && Array.isArray(result.chatHistory)) {
+                this.chatHistory = result.chatHistory;
+                console.log('✅ Loaded chat history:', this.chatHistory.length, 'messages');
+            } else {
+                this.chatHistory = [];
+            }
+
+            // Restore visual chat messages in UI
+            if (result.chatMessages && Array.isArray(result.chatMessages)) {
+                const chatMessagesContainer = document.getElementById('chat-messages');
+                const emptyState = document.getElementById('chat-empty-state');
+
+                if (chatMessagesContainer && result.chatMessages.length > 0) {
+                    // Hide empty state
+                    if (emptyState) emptyState.style.display = 'none';
+
+                    // Restore each message
+                    for (const msg of result.chatMessages) {
+                        await this.addChatMessage(msg.type, msg.text, false); // Don't animate on restore
+                    }
+
+                    console.log('✅ Restored', result.chatMessages.length, 'chat messages in UI');
+                }
+            }
+        } catch (error) {
+            console.error('Error loading chat history:', error);
+            this.chatHistory = [];
+        }
+    }
+
+    // PERSISTENT CHAT STORAGE - Save chat history to storage
+    async saveChatHistory() {
+        try {
+            // Save AI conversation history
+            await chrome.storage.local.set({
+                chatHistory: this.chatHistory || []
+            });
+
+            // Save visual messages for UI restoration
+            const chatMessagesContainer = document.getElementById('chat-messages');
+            if (chatMessagesContainer) {
+                const messages = chatMessagesContainer.querySelectorAll('.chat-message');
+                const chatMessages = Array.from(messages).map(msg => ({
+                    type: msg.classList.contains('user-message') ? 'user' : 'ai',
+                    text: msg.querySelector('.message-text')?.innerText || ''
+                }));
+
+                await chrome.storage.local.set({ chatMessages });
+            }
+
+            console.log('💾 Chat history saved to storage');
+        } catch (error) {
+            console.error('Error saving chat history:', error);
+        }
+    }
+
     clearChat() {
         const chatMessages = document.getElementById('chat-messages');
         const emptyState = document.getElementById('chat-empty-state');
@@ -2747,6 +2817,11 @@ Use this information when relevant to provide accurate, time-aware responses.`;
 
         // Clear conversation history
         this.chatHistory = [];
+
+        // Clear from persistent storage
+        chrome.storage.local.remove(['chatHistory', 'chatMessages'], () => {
+            console.log('🗑️ Chat history cleared from storage');
+        });
 
         // Show empty state
         if (emptyState) emptyState.style.display = 'flex';
