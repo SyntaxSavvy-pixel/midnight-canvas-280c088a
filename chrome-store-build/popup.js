@@ -5023,57 +5023,38 @@ Use this information when relevant to provide accurate, time-aware responses.`;
                 }, 200);
             }
 
+            // Get ALL tabs in current window (including active tab)
             const allTabs = await chrome.tabs.query({ currentWindow: true });
 
-            const domainGroups = {};
-            for (const tab of allTabs) {
-                if (this.isValidTab(tab)) {
-                    try {
-                        const url = new URL(tab.url);
-                        const domain = url.hostname.replace('www.', '');
-                        if (!domainGroups[domain]) {
-                            domainGroups[domain] = [];
-                        }
-                        domainGroups[domain].push(tab);
-                    } catch (error) {
+            // Filter out only the extension popup itself (if it's a tab)
+            const tabsToClose = allTabs.filter(tab => {
+                // Don't close the extension's own popup if it's somehow a tab
+                return !tab.url.includes('chrome-extension://');
+            });
+
+            if (tabsToClose.length === 0) {
+                setTimeout(() => {
+                    if (collapseBtn) {
+                        collapseBtn.classList.remove('collapsing');
                     }
-                }
+                    this.showMessage('No tabs to close.', 'info');
+                }, 500);
+                return;
             }
 
-            let groupedCount = 0;
-            const colors = ['grey', 'blue', 'red', 'yellow', 'green', 'pink', 'purple', 'cyan'];
-            let colorIndex = 0;
-
-            for (const [domain, tabs] of Object.entries(domainGroups)) {
-                if (tabs.length > 1) {
-                    try {
-                        const tabIds = tabs.map(t => t.id);
-                        const groupId = await chrome.tabs.group({ tabIds });
-                        await chrome.tabGroups.update(groupId, {
-                            title: domain,
-                            collapsed: true,
-                            color: colors[colorIndex % colors.length]
-                        });
-                        colorIndex++;
-                        groupedCount += tabs.length;
-                    } catch (error) {
-                    }
-                }
-            }
+            // Close ALL tabs (including active tab)
+            const tabIds = tabsToClose.map(tab => tab.id);
+            await chrome.tabs.remove(tabIds);
 
             setTimeout(() => {
                 if (collapseBtn) {
                     collapseBtn.classList.remove('collapsing');
                 }
-                this.refreshTabList();
-                if (groupedCount > 0) {
-                    this.showMessage(`Successfully grouped and collapsed ${groupedCount} tabs by domain!`, 'success');
-                } else {
-                    this.showMessage('No duplicate domains found to group.', 'info');
-                }
+                this.showMessage(`Successfully closed all ${tabsToClose.length} tabs!`, 'success');
             }, 500);
         } catch (error) {
-            this.showError('Failed to collapse tabs. Please try again.');
+            console.error('Failed to close all tabs:', error);
+            this.showError('Failed to close all tabs. Please try again.');
             const collapseBtn = document.getElementById('collapse-btn');
             if (collapseBtn) {
                 collapseBtn.classList.remove('collapsing');
