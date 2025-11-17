@@ -2783,20 +2783,31 @@ Use this information when relevant to provide accurate, time-aware responses.`;
 
                 // Restore each message WITHOUT animation (instant restore)
                 let restoredCount = 0;
+                let skippedCount = 0;
                 for (const msg of result.chatMessages) {
-                    if (msg.text && msg.text.trim()) {
-                        console.log(`  Restoring ${msg.type} message: "${msg.text.substring(0, 50)}..."`);
+                    // Validate message object
+                    if (msg && typeof msg === 'object' && msg.text && msg.text.trim() && msg.type) {
+                        console.log(`  ✅ Restoring ${msg.type} message: "${msg.text.substring(0, 50)}..."`);
                         await this.addChatMessage(msg.type, msg.text, false);
                         restoredCount++;
                     } else {
-                        console.warn('  ⚠️ Skipping empty message:', msg);
+                        // Show detailed info about what's wrong
+                        const debugInfo = {
+                            hasObject: !!msg,
+                            type: msg?.type || 'missing',
+                            textLength: msg?.text?.length || 0,
+                            textPreview: msg?.text?.substring(0, 20) || 'empty',
+                            fullObject: msg
+                        };
+                        console.warn('  ⚠️ Skipping invalid message:', JSON.stringify(debugInfo, null, 2));
+                        skippedCount++;
                     }
                 }
 
+                console.log(`✅ Restored ${restoredCount} messages, skipped ${skippedCount} invalid messages`);
+
                 // Scroll to bottom after restoring all messages
                 chatMessagesContainer.scrollTop = chatMessagesContainer.scrollHeight;
-
-                console.log('✅ Successfully restored', restoredCount, 'chat messages');
             } else {
                 console.log('ℹ️ No chat messages to restore');
             }
