@@ -1363,57 +1363,6 @@ body.user-has-premium .pro-badge {
     color: var(--info);
 }
 
-#collapse-btn {
-    position: relative;
-    overflow: hidden;
-}
-
-#collapse-btn:hover svg {
-    animation: collapseIconHover 0.3s ease-in-out;
-}
-
-#collapse-btn:active svg {
-    animation: collapseIconClick 0.2s ease-out;
-}
-
-#collapse-btn.collapsing {
-    pointer-events: none;
-}
-
-#collapse-btn.collapsing svg {
-    animation: collapseIconActive 1s ease-in-out infinite;
-}
-
-@keyframes collapseIconHover {
-    0%, 100% { transform: translateX(0); }
-    50% { transform: translateX(-2px); }
-}
-
-@keyframes collapseIconClick {
-    0% { transform: scale(1); }
-    50% { transform: scale(0.9); }
-    100% { transform: scale(1); }
-}
-
-@keyframes collapseIconActive {
-    0%, 100% {
-        transform: translateX(0) rotate(0deg);
-        opacity: 1;
-    }
-    25% {
-        transform: translateX(-3px) rotate(-2deg);
-        opacity: 0.8;
-    }
-    50% {
-        transform: translateX(3px) rotate(2deg);
-        opacity: 0.9;
-    }
-    75% {
-        transform: translateX(-1px) rotate(-1deg);
-        opacity: 0.8;
-    }
-}
-
 /* ============================================
    SMART AUTO-GROUP BUTTON STYLES
    ============================================ */

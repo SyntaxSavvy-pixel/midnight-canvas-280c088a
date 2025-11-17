@@ -3037,17 +3037,6 @@ Use this information when relevant to provide accurate, time-aware responses.`;
     }
 
     setupControlButtons() {
-        const collapseBtn = document.getElementById('collapse-btn');
-        if (collapseBtn) {
-            collapseBtn.addEventListener('click', () => {
-                if (this.isPremium) {
-                    this.collapseAllTabs();
-                } else {
-                    this.showPremiumModal();
-                }
-            });
-        }
-
         // Smart Auto-Group button
         const smartGroupBtn = document.getElementById('smart-group-btn');
         if (smartGroupBtn) {
@@ -4079,7 +4068,7 @@ Use this information when relevant to provide accurate, time-aware responses.`;
     }
     updateProBadges() {
 
-        const proFeatureButtons = ['collapse-btn', 'smart-group-btn', 'bookmark-all-btn'];
+        const proFeatureButtons = ['smart-group-btn', 'bookmark-all-btn'];
         proFeatureButtons.forEach(buttonId => {
             const button = document.getElementById(buttonId);
             if (!button) {
@@ -5022,56 +5011,6 @@ Use this information when relevant to provide accurate, time-aware responses.`;
             this.removeTabWithAnimation(tabId);
         } catch (error) {
             this.showError('Failed to close tab');
-        }
-    }
-    async collapseAllTabs() {
-        try {
-            const collapseBtn = document.getElementById('collapse-btn');
-            if (collapseBtn) {
-                collapseBtn.style.transform = 'scale(0.95)';
-                collapseBtn.style.transition = 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)';
-                collapseBtn.classList.add('collapsing');
-                setTimeout(() => {
-                    collapseBtn.style.transform = 'scale(1)';
-                }, 200);
-            }
-
-            // Get ALL tabs in current window (including active tab)
-            const allTabs = await chrome.tabs.query({ currentWindow: true });
-
-            // Filter out only the extension popup itself (if it's a tab)
-            const tabsToClose = allTabs.filter(tab => {
-                // Don't close the extension's own popup if it's somehow a tab
-                return !tab.url.includes('chrome-extension://');
-            });
-
-            if (tabsToClose.length === 0) {
-                setTimeout(() => {
-                    if (collapseBtn) {
-                        collapseBtn.classList.remove('collapsing');
-                    }
-                    this.showMessage('No tabs to close.', 'info');
-                }, 500);
-                return;
-            }
-
-            // Close ALL tabs (including active tab)
-            const tabIds = tabsToClose.map(tab => tab.id);
-            await chrome.tabs.remove(tabIds);
-
-            setTimeout(() => {
-                if (collapseBtn) {
-                    collapseBtn.classList.remove('collapsing');
-                }
-                this.showMessage(`Successfully closed all ${tabsToClose.length} tabs!`, 'success');
-            }, 500);
-        } catch (error) {
-            console.error('Failed to close all tabs:', error);
-            this.showError('Failed to close all tabs. Please try again.');
-            const collapseBtn = document.getElementById('collapse-btn');
-            if (collapseBtn) {
-                collapseBtn.classList.remove('collapsing');
-            }
         }
     }
 
