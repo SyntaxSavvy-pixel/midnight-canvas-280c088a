@@ -2782,14 +2782,21 @@ Use this information when relevant to provide accurate, time-aware responses.`;
                 if (emptyState) emptyState.style.display = 'none';
 
                 // Restore each message WITHOUT animation (instant restore)
+                let restoredCount = 0;
                 for (const msg of result.chatMessages) {
-                    await this.addChatMessage(msg.type, msg.text, false);
+                    if (msg.text && msg.text.trim()) {
+                        console.log(`  Restoring ${msg.type} message: "${msg.text.substring(0, 50)}..."`);
+                        await this.addChatMessage(msg.type, msg.text, false);
+                        restoredCount++;
+                    } else {
+                        console.warn('  ⚠️ Skipping empty message:', msg);
+                    }
                 }
 
                 // Scroll to bottom after restoring all messages
                 chatMessagesContainer.scrollTop = chatMessagesContainer.scrollHeight;
 
-                console.log('✅ Successfully restored', result.chatMessages.length, 'chat messages');
+                console.log('✅ Successfully restored', restoredCount, 'chat messages');
             } else {
                 console.log('ℹ️ No chat messages to restore');
             }
@@ -2811,17 +2818,27 @@ Use this information when relevant to provide accurate, time-aware responses.`;
             const chatMessagesContainer = document.getElementById('chat-messages');
             if (chatMessagesContainer) {
                 const messages = chatMessagesContainer.querySelectorAll('.chat-message');
-                const chatMessages = Array.from(messages).map(msg => ({
-                    type: msg.classList.contains('user-message') ? 'user' : 'ai',
-                    text: msg.querySelector('.message-text')?.innerText || ''
-                }));
+                console.log('📝 Found', messages.length, 'chat messages to save');
+
+                const chatMessages = Array.from(messages).map((msg, index) => {
+                    // Determine message type
+                    const isUser = msg.classList.contains('user-message') || msg.classList.contains('user');
+                    const type = isUser ? 'user' : 'ai';
+
+                    // Get text from message bubble (correct selector!)
+                    const bubble = msg.querySelector('.message-bubble');
+                    const text = bubble ? (bubble.textContent || bubble.innerText || '').trim() : '';
+
+                    console.log(`  [${index}] Type: ${type}, Text length: ${text.length}, Preview: "${text.substring(0, 50)}..."`);
+
+                    return { type, text };
+                }).filter(msg => msg.text.length > 0); // Only save messages with actual text
 
                 await chrome.storage.local.set({ chatMessages });
+                console.log('💾 Saved', chatMessages.length, 'messages to storage');
             }
-
-            console.log('💾 Chat history saved to storage');
         } catch (error) {
-            console.error('Error saving chat history:', error);
+            console.error('❌ Error saving chat history:', error);
         }
     }
 
