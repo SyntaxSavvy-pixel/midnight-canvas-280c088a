@@ -3047,6 +3047,19 @@ Use this information when relevant to provide accurate, time-aware responses.`;
                 }
             });
         }
+
+        // Smart Auto-Group button
+        const smartGroupBtn = document.getElementById('smart-group-btn');
+        if (smartGroupBtn) {
+            smartGroupBtn.addEventListener('click', () => {
+                if (this.isPremium) {
+                    this.smartAutoGroup();
+                } else {
+                    this.showPremiumModal();
+                }
+            });
+        }
+
         const bookmarkAllBtn = document.getElementById('bookmark-all-btn');
         if (bookmarkAllBtn) {
             bookmarkAllBtn.addEventListener('click', () => {
@@ -4066,7 +4079,7 @@ Use this information when relevant to provide accurate, time-aware responses.`;
     }
     updateProBadges() {
 
-        const proFeatureButtons = ['collapse-btn', 'bookmark-all-btn'];
+        const proFeatureButtons = ['collapse-btn', 'smart-group-btn', 'bookmark-all-btn'];
         proFeatureButtons.forEach(buttonId => {
             const button = document.getElementById(buttonId);
             if (!button) {
@@ -5061,6 +5074,368 @@ Use this information when relevant to provide accurate, time-aware responses.`;
             }
         }
     }
+
+    // ============================================
+    // SMART AUTO-GROUPING SYSTEM
+    // ============================================
+
+    /**
+     * Category definitions with domains, keywords, and colors
+     * Each category has:
+     * - name: Display name
+     * - domains: Array of domain patterns to match
+     * - keywords: Array of keywords to match in URL/title
+     * - color: Chrome tab group color
+     * - priority: Higher priority wins conflicts (1-10)
+     */
+    getSmartCategories() {
+        return [
+            {
+                name: '🛍️ Shopping',
+                domains: ['amazon', 'ebay', 'walmart', 'etsy', 'aliexpress', 'target', 'bestbuy', 'shopify', 'shop', 'store', 'cart', 'checkout', 'product'],
+                keywords: ['buy', 'price', 'deal', 'sale', 'discount', 'shop', 'cart', 'order', 'purchase'],
+                color: 'yellow',
+                priority: 7
+            },
+            {
+                name: '💼 Work/School',
+                domains: ['docs.google', 'notion', 'gmail', 'outlook', 'teams', 'slack', 'zoom', 'meet.google', 'calendar', 'drive.google', 'dropbox', 'onedrive', 'evernote', 'trello', 'asana', 'monday'],
+                keywords: ['homework', 'essay', 'project', 'assignment', 'research', 'study', 'lecture', 'class', 'work', 'meeting', 'presentation', 'document', 'report'],
+                color: 'blue',
+                priority: 8
+            },
+            {
+                name: '🎮 Social/Entertainment',
+                domains: ['youtube', 'reddit', 'tiktok', 'twitter', 'instagram', 'facebook', 'twitch', 'netflix', 'spotify', 'discord', 'pinterest', 'tumblr', 'snapchat'],
+                keywords: ['watch', 'video', 'stream', 'music', 'game', 'play', 'entertainment', 'social', 'chat', 'meme'],
+                color: 'pink',
+                priority: 5
+            },
+            {
+                name: '🤖 AI Tools',
+                domains: ['chat.openai', 'claude.ai', 'gemini.google', 'bard.google', 'copilot', 'midjourney', 'perplexity', 'anthropic'],
+                keywords: ['chatgpt', 'claude', 'gemini', 'bard', 'ai chat', 'artificial intelligence', 'gpt', 'llm'],
+                color: 'purple',
+                priority: 9
+            },
+            {
+                name: '💻 Coding',
+                domains: ['github', 'gitlab', 'stackoverflow', 'stackexchange', 'codepen', 'codesandbox', 'replit', 'glitch', 'vercel', 'netlify', 'heroku', 'npm', 'pypi'],
+                keywords: ['code', 'programming', 'developer', 'api', 'documentation', 'repository', 'commit', 'pull request', 'bug', 'error'],
+                color: 'cyan',
+                priority: 8
+            },
+            {
+                name: '📰 News/Reading',
+                domains: ['news', 'medium', 'substack', 'wikipedia', 'article', 'blog'],
+                keywords: ['article', 'news', 'read', 'blog', 'post', 'story'],
+                color: 'grey',
+                priority: 4
+            }
+        ];
+    }
+
+    /**
+     * Auto-Group Rules Configuration
+     * Optional rules that can be enabled/disabled
+     */
+    getAutoGroupRules() {
+        return {
+            sameDomainThreshold: 3, // Group if 3+ tabs from same domain
+            enableKeywordGrouping: true, // Enable keyword-based grouping
+            enableDomainGrouping: true, // Enable domain-based grouping
+            minTabsForGroup: 2 // Minimum tabs needed to create a group
+        };
+    }
+
+    /**
+     * Detect category for a single tab
+     * Returns: { category, score, matchType }
+     */
+    detectTabCategory(tab) {
+        if (!tab || !tab.url) return null;
+
+        const categories = this.getSmartCategories();
+        const url = tab.url.toLowerCase();
+        const title = (tab.title || '').toLowerCase();
+
+        let bestMatch = null;
+        let highestScore = 0;
+
+        for (const category of categories) {
+            let score = 0;
+            let matchType = '';
+
+            // Check domain matching (stronger signal)
+            for (const domain of category.domains) {
+                if (url.includes(domain)) {
+                    score += 10;
+                    matchType = 'domain';
+                    break;
+                }
+            }
+
+            // Check keyword matching in URL and title (weaker signal)
+            for (const keyword of category.keywords) {
+                if (url.includes(keyword)) {
+                    score += 3;
+                    matchType = matchType || 'url-keyword';
+                }
+                if (title.includes(keyword)) {
+                    score += 2;
+                    matchType = matchType || 'title-keyword';
+                }
+            }
+
+            // Apply category priority as tiebreaker
+            if (score > 0) {
+                score += category.priority * 0.1;
+            }
+
+            // Update best match if this category scores higher
+            if (score > highestScore) {
+                highestScore = score;
+                bestMatch = {
+                    category: category,
+                    score: score,
+                    matchType: matchType
+                };
+            }
+        }
+
+        return bestMatch;
+    }
+
+    /**
+     * Group tabs by same domain (for 3+ tabs rule)
+     */
+    groupBySameDomain(tabs) {
+        const domainGroups = {};
+
+        for (const tab of tabs) {
+            try {
+                const url = new URL(tab.url);
+                const domain = url.hostname.replace('www.', '');
+
+                if (!domainGroups[domain]) {
+                    domainGroups[domain] = [];
+                }
+                domainGroups[domain].push(tab);
+            } catch (error) {
+                // Skip invalid URLs
+            }
+        }
+
+        return domainGroups;
+    }
+
+    /**
+     * Main Smart Auto-Grouping function
+     * Analyzes all tabs and creates smart groups
+     */
+    async smartAutoGroup() {
+        try {
+            const groupBtn = document.getElementById('smart-group-btn');
+            if (groupBtn) {
+                groupBtn.classList.add('grouping');
+                groupBtn.style.transform = 'scale(0.95)';
+            }
+
+            console.log('🤖 Starting Smart Auto-Grouping...');
+
+            // Get all tabs in current window
+            const allTabs = await chrome.tabs.query({ currentWindow: true });
+            const rules = this.getAutoGroupRules();
+
+            // Step 1: Ungroup all existing groups (fresh start)
+            for (const tab of allTabs) {
+                if (tab.groupId && tab.groupId !== -1) {
+                    try {
+                        await chrome.tabs.ungroup(tab.id);
+                    } catch (error) {
+                        // Ignore errors
+                    }
+                }
+            }
+
+            // Step 2: Categorize all tabs
+            const categorizedTabs = {};
+            const uncategorizedTabs = [];
+
+            for (const tab of allTabs) {
+                // Skip extension pages
+                if (tab.url.includes('chrome://') || tab.url.includes('chrome-extension://')) {
+                    continue;
+                }
+
+                const match = this.detectTabCategory(tab);
+
+                if (match && match.score > 0) {
+                    const categoryName = match.category.name;
+
+                    if (!categorizedTabs[categoryName]) {
+                        categorizedTabs[categoryName] = {
+                            category: match.category,
+                            tabs: []
+                        };
+                    }
+
+                    categorizedTabs[categoryName].tabs.push({
+                        tab: tab,
+                        score: match.score,
+                        matchType: match.matchType
+                    });
+                } else {
+                    uncategorizedTabs.push(tab);
+                }
+            }
+
+            // Step 3: Apply same-domain rule to uncategorized tabs
+            if (rules.enableDomainGrouping) {
+                const domainGroups = this.groupBySameDomain(uncategorizedTabs);
+
+                for (const [domain, tabs] of Object.entries(domainGroups)) {
+                    if (tabs.length >= rules.sameDomainThreshold) {
+                        const categoryName = `🌐 ${domain}`;
+                        categorizedTabs[categoryName] = {
+                            category: {
+                                name: categoryName,
+                                color: 'grey',
+                                priority: 3
+                            },
+                            tabs: tabs.map(tab => ({ tab, score: 5, matchType: 'same-domain' }))
+                        };
+                    }
+                }
+            }
+
+            // Step 4: Create Chrome Tab Groups
+            let groupedCount = 0;
+            const groupSummary = [];
+
+            for (const [categoryName, data] of Object.entries(categorizedTabs)) {
+                const { category, tabs } = data;
+
+                // Only group if we have minimum tabs
+                if (tabs.length < rules.minTabsForGroup) {
+                    continue;
+                }
+
+                try {
+                    // Sort tabs by score (highest confidence first)
+                    tabs.sort((a, b) => b.score - a.score);
+
+                    const tabIds = tabs.map(t => t.tab.id);
+
+                    // Create tab group
+                    const groupId = await chrome.tabs.group({ tabIds });
+
+                    // Configure group
+                    await chrome.tabGroups.update(groupId, {
+                        title: category.name,
+                        color: category.color,
+                        collapsed: false // Keep expanded so users see the groups
+                    });
+
+                    groupedCount += tabs.length;
+                    groupSummary.push({
+                        name: category.name,
+                        count: tabs.length,
+                        color: category.color
+                    });
+
+                    console.log(`✅ Created group "${category.name}" with ${tabs.length} tabs`);
+                } catch (error) {
+                    console.error(`❌ Failed to create group "${categoryName}":`, error);
+                }
+            }
+
+            // Step 5: Reset button state
+            setTimeout(() => {
+                if (groupBtn) {
+                    groupBtn.classList.remove('grouping');
+                    groupBtn.style.transform = 'scale(1)';
+                }
+            }, 300);
+
+            // Step 6: Show success notification
+            if (groupedCount > 0) {
+                this.showSmartGroupNotification(groupSummary, groupedCount);
+                this.showMessage(`🤖 Smart grouped ${groupedCount} tabs into ${groupSummary.length} categories!`, 'success');
+            } else {
+                this.showMessage('No tabs matched any categories. Try opening more tabs!', 'info');
+            }
+
+            // Step 7: Refresh UI
+            await this.refreshTabList();
+
+            console.log(`🎉 Smart Auto-Grouping complete: ${groupedCount} tabs grouped`);
+            return { success: true, groupedCount, groups: groupSummary };
+
+        } catch (error) {
+            console.error('❌ Smart Auto-Grouping error:', error);
+            this.showError('Failed to auto-group tabs. Please try again.');
+
+            const groupBtn = document.getElementById('smart-group-btn');
+            if (groupBtn) {
+                groupBtn.classList.remove('grouping');
+                groupBtn.style.transform = 'scale(1)';
+            }
+
+            return { success: false, error: error.message };
+        }
+    }
+
+    /**
+     * Show notification with group summary
+     * Displays a nice tooltip showing what was grouped
+     */
+    showSmartGroupNotification(groupSummary, totalCount) {
+        // Create notification element
+        const notification = document.createElement('div');
+        notification.className = 'smart-group-notification';
+        notification.innerHTML = `
+            <div class="notification-header">
+                <span class="notification-icon">🤖</span>
+                <span class="notification-title">Smart Auto-Grouping Complete!</span>
+            </div>
+            <div class="notification-body">
+                <div class="notification-summary">Organized ${totalCount} tabs into ${groupSummary.length} groups:</div>
+                <div class="notification-groups">
+                    ${groupSummary.map(group => `
+                        <div class="notification-group">
+                            <span class="group-badge" style="background-color: var(--group-${group.color})"></span>
+                            <span class="group-name">${group.name}</span>
+                            <span class="group-count">${group.count} tabs</span>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+        `;
+
+        // Add to DOM
+        document.body.appendChild(notification);
+
+        // Animate in
+        setTimeout(() => notification.classList.add('show'), 10);
+
+        // Auto-remove after 5 seconds
+        setTimeout(() => {
+            notification.classList.remove('show');
+            setTimeout(() => notification.remove(), 300);
+        }, 5000);
+
+        // Click to dismiss
+        notification.addEventListener('click', () => {
+            notification.classList.remove('show');
+            setTimeout(() => notification.remove(), 300);
+        });
+    }
+
+    // ============================================
+    // END SMART AUTO-GROUPING SYSTEM
+    // ============================================
+
     removeTabWithAnimation(tabId) {
         const tabElement = document.querySelector(`[data-tab-id="${tabId}"]`);
         if (!tabElement) return;
