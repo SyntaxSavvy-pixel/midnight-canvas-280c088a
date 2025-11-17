@@ -1547,6 +1547,9 @@ Use this information when relevant to provide accurate, time-aware responses.`;
                 content: message
             });
 
+            // Save user message immediately (don't wait for AI response)
+            await this.saveChatHistory();
+
             // Tool loop: keep calling Claude until we get a final response (no more tool uses)
             let continueLoop = true;
             let finalResponse = '';
@@ -2746,35 +2749,52 @@ Use this information when relevant to provide accurate, time-aware responses.`;
     // PERSISTENT CHAT STORAGE - Load chat history from storage
     async loadChatHistory() {
         try {
+            console.log('💾 Loading chat history from storage...');
             const result = await chrome.storage.local.get(['chatHistory', 'chatMessages']);
 
-            // Restore conversation history for AI
+            // Restore conversation history for AI (this MUST be restored for AI memory)
             if (result.chatHistory && Array.isArray(result.chatHistory)) {
                 this.chatHistory = result.chatHistory;
-                console.log('✅ Loaded chat history:', this.chatHistory.length, 'messages');
+                console.log('✅ Loaded AI chat history:', this.chatHistory.length, 'messages');
             } else {
                 this.chatHistory = [];
+                console.log('ℹ️ No existing chat history found');
             }
 
             // Restore visual chat messages in UI
-            if (result.chatMessages && Array.isArray(result.chatMessages)) {
+            if (result.chatMessages && Array.isArray(result.chatMessages) && result.chatMessages.length > 0) {
+                console.log('📝 Restoring', result.chatMessages.length, 'chat messages in UI...');
+
+                // Wait a bit to ensure DOM is fully ready
+                await new Promise(resolve => setTimeout(resolve, 100));
+
                 const chatMessagesContainer = document.getElementById('chat-messages');
                 const emptyState = document.getElementById('chat-empty-state');
 
-                if (chatMessagesContainer && result.chatMessages.length > 0) {
-                    // Hide empty state
-                    if (emptyState) emptyState.style.display = 'none';
-
-                    // Restore each message
-                    for (const msg of result.chatMessages) {
-                        await this.addChatMessage(msg.type, msg.text, false); // Don't animate on restore
-                    }
-
-                    console.log('✅ Restored', result.chatMessages.length, 'chat messages in UI');
+                if (!chatMessagesContainer) {
+                    console.warn('⚠️ Chat messages container not found - will restore when available');
+                    // Store for later restoration
+                    this._pendingMessages = result.chatMessages;
+                    return;
                 }
+
+                // Hide empty state
+                if (emptyState) emptyState.style.display = 'none';
+
+                // Restore each message WITHOUT animation (instant restore)
+                for (const msg of result.chatMessages) {
+                    await this.addChatMessage(msg.type, msg.text, false);
+                }
+
+                // Scroll to bottom after restoring all messages
+                chatMessagesContainer.scrollTop = chatMessagesContainer.scrollHeight;
+
+                console.log('✅ Successfully restored', result.chatMessages.length, 'chat messages');
+            } else {
+                console.log('ℹ️ No chat messages to restore');
             }
         } catch (error) {
-            console.error('Error loading chat history:', error);
+            console.error('❌ Error loading chat history:', error);
             this.chatHistory = [];
         }
     }
