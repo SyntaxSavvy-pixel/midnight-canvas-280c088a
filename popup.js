@@ -15,10 +15,12 @@ const CONFIG = {
         COUNTRY: 'US'
     },
     SERPAPI: {
-        // TODO: Update this URL after deploying the Cloudflare Worker
-        // See cloudflare-workers/DEPLOYMENT.md for instructions
-        SEARCH_URL: 'https://serpapi-search-worker.YOUR-SUBDOMAIN.workers.dev',
-        // Or use custom domain: 'https://tabmangment.com/api/serpapi-search'
+        // Enhanced SerpAPI Worker - 10x Smarter Search
+        SEARCH_URL: 'https://serpapi-search-worker.selfshios.workers.dev',
+        // Advanced features: real-time tracking, deal detection, smart recommendations
+        MAX_RESULTS: 10,
+        INCLUDE_SPECS: true,
+        TRACK_PRICES: true
     },
     WEB: {
         AUTH_URL: 'https://tabmangment.com/new-authentication',
@@ -68,32 +70,49 @@ You have tools available to help users:
 
 You are an AI-powered productivity assistant that helps users manage tabs efficiently. You can analyze their browsing patterns, suggest optimizations, and proactively help them stay organized.
 
-CRITICAL - PRODUCT RESEARCH (${new Date().getFullYear()}):
-When users ask about products (e.g., "best gaming keyboard", "best monitor", "Pokemon card"):
+CRITICAL - ENHANCED PRODUCT RESEARCH (${new Date().getFullYear()}):
+When users ask about products, you have access to a 10X SMARTER AI-powered product research system with:
+- Real-time price tracking & comparison
+- Deal detection & recommendations
+- Quality scoring & review analysis
+- Smart recommendations (Best Value, Top Rated, Budget Pick)
+- Product specifications & availability tracking
 
-1. **Use research_product tool FIRST** - This searches the web and finds actual product pages with URLs
-   - DO NOT use search_web for products - it only opens search results
-   - research_product returns real product information with direct purchase links
+**How to use research_product (REQUIRED for ALL product queries):**
 
-2. **Read the research results** - Extract the top 1-2 product names and their direct URLs
+1. **Call research_product FIRST** with the product query
+   - Returns: Top recommendations, deals, price analysis, quality scores
+   - Includes: Real product URLs, prices, ratings, reviews
+   - Smart AI analyzes quality, value, and finds best deals
 
-3. **Open ONLY actual product pages** using open_url tool:
-   - Open the specific product page (Amazon listing, eBay item, etc.)
-   - Maximum 1-2 tabs - only the BEST products
-   - NOT search results, NOT homepages, ONLY direct product URLs
+2. **Present AI recommendations** to the user:
+   - Tell them the TOP RATED product (highest rating + reviews)
+   - Tell them the BEST VALUE product (quality/price ratio)
+   - Tell them about any HOT DEALS found
+   - Include prices and ratings in your response
 
-4. **Tell user what you found**:
-   - "I found the [Product Name] - opening the product page now"
-   - Be specific about what product you're showing them
+3. **Open 1-2 BEST product pages** using open_url:
+   - Open the Top Rated OR Best Value product link
+   - Maximum 2 tabs total - only the very best options
+   - Use actual product URLs from the recommendations
+
+4. **Explain what you found**:
+   - "I found the [Product Name] rated [X]★ with [Y] reviews"
+   - "Best value: [Product] at [Price]"
+   - "Opening the top product page now"
 
 Example interaction:
 User: "What's the best gaming monitor?"
-You: [Call research_product with "best gaming monitor ${new Date().getFullYear()}"]
-You: [Read results, extract product URL]
-You: "I found the ASUS ROG Swift is the top-rated gaming monitor for ${new Date().getFullYear()}. Opening the product page on Amazon now."
-You: [Call open_url with the actual Amazon product URL]
+You: [Call research_product with "best gaming monitor"]
+You: "I found the ASUS ROG Swift PG279QM - rated 4.7★ with 2,847 reviews. It's the top-rated gaming monitor for ${new Date().getFullYear()}.
 
-NEVER open multiple search result tabs. ONLY open 1-2 specific product pages with direct buy links.
+      🏆 Top Rated: ASUS ROG Swift - $699
+      💎 Best Value: LG UltraGear - $449
+
+      Opening the ASUS product page now."
+You: [Call open_url with the ASUS Amazon URL]
+
+NEVER use search_web for products. ALWAYS use research_product for intelligent product research.
 
 IMPORTANT USAGE:
 - When user says "set a timer for THIS tab" or "bookmark THIS tab", first use get_active_tab to get the current tab, then use the appropriate tool
@@ -1625,13 +1644,22 @@ Use this information when relevant to provide accurate, time-aware responses.`;
         return [
             {
                 name: 'research_product',
-                description: `Research products using web search to find actual product pages with direct purchase links. Returns specific product names, descriptions, prices, and most importantly - the actual product page URLs (Amazon, eBay, retailer sites, etc.). Use this for ANY product query. Do NOT use search_web for products - only use this tool.`,
+                description: `🔥 ENHANCED 10X SMARTER product research with AI-powered analysis. Returns:
+                - Top Recommendations (Top Rated, Best Value, Budget Pick)
+                - Hot Deals with price analysis
+                - Real-time quality scores (0-100)
+                - Review analysis & sentiment
+                - Price tracking & comparison
+                - Product specifications
+                - Direct purchase URLs to actual product pages
+
+                Use this for ANY product query (shopping, buying, comparing products). Returns intelligent recommendations with detailed analysis. Much better than basic search - includes deal detection, value scoring, and smart filtering.`,
                 input_schema: {
                     type: 'object',
                     properties: {
                         query: {
                             type: 'string',
-                            description: `What product to research (e.g., "best gaming monitor", "legendary Pokemon card", "office chair"). The tool will search the web and return actual product information with direct URLs.`
+                            description: `Product to research (e.g., "best gaming monitor", "wireless headphones", "Pokemon card"). Returns AI-analyzed recommendations with prices, ratings, and direct product URLs.`
                         }
                     },
                     required: ['query']
@@ -1900,69 +1928,130 @@ Use this information when relevant to provide accurate, time-aware responses.`;
             // Add current year to query for latest products
             const searchQuery = `${query} ${currentYear}`;
 
-            console.log('Researching product with SerpAPI:', searchQuery);
+            console.log('🔍 ENHANCED Product Research:', searchQuery);
 
-            // Call SerpAPI via secure Cloudflare Worker
+            // Call Enhanced SerpAPI Worker with advanced features
             const response = await fetch(CONFIG.SERPAPI.SEARCH_URL, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
                 },
                 body: JSON.stringify({
-                    query: searchQuery
+                    query: searchQuery,
+                    maxResults: CONFIG.SERPAPI.MAX_RESULTS,
+                    includeSpecs: CONFIG.SERPAPI.INCLUDE_SPECS,
+                    trackPrices: CONFIG.SERPAPI.TRACK_PRICES,
+                    location: 'United States'
                 })
             });
 
             if (!response.ok) {
-                throw new Error(`SerpAPI Worker error: ${response.status}`);
+                throw new Error(`Enhanced SerpAPI Worker error: ${response.status}`);
             }
 
             const data = await response.json();
 
             if (!data.success) {
-                throw new Error(data.error || 'SerpAPI request failed');
+                throw new Error(data.error || 'Product research failed');
             }
 
-            // SerpAPI returns actual product data with URLs
-            const products = data.products || [];
-            const formattedResults = data.results || '';
-
-            console.log('SerpAPI product results:', {
-                productCount: products.length,
-                products: products.map(p => ({ title: p.title, link: p.link }))
+            console.log('✅ Enhanced Results:', {
+                products: data.products?.length || 0,
+                recommendations: data.recommendations,
+                deals: data.deals?.length || 0,
+                confidence: data.analysis?.confidence,
+                timestamp: data.timestamp
             });
 
-            // Build response for AI
-            let aiMessage = `Found ${products.length} products for "${query}".\n\n`;
+            // Extract enhanced data
+            const products = data.products || [];
+            const recommendations = data.recommendations || {};
+            const deals = data.deals || [];
+            const analysis = data.analysis || {};
+            const formattedResults = data.results || '';
 
-            if (products.length > 0) {
-                aiMessage += 'Here are the top product URLs to open:\n';
-                products.slice(0, 2).forEach((product, index) => {
-                    aiMessage += `${index + 1}. ${product.title} - ${product.link}\n`;
-                    aiMessage += `   Price: ${product.price || 'N/A'} | Rating: ${product.rating || 'N/A'}\n`;
-                });
-                aiMessage += `\nUse open_url to open the top 1-2 product links above.`;
-            } else {
-                aiMessage += 'No products found. Try a different search term.';
+            // Build SMART AI response with recommendations
+            let aiMessage = `🔍 **Enhanced Product Research** (${data.timestamp})\n\n`;
+            aiMessage += `Found ${products.length} products for "${query}" with ${analysis.confidence || 'medium'} confidence\n\n`;
+
+            // TOP RECOMMENDATIONS
+            if (recommendations.topRated || recommendations.bestValue || recommendations.budgetPick) {
+                aiMessage += `⭐ **SMART RECOMMENDATIONS:**\n\n`;
+
+                if (recommendations.topRated) {
+                    aiMessage += `🏆 **Top Rated:** ${recommendations.topRated.title}\n`;
+                    aiMessage += `   ${recommendations.topRated.reason}\n`;
+                    aiMessage += `   Price: ${recommendations.topRated.price}\n`;
+                    aiMessage += `   🔗 ${recommendations.topRated.link}\n\n`;
+                }
+
+                if (recommendations.bestValue) {
+                    aiMessage += `💎 **Best Value:** ${recommendations.bestValue.title}\n`;
+                    aiMessage += `   ${recommendations.bestValue.reason}\n`;
+                    aiMessage += `   Price: ${recommendations.bestValue.price}\n`;
+                    aiMessage += `   🔗 ${recommendations.bestValue.link}\n\n`;
+                }
+
+                if (recommendations.budgetPick) {
+                    aiMessage += `💰 **Budget Pick:** ${recommendations.budgetPick.title}\n`;
+                    aiMessage += `   ${recommendations.budgetPick.reason}\n`;
+                    aiMessage += `   Price: ${recommendations.budgetPick.price}\n`;
+                    aiMessage += `   🔗 ${recommendations.budgetPick.link}\n\n`;
+                }
             }
+
+            // HOT DEALS
+            if (deals.length > 0) {
+                aiMessage += `🔥 **HOT DEALS DETECTED:**\n`;
+                deals.forEach((deal, i) => {
+                    aiMessage += `${i + 1}. ${deal.title}\n`;
+                    aiMessage += `   ${deal.dealType} | ${deal.rating}★ (${deal.reviews.toLocaleString()} reviews)\n`;
+                    aiMessage += `   ${deal.price} | 🔗 ${deal.link}\n\n`;
+                });
+            }
+
+            // PRODUCT INSIGHTS
+            if (analysis.averageRating || analysis.averagePrice) {
+                aiMessage += `📊 **INSIGHTS:**\n`;
+                aiMessage += `• Avg Rating: ${analysis.averageRating}★\n`;
+                aiMessage += `• Avg Price: ${analysis.averagePrice}\n`;
+                if (analysis.priceDistribution) {
+                    aiMessage += `• Price Range: $${analysis.priceDistribution.min?.toFixed(2)} - $${analysis.priceDistribution.max?.toFixed(2)}\n`;
+                }
+                aiMessage += `• Top-rated (4.5★+): ${analysis.topRatedCount || 0} products\n\n`;
+            }
+
+            // ACTION GUIDANCE
+            aiMessage += `💡 **ACTION:** Use open_url to open 1-2 of the recommended product links above.`;
 
             return {
                 success: true,
-                results: formattedResults,
+
+                // Enhanced data
                 products: products,
+                recommendations: recommendations,
+                deals: deals,
+                analysis: analysis,
+                metadata: data.metadata,
+
+                // Formatted text
+                results: formattedResults,
+                message: aiMessage,
+
+                // Context
                 query: query,
                 year: currentYear,
-                message: aiMessage
+                timestamp: data.timestamp
             };
 
         } catch (error) {
-            console.error('Product research error:', error);
+            console.error('❌ Enhanced product research error:', error);
 
-            // Fallback: Return a helpful message
+            // Fallback: Return helpful error message
             return {
                 success: false,
                 error: error.message,
-                fallback_message: `Product search unavailable (${error.message}). You can tell the user about products from your knowledge, or use search_web as a last resort.`
+                fallback_message: `Enhanced product search is temporarily unavailable (${error.message}). Please try again or use general web search as a fallback.`
             };
         }
     }
