@@ -40,10 +40,10 @@
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600;700&family=Raleway:wght@300;400;500;600;700&family=Ubuntu:wght@300;400;500;700&family=Roboto:wght@300;400;500;700&family=Montserrat:wght@300;400;500;600;700&family=Nunito:wght@300;400;500;600;700&family=Lato:wght@300;400;700&family=Open+Sans:wght@300;400;600;700&family=Playfair+Display:wght@400;500;600;700&family=Merriweather:wght@300;400;700&family=Lora:wght@400;500;600;700&family=Fira+Code:wght@300;400;500;600;700&family=Source+Code+Pro:wght@300;400;500;600;700&family=JetBrains+Mono:wght@300;400;500;600;700&family=Pacifico&family=Righteous&family=Bebas+Neue&family=Permanent+Marker&family=Alfa+Slab+One&display=swap" rel="stylesheet">
 
     <!-- Supabase JavaScript Client -->
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="supabase.js"></script>
 
-    <script src="https://unpkg.com/feather-icons"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="feather-icons.js"></script>
+    <script src="chart.js"></script>
 
     <style>
         * {
@@ -2275,7 +2275,7 @@
                                 <li><i data-feather="check" class="check"></i> Data export capabilities</li>
                             </ul>
 
-                            <button class="card-action" onclick="upgradeToProMonthly()" style="width: 100%; padding: 1.125rem; font-size: 1.0625rem; font-weight: 600;">
+                            <button id="btn-monthly" class="card-action" onclick="upgradeToProMonthly()" style="width: 100%; padding: 1.125rem; font-size: 1.0625rem; font-weight: 600;">
                                 Upgrade to Pro Monthly
                             </button>
                         </div>
@@ -2300,7 +2300,7 @@
                                 <li><i data-feather="check" class="check"></i> Cancel anytime, no commitments</li>
                             </ul>
 
-                            <button class="card-action" onclick="upgradeToProYearly()" style="width: 100%; padding: 1.125rem; font-size: 1.0625rem; font-weight: 600; background: linear-gradient(135deg, #10b981 0%, #059669 100%);">
+                            <button id="btn-yearly" class="card-action" onclick="upgradeToProYearly()" style="width: 100%; padding: 1.125rem; font-size: 1.0625rem; font-weight: 600; background: linear-gradient(135deg, #10b981 0%, #059669 100%);">
                                 Upgrade to Pro Yearly
                             </button>
                         </div>
@@ -2325,7 +2325,7 @@
                                 <li><i data-feather="check" class="check"></i> Perfect for power users</li>
                             </ul>
 
-                            <button class="card-action" onclick="upgradeToProLifetime()" style="width: 100%; padding: 1.125rem; font-size: 1.0625rem; font-weight: 600; background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);">
+                            <button id="btn-lifetime" class="card-action" onclick="upgradeToProLifetime()" style="width: 100%; padding: 1.125rem; font-size: 1.0625rem; font-weight: 600; background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);">
                                 Get Lifetime Access
                             </button>
                         </div>
@@ -4789,7 +4789,7 @@
             updateUserDisplay();
             updatePlanDisplay();
             updateAccountActionButtons();
-            initChart();
+            await initChart();
 
             // Run non-blocking operations in parallel
             Promise.all([
@@ -5623,7 +5623,7 @@
                 try {
                     const { data: dbUser, error: dbError } = await supabaseClient
                         .from('users_auth')
-                        .select('is_pro, plan_type, subscription_status, current_period_end, stripe_customer_id, stripe_subscription_id')
+                        .select('is_pro, plan_type, subscription_status, current_period_end, stripe_customer_id, stripe_subscription_id, stripe_price_id')
                         .eq('email', userData.email)
                         .maybeSingle(); // Changed from .single() to prevent 406 errors
 
@@ -5638,7 +5638,13 @@
                         userData.currentPeriodEnd = dbUser.current_period_end;
                         userData.stripeCustomerId = dbUser.stripe_customer_id;
                         userData.stripeSubscriptionId = dbUser.stripe_subscription_id;
+                        userData.stripePriceId = dbUser.stripe_price_id;
                         userData.isAdmin = isAdmin; // Store admin status
+
+                        // Store price ID for button state management
+                        if (userData.stripePriceId) {
+                            localStorage.setItem('user_stripe_price_id', userData.stripePriceId);
+                        }
                     } else {
                         // Fallback to localStorage if database query fails
                         const isAdmin = userData.email && userData.email.toLowerCase() === 'selfshios@gmail.com';
@@ -5933,12 +5939,69 @@
             feather.replace();
         }
 
+        // Update subscription button states based on user's current plan
+        function updateSubscriptionButtons() {
+            const monthlyBtn = document.getElementById('btn-monthly');
+            const yearlyBtn = document.getElementById('btn-yearly');
+            const lifetimeBtn = document.getElementById('btn-lifetime');
+
+            if (!monthlyBtn || !yearlyBtn || !lifetimeBtn) return;
+
+            // Get user's current plan type from Stripe price ID or subscription data
+            const priceId = userData.stripePriceId || localStorage.getItem('user_stripe_price_id');
+            let userPlanType = null;
+
+            // Determine which plan the user owns
+            if (priceId === STRIPE_PRICE_MONTHLY) {
+                userPlanType = 'monthly';
+            } else if (priceId === STRIPE_PRICE_YEARLY) {
+                userPlanType = 'yearly';
+            } else if (priceId === STRIPE_PRICE_LIFETIME) {
+                userPlanType = 'lifetime';
+            }
+
+            // Update each button based on ownership
+            const buttons = [
+                { btn: monthlyBtn, type: 'monthly', text: 'Pro Monthly', defaultBg: 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)' },
+                { btn: yearlyBtn, type: 'yearly', text: 'Pro Yearly', defaultBg: 'linear-gradient(135deg, #10b981 0%, #059669 100%)' },
+                { btn: lifetimeBtn, type: 'lifetime', text: 'Lifetime Access', defaultBg: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)' }
+            ];
+
+            buttons.forEach(({ btn, type, text, defaultBg }) => {
+                if (userPlanType === type) {
+                    // User owns this plan
+                    btn.textContent = '✓ You own this plan';
+                    btn.style.background = '#1e293b';
+                    btn.style.border = '2px solid #10b981';
+                    btn.style.color = '#10b981';
+                    btn.style.cursor = 'default';
+                    btn.style.opacity = '0.9';
+                    btn.onclick = null; // Disable click
+                } else {
+                    // User doesn't own this plan
+                    btn.textContent = `Upgrade to ${text}`;
+                    btn.style.background = defaultBg;
+                    btn.style.border = 'none';
+                    btn.style.color = '#ffffff';
+                    btn.style.cursor = 'pointer';
+                    btn.style.opacity = '1';
+                    // Restore click handlers
+                    if (type === 'monthly') btn.onclick = upgradeToProMonthly;
+                    else if (type === 'yearly') btn.onclick = upgradeToProYearly;
+                    else if (type === 'lifetime') btn.onclick = upgradeToProLifetime;
+                }
+            });
+        }
+
         // Update plan display
         function updatePlanDisplay() {
             const planBadge = document.getElementById('plan-badge');
             const planActionBtn = document.getElementById('plan-action-btn');
             const freeStatus = document.getElementById('free-status');
             const proStatus = document.getElementById('pro-status');
+
+            // Update subscription buttons
+            updateSubscriptionButtons();
 
             if (!planBadge) {
                 return;
@@ -7527,6 +7590,29 @@
         // Chart initialization with real analytics data
         async function initChart() {
             try {
+                // Check if Chart.js is loaded
+                if (typeof Chart === 'undefined') {
+                    // Wait for Chart.js to load
+                    await new Promise((resolve) => {
+                        const checkChart = setInterval(() => {
+                            if (typeof Chart !== 'undefined') {
+                                clearInterval(checkChart);
+                                resolve();
+                            }
+                        }, 100);
+                        // Timeout after 5 seconds
+                        setTimeout(() => {
+                            clearInterval(checkChart);
+                            resolve();
+                        }, 5000);
+                    });
+                }
+
+                // If Chart.js still not loaded, exit
+                if (typeof Chart === 'undefined') {
+                    return;
+                }
+
                 // Get analytics data from extension with timeout
                 let analyticsData;
                 const loadingEl = document.getElementById('chart-loading');
@@ -7858,6 +7944,10 @@
                     userData.isPro = true;
                     userData.subscriptionStatus = result.subscriptionStatus || 'active';
                     userData.stripeCustomerId = result.customerId;
+                    userData.stripePriceId = result.priceId || STRIPE_PRICE_ID;
+
+                    // Store price ID for button state management
+                    localStorage.setItem('user_stripe_price_id', userData.stripePriceId);
                     userData.stripeSubscriptionId = result.subscriptionId;
                     userData.currentPeriodStart = result.currentPeriodStart;
                     userData.currentPeriodEnd = result.currentPeriodEnd;
@@ -8897,7 +8987,7 @@
         const themeTabContents = document.querySelectorAll('.theme-tab-content');
         const themeTabsContainer = document.getElementById('theme-tabs-container');
 
-        console.log('Theme tabs setup:', {
+// console.log('Theme tabs setup:', {
             buttons: themeTabButtons.length,
             contents: themeTabContents.length,
             container: themeTabsContainer ? 'found' : 'NOT FOUND'
@@ -8909,18 +8999,18 @@
                 const clickedBtn = e.target.closest('.theme-tab-btn');
                 if (!clickedBtn) return;
 
-                console.log('Theme tab clicked:', clickedBtn.dataset.tab);
-                console.log('User Pro status:', userData.isPro, 'Plan:', userData.plan);
+// console.log('Theme tab clicked:', clickedBtn.dataset.tab);
+// console.log('User Pro status:', userData.isPro, 'Plan:', userData.plan);
 
                 // PRO FEATURE: Check if custom themes tab requires Pro
                 const isProUser = userData.isPro || userData.plan === 'pro';
                 if (clickedBtn.dataset.tab === 'custom' && !isProUser) {
-                    console.log('Showing upgrade modal - user is not Pro');
+// console.log('Showing upgrade modal - user is not Pro');
                     showCustomThemeUpgradeModal();
                     return;
                 }
 
-                console.log('Switching to tab:', clickedBtn.dataset.tab);
+// console.log('Switching to tab:', clickedBtn.dataset.tab);
 
                 // Use requestAnimationFrame to batch visual updates and prevent layout thrashing
                 requestAnimationFrame(() => {
@@ -8931,17 +9021,17 @@
                     // Add active class to clicked button and corresponding content
                     clickedBtn.classList.add('active');
                     const targetTab = document.getElementById(`${clickedBtn.dataset.tab}-themes-tab`);
-                    console.log('Target tab element:', targetTab);
+// console.log('Target tab element:', targetTab);
                     if (targetTab) {
                         targetTab.classList.add('active');
-                        console.log('Tab activated:', targetTab.id);
+// console.log('Tab activated:', targetTab.id);
                     } else {
-                        console.error('Target tab not found:', `${clickedBtn.dataset.tab}-themes-tab`);
+// console.error('Target tab not found:', `${clickedBtn.dataset.tab}-themes-tab`);
                     }
                 });
             });
         } else {
-            console.error('Theme tabs container not found!');
+// console.error('Theme tabs container not found!');
         }
 
         // Show Custom Theme Upgrade Modal (navigates to subscription page)

@@ -863,7 +863,7 @@ class TabmangmentPopup {
                 }
             }
         } catch (error) {
-            console.error('Error loading profile info:', error);
+// console.error('Error loading profile info:', error);
         }
     }
 
@@ -889,7 +889,7 @@ class TabmangmentPopup {
 
             this.showLoginScreen();
         } catch (error) {
-            console.error('Error during logout:', error);
+// console.error('Error during logout:', error);
         }
     }
 
@@ -1639,7 +1639,7 @@ Use this information when relevant to provide accurate, time-aware responses.`;
             await this.saveChatHistory();
 
         } catch (error) {
-            console.error('Chat error:', error);
+// console.error('Chat error:', error);
             // Hide typing indicator
             if (typingIndicator) typingIndicator.style.display = 'none';
 
@@ -1875,7 +1875,7 @@ Use this information when relevant to provide accurate, time-aware responses.`;
     }
 
     async executeTool(toolName, input) {
-        console.log(`Executing tool: ${toolName}`, input);
+// console.log(`Executing tool: ${toolName}`, input);
 
         // Security: Validate inputs
         try {
@@ -1939,7 +1939,7 @@ Use this information when relevant to provide accurate, time-aware responses.`;
             // Add current year to query for latest products
             const searchQuery = `${query} ${currentYear}`;
 
-            console.log('🔍 ENHANCED Product Research:', searchQuery);
+// console.log('🔍 ENHANCED Product Research:', searchQuery);
 
             // Call Enhanced SerpAPI Worker with advanced features
             const response = await fetch(CONFIG.SERPAPI.SEARCH_URL, {
@@ -1966,13 +1966,13 @@ Use this information when relevant to provide accurate, time-aware responses.`;
                 throw new Error(data.error || 'Product research failed');
             }
 
-            console.log('✅ Enhanced Results:', {
-                products: data.products?.length || 0,
-                recommendations: data.recommendations,
-                deals: data.deals?.length || 0,
-                confidence: data.analysis?.confidence,
-                timestamp: data.timestamp
-            });
+// console.log('✅ Enhanced Results:', {
+//                 products: data.products?.length || 0,
+//                 recommendations: data.recommendations,
+//                 deals: data.deals?.length || 0,
+//                 confidence: data.analysis?.confidence,
+//                 timestamp: data.timestamp
+//             });
 
             // Extract enhanced data
             const products = data.products || [];
@@ -2056,7 +2056,7 @@ Use this information when relevant to provide accurate, time-aware responses.`;
             };
 
         } catch (error) {
-            console.error('❌ Enhanced product research error:', error);
+// console.error('❌ Enhanced product research error:', error);
 
             // Fallback: Return helpful error message
             return {
@@ -2080,7 +2080,7 @@ Use this information when relevant to provide accurate, time-aware responses.`;
                 query: query
             };
         } catch (error) {
-            console.error('Search error:', error);
+// console.error('Search error:', error);
             return { success: false, error: error.message };
         }
     }
@@ -2287,7 +2287,7 @@ Use this information when relevant to provide accurate, time-aware responses.`;
                 duration_minutes: duration
             };
         } catch (error) {
-            console.error('Set timer error:', error);
+// console.error('Set timer error:', error);
             return {
                 success: false,
                 error: error.message || 'Failed to set timer'
@@ -2370,7 +2370,7 @@ Use this information when relevant to provide accurate, time-aware responses.`;
                 tab_id: tabId
             };
         } catch (error) {
-            console.error('Remove timer error:', error);
+// console.error('Remove timer error:', error);
             return {
                 success: false,
                 error: error.message || 'Failed to remove timer'
@@ -2461,7 +2461,7 @@ Use this information when relevant to provide accurate, time-aware responses.`;
                 insights: insights
             };
         } catch (error) {
-            console.error('Get insights error:', error);
+// console.error('Get insights error:', error);
             return {
                 success: false,
                 error: error.message || 'Failed to get insights'
@@ -2551,7 +2551,7 @@ Use this information when relevant to provide accurate, time-aware responses.`;
                 summary: `Found ${suggestions.to_close.length} tabs to close, ${suggestions.to_bookmark.length} to bookmark, ${suggestions.to_set_timer.length} needing timers, and ${suggestions.to_group.length} groups to organize.`
             };
         } catch (error) {
-            console.error('Suggest cleanup error:', error);
+// console.error('Suggest cleanup error:', error);
             return {
                 success: false,
                 error: error.message || 'Failed to suggest cleanup'
@@ -2749,21 +2749,21 @@ Use this information when relevant to provide accurate, time-aware responses.`;
     // PERSISTENT CHAT STORAGE - Load chat history from storage
     async loadChatHistory() {
         try {
-            console.log('💾 Loading chat history from storage...');
+// console.log('💾 Loading chat history from storage...');
             const result = await chrome.storage.local.get(['chatHistory', 'chatMessages']);
 
             // Restore conversation history for AI (this MUST be restored for AI memory)
             if (result.chatHistory && Array.isArray(result.chatHistory)) {
                 this.chatHistory = result.chatHistory;
-                console.log('✅ Loaded AI chat history:', this.chatHistory.length, 'messages');
+// console.log('✅ Loaded AI chat history:', this.chatHistory.length, 'messages');
             } else {
                 this.chatHistory = [];
-                console.log('ℹ️ No existing chat history found');
+// console.log('ℹ️ No existing chat history found');
             }
 
             // Restore visual chat messages in UI
             if (result.chatMessages && Array.isArray(result.chatMessages) && result.chatMessages.length > 0) {
-                console.log('📝 Restoring', result.chatMessages.length, 'chat messages in UI...');
+// console.log('📝 Restoring', result.chatMessages.length, 'chat messages in UI...');
 
                 // Wait a bit to ensure DOM is fully ready
                 await new Promise(resolve => setTimeout(resolve, 100));
@@ -2772,7 +2772,7 @@ Use this information when relevant to provide accurate, time-aware responses.`;
                 const emptyState = document.getElementById('chat-empty-state');
 
                 if (!chatMessagesContainer) {
-                    console.warn('⚠️ Chat messages container not found - will restore when available');
+// console.warn('⚠️ Chat messages container not found - will restore when available');
                     // Store for later restoration
                     this._pendingMessages = result.chatMessages;
                     return;
@@ -2787,7 +2787,7 @@ Use this information when relevant to provide accurate, time-aware responses.`;
                 for (const msg of result.chatMessages) {
                     // Validate message object
                     if (msg && typeof msg === 'object' && msg.text && msg.text.trim() && msg.type) {
-                        console.log(`  ✅ Restoring ${msg.type} message: "${msg.text.substring(0, 50)}..."`);
+// console.log(`  ✅ Restoring ${msg.type} message: "${msg.text.substring(0, 50)}..."`);
                         await this.addChatMessage(msg.type, msg.text, false);
                         restoredCount++;
                     } else {
@@ -2799,16 +2799,16 @@ Use this information when relevant to provide accurate, time-aware responses.`;
                             textPreview: msg?.text?.substring(0, 20) || 'empty',
                             fullObject: msg
                         };
-                        console.warn('  ⚠️ Skipping invalid message:', JSON.stringify(debugInfo, null, 2));
+// console.warn('  ⚠️ Skipping invalid message:', JSON.stringify(debugInfo, null, 2));
                         skippedCount++;
                     }
                 }
 
-                console.log(`✅ Restored ${restoredCount} messages, skipped ${skippedCount} invalid messages`);
+// console.log(`✅ Restored ${restoredCount} messages, skipped ${skippedCount} invalid messages`);
 
                 // AUTO-CLEANUP: If we skipped any corrupted messages, clean storage
                 if (skippedCount > 0) {
-                    console.log('🔧 Auto-cleaning corrupted data from storage...');
+// console.log('🔧 Auto-cleaning corrupted data from storage...');
 
                     // Filter to only valid messages
                     const cleanMessages = result.chatMessages.filter(msg =>
@@ -2817,16 +2817,16 @@ Use this information when relevant to provide accurate, time-aware responses.`;
 
                     // Save cleaned data back to storage
                     await chrome.storage.local.set({ chatMessages: cleanMessages });
-                    console.log(`✅ Auto-cleaned storage: ${cleanMessages.length} valid messages retained, ${skippedCount} corrupted messages removed`);
+// console.log(`✅ Auto-cleaned storage: ${cleanMessages.length} valid messages retained, ${skippedCount} corrupted messages removed`);
                 }
 
                 // Scroll to bottom after restoring all messages
                 chatMessagesContainer.scrollTop = chatMessagesContainer.scrollHeight;
             } else {
-                console.log('ℹ️ No chat messages to restore');
+// console.log('ℹ️ No chat messages to restore');
             }
         } catch (error) {
-            console.error('❌ Error loading chat history:', error);
+// console.error('❌ Error loading chat history:', error);
             this.chatHistory = [];
         }
     }
@@ -2843,7 +2843,7 @@ Use this information when relevant to provide accurate, time-aware responses.`;
             const chatMessagesContainer = document.getElementById('chat-messages');
             if (chatMessagesContainer) {
                 const messages = chatMessagesContainer.querySelectorAll('.chat-message');
-                console.log('📝 Found', messages.length, 'chat messages to save');
+// console.log('📝 Found', messages.length, 'chat messages to save');
 
                 const chatMessages = Array.from(messages).map((msg, index) => {
                     // Determine message type
@@ -2854,16 +2854,16 @@ Use this information when relevant to provide accurate, time-aware responses.`;
                     const bubble = msg.querySelector('.message-bubble');
                     const text = bubble ? (bubble.textContent || bubble.innerText || '').trim() : '';
 
-                    console.log(`  [${index}] Type: ${type}, Text length: ${text.length}, Preview: "${text.substring(0, 50)}..."`);
+// console.log(`  [${index}] Type: ${type}, Text length: ${text.length}, Preview: "${text.substring(0, 50)}..."`);
 
                     return { type, text };
                 }).filter(msg => msg.text.length > 0); // Only save messages with actual text
 
                 await chrome.storage.local.set({ chatMessages });
-                console.log('💾 Saved', chatMessages.length, 'messages to storage');
+// console.log('💾 Saved', chatMessages.length, 'messages to storage');
             }
         } catch (error) {
-            console.error('❌ Error saving chat history:', error);
+// console.error('❌ Error saving chat history:', error);
         }
     }
 
@@ -2882,7 +2882,7 @@ Use this information when relevant to provide accurate, time-aware responses.`;
 
         // Clear from persistent storage
         chrome.storage.local.remove(['chatHistory', 'chatMessages'], () => {
-            console.log('🗑️ Chat history cleared from storage');
+// console.log('🗑️ Chat history cleared from storage');
         });
 
         // Show empty state
@@ -2937,7 +2937,7 @@ Use this information when relevant to provide accurate, time-aware responses.`;
             chatInput.dispatchEvent(new Event('input'));
 
         } catch (error) {
-            console.error('Prompt enhancement error:', error);
+// console.error('Prompt enhancement error:', error);
             // Keep original text on error
         } finally {
             // Re-enable input
@@ -3233,7 +3233,7 @@ Use this information when relevant to provide accurate, time-aware responses.`;
                         emailInput.style.cursor = 'not-allowed';
                     }
                 } catch (error) {
-                    console.error('Error loading user email:', error);
+// console.error('Error loading user email:', error);
                 }
             }
 
@@ -3290,14 +3290,14 @@ Use this information when relevant to provide accurate, time-aware responses.`;
 
             if (!response.ok) {
                 const errorText = await response.text();
-                console.error('Supabase error:', response.status, errorText);
+// console.error('Supabase error:', response.status, errorText);
                 throw new Error('Failed to send message. Please try again or email selfshios@gmail.com directly.');
             }
 
             this.showMessage('Message sent successfully! I will get back to you soon.', 'success');
             this.hideContactModal();
         } catch (error) {
-            console.error('Contact form error:', error);
+// console.error('Contact form error:', error);
             this.showError(error.message || 'Failed to send message. Please try again.');
         } finally {
             submitBtn.disabled = false;
@@ -4927,7 +4927,7 @@ Use this information when relevant to provide accurate, time-aware responses.`;
                 }
             });
         } catch (error) {
-            console.error('Error adjusting action button colors:', error);
+// console.error('Error adjusting action button colors:', error);
         }
     }
     handleFaviconErrors() {
@@ -5027,150 +5027,15 @@ Use this information when relevant to provide accurate, time-aware responses.`;
      * - color: Chrome tab group color
      * - priority: Higher priority wins conflicts (1-10)
      */
-    getSmartCategories() {
-        return [
-            {
-                name: '🛍️ Shopping',
-                domains: ['amazon', 'ebay', 'walmart', 'etsy', 'aliexpress', 'target', 'bestbuy', 'shopify', 'shop', 'store', 'cart', 'checkout', 'product'],
-                keywords: ['buy', 'price', 'deal', 'sale', 'discount', 'shop', 'cart', 'order', 'purchase'],
-                color: 'yellow',
-                priority: 7
-            },
-            {
-                name: '💼 Work/School',
-                domains: ['docs.google', 'notion', 'gmail', 'outlook', 'teams', 'slack', 'zoom', 'meet.google', 'calendar', 'drive.google', 'dropbox', 'onedrive', 'evernote', 'trello', 'asana', 'monday'],
-                keywords: ['homework', 'essay', 'project', 'assignment', 'research', 'study', 'lecture', 'class', 'work', 'meeting', 'presentation', 'document', 'report'],
-                color: 'blue',
-                priority: 8
-            },
-            {
-                name: '🎮 Social/Entertainment',
-                domains: ['youtube', 'reddit', 'tiktok', 'twitter', 'instagram', 'facebook', 'twitch', 'netflix', 'spotify', 'discord', 'pinterest', 'tumblr', 'snapchat'],
-                keywords: ['watch', 'video', 'stream', 'music', 'game', 'play', 'entertainment', 'social', 'chat', 'meme'],
-                color: 'pink',
-                priority: 5
-            },
-            {
-                name: '🤖 AI Tools',
-                domains: ['chat.openai', 'claude.ai', 'gemini.google', 'bard.google', 'copilot', 'midjourney', 'perplexity', 'anthropic'],
-                keywords: ['chatgpt', 'claude', 'gemini', 'bard', 'ai chat', 'artificial intelligence', 'gpt', 'llm'],
-                color: 'purple',
-                priority: 9
-            },
-            {
-                name: '💻 Coding',
-                domains: ['github', 'gitlab', 'stackoverflow', 'stackexchange', 'codepen', 'codesandbox', 'replit', 'glitch', 'vercel', 'netlify', 'heroku', 'npm', 'pypi'],
-                keywords: ['code', 'programming', 'developer', 'api', 'documentation', 'repository', 'commit', 'pull request', 'bug', 'error'],
-                color: 'cyan',
-                priority: 8
-            },
-            {
-                name: '📰 News/Reading',
-                domains: ['news', 'medium', 'substack', 'wikipedia', 'article', 'blog'],
-                keywords: ['article', 'news', 'read', 'blog', 'post', 'story'],
-                color: 'grey',
-                priority: 4
-            }
-        ];
-    }
-
-    /**
-     * Auto-Group Rules Configuration
-     * Optional rules that can be enabled/disabled
-     */
-    getAutoGroupRules() {
-        return {
-            sameDomainThreshold: 3, // Group if 3+ tabs from same domain
-            enableKeywordGrouping: true, // Enable keyword-based grouping
-            enableDomainGrouping: true, // Enable domain-based grouping
-            minTabsForGroup: 2 // Minimum tabs needed to create a group
-        };
-    }
-
-    /**
-     * Detect category for a single tab
-     * Returns: { category, score, matchType }
-     */
-    detectTabCategory(tab) {
-        if (!tab || !tab.url) return null;
-
-        const categories = this.getSmartCategories();
-        const url = tab.url.toLowerCase();
-        const title = (tab.title || '').toLowerCase();
-
-        let bestMatch = null;
-        let highestScore = 0;
-
-        for (const category of categories) {
-            let score = 0;
-            let matchType = '';
-
-            // Check domain matching (stronger signal)
-            for (const domain of category.domains) {
-                if (url.includes(domain)) {
-                    score += 10;
-                    matchType = 'domain';
-                    break;
-                }
-            }
-
-            // Check keyword matching in URL and title (weaker signal)
-            for (const keyword of category.keywords) {
-                if (url.includes(keyword)) {
-                    score += 3;
-                    matchType = matchType || 'url-keyword';
-                }
-                if (title.includes(keyword)) {
-                    score += 2;
-                    matchType = matchType || 'title-keyword';
-                }
-            }
-
-            // Apply category priority as tiebreaker
-            if (score > 0) {
-                score += category.priority * 0.1;
-            }
-
-            // Update best match if this category scores higher
-            if (score > highestScore) {
-                highestScore = score;
-                bestMatch = {
-                    category: category,
-                    score: score,
-                    matchType: matchType
-                };
-            }
-        }
-
-        return bestMatch;
-    }
-
-    /**
-     * Group tabs by same domain (for 3+ tabs rule)
-     */
-    groupBySameDomain(tabs) {
-        const domainGroups = {};
-
-        for (const tab of tabs) {
-            try {
-                const url = new URL(tab.url);
-                const domain = url.hostname.replace('www.', '');
-
-                if (!domainGroups[domain]) {
-                    domainGroups[domain] = [];
-                }
-                domainGroups[domain].push(tab);
-            } catch (error) {
-                // Skip invalid URLs
-            }
-        }
-
-        return domainGroups;
-    }
+    // ============================================
+    // OLD PRE-BUILT CATEGORIES (REMOVED)
+    // Now using AI-powered dynamic categorization instead
+    // The AI analyzes ALL tabs and creates smart categories on-the-fly
+    // ============================================
 
     /**
      * Main Smart Auto-Grouping function
-     * Analyzes all tabs and creates smart groups
+     * Uses AI to intelligently categorize ALL tabs
      */
     async smartAutoGroup() {
         try {
@@ -5180,13 +5045,28 @@ Use this information when relevant to provide accurate, time-aware responses.`;
                 groupBtn.style.transform = 'scale(0.95)';
             }
 
-            console.log('🤖 Starting Smart Auto-Grouping...');
+// console.log('🤖 Starting AI-Powered Smart Auto-Grouping...');
+            this.showMessage('🤖 AI is analyzing your tabs...', 'info');
 
-            // Get all tabs in current window
+            // Step 1: Get all tabs in current window
             const allTabs = await chrome.tabs.query({ currentWindow: true });
-            const rules = this.getAutoGroupRules();
 
-            // Step 1: Ungroup all existing groups (fresh start)
+            // Filter out extension pages
+            const validTabs = allTabs.filter(tab =>
+                !tab.url.includes('chrome://') &&
+                !tab.url.includes('chrome-extension://')
+            );
+
+            if (validTabs.length === 0) {
+                this.showMessage('No tabs to group!', 'info');
+                if (groupBtn) {
+                    groupBtn.classList.remove('grouping');
+                    groupBtn.style.transform = 'scale(1)';
+                }
+                return { success: false, error: 'No valid tabs' };
+            }
+
+            // Step 2: Ungroup all existing groups (fresh start)
             for (const tab of allTabs) {
                 if (tab.groupId && tab.groupId !== -1) {
                     try {
@@ -5197,99 +5077,69 @@ Use this information when relevant to provide accurate, time-aware responses.`;
                 }
             }
 
-            // Step 2: Categorize all tabs
-            const categorizedTabs = {};
-            const uncategorizedTabs = [];
+            // Step 3: Prepare tab data for AI analysis
+            const tabData = validTabs.map((tab, index) => ({
+                id: index,
+                tabId: tab.id,
+                title: tab.title,
+                url: tab.url
+            }));
 
-            for (const tab of allTabs) {
-                // Skip extension pages
-                if (tab.url.includes('chrome://') || tab.url.includes('chrome-extension://')) {
-                    continue;
-                }
+            // Step 4: Call AI to categorize tabs
+            const aiResponse = await this.categorizeTabsWithAI(tabData);
 
-                const match = this.detectTabCategory(tab);
-
-                if (match && match.score > 0) {
-                    const categoryName = match.category.name;
-
-                    if (!categorizedTabs[categoryName]) {
-                        categorizedTabs[categoryName] = {
-                            category: match.category,
-                            tabs: []
-                        };
-                    }
-
-                    categorizedTabs[categoryName].tabs.push({
-                        tab: tab,
-                        score: match.score,
-                        matchType: match.matchType
-                    });
-                } else {
-                    uncategorizedTabs.push(tab);
-                }
+            if (!aiResponse || !aiResponse.categories) {
+                throw new Error('AI failed to categorize tabs');
             }
 
-            // Step 3: Apply same-domain rule to uncategorized tabs
-            if (rules.enableDomainGrouping) {
-                const domainGroups = this.groupBySameDomain(uncategorizedTabs);
-
-                for (const [domain, tabs] of Object.entries(domainGroups)) {
-                    if (tabs.length >= rules.sameDomainThreshold) {
-                        const categoryName = `🌐 ${domain}`;
-                        categorizedTabs[categoryName] = {
-                            category: {
-                                name: categoryName,
-                                color: 'grey',
-                                priority: 3
-                            },
-                            tabs: tabs.map(tab => ({ tab, score: 5, matchType: 'same-domain' }))
-                        };
-                    }
-                }
-            }
-
-            // Step 4: Create Chrome Tab Groups
+            // Step 5: Create Chrome Tab Groups based on AI categorization
             let groupedCount = 0;
             const groupSummary = [];
+            const availableColors = ['blue', 'red', 'yellow', 'green', 'pink', 'purple', 'cyan', 'orange'];
 
-            for (const [categoryName, data] of Object.entries(categorizedTabs)) {
-                const { category, tabs } = data;
+            for (let i = 0; i < aiResponse.categories.length; i++) {
+                const category = aiResponse.categories[i];
 
-                // Only group if we have minimum tabs
-                if (tabs.length < rules.minTabsForGroup) {
+                // Skip categories with less than 2 tabs
+                if (!category.tabIds || category.tabIds.length < 2) {
                     continue;
                 }
 
                 try {
-                    // Sort tabs by score (highest confidence first)
-                    tabs.sort((a, b) => b.score - a.score);
+                    // Map AI tab IDs back to actual Chrome tab IDs
+                    const tabIds = category.tabIds
+                        .map(id => tabData[id]?.tabId)
+                        .filter(id => id !== undefined);
 
-                    const tabIds = tabs.map(t => t.tab.id);
+                    if (tabIds.length === 0) continue;
 
                     // Create tab group
                     const groupId = await chrome.tabs.group({ tabIds });
 
+                    // Assign color (cycle through available colors)
+                    const color = category.color || availableColors[i % availableColors.length];
+
                     // Configure group
                     await chrome.tabGroups.update(groupId, {
                         title: category.name,
-                        color: category.color,
-                        collapsed: false // Keep expanded so users see the groups
+                        color: color,
+                        collapsed: false
                     });
 
-                    groupedCount += tabs.length;
+                    groupedCount += tabIds.length;
                     groupSummary.push({
                         name: category.name,
-                        count: tabs.length,
-                        color: category.color
+                        count: tabIds.length,
+                        color: color
                     });
 
-                    console.log(`✅ Created group "${category.name}" with ${tabs.length} tabs`);
+// console.log(`✅ Created AI group "${category.name}" with ${tabIds.length} tabs`);
                 } catch (error) {
-                    console.error(`❌ Failed to create group "${categoryName}":`, error);
+// console.error(`❌ Failed to create group "${category.name}":`, error);
                 }
             }
 
-            // Step 5: Reset button state
+            // Step 6: Reset button state
             setTimeout(() => {
                 if (groupBtn) {
                     groupBtn.classList.remove('grouping');
@@ -5297,23 +5147,22 @@ Use this information when relevant to provide accurate, time-aware responses.`;
                 }
             }, 300);
 
-            // Step 6: Show success notification
+            // Step 7: Show success message
             if (groupedCount > 0) {
-                this.showSmartGroupNotification(groupSummary, groupedCount);
-                this.showMessage(`🤖 Smart grouped ${groupedCount} tabs into ${groupSummary.length} categories!`, 'success');
+                this.showMessage(`🤖 AI grouped ${groupedCount} tabs into ${groupSummary.length} smart categories!`, 'success');
             } else {
-                this.showMessage('No tabs matched any categories. Try opening more tabs!', 'info');
+                this.showMessage('AI couldn\'t find groupings. Try opening more tabs!', 'info');
             }
 
-            // Step 7: Refresh UI
+            // Step 8: Refresh UI
             await this.refreshTabList();
 
-            console.log(`🎉 Smart Auto-Grouping complete: ${groupedCount} tabs grouped`);
+// console.log(`🎉 AI Auto-Grouping complete: ${groupedCount} tabs grouped into ${groupSummary.length} categories`);
             return { success: true, groupedCount, groups: groupSummary };
 
         } catch (error) {
-            console.error('❌ Smart Auto-Grouping error:', error);
-            this.showError('Failed to auto-group tabs. Please try again.');
+// console.error('❌ AI Auto-Grouping error:', error);
+            this.showError('AI grouping failed. Please try again.');
 
             const groupBtn = document.getElementById('smart-group-btn');
             if (groupBtn) {
@@ -5326,49 +5175,74 @@ Use this information when relevant to provide accurate, time-aware responses.`;
     }
 
     /**
-     * Show notification with group summary
-     * Displays a nice tooltip showing what was grouped
+     * Use AI to intelligently categorize tabs
+     * Returns: { categories: [{ name, tabIds, color }] }
      */
-    showSmartGroupNotification(groupSummary, totalCount) {
-        // Create notification element
-        const notification = document.createElement('div');
-        notification.className = 'smart-group-notification';
-        notification.innerHTML = `
-            <div class="notification-header">
-                <span class="notification-icon">🤖</span>
-                <span class="notification-title">Smart Auto-Grouping Complete!</span>
-            </div>
-            <div class="notification-body">
-                <div class="notification-summary">Organized ${totalCount} tabs into ${groupSummary.length} groups:</div>
-                <div class="notification-groups">
-                    ${groupSummary.map(group => `
-                        <div class="notification-group">
-                            <span class="group-badge" style="background-color: var(--group-${group.color})"></span>
-                            <span class="group-name">${group.name}</span>
-                            <span class="group-count">${group.count} tabs</span>
-                        </div>
-                    `).join('')}
-                </div>
-            </div>
-        `;
+    async categorizeTabsWithAI(tabData) {
+        try {
+            const prompt = `Analyze these browser tabs and intelligently group them into smart categories. Create categories that make sense based on the content, purpose, and context of the tabs.
 
-        // Add to DOM
-        document.body.appendChild(notification);
+TABS TO CATEGORIZE:
+${tabData.map(tab => `[${tab.id}] ${tab.title} - ${tab.url}`).join('\n')}
 
-        // Animate in
-        setTimeout(() => notification.classList.add('show'), 10);
+INSTRUCTIONS:
+1. Group ALL tabs into meaningful categories (don't leave any uncategorized)
+2. Create 3-8 category names that are clear and descriptive
+3. Add an appropriate emoji to each category name
+4. Each category should have at least 2 tabs
+5. Choose a color for each group: blue, red, yellow, green, pink, purple, cyan, or orange
 
-        // Auto-remove after 5 seconds
-        setTimeout(() => {
-            notification.classList.remove('show');
-            setTimeout(() => notification.remove(), 300);
-        }, 5000);
+Return ONLY a JSON object in this exact format (no markdown, no explanation):
+{
+  "categories": [
+    {
+      "name": "🎮 Gaming & Entertainment",
+      "tabIds": [0, 3, 5],
+      "color": "pink"
+    },
+    {
+      "name": "💼 Work & Productivity",
+      "tabIds": [1, 2],
+      "color": "blue"
+    }
+  ]
+}`;
 
-        // Click to dismiss
-        notification.addEventListener('click', () => {
-            notification.classList.remove('show');
-            setTimeout(() => notification.remove(), 300);
-        });
+            const response = await fetch(CONFIG.CLAUDE.CHAT_URL, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    messages: [{ role: 'user', content: prompt }],
+                    model: CONFIG.CLAUDE.MODEL,
+                    max_tokens: 4000,
+                    system: 'You are a smart tab categorization assistant. Return only valid JSON, no markdown formatting.',
+                    userEmail: this.userEmail || 'anonymous',
+                    tools: []
+                })
+            });
+
+            if (!response.ok) {
+                throw new Error(`AI API error: ${response.status}`);
+            }
+
+            const data = await response.json();
+            let aiText = data.content?.find(block => block.type === 'text')?.text || data.message || '';
+
+            // Clean up response (remove markdown code blocks if present)
+            aiText = aiText.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+
+            // Parse JSON response
+            const result = JSON.parse(aiText);
+
+// console.log('🤖 AI Categorization:', result);
+            return result;
+
+        } catch (error) {
+// console.error('AI categorization error:', error);
+            throw error;
+        }
     }
 
     // ============================================
@@ -5683,8 +5557,8 @@ Use this information when relevant to provide accurate, time-aware responses.`;
                 this.attachBookmarkListeners();
                 setTimeout(() => this.handleFaviconErrors(), 100);
             } catch (error) {
-                console.error('Error rendering bookmarks:', error);
-                console.error('Error stack:', error.stack);
+// console.error('Error rendering bookmarks:', error);
+// console.error('Error stack:', error.stack);
                 container.innerHTML = `
                     <div class="empty-state">
                         <svg class="empty-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="color: #ef4444;">
@@ -9875,7 +9749,7 @@ function applyThemeToPopup(theme) {
             tabItemSecondaryTextColor = autoTabItemSecondaryTextColor;
 
             if (theme.textColor) {
-                console.warn(`Theme text color ${theme.textColor} has insufficient contrast with tab background ${tabItemBgHex}. Using auto-calculated color ${tabItemTextColor} instead.`);
+// console.warn(`Theme text color ${theme.textColor} has insufficient contrast with tab background ${tabItemBgHex}. Using auto-calculated color ${tabItemTextColor} instead.`);
             }
         }
 
