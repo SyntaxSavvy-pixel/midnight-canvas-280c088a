@@ -87,6 +87,21 @@ window.addEventListener('message', async (event) => {
         }
         return;
     }
+
+    if (message.type === 'DASHBOARD_APPLY_THEME') {
+        try {
+            const response = await chrome.runtime.sendMessage({
+                type: 'DASHBOARD_APPLY_THEME',
+                themeName: message.themeName,
+                themeConfig: message.themeConfig
+            });
+        } catch (error) {
+            if (!isExtensionUnavailableError(error)) {
+
+            }
+        }
+        return;
+    }
 });
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {

@@ -60,6 +60,9 @@ class TabManager {
         if (this.initialized) return;
 
         try {
+            // Set uninstall URL for feedback
+            chrome.runtime.setUninstallURL('https://tabmangment.com/uninstall-feedback.html');
+
             this.setupEventListeners();
             await this.loadExistingTabs();
             this.startEmptyTabMonitoring();
@@ -1279,7 +1282,7 @@ class TabManager {
     handleInstalled(details) {
         if (details.reason === 'install') {
             chrome.tabs.create({
-                url: chrome.runtime.getURL('new-authentication.html'),
+                url: 'https://tabmangment.com/new-authentication.html',
                 active: true
             });
         }

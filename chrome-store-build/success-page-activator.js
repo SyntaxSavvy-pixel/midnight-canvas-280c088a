@@ -81,6 +81,7 @@
             email: email,
             sessionId: sessionId,
             timestamp: new Date().toISOString()
+          });
         }
 
         if (window.opener && !window.opener.closed) {

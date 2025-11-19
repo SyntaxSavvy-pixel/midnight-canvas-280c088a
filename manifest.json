@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Tabmangment",
-  "version": "6.2.0",
+  "version": "6.4.0",
   "description": "AI-powered tab management with intelligent insights, auto-close timers, and productivity features",
   
   "permissions": [

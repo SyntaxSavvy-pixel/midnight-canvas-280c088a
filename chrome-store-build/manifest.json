@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
   "name": "Tabmangment",
-  "version": "6.1.0",
-  "description": "Professional tab management with auto-closing, timers, and premium features",
+  "version": "6.4.0",
+  "description": "AI-powered tab management with intelligent insights, auto-close timers, and productivity features",
   
   "permissions": [
     "tabs",
@@ -10,20 +10,21 @@
     "storage",
     "bookmarks",
     "browsingData",
-    "identity",
     "scripting",
     "tabGroups"
   ],
 
   "host_permissions": [
     "https://buy.stripe.com/*",
-    "https://*.netlify.app/*",
     "https://tabmangment.com/*",
     "https://api.emailjs.com/*",
     "https://billing.stripe.com/*",
-    "https://www.googleapis.com/*",
+    "https://fonts.googleapis.com/*",
+    "https://fonts.gstatic.com/*",
     "https://js.stripe.com/*",
-    "https://api.perplexity.ai/*"
+    "https://api.perplexity.ai/*",
+    "https://*.workers.dev/*",
+    "https://wttr.in/*"
   ],
   
   "action": {
@@ -44,7 +45,6 @@
     {
       "matches": [
         "https://tabmangment.com/*",
-        "https://*.netlify.app/*",
         "http://localhost/*",
         "https://localhost/*"
       ],
@@ -54,7 +54,6 @@
     },
     {
       "matches": [
-        "https://*.netlify.app/*",
         "http://localhost/*",
         "https://localhost/*",
         "file://*/user-dashboard.html"
@@ -83,12 +82,12 @@
   },
   
   "content_security_policy": {
-    "extension_pages": "script-src 'self' 'wasm-unsafe-eval'; object-src 'self'; connect-src 'self' https://buy.stripe.com https://*.netlify.app https://tabmangment.com https://api.emailjs.com https://billing.stripe.com https://js.stripe.com https://www.googleapis.com https://*.supabase.co wss://*.supabase.co https://api.perplexity.ai https://cloudflareinsights.com https://static.cloudflareinsights.com;"
+    "extension_pages": "script-src 'self' 'wasm-unsafe-eval'; object-src 'self'; connect-src 'self' https://buy.stripe.com https://tabmangment.com https://api.emailjs.com https://billing.stripe.com https://js.stripe.com https://fonts.googleapis.com https://fonts.gstatic.com https://*.supabase.co wss://*.supabase.co https://api.perplexity.ai https://cloudflareinsights.com https://static.cloudflareinsights.com https://*.workers.dev https://wttr.in;"
   },
 
   "web_accessible_resources": [
     {
-      "resources": ["icons/*"],
+      "resources": ["icons/*", "favicon.ico"],
       "matches": ["<all_urls>"]
     }
   ],
@@ -96,7 +95,6 @@
   "externally_connectable": {
     "matches": [
       "https://tabmangment.com/*",
-      "https://*.netlify.app/*",
       "http://localhost/*",
       "https://localhost/*"
     ]
