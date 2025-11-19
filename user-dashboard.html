@@ -5689,7 +5689,7 @@
                 try {
                     const { data: dbUser, error: dbError } = await supabaseClient
                         .from('users_auth')
-                        .select('is_pro, plan_type, subscription_status, current_period_end, stripe_customer_id, stripe_subscription_id, stripe_price_id')
+                        .select('is_pro, plan_type, subscription_status, current_period_end, stripe_customer_id, stripe_subscription_id')
                         .eq('email', userData.email)
                         .maybeSingle(); // Changed from .single() to prevent 406 errors
 
@@ -5704,7 +5704,7 @@
                         userData.currentPeriodEnd = dbUser.current_period_end;
                         userData.stripeCustomerId = dbUser.stripe_customer_id;
                         userData.stripeSubscriptionId = dbUser.stripe_subscription_id;
-                        userData.stripePriceId = dbUser.stripe_price_id;
+                        userData.stripePriceId = localStorage.getItem('user_stripe_price_id') || null; // Load from localStorage instead
                         userData.isAdmin = isAdmin; // Store admin status
 
                         // Store price ID for button state management
