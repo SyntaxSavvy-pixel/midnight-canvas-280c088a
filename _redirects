@@ -1,0 +1,9 @@
+# Cloudflare Pages 301 Redirects for SEO
+# Replace meta refresh with proper HTTP 301 redirects
+
+# Redirect root to main landing page
+/index.html /mainlandingpage.html 301
+/ /mainlandingpage.html 301
+
+# Redirect www to non-www for SEO consistency
+https://www.tabmangment.com/* https://tabmangment.com/:splat 301
