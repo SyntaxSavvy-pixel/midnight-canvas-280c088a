@@ -28,33 +28,47 @@ cp dashboard-sync.js chrome-store-build/
 cp dashboard-bridge.js chrome-store-build/
 cp success-page-activator.js chrome-store-build/
 
-# Icons
-cp -r icons chrome-store-build/
-
-# Extension libraries (if they exist)
-if [ -d "lib" ]; then
-    cp -r lib chrome-store-build/
-fi
+# Icons directory
+mkdir -p chrome-store-build/icons
+cp icons/icon-16.png chrome-store-build/icons/
+cp icons/icon-32.png chrome-store-build/icons/
+cp icons/icon-48.png chrome-store-build/icons/
+cp icons/icon-128.png chrome-store-build/icons/
 
 echo "✅ Files copied"
 echo ""
 
-# Create ZIP
+# List files to be included
+echo "📋 Files included in extension:"
+find chrome-store-build -type f | sort
+
+echo ""
+echo "📊 Total files: $(find chrome-store-build -type f | wc -l)"
+echo ""
+
+# Create ZIP using Python (zip command not available)
+echo "🗜️ Creating ZIP file..."
 cd chrome-store-build
-zip -r ../tabmangment-extension-v5.5.0.zip . -x "*.DS_Store" "*.git*"
+python3 -m zipfile -c ../tabmanagement-extension.zip ./*
 cd ..
 
-echo ""
-echo "✅ ZIP created: tabmangment-extension-v5.5.0.zip"
-echo ""
-echo "📊 Contents:"
-unzip -l tabmangment-extension-v5.5.0.zip
-
-echo ""
-echo "🚀 Ready to upload to Chrome Web Store!"
-echo ""
-echo "⚠️  EXCLUDED (website files, not extension):"
-echo "   - user-dashboard.html"
-echo "   - New-authentication.html"
-echo "   - All other HTML pages"
-echo "   - netlify/ directory"
+# Verify ZIP was created
+if [ -f "tabmanagement-extension.zip" ]; then
+    SIZE=$(du -h tabmanagement-extension.zip | cut -f1)
+    echo ""
+    echo "✅ ZIP created successfully: tabmanagement-extension.zip ($SIZE)"
+    echo ""
+    echo "🚀 Ready to upload to Chrome Web Store!"
+    echo ""
+    echo "⚠️  EXCLUDED (website/backend files):"
+    echo "   - user-dashboard.html (website)"
+    echo "   - new-authentication.html (website)"
+    echo "   - mainlandingpage.html (website)"
+    echo "   - All SQL files"
+    echo "   - .env file"
+    echo "   - functions/ directory"
+    echo "   - backend-setup/ directory"
+else
+    echo "❌ Failed to create ZIP file"
+    exit 1
+fi
