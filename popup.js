@@ -4218,7 +4218,7 @@ Use this information when relevant to provide accurate, time-aware responses.`;
             } else {
             }
 
-            const tabs = await chrome.tabs.query({ url: ['*://tabmangment.com/*', '*://tabmangment.netlify.app/*'] });
+            const tabs = await chrome.tabs.query({ url: ['*://tabmangment.com/*'] });
 
             if (tabs.length === 0) {
                 return false;
