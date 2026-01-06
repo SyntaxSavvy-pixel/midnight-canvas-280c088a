@@ -1,0 +1,12 @@
+{
+  "buildCommand": "cd nest-flow && npm install && npm run build",
+  "outputDirectory": "nest-flow/dist",
+  "installCommand": "cd nest-flow && npm install",
+  "framework": "vite",
+  "rewrites": [
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
+    }
+  ]
+}
