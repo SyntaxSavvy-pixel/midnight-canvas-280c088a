@@ -3,10 +3,13 @@
   "outputDirectory": "nest-flow/dist",
   "installCommand": "cd nest-flow && npm install",
   "devCommand": "cd nest-flow && npm run dev",
-  "rewrites": [
+  "routes": [
     {
-      "source": "/(.*)",
-      "destination": "/index.html"
+      "handle": "filesystem"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "/index.html"
     }
   ]
 }
