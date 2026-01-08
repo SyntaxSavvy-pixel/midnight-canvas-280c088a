@@ -972,7 +972,7 @@ class TabKeepPopup {
   updateAvatarDisplay(avatarSVG) {
     // Replace the img with a div containing the SVG
     this.avatarContainer.innerHTML = `
-      <div class="avatar pixel-avatar" style="width: 32px; height: 32px; border-radius: 50%; overflow: hidden; border: 2px solid rgba(255, 255, 255, 0.1);">
+      <div class="pixel-avatar">
         ${avatarSVG}
       </div>
     `;
@@ -1046,7 +1046,7 @@ class TabKeepPopup {
 
   openAuthPage() {
     chrome.tabs.create({
-      url: 'https://www.tabkeep.app/extension-auth',
+      url: 'https://www.tabkeep.app/auth?source=extension',
       active: true
     });
   }
@@ -1061,6 +1061,15 @@ class TabKeepPopup {
           // User just authenticated, reload the popup with main view
           window.location.reload();
         }
+      }
+    });
+
+    // Also listen for storage changes (when auth data is saved)
+    chrome.storage.onChanged.addListener((changes, namespace) => {
+      if (namespace === 'sync' && changes.tabkeepSyncToken) {
+        // Auth token was added or changed, reload the popup
+        console.log('🔄 Auth token changed in storage, reloading popup...');
+        window.location.reload();
       }
     });
   }

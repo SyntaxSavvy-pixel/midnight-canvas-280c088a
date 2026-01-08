@@ -95,7 +95,53 @@ class TabKeepBackground {
         break;
 
       default:
-        sendResponse({ error: 'Unknown action' });
+        // Check for auth messages
+        if (request.type === 'TABKEEP_AUTH_SUCCESS') {
+          this.handleAuthSuccess(request).then(() => {
+            sendResponse({ success: true });
+          });
+        } else {
+          sendResponse({ error: 'Unknown action' });
+        }
+    }
+  }
+
+  /**
+   * Handle successful authentication from web app
+   */
+  async handleAuthSuccess(authData) {
+    try {
+      console.log('🔐 Auth success received in background');
+
+      // Store auth data in chrome.storage.sync
+      await chrome.storage.sync.set({
+        tabkeepSyncToken: authData.syncToken,
+        tabkeepUserId: authData.userId,
+        tabkeepUserEmail: authData.userEmail,
+        userAvatar: authData.avatarId,
+        authTimestamp: authData.timestamp || Date.now()
+      });
+
+      console.log('✅ Auth data saved to storage');
+      console.log('Sync Token:', authData.syncToken?.substring(0, 10) + '...');
+      console.log('User ID:', authData.userId);
+
+      // Broadcast auth state change to all extension contexts (popups, etc.)
+      chrome.runtime.sendMessage({
+        type: 'AUTH_STATE_CHANGED',
+        isAuthenticated: true,
+        syncToken: authData.syncToken,
+        userId: authData.userId,
+        userEmail: authData.userEmail
+      }).catch(() => {
+        // Ignore errors if no listeners (e.g., popup closed)
+        console.log('No listeners for auth broadcast (popup may be closed)');
+      });
+
+      return true;
+    } catch (error) {
+      console.error('❌ Error handling auth success:', error);
+      return false;
     }
   }
 

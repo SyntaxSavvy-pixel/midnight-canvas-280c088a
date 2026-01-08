@@ -18,11 +18,79 @@ class TabKeepContent {
     // Initialize AI Price Comparison
     this.initPriceComparison();
 
+    // Set up web page to extension bridge (for tabkeep.app auth)
+    this.setupAuthBridge();
+
     // Listen for messages from background or popup
     chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       this.handleMessage(request, sender, sendResponse);
       return true;
     });
+  }
+
+  /**
+   * Set up message bridge for tabkeep.app authentication
+   * Listens for postMessage from web page and relays to extension
+   */
+  setupAuthBridge() {
+    // Only set up on tabkeep.app domain
+    const isTabKeepDomain = window.location.hostname.includes('tabkeep.app') ||
+                           window.location.hostname.includes('localhost') ||
+                           window.location.hostname.includes('vercel.app');
+
+    if (!isTabKeepDomain) {
+      return;
+    }
+
+    console.log('🔗 TabKeep auth bridge initialized on', window.location.hostname);
+
+    // Listen for messages from the web page
+    window.addEventListener('message', (event) => {
+      // Verify origin for security
+      const validOrigins = [
+        'https://tabkeep.app',
+        'https://www.tabkeep.app',
+        'http://localhost:3000',
+        'http://localhost:5173'
+      ];
+
+      // Also accept vercel.app domains
+      const isValidOrigin = validOrigins.includes(event.origin) ||
+                           event.origin.includes('vercel.app');
+
+      if (!isValidOrigin) {
+        return;
+      }
+
+      // Check if it's a TabKeep auth message
+      if (event.data && event.data.type === 'TABKEEP_AUTH_SUCCESS') {
+        console.log('🔐 Auth message received from web page, relaying to extension...');
+
+        // Relay message to background script
+        chrome.runtime.sendMessage(event.data, (response) => {
+          if (chrome.runtime.lastError) {
+            console.error('❌ Error relaying auth message:', chrome.runtime.lastError.message);
+          } else {
+            console.log('✅ Auth message relayed successfully:', response);
+
+            // Send confirmation back to web page
+            window.postMessage({
+              type: 'TABKEEP_AUTH_CONFIRMED',
+              success: true
+            }, event.origin);
+          }
+        });
+      }
+    });
+
+    // Inject a script to help the web page detect the extension
+    const script = document.createElement('script');
+    script.textContent = `
+      window.__TABKEEP_EXTENSION_INSTALLED__ = true;
+      console.log('✅ TabKeep extension detected');
+    `;
+    (document.head || document.documentElement).appendChild(script);
+    script.remove();
   }
 
   initPriceComparison() {
