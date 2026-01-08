@@ -288,6 +288,39 @@
     </div>
   </div>
 
+  <!-- Auth Screen (shown when not authenticated) -->
+  <div class="auth-screen hidden" id="authScreen">
+    <div class="auth-container">
+      <div class="auth-logo">
+        <svg width="64" height="64" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect width="32" height="32" rx="8" fill="url(#gradient)"/>
+          <g transform="translate(4, 4) scale(1)">
+            <path d="M12.67 19a2 2 0 0 0 1.416-.588l6.154-6.172a6 6 0 0 0-8.49-8.49L5.586 9.914A2 2 0 0 0 5 11.328V18a1 1 0 0 0 1 1z" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M16 8 2 22" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M17.5 15H9" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+          </g>
+          <defs>
+            <linearGradient id="gradient" x1="0" y1="0" x2="32" y2="32">
+              <stop offset="0%" stop-color="#6366F1"/>
+              <stop offset="100%" stop-color="#8B5CF6"/>
+            </linearGradient>
+          </defs>
+        </svg>
+      </div>
+      <h1 class="auth-title">Welcome to TabKeep</h1>
+      <p class="auth-subtitle">Your smart tab manager</p>
+      <p class="auth-description">Get started by connecting your TabKeep account to sync your tabs, bookmarks, and settings across all your devices.</p>
+      <button class="auth-button" id="getStartedBtn">
+        <span>Click Me To Get Started</span>
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M5 12h14M12 5l7 7-7 7"/>
+        </svg>
+      </button>
+      <p class="auth-footer">Clicking will open tabkeep.app in a new tab</p>
+    </div>
+  </div>
+
+  <script src="../scripts/auth.js"></script>
   <script src="../scripts/pixelAvatars.js"></script>
   <script src="popup.js"></script>
 </body>

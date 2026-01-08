@@ -20,18 +20,40 @@ class TabKeepPopup {
     this.bookmarksGrid = document.getElementById('bookmarksGrid');
     this.bookmarksEmpty = document.getElementById('bookmarksEmpty');
 
+    // Auth elements
+    this.authScreen = document.getElementById('authScreen');
+    this.mainView = document.getElementById('mainView');
+    this.getStartedBtn = document.getElementById('getStartedBtn');
+
     // Current search query
     this.searchQuery = '';
+
+    // Auth state
+    this.isAuthenticated = false;
 
     this.init();
   }
 
-  init() {
-    this.loadTabs();
-    this.setupEventListeners();
-    this.loadSettings();
-    this.loadAvatar();
-    this.setupAvatarSync();
+  async init() {
+    // Check authentication first
+    await this.checkAuth();
+
+    if (this.isAuthenticated) {
+      // Show main view and load data
+      this.showMainView();
+      this.loadTabs();
+      this.setupEventListeners();
+      this.loadSettings();
+      this.loadAvatar();
+      this.setupAvatarSync();
+    } else {
+      // Show auth screen
+      this.showAuthScreen();
+      this.setupAuthListeners();
+    }
+
+    // Listen for auth state changes
+    this.listenForAuthChanges();
   }
 
   setupEventListeners() {
@@ -982,6 +1004,62 @@ class TabKeepPopup {
           if (avatarSVG) {
             this.updateAvatarDisplay(avatarSVG);
           }
+        }
+      }
+    });
+  }
+
+  // Authentication Methods
+  async checkAuth() {
+    try {
+      const data = await chrome.storage.sync.get(['tabkeepSyncToken', 'tabkeepUserId']);
+      this.isAuthenticated = !!(data.tabkeepSyncToken && data.tabkeepUserId);
+      return this.isAuthenticated;
+    } catch (error) {
+      console.error('Error checking auth:', error);
+      this.isAuthenticated = false;
+      return false;
+    }
+  }
+
+  showAuthScreen() {
+    if (this.authScreen && this.mainView) {
+      this.authScreen.classList.remove('hidden');
+      this.mainView.classList.add('hidden');
+    }
+  }
+
+  showMainView() {
+    if (this.authScreen && this.mainView) {
+      this.authScreen.classList.add('hidden');
+      this.mainView.classList.remove('hidden');
+    }
+  }
+
+  setupAuthListeners() {
+    if (this.getStartedBtn) {
+      this.getStartedBtn.addEventListener('click', () => {
+        this.openAuthPage();
+      });
+    }
+  }
+
+  openAuthPage() {
+    chrome.tabs.create({
+      url: 'https://www.tabkeep.app/extension-auth',
+      active: true
+    });
+  }
+
+  listenForAuthChanges() {
+    // Listen for auth state changes from background
+    chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+      if (message.type === 'AUTH_STATE_CHANGED') {
+        this.isAuthenticated = message.isAuthenticated;
+
+        if (this.isAuthenticated) {
+          // User just authenticated, reload the popup with main view
+          window.location.reload();
         }
       }
     });
