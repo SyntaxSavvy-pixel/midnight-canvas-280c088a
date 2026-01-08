@@ -80,3 +80,4 @@ Thumbs.db
 # Netlify config files (breaks Chrome extension loading)
 _headers
 _redirects
+.env*.local
