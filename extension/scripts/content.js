@@ -81,6 +81,32 @@ class TabKeepContent {
           }
         });
       }
+
+      // Check if it's a profile update message (avatar or profile image)
+      if (event.data && event.data.type === 'TABKEEP_PROFILE_UPDATE') {
+        console.log('🎨 Profile update received from web page, relaying to extension...');
+
+        // Store the profile data in chrome.storage.sync
+        const storageData = {};
+        if (event.data.avatarId) {
+          storageData.userAvatar = event.data.avatarId;
+        }
+        if (event.data.profileImage) {
+          storageData.profileImage = event.data.profileImage;
+        }
+
+        if (Object.keys(storageData).length > 0) {
+          chrome.storage.sync.set(storageData, () => {
+            console.log('✅ Profile data synced to extension storage:', storageData);
+
+            // Send confirmation back to web page
+            window.postMessage({
+              type: 'TABKEEP_PROFILE_UPDATE_CONFIRMED',
+              success: true
+            }, event.origin);
+          });
+        }
+      }
     });
 
     // Inject a script to help the web page detect the extension

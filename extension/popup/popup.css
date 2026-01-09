@@ -81,6 +81,7 @@ body {
 
 .profile {
   flex-shrink: 0;
+  position: relative;
 }
 
 .avatar {
@@ -96,6 +97,82 @@ body {
   width: 40px;
   height: 40px;
   flex-shrink: 0;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.avatar-container:hover {
+  transform: scale(1.05);
+  border-radius: 50%;
+  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.2);
+}
+
+/* Profile Dropdown */
+.profile-dropdown {
+  position: absolute;
+  top: 50px;
+  right: 0;
+  background: #FFFFFF;
+  border-radius: 16px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12), 0 2px 8px rgba(0, 0, 0, 0.08);
+  min-width: 180px;
+  padding: 8px;
+  z-index: 1000;
+  animation: dropdownSlideIn 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  border: 1px solid rgba(99, 102, 241, 0.1);
+}
+
+@keyframes dropdownSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.dropdown-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 12px 14px;
+  background: transparent;
+  border: none;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 14px;
+  font-weight: 600;
+  color: #374151;
+  font-family: inherit;
+}
+
+.dropdown-item:hover {
+  background: #F3F4F6;
+  color: #111827;
+  transform: translateX(2px);
+}
+
+.dropdown-item svg {
+  flex-shrink: 0;
+  color: #6B7280;
+  stroke-width: 2;
+}
+
+.dropdown-item:hover svg {
+  color: #6366F1;
+}
+
+.dropdown-item.logout:hover {
+  background: #FEE2E2;
+  color: #DC2626;
+}
+
+.dropdown-item.logout:hover svg {
+  color: #DC2626;
 }
 
 .pixel-avatar {

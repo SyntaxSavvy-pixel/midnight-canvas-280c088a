@@ -13,6 +13,9 @@ class TabKeepPopup {
     // Avatar elements
     this.avatarContainer = document.getElementById('avatarContainer');
     this.profileAvatar = document.getElementById('profileAvatar');
+    this.profileDropdown = document.getElementById('profileDropdown');
+    this.viewProfileBtn = document.getElementById('viewProfileBtn');
+    this.logoutBtn = document.getElementById('logoutBtn');
 
     // Bookmarks view elements
     this.bookmarksView = document.getElementById('bookmarksView');
@@ -73,6 +76,31 @@ class TabKeepPopup {
 
     this.collapseBtn.addEventListener('click', () => {
       this.collapseAllTabs();
+    });
+
+    // Profile dropdown toggle
+    this.avatarContainer.addEventListener('click', (e) => {
+      e.stopPropagation();
+      this.toggleProfileDropdown();
+    });
+
+    // View profile button
+    this.viewProfileBtn?.addEventListener('click', () => {
+      this.openProfile();
+    });
+
+    // Logout button
+    this.logoutBtn?.addEventListener('click', () => {
+      this.handleLogout();
+    });
+
+    // Close dropdown when clicking outside
+    document.addEventListener('click', (e) => {
+      if (!this.profileDropdown.classList.contains('hidden') &&
+          !this.profileDropdown.contains(e.target) &&
+          !this.avatarContainer.contains(e.target)) {
+        this.profileDropdown.classList.add('hidden');
+      }
     });
 
     // AI Interface Event Listeners
@@ -955,13 +983,18 @@ class TabKeepPopup {
   // Avatar Management Methods
   async loadAvatar() {
     try {
-      // Get avatar from chrome.storage.sync (syncs from web dashboard)
-      const { userAvatar } = await chrome.storage.sync.get('userAvatar');
+      // Get avatar and profile image from chrome.storage.sync (syncs from web dashboard)
+      const { userAvatar, profileImage } = await chrome.storage.sync.get(['userAvatar', 'profileImage']);
 
-      if (userAvatar && typeof getAvatarById === 'function') {
+      // Prioritize profile image over pixel avatar
+      if (profileImage) {
+        this.updateAvatarDisplay(null, profileImage);
+        console.log('🖼️ Loaded profile image');
+      } else if (userAvatar && typeof getAvatarById === 'function') {
         const avatarSVG = getAvatarById(userAvatar);
         if (avatarSVG) {
           this.updateAvatarDisplay(avatarSVG);
+          console.log('🎨 Loaded pixel avatar:', userAvatar);
         }
       }
     } catch (error) {
@@ -969,30 +1002,94 @@ class TabKeepPopup {
     }
   }
 
-  updateAvatarDisplay(avatarSVG) {
-    // Replace the img with a div containing the SVG
-    this.avatarContainer.innerHTML = `
-      <div class="pixel-avatar">
-        ${avatarSVG}
-      </div>
-    `;
+  updateAvatarDisplay(avatarSVG, imageUrl = null) {
+    if (imageUrl) {
+      // Use regular image
+      this.avatarContainer.innerHTML = `
+        <img src="${imageUrl}" alt="Profile" class="avatar">
+      `;
+    } else if (avatarSVG) {
+      // Use pixel avatar SVG
+      this.avatarContainer.innerHTML = `
+        <div class="pixel-avatar">
+          ${avatarSVG}
+        </div>
+      `;
+    }
+  }
+
+  // Profile Dropdown Methods
+  toggleProfileDropdown() {
+    this.profileDropdown.classList.toggle('hidden');
+  }
+
+  openProfile() {
+    // Close dropdown
+    this.profileDropdown.classList.add('hidden');
+
+    // Open the profile section in the web dashboard
+    chrome.tabs.create({
+      url: 'https://www.tabkeep.app/dashboard?section=profile',
+      active: true
+    });
+  }
+
+  async handleLogout() {
+    try {
+      // Close dropdown
+      this.profileDropdown.classList.add('hidden');
+
+      // Clear all auth data from storage
+      await chrome.storage.sync.remove([
+        'tabkeepSyncToken',
+        'tabkeepUserId',
+        'tabkeepUserEmail',
+        'userAvatar',
+        'profileImage',
+        'authTimestamp'
+      ]);
+
+      // Update auth state
+      this.isAuthenticated = false;
+
+      // Show auth screen
+      this.showAuthScreen();
+
+      console.log('✅ User logged out successfully');
+    } catch (error) {
+      console.error('Error logging out:', error);
+      this.showNotification('Logout failed', 'error');
+    }
   }
 
   setupAvatarSync() {
-    // Listen for storage changes (from web dashboard)
+    // Listen for storage changes (from web dashboard) - Real-time sync
     chrome.storage.onChanged.addListener((changes, namespace) => {
-      if (namespace === 'sync' && changes.userAvatar) {
-        const newAvatarId = changes.userAvatar.newValue;
-        if (newAvatarId && typeof getAvatarById === 'function') {
-          const avatarSVG = getAvatarById(newAvatarId);
-          if (avatarSVG) {
-            this.updateAvatarDisplay(avatarSVG);
+      if (namespace === 'sync') {
+        // Handle avatar updates
+        if (changes.userAvatar) {
+          const newAvatarId = changes.userAvatar.newValue;
+          if (newAvatarId && typeof getAvatarById === 'function') {
+            const avatarSVG = getAvatarById(newAvatarId);
+            if (avatarSVG) {
+              this.updateAvatarDisplay(avatarSVG);
+              console.log('🎨 Avatar updated in real-time:', newAvatarId);
+            }
+          }
+        }
+
+        // Handle profile image updates (if stored separately)
+        if (changes.profileImage) {
+          const newProfileImage = changes.profileImage.newValue;
+          if (newProfileImage) {
+            this.updateAvatarDisplay(null, newProfileImage);
+            console.log('🖼️ Profile image updated in real-time');
           }
         }
       }
     });
 
-    // Listen for messages from the dashboard (via BroadcastChannel simulation)
+    // Listen for messages from the web dashboard or content script
     chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       if (message.type === 'AVATAR_UPDATED' && message.avatarId) {
         // Store in chrome.storage.sync for persistence
@@ -1003,8 +1100,16 @@ class TabKeepPopup {
           const avatarSVG = getAvatarById(message.avatarId);
           if (avatarSVG) {
             this.updateAvatarDisplay(avatarSVG);
+            console.log('🎨 Avatar updated via message:', message.avatarId);
           }
         }
+      }
+
+      // Handle profile image updates via message
+      if (message.type === 'PROFILE_IMAGE_UPDATED' && message.imageUrl) {
+        chrome.storage.sync.set({ profileImage: message.imageUrl });
+        this.updateAvatarDisplay(null, message.imageUrl);
+        console.log('🖼️ Profile image updated via message');
       }
     });
   }
