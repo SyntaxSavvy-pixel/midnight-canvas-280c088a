@@ -1,8 +1,9 @@
 {
-  "buildCommand": "cd nest-flow && npm run build",
+  "buildCommand": "npm run build --prefix nest-flow",
   "outputDirectory": "nest-flow/dist",
-  "installCommand": "cd nest-flow && npm install",
-  "devCommand": "cd nest-flow && npm run dev",
+  "installCommand": "npm install --prefix nest-flow",
+  "devCommand": "npm run dev --prefix nest-flow",
+  "framework": "vite",
   "routes": [
     {
       "handle": "filesystem"
