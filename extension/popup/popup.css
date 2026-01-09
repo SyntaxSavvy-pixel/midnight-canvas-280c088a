@@ -1386,9 +1386,73 @@ body {
   stroke-width: 2.5;
 }
 
-/* Featured Card (VPN) - Hidden for now to simplify */
+/* Featured Card (VPN) */
 .featured-card {
-  display: none;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 16px;
+  padding: 20px;
+  margin-bottom: 20px;
+  box-shadow: 0 8px 20px rgba(102, 126, 234, 0.3);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.featured-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 28px rgba(102, 126, 234, 0.4);
+}
+
+.card-content {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+}
+
+.card-title {
+  color: white;
+  font-size: 16px;
+  font-weight: 600;
+  margin: 0 0 4px 0;
+}
+
+.card-subtitle {
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 13px;
+  margin: 0;
+}
+
+.toggle-btn {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  color: rgba(255, 255, 255, 0.4);
+  transition: all 0.3s ease;
+  padding: 0;
+  display: flex;
+  align-items: center;
+}
+
+.toggle-btn:hover {
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.toggle-btn.active {
+  color: #10b981;
+}
+
+.toggle-btn svg {
+  transition: all 0.3s ease;
+}
+
+.toggle-btn.active svg circle {
+  transform: translateX(-20px);
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 /* Notification Toast */
