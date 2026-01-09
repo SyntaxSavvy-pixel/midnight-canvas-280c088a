@@ -34,12 +34,22 @@ class TabKeepBackground {
 
   async loadSettings() {
     try {
+      // Check if chrome.storage is available
+      if (!chrome.storage || !chrome.storage.local) {
+        console.warn('Chrome storage not available yet, will retry...');
+        // Retry after a delay
+        setTimeout(() => this.loadSettings(), 1000);
+        return;
+      }
+
       const { autoCloseEnabled } = await chrome.storage.local.get('autoCloseEnabled');
       if (autoCloseEnabled) {
         this.startAutoCloseTimer();
       }
     } catch (error) {
       console.error('Error loading settings:', error);
+      // Retry on error
+      setTimeout(() => this.loadSettings(), 2000);
     }
   }
 
