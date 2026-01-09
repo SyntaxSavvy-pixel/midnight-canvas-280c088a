@@ -101,14 +101,14 @@ class TabKeepContent {
       }
     });
 
-    // Inject a script to help the web page detect the extension
-    const script = document.createElement('script');
-    script.textContent = `
-      window.__TABKEEP_EXTENSION_INSTALLED__ = true;
-      console.log('✅ TabKeep extension detected');
-    `;
-    (document.head || document.documentElement).appendChild(script);
-    script.remove();
+    // Signal to the web page that the extension is installed
+    // Use a different approach that doesn't violate CSP
+    window.postMessage({
+      type: 'TABKEEP_EXTENSION_DETECTED',
+      installed: true
+    }, window.location.origin);
+
+    console.log('✅ TabKeep extension signaled to web page');
   }
 
   initPriceComparison() {
