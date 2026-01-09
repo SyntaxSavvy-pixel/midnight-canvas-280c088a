@@ -82,22 +82,14 @@ class TabKeepContent {
         });
       }
 
-      // Check if it's a profile update message (avatar or profile image)
+      // Check if it's a profile update message (avatar image)
       if (event.data && event.data.type === 'TABKEEP_PROFILE_UPDATE') {
         console.log('🎨 Profile update received from web page, relaying to extension...');
 
-        // Store the profile data in chrome.storage.sync
-        const storageData = {};
-        if (event.data.avatarId) {
-          storageData.userAvatar = event.data.avatarId;
-        }
-        if (event.data.profileImage) {
-          storageData.profileImage = event.data.profileImage;
-        }
-
-        if (Object.keys(storageData).length > 0) {
-          chrome.storage.sync.set(storageData, () => {
-            console.log('✅ Profile data synced to extension storage:', storageData);
+        // Store the avatar image URL in chrome.storage.sync
+        if (event.data.avatarImage) {
+          chrome.storage.sync.set({ avatarImage: event.data.avatarImage }, () => {
+            console.log('✅ Avatar image synced to extension storage:', event.data.avatarImage);
 
             // Send confirmation back to web page
             window.postMessage({

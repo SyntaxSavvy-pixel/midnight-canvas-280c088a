@@ -983,37 +983,23 @@ class TabKeepPopup {
   // Avatar Management Methods
   async loadAvatar() {
     try {
-      // Get avatar and profile image from chrome.storage.sync (syncs from web dashboard)
-      const { userAvatar, profileImage } = await chrome.storage.sync.get(['userAvatar', 'profileImage']);
+      // Get avatar image URL from chrome.storage.sync (syncs from web dashboard)
+      const { avatarImage } = await chrome.storage.sync.get('avatarImage');
 
-      // Prioritize profile image over pixel avatar
-      if (profileImage) {
-        this.updateAvatarDisplay(null, profileImage);
-        console.log('🖼️ Loaded profile image');
-      } else if (userAvatar && typeof getAvatarById === 'function') {
-        const avatarSVG = getAvatarById(userAvatar);
-        if (avatarSVG) {
-          this.updateAvatarDisplay(avatarSVG);
-          console.log('🎨 Loaded pixel avatar:', userAvatar);
-        }
+      if (avatarImage) {
+        this.updateAvatarDisplay(avatarImage);
+        console.log('🖼️ Loaded avatar image:', avatarImage);
       }
     } catch (error) {
       console.error('Error loading avatar:', error);
     }
   }
 
-  updateAvatarDisplay(avatarSVG, imageUrl = null) {
+  updateAvatarDisplay(imageUrl) {
     if (imageUrl) {
-      // Use regular image
+      // Use the image URL directly
       this.avatarContainer.innerHTML = `
         <img src="${imageUrl}" alt="Profile" class="avatar">
-      `;
-    } else if (avatarSVG) {
-      // Use pixel avatar SVG
-      this.avatarContainer.innerHTML = `
-        <div class="pixel-avatar">
-          ${avatarSVG}
-        </div>
       `;
     }
   }
@@ -1044,8 +1030,7 @@ class TabKeepPopup {
         'tabkeepSyncToken',
         'tabkeepUserId',
         'tabkeepUserEmail',
-        'userAvatar',
-        'profileImage',
+        'avatarImage',
         'authTimestamp'
       ]);
 
@@ -1065,51 +1050,12 @@ class TabKeepPopup {
   setupAvatarSync() {
     // Listen for storage changes (from web dashboard) - Real-time sync
     chrome.storage.onChanged.addListener((changes, namespace) => {
-      if (namespace === 'sync') {
-        // Handle avatar updates
-        if (changes.userAvatar) {
-          const newAvatarId = changes.userAvatar.newValue;
-          if (newAvatarId && typeof getAvatarById === 'function') {
-            const avatarSVG = getAvatarById(newAvatarId);
-            if (avatarSVG) {
-              this.updateAvatarDisplay(avatarSVG);
-              console.log('🎨 Avatar updated in real-time:', newAvatarId);
-            }
-          }
+      if (namespace === 'sync' && changes.avatarImage) {
+        const newAvatarImage = changes.avatarImage.newValue;
+        if (newAvatarImage) {
+          this.updateAvatarDisplay(newAvatarImage);
+          console.log('🎨 Avatar updated in real-time:', newAvatarImage);
         }
-
-        // Handle profile image updates (if stored separately)
-        if (changes.profileImage) {
-          const newProfileImage = changes.profileImage.newValue;
-          if (newProfileImage) {
-            this.updateAvatarDisplay(null, newProfileImage);
-            console.log('🖼️ Profile image updated in real-time');
-          }
-        }
-      }
-    });
-
-    // Listen for messages from the web dashboard or content script
-    chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-      if (message.type === 'AVATAR_UPDATED' && message.avatarId) {
-        // Store in chrome.storage.sync for persistence
-        chrome.storage.sync.set({ userAvatar: message.avatarId });
-
-        // Update display
-        if (typeof getAvatarById === 'function') {
-          const avatarSVG = getAvatarById(message.avatarId);
-          if (avatarSVG) {
-            this.updateAvatarDisplay(avatarSVG);
-            console.log('🎨 Avatar updated via message:', message.avatarId);
-          }
-        }
-      }
-
-      // Handle profile image updates via message
-      if (message.type === 'PROFILE_IMAGE_UPDATED' && message.imageUrl) {
-        chrome.storage.sync.set({ profileImage: message.imageUrl });
-        this.updateAvatarDisplay(null, message.imageUrl);
-        console.log('🖼️ Profile image updated via message');
       }
     });
   }

@@ -94,13 +94,19 @@ class AuthManager {
   async handleAuthSuccess(authData) {
     try {
       // Store auth data
-      await chrome.storage.sync.set({
+      const storageData = {
         tabkeepSyncToken: authData.syncToken,
         tabkeepUserId: authData.userId,
         tabkeepUserEmail: authData.userEmail,
-        userAvatar: authData.avatarId,
         authTimestamp: authData.timestamp || Date.now()
-      });
+      };
+
+      // Store avatar image if provided
+      if (authData.avatarImage) {
+        storageData.avatarImage = authData.avatarImage;
+      }
+
+      await chrome.storage.sync.set(storageData);
 
       this.syncToken = authData.syncToken;
       this.userId = authData.userId;
@@ -142,7 +148,7 @@ class AuthManager {
       'tabkeepSyncToken',
       'tabkeepUserId',
       'tabkeepUserEmail',
-      'userAvatar',
+      'avatarImage',
       'authTimestamp'
     ]);
 
