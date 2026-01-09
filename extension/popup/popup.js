@@ -997,10 +997,13 @@ class TabKeepPopup {
 
   updateAvatarDisplay(imageUrl) {
     if (imageUrl) {
-      // Use the image URL directly
-      this.avatarContainer.innerHTML = `
-        <img src="${imageUrl}" alt="Profile" class="avatar">
-      `;
+      // Update the existing img element instead of replacing innerHTML
+      // This preserves event listeners on avatarContainer
+      const avatarImg = this.avatarContainer.querySelector('img.avatar') || this.profileAvatar;
+      if (avatarImg) {
+        avatarImg.src = imageUrl;
+        console.log('✅ Avatar image updated in popup:', imageUrl);
+      }
     }
   }
 
