@@ -1,8 +1,8 @@
 {
-  "buildCommand": "npm run build --prefix nest-flow",
-  "outputDirectory": "nest-flow/dist",
-  "installCommand": "npm install --prefix nest-flow",
-  "devCommand": "npm run dev --prefix nest-flow",
+  "buildCommand": "npm run build --prefix midnight-canvas-280c088a",
+  "outputDirectory": "midnight-canvas-280c088a/dist",
+  "installCommand": "npm install --prefix midnight-canvas-280c088a",
+  "devCommand": "npm run dev --prefix midnight-canvas-280c088a",
   "framework": "vite",
   "routes": [
     {
