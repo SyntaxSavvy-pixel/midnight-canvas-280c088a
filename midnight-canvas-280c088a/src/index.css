@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -6,292 +6,360 @@
 
 @layer base {
   :root {
-    /* TabKeep Brand Colors - Light Theme */
-    --background: 0 0% 98%;
-    --foreground: 240 10% 10%;
+    /* Deep midnight palette */
+    --background: 230 15% 5%;
+    --foreground: 210 20% 95%;
 
-    --card: 0 0% 100%;
-    --card-foreground: 240 10% 10%;
+    --card: 230 15% 8%;
+    --card-foreground: 210 20% 95%;
 
-    --popover: 0 0% 100%;
-    --popover-foreground: 240 10% 10%;
+    --popover: 230 15% 8%;
+    --popover-foreground: 210 20% 95%;
 
-    /* Primary: TabKeep Blue */
-    --primary: 204 65% 53%;
-    --primary-foreground: 0 0% 100%;
+    --primary: 200 80% 60%;
+    --primary-foreground: 230 15% 5%;
 
-    /* Secondary: Soft gray */
-    --secondary: 220 14% 96%;
-    --secondary-foreground: 240 10% 10%;
+    --secondary: 230 15% 12%;
+    --secondary-foreground: 210 20% 85%;
 
-    --muted: 220 14% 96%;
-    --muted-foreground: 220 9% 46%;
+    --muted: 230 15% 15%;
+    --muted-foreground: 210 15% 55%;
 
-    /* Accent: TabKeep Green */
-    --accent: 152 51% 42%;
-    --accent-foreground: 0 0% 100%;
+    --accent: 200 60% 50%;
+    --accent-foreground: 210 20% 95%;
 
-    /* Destructive: TabKeep Red */
-    --destructive: 4 82% 59%;
-    --destructive-foreground: 0 0% 100%;
+    --destructive: 0 62% 50%;
+    --destructive-foreground: 210 20% 95%;
 
-    --border: 220 13% 91%;
-    --input: 220 13% 91%;
-    --ring: 204 65% 53%;
+    --border: 230 15% 15%;
+    --input: 230 15% 12%;
+    --ring: 200 80% 60%;
 
-    --radius: 0.75rem;
+    --radius: 1rem;
 
-    /* TabKeep Brand Tokens */
-    --tabkeep-red: 4 82% 59%;
-    --tabkeep-green: 152 51% 42%;
-    --tabkeep-blue: 204 65% 53%;
-    --tabkeep-gold: 47 91% 59%;
-    --tabkeep-dark: 240 33% 3%;
+    /* Custom tokens */
+    --glow-primary: 200 80% 60%;
+    --glow-subtle: 220 60% 50%;
+    --surface-elevated: 230 15% 10%;
+    --text-subtle: 210 15% 45%;
+    
+    /* Gradients */
+    --gradient-radial: radial-gradient(ellipse at center, hsl(230 15% 8%) 0%, hsl(230 15% 5%) 100%);
+    --gradient-glow: radial-gradient(ellipse at center, hsl(200 80% 60% / 0.15) 0%, transparent 70%);
+    
+    /* Shadows */
+    --shadow-glow: 0 0 60px -15px hsl(200 80% 60% / 0.4);
+    --shadow-soft: 0 4px 30px -10px hsl(0 0% 0% / 0.5);
+    --shadow-inner: inset 0 2px 4px 0 hsl(0 0% 0% / 0.3);
   }
 
   .dark {
-    /* TabKeep Brand Colors - Dark Theme */
-    --background: 240 33% 3%;
-    --foreground: 0 0% 95%;
+    --background: 230 15% 5%;
+    --foreground: 210 20% 95%;
 
-    --card: 240 20% 6%;
-    --card-foreground: 0 0% 95%;
+    --card: 230 15% 8%;
+    --card-foreground: 210 20% 95%;
 
-    --popover: 240 20% 6%;
-    --popover-foreground: 0 0% 95%;
+    --popover: 230 15% 8%;
+    --popover-foreground: 210 20% 95%;
 
-    /* Primary: TabKeep Blue */
-    --primary: 204 65% 53%;
+    --primary: 200 80% 60%;
+    --primary-foreground: 230 15% 5%;
+
+    --secondary: 230 15% 12%;
+    --secondary-foreground: 210 20% 85%;
+
+    --muted: 230 15% 15%;
+    --muted-foreground: 210 15% 55%;
+
+    --accent: 200 60% 50%;
+    --accent-foreground: 210 20% 95%;
+
+    --destructive: 0 62% 50%;
+    --destructive-foreground: 210 20% 95%;
+
+    --border: 230 15% 15%;
+    --input: 230 15% 12%;
+    --ring: 200 80% 60%;
+
+    --glow-primary: 200 80% 60%;
+    --glow-subtle: 220 60% 50%;
+    --surface-elevated: 230 15% 10%;
+
+    --gradient-radial: radial-gradient(ellipse at center, hsl(230 15% 8%) 0%, hsl(230 15% 5%) 100%);
+    --gradient-glow: radial-gradient(ellipse at center, hsl(200 80% 60% / 0.15) 0%, transparent 70%);
+  }
+
+  .light {
+    --background: 0 0% 98%;
+    --foreground: 220 15% 15%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 220 15% 15%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 220 15% 15%;
+
+    --primary: 200 80% 45%;
     --primary-foreground: 0 0% 100%;
 
-    /* Secondary */
-    --secondary: 240 14% 12%;
-    --secondary-foreground: 0 0% 95%;
+    --secondary: 220 15% 95%;
+    --secondary-foreground: 220 15% 25%;
 
-    --muted: 240 14% 12%;
-    --muted-foreground: 220 9% 60%;
+    --muted: 220 15% 92%;
+    --muted-foreground: 220 10% 45%;
 
-    /* Accent: TabKeep Green */
-    --accent: 152 51% 42%;
+    --accent: 200 60% 50%;
     --accent-foreground: 0 0% 100%;
 
-    /* Destructive: TabKeep Red */
-    --destructive: 4 82% 59%;
+    --destructive: 0 70% 50%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 240 14% 15%;
-    --input: 240 14% 15%;
-    --ring: 204 65% 53%;
+    --border: 220 15% 88%;
+    --input: 220 15% 95%;
+    --ring: 200 80% 45%;
+
+    --glow-primary: 200 80% 45%;
+    --glow-subtle: 220 60% 50%;
+    --surface-elevated: 0 0% 96%;
+
+    --gradient-radial: radial-gradient(ellipse at center, hsl(0 0% 100%) 0%, hsl(0 0% 98%) 100%);
+    --gradient-glow: radial-gradient(ellipse at center, hsl(200 80% 45% / 0.08) 0%, transparent 70%);
   }
 }
 
 @layer base {
   * {
     @apply border-border;
-    scrollbar-width: thin;
-    scrollbar-color: hsl(var(--border)) transparent;
   }
 
   html {
     font-family: 'Inter', system-ui, sans-serif;
-    scroll-behavior: smooth;
+    /* Smooth theme transition */
+    transition: background-color 0.7s cubic-bezier(0.4, 0, 0.2, 1),
+                color 0.7s cubic-bezier(0.4, 0, 0.2, 1);
   }
 
   body {
     @apply bg-background text-foreground antialiased;
+    background: var(--gradient-radial);
     min-height: 100vh;
+    /* Smooth theme transition for background */
+    transition: background 0.7s cubic-bezier(0.4, 0, 0.2, 1);
   }
 
-  /* TabKeep Custom Scrollbar */
-  *::-webkit-scrollbar {
+  /* Smooth transitions for all themed elements */
+  *,
+  *::before,
+  *::after {
+    transition-property: background-color, border-color, color, fill, stroke, box-shadow;
+    transition-duration: 0.5s;
+    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  /* Don't transition transforms and opacity for animations */
+  * {
+    transition-property: background-color, border-color, color, fill, stroke, box-shadow, backdrop-filter;
+  }
+
+  /* Custom Scrollbar */
+  .scrollbar-thin::-webkit-scrollbar {
     width: 6px;
-    height: 6px;
   }
 
-  *::-webkit-scrollbar-track {
+  .scrollbar-thin::-webkit-scrollbar-track {
     background: transparent;
   }
 
-  *::-webkit-scrollbar-thumb {
-    background: hsl(var(--border));
+  .scrollbar-thin::-webkit-scrollbar-thumb {
+    background: hsl(var(--secondary) / 0.5);
     border-radius: 3px;
   }
 
-  *::-webkit-scrollbar-thumb:hover {
-    background: hsl(var(--muted-foreground) / 0.5);
+  .scrollbar-thin::-webkit-scrollbar-thumb:hover {
+    background: hsl(var(--secondary) / 0.7);
   }
 }
 
 @layer utilities {
-  /* Hide scrollbar for horizontal scroll areas */
-  .scrollbar-hide {
-    -ms-overflow-style: none;
-    scrollbar-width: none;
+  .glow-primary {
+    box-shadow: var(--shadow-glow);
   }
-
-  .scrollbar-hide::-webkit-scrollbar {
-    display: none;
+  
+  .glow-border {
+    box-shadow: 0 0 0 1px hsl(var(--glow-primary) / 0.3), var(--shadow-glow);
   }
-
-  /* Line clamp for text truncation */
-  .line-clamp-2 {
-    display: -webkit-box;
-    -webkit-box-orient: vertical;
-    -webkit-line-clamp: 2;
-    line-clamp: 2;
-    overflow: hidden;
-  }
-
-  .line-clamp-3 {
-    display: -webkit-box;
-    -webkit-box-orient: vertical;
-    -webkit-line-clamp: 3;
-    line-clamp: 3;
-    overflow: hidden;
-  }
-
-  /* TabKeep Gradient Text */
-  .tabkeep-gradient-text {
-    background: linear-gradient(135deg, hsl(var(--tabkeep-red)), hsl(var(--tabkeep-blue)));
+  
+  .text-gradient {
+    background: linear-gradient(135deg, hsl(var(--foreground)) 0%, hsl(var(--muted-foreground)) 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
   }
-
-  /* TabKeep Gradient Border */
-  .tabkeep-gradient-border {
-    position: relative;
-    background: hsl(var(--card));
-    border-radius: var(--radius);
+  
+  .glass-panel {
+    background: hsl(var(--card) / 0.8);
+    backdrop-filter: blur(20px);
+    border: 1px solid hsl(var(--border) / 0.5);
   }
-
-  .tabkeep-gradient-border::before {
-    content: '';
-    position: absolute;
-    inset: 0;
-    padding: 1px;
-    border-radius: inherit;
-    background: linear-gradient(135deg, hsl(var(--tabkeep-red)), hsl(var(--tabkeep-green)), hsl(var(--tabkeep-blue)));
-    -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-    mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-    -webkit-mask-composite: xor;
-    mask-composite: exclude;
-    pointer-events: none;
+  
+  .animate-glow-pulse {
+    animation: glow-pulse 3s ease-in-out infinite;
   }
-
-  /* TabKeep Glow Effect */
-  .tabkeep-glow {
-    box-shadow: 0 0 20px hsl(var(--primary) / 0.15),
-                0 0 40px hsl(var(--primary) / 0.1);
+  
+  @keyframes glow-pulse {
+    0%, 100% {
+      box-shadow: 0 0 40px -10px hsl(var(--glow-primary) / 0.3);
+    }
+    50% {
+      box-shadow: 0 0 60px -10px hsl(var(--glow-primary) / 0.5);
+    }
   }
-
-  .tabkeep-glow-green {
-    box-shadow: 0 0 20px hsl(var(--tabkeep-green) / 0.2),
-                0 0 40px hsl(var(--tabkeep-green) / 0.1);
-  }
-
-  /* TabKeep animations */
+  
   .animate-fade-in {
-    animation: fade-in 0.2s ease-out forwards;
+    animation: fade-in 0.3s ease-out forwards;
   }
-
+  
   @keyframes fade-in {
     from {
       opacity: 0;
-      transform: translateY(4px);
+      transform: translateY(10px);
     }
     to {
       opacity: 1;
       transform: translateY(0);
     }
   }
-
-  .animate-slide-up {
-    animation: slide-up 0.3s ease-out forwards;
+  
+  .animate-slide-in {
+    animation: slide-in 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
   }
-
-  @keyframes slide-up {
+  
+  @keyframes slide-in {
     from {
       opacity: 0;
-      transform: translateY(16px);
+      transform: translateX(-20px);
     }
     to {
       opacity: 1;
-      transform: translateY(0);
+      transform: translateX(0);
     }
   }
 
-  .animate-scale-in {
-    animation: scale-in 0.2s ease-out forwards;
-  }
-
-  @keyframes scale-in {
+  @keyframes fade-slide-in {
     from {
       opacity: 0;
-      transform: scale(0.95);
+      transform: translateX(-8px);
     }
     to {
       opacity: 1;
-      transform: scale(1);
+      transform: translateX(0);
     }
   }
 
-  /* Typing indicator animation */
-  .animate-pulse-dot {
-    animation: pulse-dot 1.4s ease-in-out infinite;
-  }
-
-  @keyframes pulse-dot {
-    0%, 80%, 100% {
-      opacity: 0.3;
-      transform: scale(0.8);
-    }
-    40% {
-      opacity: 1;
-      transform: scale(1);
-    }
-  }
-
-  /* TabKeep shimmer loading effect */
-  .animate-shimmer {
-    background: linear-gradient(
-      90deg,
-      hsl(var(--secondary)) 0%,
-      hsl(var(--muted)) 50%,
-      hsl(var(--secondary)) 100%
-    );
-    background-size: 200% 100%;
-    animation: shimmer 1.5s infinite;
-  }
-
-  @keyframes shimmer {
+  @keyframes dust-dissolve {
     0% {
-      background-position: 200% 0;
+      opacity: 1;
+      transform: scale(1) translate(0, 0);
+      filter: blur(0px);
     }
     100% {
-      background-position: -200% 0;
+      opacity: 0;
+      transform: scale(0) translate(var(--dissolve-x, 20px), var(--dissolve-y, -30px));
+      filter: blur(4px);
     }
   }
-}
 
-/* Mode badge colors */
-.mode-speed {
-  @apply bg-green-500/10 text-green-500 border-green-500/20;
-}
+  /* Thanos snap dust particle dissolve effect */
+  .dust-dissolve-out {
+    animation: thanos-snap 0.8s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+  }
 
-.mode-balanced {
-  @apply bg-blue-500/10 text-blue-500 border-blue-500/20;
-}
+  .dust-dissolve-in {
+    animation: thanos-appear 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  }
 
-.mode-quality {
-  @apply bg-purple-500/10 text-purple-500 border-purple-500/20;
-}
+  @keyframes thanos-snap {
+    0% {
+      opacity: 1;
+      transform: scale(1) translateY(0);
+      filter: blur(0px) brightness(1);
+    }
+    30% {
+      opacity: 0.9;
+      transform: scale(1.05) translateY(-2px);
+      filter: blur(0px) brightness(1.2);
+    }
+    50% {
+      opacity: 0.6;
+      transform: scale(1.02) translateY(-5px);
+      filter: blur(2px) brightness(1.1);
+    }
+    70% {
+      opacity: 0.3;
+      transform: scale(0.98) translateY(-10px) rotate(3deg);
+      filter: blur(4px) brightness(0.9);
+    }
+    100% {
+      opacity: 0;
+      transform: scale(0.8) translateY(-20px) rotate(5deg);
+      filter: blur(8px) brightness(0.5);
+      pointer-events: none;
+    }
+  }
 
-/* Prevent iOS zoom on input focus */
-@media screen and (-webkit-min-device-pixel-ratio: 0) {
-  select,
-  textarea,
-  input {
-    font-size: 16px !important;
+  @keyframes thanos-appear {
+    0% {
+      opacity: 0;
+      transform: scale(0.8) translateY(-20px);
+      filter: blur(8px);
+    }
+    40% {
+      opacity: 0.5;
+      transform: scale(0.95) translateY(-8px);
+      filter: blur(3px);
+    }
+    70% {
+      opacity: 0.85;
+      transform: scale(1.02) translateY(-2px);
+      filter: blur(1px);
+    }
+    100% {
+      opacity: 1;
+      transform: scale(1) translateY(0);
+      filter: blur(0px);
+    }
+  }
+
+  /* Theme transition wave effect */
+  @keyframes theme-wave {
+    0% {
+      transform: scale(0);
+      opacity: 1;
+    }
+    50% {
+      opacity: 0.8;
+    }
+    100% {
+      transform: scale(2.5);
+      opacity: 0;
+    }
+  }
+
+  .theme-transition-wave {
+    animation: theme-wave 1.2s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+  }
+
+  /* Smooth fade effect for theme changes */
+  @keyframes theme-fade {
+    0% {
+      opacity: 0.95;
+    }
+    50% {
+      opacity: 1;
+    }
+    100% {
+      opacity: 1;
+    }
   }
 }

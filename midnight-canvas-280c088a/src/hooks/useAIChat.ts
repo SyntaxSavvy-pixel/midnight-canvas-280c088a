@@ -1,12 +1,12 @@
 /**
- * useAIChat Hook - Real AI chat with GPT-5-nano
+ * useAIChat Hook - Real AI chat with streaming support
  *
- * Uses OpenAI GPT-5-nano for fast, human-like responses
- * Handles conversation history and error states
+ * Uses free Groq API with Llama 3.1 models
+ * Handles conversation history, streaming, and error states
  */
 
 import { useState, useCallback } from 'react';
-import { advancedAIService, ChatMessage } from '@/services/ai/advanced-ai.service';
+import { groqService, ChatMessage as GroqMessage } from '@/services/ai/groq.service';
 
 export interface Message {
   id: string;
@@ -20,9 +20,8 @@ export interface UseAIChatReturn {
   isLoading: boolean;
   error: string | null;
   sendMessage: (content: string) => Promise<void>;
-  editMessage: (messageId: string, newContent: string) => Promise<void>;
-  loadMessages: (messages: Message[]) => void;
   clearMessages: () => void;
+  setMessages: (messages: Message[]) => void;
   isConfigured: boolean;
 }
 
@@ -31,7 +30,7 @@ export const useAIChat = (): UseAIChatReturn => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const isConfigured = advancedAIService.getConfiguredProviders().length > 0;
+  const isConfigured = groqService.isConfigured();
 
   /**
    * Send a message and get AI response with streaming
@@ -52,25 +51,21 @@ export const useAIChat = (): UseAIChatReturn => {
     setMessages(prev => [...prev, userMessage]);
 
     try {
-      // Keep only last 10 messages to prevent token overflow
-      const recentMessages = messages.slice(-10);
-
-      // Convert to ChatMessage format
-      const conversationHistory: ChatMessage[] = [
+      // Convert to Groq message format
+      const conversationHistory: GroqMessage[] = [
         {
           role: 'system',
-          content: `You are a helpful AI assistant powered by GPT-5-nano, integrated into TabKeep, a multi-platform search application.
+          content: `You are a helpful AI assistant integrated into TabKeep, a multi-platform search application.
 
 Your role:
 - Answer user questions clearly and concisely
 - Be friendly and conversational
 - Provide useful information
-- If asked about your identity, say you're powered by OpenAI's GPT-5-nano model
 - If asked about searching platforms, explain that TabKeep can search across Google, YouTube, GitHub, Reddit, Spotify, TikTok, Twitter, Instagram, LinkedIn, Indeed, Pinterest, and Facebook
 
-Keep responses focused and helpful. Current year: 2026.`
+Keep responses focused and helpful.`
         },
-        ...recentMessages.map(msg => ({
+        ...messages.map(msg => ({
           role: msg.role as 'user' | 'assistant',
           content: msg.content
         })),
@@ -82,6 +77,7 @@ Keep responses focused and helpful. Current year: 2026.`
 
       // Create assistant message placeholder
       const assistantMessageId = (Date.now() + 1).toString();
+      let assistantContent = '';
 
       setMessages(prev => [...prev, {
         id: assistantMessageId,
@@ -90,31 +86,22 @@ Keep responses focused and helpful. Current year: 2026.`
         isTyping: true
       }]);
 
-      // Get AI response using GPT-5-nano
-      const provider = advancedAIService.getProvider();
-      console.log('Sending request to GPT-5-nano...', {
-        provider: provider.name,
-        messageCount: conversationHistory.length
-      });
+      // Stream the response
+      for await (const chunk of groqService.chatStream(conversationHistory)) {
+        assistantContent += chunk;
 
-      const response = await provider.chat(conversationHistory, {
-        maxTokens: 4096 // Increased for better responses
-      });
-
-      console.log('Received response from GPT-5-nano:', {
-        length: response?.length,
-        preview: response?.slice(0, 100)
-      });
-
-      // Check if response is empty
-      if (!response || response.trim() === '') {
-        throw new Error('Received empty response from AI');
+        // Update message content in real-time
+        setMessages(prev => prev.map(msg =>
+          msg.id === assistantMessageId
+            ? { ...msg, content: assistantContent, isTyping: true }
+            : msg
+        ));
       }
 
-      // Update with final response
+      // Mark as complete (remove typing indicator)
       setMessages(prev => prev.map(msg =>
         msg.id === assistantMessageId
-          ? { ...msg, content: response, isTyping: false }
+          ? { ...msg, isTyping: false }
           : msg
       ));
 
@@ -130,7 +117,7 @@ Keep responses focused and helpful. Current year: 2026.`
         role: 'assistant',
         content: `Sorry, I encountered an error: ${errorMessage}\n\n${
           !isConfigured
-            ? 'Please configure your OpenAI GPT-5-nano API key to enable AI chat.'
+            ? 'Please configure your free Groq API key to enable AI chat.'
             : 'Please try again in a moment.'
         }`
       }]);
@@ -140,34 +127,18 @@ Keep responses focused and helpful. Current year: 2026.`
   }, [messages, isConfigured]);
 
   /**
-   * Edit a user message and regenerate AI response
-   */
-  const editMessage = useCallback(async (messageId: string, newContent: string) => {
-    // Find the message index
-    const messageIndex = messages.findIndex(m => m.id === messageId);
-    if (messageIndex === -1) return;
-
-    // Remove the message and all messages after it
-    const updatedMessages = messages.slice(0, messageIndex);
-    setMessages(updatedMessages);
-
-    // Send the edited message as a new message
-    await sendMessage(newContent);
-  }, [messages, sendMessage]);
-
-  /**
-   * Load messages from chat history
-   */
-  const loadMessages = useCallback((newMessages: Message[]) => {
-    setMessages(newMessages);
-    setError(null);
-  }, []);
-
-  /**
    * Clear conversation history
    */
   const clearMessages = useCallback(() => {
     setMessages([]);
+    setError(null);
+  }, []);
+
+  /**
+   * Load messages from saved conversation
+   */
+  const loadMessages = useCallback((savedMessages: Message[]) => {
+    setMessages(savedMessages);
     setError(null);
   }, []);
 
@@ -176,9 +147,8 @@ Keep responses focused and helpful. Current year: 2026.`
     isLoading,
     error,
     sendMessage,
-    editMessage,
-    loadMessages,
     clearMessages,
+    setMessages: loadMessages,
     isConfigured
   };
 };

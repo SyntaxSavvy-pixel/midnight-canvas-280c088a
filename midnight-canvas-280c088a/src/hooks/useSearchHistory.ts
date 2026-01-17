@@ -93,7 +93,10 @@ export const useSearchHistory = () => {
     searchHistory,
     isLoading,
     error,
-    addSearch: addSearchMutation.mutate,
+    addSearch: addSearchMutation.mutate as (
+      params: { title: string; initialQuery: string; messages?: any },
+      options?: { onSuccess?: (data: any) => void }
+    ) => void,
     updateSearch: updateSearchMutation.mutate,
     deleteSearch: deleteSearchMutation.mutate,
     isAdding: addSearchMutation.isPending,

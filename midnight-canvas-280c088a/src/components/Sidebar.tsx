@@ -1,28 +1,35 @@
 import { useState, useEffect } from 'react';
 import { Bookmark, FileText, User, Plus, MessageSquare, Menu, X, Search, Pencil, Trash2, Check } from 'lucide-react';
 import { categorizeChatsByDate } from '@/utils/dateHelpers';
-
-export interface ChatHistoryItem {
-  id: string;
-  title: string;
-  timestamp: string;
-  createdAt?: Date;
-}
+import { SearchHistoryItem } from '@/types/auth';
 
 interface SidebarProps {
   isOpen: boolean;
   onToggle: () => void;
-  history: ChatHistoryItem[];
+  history: SearchHistoryItem[];
   userName?: string;
   avatarUrl?: string | null;
   onRenameChat?: (id: string, newTitle: string) => void;
   onDeleteChat?: (id: string) => void;
-  onSelectChat?: (id: string) => void;
-  onNewChat?: () => void;
   onProfileClick?: () => void;
+  onSelectChat?: (item: SearchHistoryItem) => void;
+  onNewChat?: () => void;
+  activeChatId?: string | null;
 }
 
-const Sidebar = ({ isOpen, onToggle, history, userName = "User", avatarUrl, onRenameChat, onDeleteChat, onSelectChat, onNewChat, onProfileClick }: SidebarProps) => {
+const Sidebar = ({ 
+  isOpen, 
+  onToggle, 
+  history, 
+  userName = "User", 
+  avatarUrl, 
+  onRenameChat, 
+  onDeleteChat, 
+  onProfileClick,
+  onSelectChat,
+  onNewChat,
+  activeChatId
+}: SidebarProps) => {
   const [isVisible, setIsVisible] = useState(false);
   const [isAnimatingOut, setIsAnimatingOut] = useState(false);
   const [particles, setParticles] = useState<{ id: number; x: number; y: number; delay: number }[]>([]);
@@ -55,8 +62,15 @@ const Sidebar = ({ isOpen, onToggle, history, userName = "User", avatarUrl, onRe
     }
   }, [isOpen, isVisible]);
 
+  // Transform history items to include timestamp for date categorization
+  const historyWithTimestamp = history.map(item => ({
+    ...item,
+    timestamp: item.timestamp || '',
+    createdAt: new Date(item.created_at)
+  }));
+
   // Filter chats by search query
-  const filteredHistory = history.filter(chat =>
+  const filteredHistory = historyWithTimestamp.filter(chat =>
     chat.title.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
@@ -87,6 +101,18 @@ const Sidebar = ({ isOpen, onToggle, history, userName = "User", avatarUrl, onRe
   const handleDelete = (id: string) => {
     if (onDeleteChat) {
       onDeleteChat(id);
+    }
+  };
+
+  const handleSelectChat = (item: SearchHistoryItem) => {
+    if (onSelectChat) {
+      onSelectChat(item);
+    }
+  };
+
+  const handleNewChat = () => {
+    if (onNewChat) {
+      onNewChat();
     }
   };
 
@@ -166,8 +192,8 @@ const Sidebar = ({ isOpen, onToggle, history, userName = "User", avatarUrl, onRe
                 </button>
 
                 {/* New Chat button - icon only */}
-                <button
-                  onClick={onNewChat}
+                <button 
+                  onClick={handleNewChat}
                   className="
                     p-2 rounded-lg
                     hover:bg-secondary/50
@@ -230,90 +256,96 @@ const Sidebar = ({ isOpen, onToggle, history, userName = "User", avatarUrl, onRe
 
                           {/* Chats in this category */}
                           <div className="space-y-1">
-                            {chats.map((item) => (
-                              <div
-                                key={item.id}
-                                className="group relative"
-                                onMouseEnter={() => setHoveredId(item.id)}
-                                onMouseLeave={() => setHoveredId(null)}
-                              >
-                                {editingId === item.id ? (
-                                  // Edit mode
-                                  <div className="flex items-center gap-1 px-2 py-2 rounded-lg bg-secondary/50">
-                                    <input
-                                      type="text"
-                                      value={editTitle}
-                                      onChange={(e) => setEditTitle(e.target.value)}
-                                      onKeyDown={(e) => {
-                                        if (e.key === 'Enter') saveRename(item.id);
-                                        if (e.key === 'Escape') cancelRename();
-                                      }}
-                                      className="
-                                        flex-1 bg-transparent text-sm text-foreground
-                                        focus:outline-none
-                                      "
-                                      autoFocus
-                                    />
-                                    <button
-                                      onClick={() => saveRename(item.id)}
-                                      className="p-1 hover:bg-secondary/70 rounded transition-colors"
-                                    >
-                                      <Check className="w-3.5 h-3.5 text-foreground/70" />
-                                    </button>
-                                    <button
-                                      onClick={cancelRename}
-                                      className="p-1 hover:bg-secondary/70 rounded transition-colors"
-                                    >
-                                      <X className="w-3.5 h-3.5 text-foreground/70" />
-                                    </button>
-                                  </div>
-                                ) : (
-                                  // Normal mode
-                                  <button
-                                    onClick={() => onSelectChat?.(item.id)}
-                                    className="
-                                      w-full px-2 py-2 rounded-lg text-left
-                                      hover:bg-secondary/50
-                                      transition-all duration-150
-                                      flex items-center gap-2
-                                    "
-                                  >
-                                    <MessageSquare className="w-4 h-4 text-foreground/40 flex-shrink-0" />
-                                    <div className="flex-1 min-w-0">
-                                      <p className="text-sm text-foreground/80 truncate group-hover:text-foreground">
-                                        {item.title}
-                                      </p>
+                            {chats.map((item) => {
+                              const originalItem = history.find(h => h.id === item.id);
+                              const isActive = activeChatId === item.id;
+                              
+                              return (
+                                <div
+                                  key={item.id}
+                                  className="group relative"
+                                  onMouseEnter={() => setHoveredId(item.id)}
+                                  onMouseLeave={() => setHoveredId(null)}
+                                >
+                                  {editingId === item.id ? (
+                                    // Edit mode
+                                    <div className="flex items-center gap-1 px-2 py-2 rounded-lg bg-secondary/50">
+                                      <input
+                                        type="text"
+                                        value={editTitle}
+                                        onChange={(e) => setEditTitle(e.target.value)}
+                                        onKeyDown={(e) => {
+                                          if (e.key === 'Enter') saveRename(item.id);
+                                          if (e.key === 'Escape') cancelRename();
+                                        }}
+                                        className="
+                                          flex-1 bg-transparent text-sm text-foreground
+                                          focus:outline-none
+                                        "
+                                        autoFocus
+                                      />
+                                      <button
+                                        onClick={() => saveRename(item.id)}
+                                        className="p-1 hover:bg-secondary/70 rounded transition-colors"
+                                      >
+                                        <Check className="w-3.5 h-3.5 text-foreground/70" />
+                                      </button>
+                                      <button
+                                        onClick={cancelRename}
+                                        className="p-1 hover:bg-secondary/70 rounded transition-colors"
+                                      >
+                                        <X className="w-3.5 h-3.5 text-foreground/70" />
+                                      </button>
                                     </div>
-
-                                    {/* Action buttons on hover */}
-                                    {hoveredId === item.id && (
-                                      <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                        <button
-                                          onClick={(e) => {
-                                            e.stopPropagation();
-                                            handleRename(item.id);
-                                          }}
-                                          className="p-1 hover:bg-secondary/70 rounded transition-colors"
-                                          title="Rename"
-                                        >
-                                          <Pencil className="w-3.5 h-3.5 text-foreground/70" />
-                                        </button>
-                                        <button
-                                          onClick={(e) => {
-                                            e.stopPropagation();
-                                            handleDelete(item.id);
-                                          }}
-                                          className="p-1 hover:bg-red-500/20 rounded transition-colors"
-                                          title="Delete"
-                                        >
-                                          <Trash2 className="w-3.5 h-3.5 text-red-500/70" />
-                                        </button>
+                                  ) : (
+                                    // Normal mode
+                                    <button
+                                      onClick={() => originalItem && handleSelectChat(originalItem)}
+                                      className={`
+                                        w-full px-2 py-2 rounded-lg text-left
+                                        hover:bg-secondary/50
+                                        transition-all duration-150
+                                        flex items-center gap-2
+                                        ${isActive ? 'bg-secondary/60 border border-primary/30' : ''}
+                                      `}
+                                    >
+                                      <MessageSquare className={`w-4 h-4 flex-shrink-0 ${isActive ? 'text-primary' : 'text-foreground/40'}`} />
+                                      <div className="flex-1 min-w-0">
+                                        <p className={`text-sm truncate group-hover:text-foreground ${isActive ? 'text-foreground font-medium' : 'text-foreground/80'}`}>
+                                          {item.title}
+                                        </p>
                                       </div>
-                                    )}
-                                  </button>
-                                )}
-                              </div>
-                            ))}
+
+                                      {/* Action buttons on hover */}
+                                      {hoveredId === item.id && (
+                                        <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                          <button
+                                            onClick={(e) => {
+                                              e.stopPropagation();
+                                              handleRename(item.id);
+                                            }}
+                                            className="p-1 hover:bg-secondary/70 rounded transition-colors"
+                                            title="Rename"
+                                          >
+                                            <Pencil className="w-3.5 h-3.5 text-foreground/70" />
+                                          </button>
+                                          <button
+                                            onClick={(e) => {
+                                              e.stopPropagation();
+                                              handleDelete(item.id);
+                                            }}
+                                            className="p-1 hover:bg-red-500/20 rounded transition-colors"
+                                            title="Delete"
+                                          >
+                                            <Trash2 className="w-3.5 h-3.5 text-red-500/70" />
+                                          </button>
+                                        </div>
+                                      )}
+                                    </button>
+                                  )}
+                                </div>
+                              );
+                            })}
                           </div>
                         </div>
                       );
