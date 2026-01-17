@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <!-- Pixel art avatar 8: Yellow character -->
+  <rect width="64" height="64" fill="#eab308"/>
+  <rect x="16" y="16" width="8" height="8" fill="#fef9c3"/>
+  <rect x="40" y="16" width="8" height="8" fill="#fef9c3"/>
+  <rect x="20" y="36" width="24" height="8" fill="#fef08a"/>
+  <rect x="28" y="28" width="8" height="4" fill="#fef9c3"/>
+</svg>
