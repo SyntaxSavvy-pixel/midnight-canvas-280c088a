@@ -226,12 +226,15 @@ const Index = () => {
         onToggle={() => setSidebarOpen(prev => !prev)}
         history={searchHistory}
         userName={profile?.display_name || profile?.email?.split('@')[0] || 'User'}
+        userEmail={profile?.email || ''}
         avatarUrl={profile?.avatar_url}
+        subscriptionPlan="Free"
         onRenameChat={handleRenameChat}
         onDeleteChat={handleDeleteChat}
         onProfileClick={() => setSettingsModalOpen(true)}
         onSelectChat={handleSelectChat}
         onNewChat={handleNewChat}
+        onLogout={() => {/* TODO: Implement logout */}}
         activeChatId={activeChatId}
       />
 
