@@ -1,42 +1,94 @@
 /**
- * useAIChat Hook - Real AI chat with streaming support
+ * useAIChat Hook - AI chat with Perplexica features
  *
- * Uses free Groq API with Llama 3.1 models
- * Handles conversation history, streaming, and error states
+ * Uses OpenAI + Brave Search API for intelligent search results
+ * Features: Smart search modes, source focus, widgets, streaming
  */
 
-import { useState, useCallback } from 'react';
-import { groqService, ChatMessage as GroqMessage } from '@/services/ai/groq.service';
+import { useState, useCallback, useRef } from 'react';
 
 export interface Message {
   id: string;
   role: 'user' | 'assistant';
   content: string;
   isTyping?: boolean;
+  sources?: Source[];
+  videos?: VideoResult[];
+  images?: ImageResult[];
 }
+
+export interface Source {
+  title: string;
+  url: string;
+  snippet: string;
+  domain: string;
+  favicon: string;
+}
+
+export interface VideoResult {
+  title: string;
+  url: string;
+  thumbnail: string | null;
+  duration: string | null;
+  publisher: string;
+  isYouTube: boolean;
+}
+
+export interface ImageResult {
+  title: string;
+  url: string;
+  thumbnail: string | null;
+  source: string;
+}
+
+export type SearchMode = 'speed' | 'balanced' | 'quality';
+export type SourceFocus = 'all' | 'web' | 'academic' | 'news' | 'discussions' | 'images' | 'videos';
 
 export interface UseAIChatReturn {
   messages: Message[];
   isLoading: boolean;
   error: string | null;
-  sendMessage: (content: string) => Promise<void>;
+  sendMessage: (content: string, options?: SendMessageOptions) => Promise<void>;
   clearMessages: () => void;
   setMessages: (messages: Message[]) => void;
   isConfigured: boolean;
+  searchMode: SearchMode;
+  setSearchMode: (mode: SearchMode) => void;
+  sourceFocus: SourceFocus;
+  setSourceFocus: (focus: SourceFocus) => void;
 }
+
+export interface SendMessageOptions {
+  forceSearch?: boolean;
+  domainFilter?: string;
+  fileContext?: string;
+}
+
+// API Server URL - configurable via env or default to localhost
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
 export const useAIChat = (): UseAIChatReturn => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [searchMode, setSearchMode] = useState<SearchMode>('balanced');
+  const [sourceFocus, setSourceFocus] = useState<SourceFocus>('all');
+  const abortControllerRef = useRef<AbortController | null>(null);
 
-  const isConfigured = groqService.isConfigured();
+  // Check if API is reachable (simple check)
+  const isConfigured = true; // Will be checked at runtime
 
   /**
    * Send a message and get AI response with streaming
    */
-  const sendMessage = useCallback(async (content: string) => {
+  const sendMessage = useCallback(async (content: string, options: SendMessageOptions = {}) => {
     if (!content.trim()) return;
+
+    // Cancel any ongoing request
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+    abortControllerRef.current = new AbortController();
 
     setError(null);
     setIsLoading(true);
@@ -50,55 +102,118 @@ export const useAIChat = (): UseAIChatReturn => {
 
     setMessages(prev => [...prev, userMessage]);
 
+    // Create assistant message placeholder
+    const assistantMessageId = (Date.now() + 1).toString();
+
+    setMessages(prev => [...prev, {
+      id: assistantMessageId,
+      role: 'assistant',
+      content: '',
+      isTyping: true,
+      sources: [],
+      videos: [],
+      images: [],
+    }]);
+
     try {
-      // Convert to Groq message format
-      const conversationHistory: GroqMessage[] = [
-        {
-          role: 'system',
-          content: `You are a helpful AI assistant integrated into TabKeep, a multi-platform search application.
+      // Build conversation history (last 10 messages)
+      const history = messages.slice(-10).map(msg => ({
+        role: msg.role,
+        content: msg.content
+      }));
 
-Your role:
-- Answer user questions clearly and concisely
-- Be friendly and conversational
-- Provide useful information
-- If asked about searching platforms, explain that TabKeep can search across Google, YouTube, GitHub, Reddit, Spotify, TikTok, Twitter, Instagram, LinkedIn, Indeed, Pinterest, and Facebook
+      // Prepare request body
+      const requestBody = {
+        message: content.trim(),
+        optimizationMode: searchMode,
+        sourceFocus,
+        history,
+        forceSearch: options.forceSearch || false,
+        domainFilter: options.domainFilter,
+        fileContext: options.fileContext,
+      };
 
-Keep responses focused and helpful.`
+      // Call the API with SSE streaming
+      const response = await fetch(`${API_URL}/api/perplexica/chat`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
         },
-        ...messages.map(msg => ({
-          role: msg.role as 'user' | 'assistant',
-          content: msg.content
-        })),
-        {
-          role: 'user',
-          content: content.trim()
-        }
-      ];
+        body: JSON.stringify(requestBody),
+        signal: abortControllerRef.current.signal,
+      });
 
-      // Create assistant message placeholder
-      const assistantMessageId = (Date.now() + 1).toString();
-      let assistantContent = '';
-
-      setMessages(prev => [...prev, {
-        id: assistantMessageId,
-        role: 'assistant',
-        content: '',
-        isTyping: true
-      }]);
-
-      // Stream the response
-      for await (const chunk of groqService.chatStream(conversationHistory)) {
-        assistantContent += chunk;
-
-        // Update message content in real-time
-        setMessages(prev => prev.map(msg =>
-          msg.id === assistantMessageId
-            ? { ...msg, content: assistantContent, isTyping: true }
-            : msg
-        ));
+      if (!response.ok) {
+        throw new Error(`API error: ${response.status}`);
       }
 
-      // Mark as complete (remove typing indicator)
+      const reader = response.body?.getReader();
+      if (!reader) throw new Error('No response body');
+
+      const decoder = new TextDecoder();
+      let assistantContent = '';
+      let sources: Source[] = [];
+      let videos: VideoResult[] = [];
+      let images: ImageResult[] = [];
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        const chunk = decoder.decode(value, { stream: true });
+        const lines = chunk.split('\n');
+
+        for (const line of lines) {
+          if (line.startsWith('data: ')) {
+            try {
+              const data = JSON.parse(line.slice(6));
+
+              switch (data.type) {
+                case 'sources':
+                  sources = data.sources || [];
+                  videos = data.videos || [];
+                  images = data.images || [];
+                  // Update message with sources immediately
+                  setMessages(prev => prev.map(msg =>
+                    msg.id === assistantMessageId
+                      ? { ...msg, sources, videos, images }
+                      : msg
+                  ));
+                  break;
+
+                case 'content':
+                  assistantContent += data.content;
+                  setMessages(prev => prev.map(msg =>
+                    msg.id === assistantMessageId
+                      ? { ...msg, content: assistantContent, isTyping: true }
+                      : msg
+                  ));
+                  break;
+
+                case 'thinking':
+                  // Could display thinking status if needed
+                  break;
+
+                case 'done':
+                  // Mark as complete
+                  setMessages(prev => prev.map(msg =>
+                    msg.id === assistantMessageId
+                      ? { ...msg, isTyping: false }
+                      : msg
+                  ));
+                  break;
+
+                case 'error':
+                  throw new Error(data.message || 'Unknown error');
+              }
+            } catch (e) {
+              // Skip invalid JSON lines
+            }
+          }
+        }
+      }
+
+      // Final update to ensure typing is false
       setMessages(prev => prev.map(msg =>
         msg.id === assistantMessageId
           ? { ...msg, isTyping: false }
@@ -106,32 +221,42 @@ Keep responses focused and helpful.`
       ));
 
     } catch (err: any) {
-      console.error('AI chat error:', err);
+      if (err.name === 'AbortError') {
+        console.log('Request cancelled');
+        return;
+      }
 
+      console.error('AI chat error:', err);
       const errorMessage = err.message || 'Failed to get AI response';
       setError(errorMessage);
 
       // Add error message to chat
-      setMessages(prev => [...prev, {
-        id: (Date.now() + 1).toString(),
-        role: 'assistant',
-        content: `Sorry, I encountered an error: ${errorMessage}\n\n${
-          !isConfigured
-            ? 'Please configure your free Groq API key to enable AI chat.'
-            : 'Please try again in a moment.'
-        }`
-      }]);
+      setMessages(prev => prev.map(msg =>
+        msg.id === assistantMessageId
+          ? {
+              ...msg,
+              content: `Sorry, I encountered an error: ${errorMessage}\n\nPlease make sure the API server is running at ${API_URL}`,
+              isTyping: false
+            }
+          : msg
+      ));
     } finally {
       setIsLoading(false);
+      abortControllerRef.current = null;
     }
-  }, [messages, isConfigured]);
+  }, [messages, searchMode, sourceFocus]);
 
   /**
    * Clear conversation history
    */
   const clearMessages = useCallback(() => {
+    // Cancel any ongoing request
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
     setMessages([]);
     setError(null);
+    setIsLoading(false);
   }, []);
 
   /**
@@ -149,6 +274,10 @@ Keep responses focused and helpful.`
     sendMessage,
     clearMessages,
     setMessages: loadMessages,
-    isConfigured
+    isConfigured,
+    searchMode,
+    setSearchMode,
+    sourceFocus,
+    setSourceFocus,
   };
 };

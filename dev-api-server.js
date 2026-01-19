@@ -8,7 +8,7 @@ const cors = require('cors');
 const OpenAI = require('openai');
 const axios = require('axios');
 const crypto = require('crypto');
-require('dotenv').config({ path: './midnight-canvas-280c088a.backup/.env.local' });
+require('dotenv').config({ path: './midnight-canvas-280c088a/.env.local' });
 
 const app = express();
 const PORT = 3000;
@@ -60,7 +60,7 @@ app.use((req, res, next) => {
 // ============================================
 // Brave Search API (Web, Videos, Images)
 // ============================================
-async function braveSearch(query, count = 8) {
+async function braveSearch(query, count = 8, sourceFocus = 'all') {
   const apiKey = process.env.BRAVE_SEARCH_API_KEY;
 
   if (!apiKey) {
@@ -69,55 +69,91 @@ async function braveSearch(query, count = 8) {
   }
 
   // Check cache first
-  const cacheKey = getCacheKey(query, 'brave');
+  const cacheKey = getCacheKey(`${query}:${sourceFocus}`, 'brave');
   const cached = getFromCache(cacheKey);
   if (cached) return { ...cached, cached: true };
 
+  // Modify query based on source focus
+  let searchQuery = query;
+  if (sourceFocus === 'academic') {
+    searchQuery = `${query} site:scholar.google.com OR site:arxiv.org OR site:researchgate.net OR site:academia.edu`;
+  } else if (sourceFocus === 'news') {
+    searchQuery = query; // Will use news endpoint
+  } else if (sourceFocus === 'discussions') {
+    searchQuery = `${query} site:reddit.com OR site:stackoverflow.com OR site:quora.com OR site:hackernews.com`;
+  }
+
   try {
     // Fetch web, video, and image results in parallel
-    const [webResponse, videoResponse, imageResponse] = await Promise.allSettled([
-      // Web search
-      axios.get('https://api.search.brave.com/res/v1/web/search', {
-        params: {
-          q: query,
-          count,
-          search_lang: 'en',
-          safesearch: 'moderate',
-          text_decorations: false,
-        },
-        headers: {
-          'Accept': 'application/json',
-          'X-Subscription-Token': apiKey,
-        },
-        timeout: 10000,
-      }),
-      // Video search
-      axios.get('https://api.search.brave.com/res/v1/videos/search', {
-        params: {
-          q: query,
-          count: 6,
-          safesearch: 'moderate',
-        },
-        headers: {
-          'Accept': 'application/json',
-          'X-Subscription-Token': apiKey,
-        },
-        timeout: 10000,
-      }),
-      // Image search
-      axios.get('https://api.search.brave.com/res/v1/images/search', {
-        params: {
-          q: query,
-          count: 6,
-          safesearch: 'moderate',
-        },
-        headers: {
-          'Accept': 'application/json',
-          'X-Subscription-Token': apiKey,
-        },
-        timeout: 10000,
-      }),
-    ]);
+    const shouldFetchVideos = sourceFocus === 'all' || sourceFocus === 'videos';
+    const shouldFetchImages = sourceFocus === 'all' || sourceFocus === 'images';
+    const shouldFetchWeb = sourceFocus !== 'videos' && sourceFocus !== 'images';
+
+    const searchPromises = [];
+
+    // Web search
+    if (shouldFetchWeb) {
+      searchPromises.push(
+        axios.get('https://api.search.brave.com/res/v1/web/search', {
+          params: {
+            q: searchQuery,
+            count,
+            search_lang: 'en',
+            safesearch: 'moderate',
+            text_decorations: false,
+          },
+          headers: {
+            'Accept': 'application/json',
+            'X-Subscription-Token': apiKey,
+          },
+          timeout: 10000,
+        })
+      );
+    } else {
+      searchPromises.push(Promise.resolve({ data: {} }));
+    }
+
+    // Video search
+    if (shouldFetchVideos) {
+      searchPromises.push(
+        axios.get('https://api.search.brave.com/res/v1/videos/search', {
+          params: {
+            q: query,
+            count: sourceFocus === 'videos' ? 12 : 6,
+            safesearch: 'moderate',
+          },
+          headers: {
+            'Accept': 'application/json',
+            'X-Subscription-Token': apiKey,
+          },
+          timeout: 10000,
+        })
+      );
+    } else {
+      searchPromises.push(Promise.resolve({ data: {} }));
+    }
+
+    // Image search
+    if (shouldFetchImages) {
+      searchPromises.push(
+        axios.get('https://api.search.brave.com/res/v1/images/search', {
+          params: {
+            q: query,
+            count: sourceFocus === 'images' ? 12 : 6,
+            safesearch: 'moderate',
+          },
+          headers: {
+            'Accept': 'application/json',
+            'X-Subscription-Token': apiKey,
+          },
+          timeout: 10000,
+        })
+      );
+    } else {
+      searchPromises.push(Promise.resolve({ data: {} }));
+    }
+
+    const [webResponse, videoResponse, imageResponse] = await Promise.allSettled(searchPromises);
 
     // Process web results
     const webData = webResponse.status === 'fulfilled' ? webResponse.value.data : {};
@@ -464,7 +500,7 @@ app.post('/api/perplexica/chat', async (req, res) => {
   }
 
   try {
-    const { message, optimizationMode = 'balanced', history = [], forceSearch = false } = req.body;
+    const { message, optimizationMode = 'balanced', history = [], forceSearch = false, sourceFocus = 'all', domainFilter = '' } = req.body;
 
     if (!message) {
       return res.status(400).json({ error: 'Message is required' });
@@ -521,7 +557,12 @@ ${userLocation ? `User's location: ${userLocation.city}, ${userLocation.region},
         }
       }
 
-      const searchData = await braveSearch(searchQuery, 8);
+      // Add domain filter if specified
+      if (domainFilter) {
+        searchQuery = `${searchQuery} site:${domainFilter}`;
+      }
+
+      const searchData = await braveSearch(searchQuery, 8, sourceFocus);
 
       sources = searchData.results.map(r => ({
         title: r.title,

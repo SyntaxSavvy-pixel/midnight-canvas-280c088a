@@ -10,7 +10,6 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useSearchHistory } from '@/hooks/useSearchHistory';
 import { useAIChat } from '@/hooks/useAIChat';
 import { SearchHistoryItem } from '@/types/auth';
-import { AlertCircle } from 'lucide-react';
 
 const ACTIVE_CHAT_KEY = 'tabkeep_active_chat_id';
 
@@ -24,8 +23,8 @@ const Index = () => {
     isLoading: historyLoading,
   } = useSearchHistory();
 
-  // AI Chat hook (FREE with Groq)
-  const { messages, isLoading, sendMessage, clearMessages, setMessages, isConfigured: aiConfigured } = useAIChat();
+  // AI Chat hook (OpenAI + Brave Search)
+  const { messages, isLoading, sendMessage, clearMessages, setMessages } = useAIChat();
 
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [showWelcome, setShowWelcome] = useState(true);
@@ -331,25 +330,7 @@ const Index = () => {
             // Chat interface
             <>
               <div className="flex-1 flex flex-col max-w-4xl mx-auto w-full pt-20">
-                {/* AI Configuration Warning */}
-                {!aiConfigured && (
-                  <div className="mx-4 mb-4 p-4 bg-yellow-500/10 border border-yellow-500/30 rounded-xl flex items-start gap-3">
-                    <AlertCircle className="w-5 h-5 text-yellow-500 mt-0.5 flex-shrink-0" />
-                    <div className="flex-1">
-                      <h3 className="font-medium text-yellow-500 mb-1">Free AI Chat Not Configured</h3>
-                      <p className="text-sm text-foreground/80 mb-2">
-                        Get your FREE Groq API key to enable real-time AI chat (no credit card required)
-                      </p>
-                      <ol className="text-xs text-foreground/70 space-y-1 ml-4 list-decimal">
-                        <li>Go to <a href="https://console.groq.com/keys" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">console.groq.com/keys</a></li>
-                        <li>Sign up with Google/GitHub (100% free)</li>
-                        <li>Click "Create API Key"</li>
-                        <li>Add it to your <code className="px-1 py-0.5 bg-secondary/50 rounded text-xs">.env.local</code> file as <code className="px-1 py-0.5 bg-secondary/50 rounded text-xs">VITE_GROQ_API_KEY</code></li>
-                        <li>Restart the dev server</li>
-                      </ol>
-                    </div>
-                  </div>
-                )}
+                {/* AI is always configured via API server */}
 
                 <Chat messages={messages} isLoading={isLoading} />
               </div>
