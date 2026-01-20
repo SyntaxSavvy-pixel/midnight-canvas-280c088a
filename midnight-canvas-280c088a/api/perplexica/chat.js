@@ -1,104 +1,7 @@
-import OpenAI from 'openai';
-
 export const config = {
   runtime: 'edge',
+  maxDuration: 60,
 };
-
-// Brave Search API
-async function braveSearch(query, apiKey, count = 8, sourceFocus = 'all') {
-  if (!apiKey) {
-    return { results: [], videos: [], images: [] };
-  }
-
-  try {
-    const searchPromises = [];
-
-    // Web search
-    searchPromises.push(
-      fetch(`https://api.search.brave.com/res/v1/web/search?q=${encodeURIComponent(query)}&count=${count}`, {
-        headers: {
-          'Accept': 'application/json',
-          'X-Subscription-Token': apiKey,
-        },
-      }).then(r => r.json()).catch(() => ({}))
-    );
-
-    // Video search
-    searchPromises.push(
-      fetch(`https://api.search.brave.com/res/v1/videos/search?q=${encodeURIComponent(query)}&count=6`, {
-        headers: {
-          'Accept': 'application/json',
-          'X-Subscription-Token': apiKey,
-        },
-      }).then(r => r.json()).catch(() => ({}))
-    );
-
-    // Image search
-    searchPromises.push(
-      fetch(`https://api.search.brave.com/res/v1/images/search?q=${encodeURIComponent(query)}&count=6`, {
-        headers: {
-          'Accept': 'application/json',
-          'X-Subscription-Token': apiKey,
-        },
-      }).then(r => r.json()).catch(() => ({}))
-    );
-
-    const [webData, videoData, imageData] = await Promise.all(searchPromises);
-
-    const results = (webData.web?.results || []).map((r, idx) => ({
-      position: idx + 1,
-      title: r.title,
-      url: r.url,
-      snippet: r.description || '',
-      domain: new URL(r.url).hostname,
-      favicon: `https://www.google.com/s2/favicons?domain=${new URL(r.url).hostname}&sz=32`,
-    }));
-
-    const videos = (videoData.results || []).slice(0, 6).map(v => ({
-      title: v.title,
-      url: v.url,
-      thumbnail: v.thumbnail?.src || null,
-      duration: v.video?.duration || null,
-      publisher: v.meta_url?.hostname || '',
-      isYouTube: v.url?.includes('youtube.com') || v.url?.includes('youtu.be'),
-    }));
-
-    const images = (imageData.results || []).slice(0, 6).map(img => ({
-      title: img.title,
-      url: img.url,
-      thumbnail: img.thumbnail?.src || img.properties?.url || null,
-      source: img.source,
-    }));
-
-    return { results, videos, images };
-  } catch (error) {
-    console.error('[BRAVE] Error:', error.message);
-    return { results: [], videos: [], images: [] };
-  }
-}
-
-// Intent classifier
-async function classifyIntent(query, openai) {
-  try {
-    const response = await openai.chat.completions.create({
-      model: 'gpt-4o-mini',
-      messages: [
-        {
-          role: 'system',
-          content: `Classify if this query needs web search. Return ONLY "search" or "chat".
-Use "search" for: facts, news, current events, how-to, who/what/when questions, technical docs, weather.
-Use "chat" for: greetings, casual chat, opinions, creative writing, math, code writing, roleplay.`
-        },
-        { role: 'user', content: query }
-      ],
-      max_tokens: 10,
-      temperature: 0,
-    });
-    return response.choices[0]?.message?.content?.toLowerCase().trim() === 'search' ? 'search' : 'chat';
-  } catch {
-    return 'chat';
-  }
-}
 
 // Current date/time
 function getCurrentDateTime() {
@@ -117,7 +20,6 @@ export default async function handler(req) {
   }
 
   const openaiApiKey = process.env.VITE_OPENAI_API_KEY;
-  const braveApiKey = process.env.BRAVE_SEARCH_API_KEY;
 
   if (!openaiApiKey) {
     return new Response(JSON.stringify({ error: 'OpenAI API key not configured' }), {
@@ -127,7 +29,7 @@ export default async function handler(req) {
   }
 
   try {
-    const { message, optimizationMode = 'balanced', history = [], forceSearch = false, sourceFocus = 'all' } = await req.json();
+    const { message, optimizationMode = 'balanced', history = [], forceSearch = false } = await req.json();
 
     if (!message) {
       return new Response(JSON.stringify({ error: 'Message is required' }), {
@@ -147,88 +49,104 @@ export default async function handler(req) {
     // Process in background
     (async () => {
       try {
-        const openai = new OpenAI({ apiKey: openaiApiKey });
         const currentDateTime = getCurrentDateTime();
 
-        // Classify intent
-        let needsSearch = forceSearch;
-        if (!forceSearch) {
-          await sendSSE('thinking', { content: 'Understanding your message...' });
-          needsSearch = (await classifyIntent(message, openai)) === 'search';
-        }
+        await sendSSE('thinking', { content: 'Searching and analyzing...' });
 
-        let sources = [];
-        let systemPrompt = '';
+        // Build conversation history for the API
+        const previousMessages = history.slice(-10).map(h => ({
+          role: h.role,
+          content: h.content
+        }));
 
-        if (needsSearch && braveApiKey) {
-          await sendSSE('thinking', { content: 'Searching the web...' });
-          const searchData = await braveSearch(message, braveApiKey, 8, sourceFocus);
-
-          sources = searchData.results.map(r => ({
-            title: r.title,
-            url: r.url,
-            snippet: r.snippet,
-            domain: r.domain,
-            favicon: r.favicon,
-          }));
-
-          if (sources.length > 0) {
-            await sendSSE('sources', {
-              sources,
-              videos: searchData.videos || [],
-              images: searchData.images || [],
-            });
-          }
-
-          const sourcesContext = sources.slice(0, 6).map((s, i) =>
-            `[${i + 1}] ${s.title}\n${s.snippet}\nURL: ${s.url}`
-          ).join('\n\n');
-
-          systemPrompt = `You are TabKeep AI, a helpful assistant with web search.
-
-Current date: ${currentDateTime}
-
-Reference sources using [1], [2], etc. Use markdown formatting.
-
-Web Search Results:
-${sourcesContext}`;
-        } else {
-          systemPrompt = `You are TabKeep AI, a friendly assistant.
-
-Current date: ${currentDateTime}
-
-Be conversational, helpful, and use markdown when appropriate.`;
-        }
-
-        await sendSSE('thinking', { content: needsSearch ? 'Analyzing results...' : '' });
-
-        const modelConfig = {
-          speed: { model: 'gpt-4o-mini', temperature: 0.3 },
-          balanced: { model: 'gpt-4o-mini', temperature: 0.7 },
-          quality: { model: 'gpt-4o', temperature: 0.8 },
-        }[optimizationMode] || { model: 'gpt-4o-mini', temperature: 0.7 };
-
-        const messages = [
-          { role: 'system', content: systemPrompt },
-          ...history.slice(-10).map(h => ({ role: h.role, content: h.content })),
-          { role: 'user', content: message },
-        ];
-
-        const completion = await openai.chat.completions.create({
-          model: modelConfig.model,
-          messages,
-          temperature: modelConfig.temperature,
-          stream: true,
+        // Use OpenAI Responses API with built-in web search
+        const response = await fetch('https://api.openai.com/v1/responses', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${openaiApiKey}`,
+          },
+          body: JSON.stringify({
+            model: optimizationMode === 'quality' ? 'gpt-4o' : 'gpt-4o-mini',
+            input: [
+              {
+                role: 'system',
+                content: `You are TabKeep AI, a helpful search assistant. Current date: ${currentDateTime}.
+Be conversational and helpful. Use markdown formatting. When citing sources, use [Source Title](URL) format.`
+              },
+              ...previousMessages,
+              {
+                role: 'user',
+                content: message
+              }
+            ],
+            tools: [
+              {
+                type: 'web_search',
+                search_context_size: 'medium',
+                user_location: {
+                  type: 'approximate'
+                }
+              }
+            ],
+            max_output_tokens: 2048,
+            stream: true,
+            include: ['web_search_call.action.sources']
+          }),
         });
 
-        for await (const chunk of completion) {
-          const content = chunk.choices[0]?.delta?.content || '';
-          if (content) {
-            await sendSSE('content', { content });
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error?.message || 'OpenAI API error');
+        }
+
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder();
+        let sources = [];
+        let buffer = '';
+
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+
+          buffer += decoder.decode(value, { stream: true });
+          const lines = buffer.split('\n');
+          buffer = lines.pop() || '';
+
+          for (const line of lines) {
+            if (line.startsWith('data: ')) {
+              const data = line.slice(6);
+              if (data === '[DONE]') continue;
+
+              try {
+                const parsed = JSON.parse(data);
+
+                // Handle different event types
+                if (parsed.type === 'response.output_text.delta') {
+                  await sendSSE('content', { content: parsed.delta || '' });
+                } else if (parsed.type === 'response.web_search_call.sources') {
+                  // Extract sources from web search
+                  sources = (parsed.sources || []).map(s => ({
+                    title: s.title,
+                    url: s.url,
+                    snippet: s.snippet || '',
+                    domain: new URL(s.url).hostname,
+                    favicon: `https://www.google.com/s2/favicons?domain=${new URL(s.url).hostname}&sz=32`,
+                  }));
+                  if (sources.length > 0) {
+                    await sendSSE('sources', { sources, videos: [], images: [] });
+                  }
+                } else if (parsed.type === 'response.completed') {
+                  // Response complete
+                }
+              } catch (e) {
+                // Skip invalid JSON
+              }
+            }
           }
         }
 
-        await sendSSE('done', { searchUsed: needsSearch, sourcesCount: sources.length });
+        await sendSSE('done', { searchUsed: true, sourcesCount: sources.length });
       } catch (error) {
         console.error('[CHAT] Error:', error);
         await sendSSE('error', { message: error.message });
