@@ -106,7 +106,7 @@ const Sidebar = ({
   };
 
   return (
-    <div className={`shrink-0 transition-all duration-250 ${isOpen ? 'w-[220px]' : 'w-10'}`}>
+    <div className={`shrink-0 transition-all duration-250 ${isOpen ? 'w-[250px]' : 'w-10'}`}>
       {/* Collapsed state - just menu icon */}
       {!isOpen && !isVisible && (
         <div className="h-screen p-2">
@@ -118,46 +118,58 @@ const Sidebar = ({
 
       {/* Open sidebar */}
       {(isVisible || isOpen) && (
-        <aside className={`h-screen w-[220px] flex flex-col bg-[#171717] transition-all duration-250 ${isOpen && !isAnimatingOut ? 'opacity-100' : 'opacity-0 -translate-x-2'}`}>
+        <aside className={`h-screen w-[250px] flex flex-col bg-[#171717] transition-all duration-250 ${isOpen && !isAnimatingOut ? 'opacity-100' : 'opacity-0 -translate-x-2'}`}>
 
-          {/* Header with menu and new chat */}
-          <div className="flex items-center justify-between p-2">
+          {/* Header with logo and menu */}
+          <div className="flex items-center justify-between p-3">
+            <div className="flex items-center gap-2">
+              <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-cyan-400 to-blue-500 flex items-center justify-center">
+                <Brain className="w-4 h-4 text-white" />
+              </div>
+              <span className="text-sm font-semibold text-[#ccc]">TabKeep</span>
+            </div>
             <button onClick={onToggle} className="p-2 rounded-lg hover:bg-white/5 transition-colors">
               <Menu className="w-5 h-5 text-[#666]" />
             </button>
-            <button onClick={onNewChat} className="p-2 rounded-lg hover:bg-white/5 transition-colors">
-              <Plus className="w-5 h-5 text-[#666]" />
-            </button>
+          </div>
+
+          {/* Navigation tabs */}
+          <div className="px-3 pb-3">
+            <div className="flex gap-1 p-1 bg-[#202020] rounded-lg">
+              <button
+                onClick={onNewChat}
+                className="flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-md bg-[#2a2a2a] text-[#ccc] text-sm font-medium transition-colors"
+              >
+                <MessageSquare className="w-4 h-4" />
+                Ask
+              </button>
+              <button className="flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-md text-[#777] text-sm font-medium hover:bg-[#252525] transition-colors">
+                <Bookmark className="w-4 h-4" />
+                Save
+              </button>
+              <button className="flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-md text-[#777] text-sm font-medium hover:bg-[#252525] transition-colors">
+                <Users className="w-4 h-4" />
+                Community
+              </button>
+            </div>
           </div>
 
           {/* Search */}
-          <div className="px-2 pb-2">
+          <div className="px-3 pb-2">
             <div className="relative">
               <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[#444]" />
               <input
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search"
+                placeholder="Search chats..."
                 className="w-full pl-8 pr-3 py-1.5 rounded-lg bg-[#202020] text-sm text-[#ccc] placeholder:text-[#444] border-none focus:outline-none focus:ring-1 focus:ring-[#333]"
               />
             </div>
           </div>
 
-          {/* Navigation */}
-          <div className="px-2 space-y-0.5">
-            <button onClick={onNewChat} className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-[#ccc] hover:bg-white/5 transition-colors">
-              <MessageSquare className="w-4 h-4 text-[#666]" />
-              <span className="text-sm">New chat</span>
-            </button>
-            <button className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-[#ccc] hover:bg-white/5 transition-colors">
-              <Bookmark className="w-4 h-4 text-[#666]" />
-              <span className="text-sm">Saved tabs</span>
-            </button>
-          </div>
-
           {/* Chat history */}
-          <div className="flex-1 overflow-y-auto px-2 pt-3 scrollbar-hide">
+          <div className="flex-1 overflow-y-auto px-3 pt-2 scrollbar-hide">
             {history.length === 0 ? (
               <p className="px-3 py-4 text-xs text-[#444] text-center">No chats yet</p>
             ) : filteredHistory.length === 0 ? (
@@ -229,10 +241,10 @@ const Sidebar = ({
           </div>
 
           {/* Profile section */}
-          <div className="relative p-2 border-t border-[#222]" ref={profileMenuRef}>
+          <div className="relative p-3 border-t border-[#222]" ref={profileMenuRef}>
             {/* Dropdown menu */}
             {profileMenuOpen && (
-              <div className="absolute bottom-full left-2 right-2 mb-1 bg-[#1c1c1c] border border-[#2a2a2a] rounded-xl shadow-2xl overflow-hidden">
+              <div className="absolute bottom-full left-3 right-3 mb-1 bg-[#1c1c1c] border border-[#2a2a2a] rounded-xl shadow-2xl overflow-hidden">
                 {/* User info */}
                 <div className="p-3 border-b border-[#2a2a2a]">
                   <div className="flex items-center gap-2.5">
