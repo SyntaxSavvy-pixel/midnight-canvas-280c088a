@@ -134,7 +134,7 @@ export const useAIChat = (): UseAIChatReturn => {
       };
 
       // Call the API with SSE streaming
-      const response = await fetch(`${API_URL}/api/perplexica/chat`, {
+      const response = await fetch(`${API_URL}/api/chat`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
