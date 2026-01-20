@@ -63,7 +63,7 @@ export default async function handler(req) {
     const openai = new OpenAI({ apiKey });
 
     const completion = await openai.chat.completions.create({
-      model: 'gpt-5-chat-latest',
+      model: 'gpt-4o-mini',
       messages: [
         {
           role: 'system',
