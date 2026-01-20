@@ -19,7 +19,7 @@ export default async function handler(req) {
     });
   }
 
-  const openaiApiKey = process.env.VITE_OPENAI_API_KEY;
+  const openaiApiKey = process.env.OPENAI_API_KEY || process.env.VITE_OPENAI_API_KEY;
 
   if (!openaiApiKey) {
     return new Response(JSON.stringify({ error: 'OpenAI API key not configured' }), {

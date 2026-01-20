@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react';
-import { Loader2, ExternalLink, Play, Image as ImageIcon } from 'lucide-react';
+import { Loader2, ExternalLink } from 'lucide-react';
+import ReactMarkdown from 'react-markdown';
 
 export interface Source {
   title: string;
@@ -40,89 +41,22 @@ interface ChatProps {
   isLoading?: boolean;
 }
 
-// Source card component
+// Compact source card
 const SourceCard = ({ source, index }: { source: Source; index: number }) => (
   <a
     href={source.url}
     target="_blank"
     rel="noopener noreferrer"
-    className="flex-shrink-0 w-48 p-3 bg-secondary/30 hover:bg-secondary/50 rounded-lg transition-colors group"
+    className="flex items-center gap-2 px-3 py-2 bg-[#1a1a1a] hover:bg-[#222] rounded-lg transition-colors border border-[#2a2a2a] group"
   >
-    <div className="flex items-center gap-2 mb-2">
-      <img
-        src={source.favicon}
-        alt=""
-        className="w-4 h-4 rounded"
-        onError={(e) => { e.currentTarget.style.display = 'none'; }}
-      />
-      <span className="text-xs text-muted-foreground truncate">{source.domain}</span>
-      <span className="ml-auto text-xs text-primary font-medium">[{index + 1}]</span>
-    </div>
-    <p className="text-xs text-foreground/80 line-clamp-2 group-hover:text-foreground transition-colors">
-      {source.title}
-    </p>
-  </a>
-);
-
-// Video card component
-const VideoCard = ({ video }: { video: VideoResult }) => (
-  <a
-    href={video.url}
-    target="_blank"
-    rel="noopener noreferrer"
-    className="flex-shrink-0 w-40 group"
-  >
-    <div className="relative rounded-lg overflow-hidden bg-secondary/30 aspect-video mb-2">
-      {video.thumbnail ? (
-        <img
-          src={video.thumbnail}
-          alt={video.title}
-          className="w-full h-full object-cover"
-          onError={(e) => { e.currentTarget.style.display = 'none'; }}
-        />
-      ) : (
-        <div className="w-full h-full flex items-center justify-center">
-          <Play className="w-8 h-8 text-muted-foreground" />
-        </div>
-      )}
-      <div className="absolute inset-0 flex items-center justify-center bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity">
-        <Play className="w-8 h-8 text-white" />
-      </div>
-      {video.isYouTube && (
-        <span className="absolute top-1 right-1 text-[10px] bg-red-600 text-white px-1 rounded">
-          YouTube
-        </span>
-      )}
-      {video.duration && (
-        <span className="absolute bottom-1 right-1 text-[10px] bg-black/70 text-white px-1 rounded">
-          {video.duration}
-        </span>
-      )}
-    </div>
-    <p className="text-xs text-foreground/80 line-clamp-2">{video.title}</p>
-  </a>
-);
-
-// Image card component
-const ImageCard = ({ image }: { image: ImageResult }) => (
-  <a
-    href={image.url}
-    target="_blank"
-    rel="noopener noreferrer"
-    className="flex-shrink-0 w-24 h-24 rounded-lg overflow-hidden bg-secondary/30 group"
-  >
-    {image.thumbnail ? (
-      <img
-        src={image.thumbnail}
-        alt={image.title}
-        className="w-full h-full object-cover group-hover:scale-105 transition-transform"
-        onError={(e) => { e.currentTarget.style.display = 'none'; }}
-      />
-    ) : (
-      <div className="w-full h-full flex items-center justify-center">
-        <ImageIcon className="w-6 h-6 text-muted-foreground" />
-      </div>
-    )}
+    <img
+      src={source.favicon}
+      alt=""
+      className="w-4 h-4 rounded shrink-0"
+      onError={(e) => { e.currentTarget.src = 'https://www.google.com/favicon.ico'; }}
+    />
+    <span className="text-xs text-[#888] truncate max-w-[120px]">{source.title}</span>
+    <span className="text-xs text-cyan-400 font-medium shrink-0">[{index + 1}]</span>
   </a>
 );
 
@@ -137,30 +71,6 @@ const Chat = ({ messages, isLoading }: ChatProps) => {
     scrollToBottom();
   }, [messages]);
 
-  // Convert markdown links and citations to clickable links
-  const formatContent = (content: string, sources?: Source[]) => {
-    if (!content) return null;
-
-    // Replace citation numbers [1], [2], etc. with clickable links
-    let formatted = content;
-    if (sources && sources.length > 0) {
-      formatted = content.replace(/\[(\d+)\]/g, (match, num) => {
-        const index = parseInt(num) - 1;
-        if (sources[index]) {
-          return `<a href="${sources[index].url}" target="_blank" rel="noopener noreferrer" class="text-primary hover:underline">[${num}]</a>`;
-        }
-        return match;
-      });
-    }
-
-    return (
-      <p
-        className="text-sm whitespace-pre-wrap"
-        dangerouslySetInnerHTML={{ __html: formatted }}
-      />
-    );
-  };
-
   return (
     <div className="flex-1 overflow-y-auto px-4 py-6 space-y-6">
       {messages.map((message) => (
@@ -168,87 +78,84 @@ const Chat = ({ messages, isLoading }: ChatProps) => {
           key={message.id}
           className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
         >
-          <div
-            className={`
-              max-w-[85%] rounded-2xl
-              ${message.role === 'user'
-                ? 'bg-primary/10 text-foreground px-4 py-3'
-                : 'bg-transparent text-foreground/90'
-              }
-            `}
-          >
-            {message.role === 'assistant' && (
-              <>
-                {/* Sources section */}
-                {message.sources && message.sources.length > 0 && (
-                  <div className="mb-4">
-                    <div className="flex items-center gap-2 mb-2">
-                      <ExternalLink className="w-4 h-4 text-muted-foreground" />
-                      <span className="text-xs text-muted-foreground font-medium">Sources</span>
-                    </div>
-                    <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
-                      {message.sources.slice(0, 6).map((source, idx) => (
-                        <SourceCard key={idx} source={source} index={idx} />
-                      ))}
-                    </div>
+          {message.role === 'user' ? (
+            // User message - simple bubble
+            <div className="bg-cyan-500/20 text-[#eee] px-4 py-2.5 rounded-2xl max-w-[70%]">
+              <p className="text-sm">{message.content}</p>
+            </div>
+          ) : (
+            // Assistant message - full width with markdown
+            <div className="w-full max-w-3xl">
+              {/* Message content FIRST */}
+              <div className="mb-4">
+                {message.isTyping ? (
+                  <div className="flex items-center gap-2 text-[#aaa]">
+                    <span className="text-sm">{message.content}</span>
+                    <span className="flex gap-1">
+                      <span className="w-1.5 h-1.5 bg-cyan-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></span>
+                      <span className="w-1.5 h-1.5 bg-cyan-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></span>
+                      <span className="w-1.5 h-1.5 bg-cyan-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></span>
+                    </span>
+                  </div>
+                ) : (
+                  <div className="prose prose-invert prose-sm max-w-none">
+                    <ReactMarkdown
+                      components={{
+                        p: ({ children }) => <p className="text-[#ccc] leading-relaxed mb-3 last:mb-0">{children}</p>,
+                        a: ({ href, children }) => (
+                          <a href={href} target="_blank" rel="noopener noreferrer" className="text-cyan-400 hover:underline">
+                            {children}
+                          </a>
+                        ),
+                        strong: ({ children }) => <strong className="text-[#eee] font-semibold">{children}</strong>,
+                        em: ({ children }) => <em className="text-[#bbb]">{children}</em>,
+                        code: ({ children }) => (
+                          <code className="bg-[#1a1a1a] px-1.5 py-0.5 rounded text-cyan-300 text-xs">{children}</code>
+                        ),
+                        pre: ({ children }) => (
+                          <pre className="bg-[#1a1a1a] p-3 rounded-lg overflow-x-auto my-3 border border-[#2a2a2a]">{children}</pre>
+                        ),
+                        ul: ({ children }) => <ul className="list-disc list-inside space-y-1 text-[#ccc] mb-3">{children}</ul>,
+                        ol: ({ children }) => <ol className="list-decimal list-inside space-y-1 text-[#ccc] mb-3">{children}</ol>,
+                        li: ({ children }) => <li className="text-[#ccc]">{children}</li>,
+                        h1: ({ children }) => <h1 className="text-xl font-bold text-[#eee] mb-2">{children}</h1>,
+                        h2: ({ children }) => <h2 className="text-lg font-bold text-[#eee] mb-2">{children}</h2>,
+                        h3: ({ children }) => <h3 className="text-base font-bold text-[#eee] mb-2">{children}</h3>,
+                        blockquote: ({ children }) => (
+                          <blockquote className="border-l-2 border-cyan-500 pl-3 text-[#999] italic my-3">{children}</blockquote>
+                        ),
+                      }}
+                    >
+                      {message.content}
+                    </ReactMarkdown>
                   </div>
                 )}
+              </div>
 
-                {/* Videos section */}
-                {message.videos && message.videos.length > 0 && (
-                  <div className="mb-4">
-                    <div className="flex items-center gap-2 mb-2">
-                      <Play className="w-4 h-4 text-muted-foreground" />
-                      <span className="text-xs text-muted-foreground font-medium">Videos</span>
-                    </div>
-                    <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide">
-                      {message.videos.slice(0, 4).map((video, idx) => (
-                        <VideoCard key={idx} video={video} />
-                      ))}
-                    </div>
+              {/* Sources BELOW the response */}
+              {message.sources && message.sources.length > 0 && !message.isTyping && (
+                <div className="mt-4 pt-4 border-t border-[#222]">
+                  <div className="flex items-center gap-2 mb-3">
+                    <ExternalLink className="w-4 h-4 text-[#666]" />
+                    <span className="text-xs text-[#666] font-medium">Sources</span>
                   </div>
-                )}
-
-                {/* Images section */}
-                {message.images && message.images.length > 0 && (
-                  <div className="mb-4">
-                    <div className="flex items-center gap-2 mb-2">
-                      <ImageIcon className="w-4 h-4 text-muted-foreground" />
-                      <span className="text-xs text-muted-foreground font-medium">Images</span>
-                    </div>
-                    <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
-                      {message.images.slice(0, 6).map((image, idx) => (
-                        <ImageCard key={idx} image={image} />
-                      ))}
-                    </div>
+                  <div className="flex flex-wrap gap-2">
+                    {message.sources.slice(0, 6).map((source, idx) => (
+                      <SourceCard key={idx} source={source} index={idx} />
+                    ))}
                   </div>
-                )}
-              </>
-            )}
-
-            {/* Message content */}
-            <div className={message.role === 'assistant' ? 'bg-secondary/50 rounded-2xl px-4 py-3' : ''}>
-              {message.isTyping ? (
-                <div className="flex items-center gap-2">
-                  <span className="text-sm">{message.content}</span>
-                  <span className="flex gap-1">
-                    <span className="w-1.5 h-1.5 bg-foreground/50 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></span>
-                    <span className="w-1.5 h-1.5 bg-foreground/50 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></span>
-                    <span className="w-1.5 h-1.5 bg-foreground/50 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></span>
-                  </span>
                 </div>
-              ) : (
-                formatContent(message.content, message.sources)
               )}
             </div>
-          </div>
+          )}
         </div>
       ))}
 
       {isLoading && (
         <div className="flex justify-start">
-          <div className="bg-secondary/50 rounded-2xl px-4 py-3">
-            <Loader2 className="w-4 h-4 animate-spin text-foreground/50" />
+          <div className="flex items-center gap-2 text-[#666]">
+            <Loader2 className="w-4 h-4 animate-spin" />
+            <span className="text-sm">Thinking...</span>
           </div>
         </div>
       )}
