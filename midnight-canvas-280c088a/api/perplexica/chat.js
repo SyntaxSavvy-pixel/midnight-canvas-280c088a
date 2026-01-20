@@ -1,3 +1,4 @@
+// TabKeep Chat API - Updated Jan 20 2026
 export const config = {
   runtime: 'edge',
   maxDuration: 60,
