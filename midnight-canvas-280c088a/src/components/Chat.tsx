@@ -1,29 +1,10 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Loader2, ExternalLink } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 
 export interface Source {
   title: string;
   url: string;
-  snippet: string;
-  domain: string;
-  favicon: string;
-}
-
-export interface VideoResult {
-  title: string;
-  url: string;
-  thumbnail: string | null;
-  duration: string | null;
-  publisher: string;
-  isYouTube: boolean;
-}
-
-export interface ImageResult {
-  title: string;
-  url: string;
-  thumbnail: string | null;
-  source: string;
 }
 
 export interface Message {
@@ -32,8 +13,6 @@ export interface Message {
   content: string;
   isTyping?: boolean;
   sources?: Source[];
-  videos?: VideoResult[];
-  images?: ImageResult[];
 }
 
 interface ChatProps {
@@ -41,34 +20,57 @@ interface ChatProps {
   isLoading?: boolean;
 }
 
-// Compact source card
-const SourceCard = ({ source, index }: { source: Source; index: number }) => (
-  <a
-    href={source.url}
-    target="_blank"
-    rel="noopener noreferrer"
-    className="flex items-center gap-2 px-3 py-2 bg-[#1a1a1a] hover:bg-[#222] rounded-lg transition-colors border border-[#2a2a2a] group"
-  >
-    <img
-      src={source.favicon}
-      alt=""
-      className="w-4 h-4 rounded shrink-0"
-      onError={(e) => { e.currentTarget.src = 'https://www.google.com/favicon.ico'; }}
-    />
-    <span className="text-xs text-[#888] truncate max-w-[120px]">{source.title}</span>
-    <span className="text-xs text-cyan-400 font-medium shrink-0">[{index + 1}]</span>
-  </a>
-);
+// Pill-style source link (like ChatGPT/Perplexity)
+const SourcePill = ({ source, index }: { source: Source; index: number }) => {
+  const [showTooltip, setShowTooltip] = useState(false);
+
+  const getDomain = (url: string) => {
+    try {
+      return new URL(url).hostname.replace('www.', '');
+    } catch {
+      return url;
+    }
+  };
+
+  return (
+    <div className="relative inline-block">
+      <a
+        href={source.url}
+        target="_blank"
+        rel="noopener noreferrer"
+        onMouseEnter={() => setShowTooltip(true)}
+        onMouseLeave={() => setShowTooltip(false)}
+        className="inline-flex items-center gap-1 px-2 py-0.5 bg-[#252525] hover:bg-[#303030] rounded-full text-xs text-cyan-400 transition-colors"
+      >
+        <span className="font-medium">{index + 1}</span>
+      </a>
+
+      {/* Tooltip on hover */}
+      {showTooltip && (
+        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-[#1a1a1a] border border-[#333] rounded-lg shadow-xl z-50 whitespace-nowrap">
+          <div className="flex items-center gap-2">
+            <img
+              src={`https://www.google.com/s2/favicons?domain=${getDomain(source.url)}&sz=16`}
+              alt=""
+              className="w-4 h-4"
+            />
+            <span className="text-xs text-[#ccc] max-w-[200px] truncate">{source.title}</span>
+            <ExternalLink className="w-3 h-3 text-[#666]" />
+          </div>
+          <div className="text-[10px] text-[#666] mt-1">{getDomain(source.url)}</div>
+          {/* Arrow */}
+          <div className="absolute top-full left-1/2 -translate-x-1/2 -mt-px border-4 border-transparent border-t-[#333]" />
+        </div>
+      )}
+    </div>
+  );
+};
 
 const Chat = ({ messages, isLoading }: ChatProps) => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  };
-
   useEffect(() => {
-    scrollToBottom();
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
   return (
@@ -79,25 +81,23 @@ const Chat = ({ messages, isLoading }: ChatProps) => {
           className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
         >
           {message.role === 'user' ? (
-            // User message - simple bubble
             <div className="bg-cyan-500/20 text-[#eee] px-4 py-2.5 rounded-2xl max-w-[70%]">
               <p className="text-sm">{message.content}</p>
             </div>
           ) : (
-            // Assistant message - full width with markdown
             <div className="w-full max-w-3xl">
-              {/* Message content FIRST */}
-              <div className="mb-4">
-                {message.isTyping ? (
-                  <div className="flex items-center gap-2 text-[#aaa]">
-                    <span className="text-sm">{message.content}</span>
-                    <span className="flex gap-1">
-                      <span className="w-1.5 h-1.5 bg-cyan-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></span>
-                      <span className="w-1.5 h-1.5 bg-cyan-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></span>
-                      <span className="w-1.5 h-1.5 bg-cyan-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></span>
-                    </span>
-                  </div>
-                ) : (
+              {message.isTyping ? (
+                <div className="flex items-center gap-2 text-[#888]">
+                  <span className="text-sm">{message.content}</span>
+                  <span className="flex gap-1">
+                    <span className="w-1.5 h-1.5 bg-cyan-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></span>
+                    <span className="w-1.5 h-1.5 bg-cyan-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></span>
+                    <span className="w-1.5 h-1.5 bg-cyan-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></span>
+                  </span>
+                </div>
+              ) : (
+                <>
+                  {/* AI Response with markdown */}
                   <div className="prose prose-invert prose-sm max-w-none">
                     <ReactMarkdown
                       components={{
@@ -129,22 +129,19 @@ const Chat = ({ messages, isLoading }: ChatProps) => {
                       {message.content}
                     </ReactMarkdown>
                   </div>
-                )}
-              </div>
 
-              {/* Sources BELOW the response */}
-              {message.sources && message.sources.length > 0 && !message.isTyping && (
-                <div className="mt-4 pt-4 border-t border-[#222]">
-                  <div className="flex items-center gap-2 mb-3">
-                    <ExternalLink className="w-4 h-4 text-[#666]" />
-                    <span className="text-xs text-[#666] font-medium">Sources</span>
-                  </div>
-                  <div className="flex flex-wrap gap-2">
-                    {message.sources.slice(0, 6).map((source, idx) => (
-                      <SourceCard key={idx} source={source} index={idx} />
-                    ))}
-                  </div>
-                </div>
+                  {/* Sources as small pills at the bottom */}
+                  {message.sources && message.sources.length > 0 && (
+                    <div className="flex items-center gap-2 mt-4 pt-3 border-t border-[#222]">
+                      <span className="text-[10px] text-[#555] uppercase tracking-wide">Sources</span>
+                      <div className="flex gap-1.5 flex-wrap">
+                        {message.sources.map((source, idx) => (
+                          <SourcePill key={idx} source={source} index={idx} />
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </>
               )}
             </div>
           )}

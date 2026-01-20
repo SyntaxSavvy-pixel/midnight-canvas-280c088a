@@ -12,20 +12,21 @@ export default async function handler(req) {
     });
   }
 
-  const apiKey = process.env.OPENAI_API_KEY || process.env.VITE_OPENAI_API_KEY;
+  const apiKey = process.env.OPENAI_API_KEY;
 
   try {
     const { message } = await req.json();
 
     if (!message) {
-      return new Response(JSON.stringify({ error: 'Message is required' }), {
-        status: 400,
+      return new Response(JSON.stringify({ title: 'New Chat' }), {
         headers: { 'Content-Type': 'application/json' },
       });
     }
 
     if (!apiKey) {
-      return new Response(JSON.stringify({ title: message.slice(0, 30) }), {
+      // Fallback: create simple title from first few words
+      const words = message.trim().split(' ').slice(0, 4).join(' ');
+      return new Response(JSON.stringify({ title: words.length > 25 ? words.slice(0, 25) + '...' : words }), {
         headers: { 'Content-Type': 'application/json' },
       });
     }
@@ -37,31 +38,28 @@ export default async function handler(req) {
       messages: [
         {
           role: 'system',
-          content: `Generate a very short, concise title (2-5 words max) that summarizes what the user is asking about.
-Do NOT include quotes or punctuation.
-Do NOT start with "How to" or "What is" - just the topic.
+          content: `Create a 2-4 word title summarizing what the user wants. No quotes, no punctuation.
 Examples:
-- "how do I make pasta" → "Making Pasta"
-- "what is the weather in new york" → "NYC Weather"
-- "explain quantum physics" → "Quantum Physics"
-- "hello how are you" → "Greeting"
-- "write me a poem about love" → "Love Poem"
-- "debug my python code" → "Python Debugging"
-Return ONLY the title, nothing else.`
+"how do I make pasta" → Making Pasta
+"what's the weather" → Weather Check
+"hello how are you" → Greeting
+"explain quantum physics" → Quantum Physics
+"debug my code" → Code Debugging
+Return ONLY the title.`
         },
         { role: 'user', content: message }
       ],
-      max_tokens: 20,
+      max_tokens: 15,
       temperature: 0.3,
     });
 
-    const title = completion.choices[0]?.message?.content?.trim() || message.slice(0, 30);
+    const title = completion.choices[0]?.message?.content?.trim()?.replace(/['"]/g, '') || message.slice(0, 25);
 
     return new Response(JSON.stringify({ title }), {
       headers: { 'Content-Type': 'application/json' },
     });
   } catch (error) {
-    console.error('[TITLE] Error:', error.message);
+    console.error('[TITLE] Error:', error);
     return new Response(JSON.stringify({ title: 'New Chat' }), {
       headers: { 'Content-Type': 'application/json' },
     });
