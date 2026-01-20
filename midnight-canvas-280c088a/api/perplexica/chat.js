@@ -124,7 +124,7 @@ export default async function handler(req) {
 
         // Build request - only add web_search tool if needed
         const requestBody = {
-          model: 'gpt-4o-mini',
+          model: 'gpt-5-chat-latest',
           input: messages,
           max_output_tokens: 2048,
           stream: true,
@@ -142,7 +142,7 @@ export default async function handler(req) {
 
         // Use standard Chat Completions API (more reliable)
         const chatRequestBody = {
-          model: 'gpt-4o-mini',
+          model: 'gpt-5-chat-latest',
           messages: messages,
           max_tokens: 2048,
           stream: true,
