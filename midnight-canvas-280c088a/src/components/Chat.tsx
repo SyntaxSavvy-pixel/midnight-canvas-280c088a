@@ -1,5 +1,5 @@
-import { useEffect, useRef, useState } from 'react';
-import { Loader2, ExternalLink } from 'lucide-react';
+import { useEffect, useRef } from 'react';
+import { Loader2 } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 
 export interface Source {
@@ -20,10 +20,8 @@ interface ChatProps {
   isLoading?: boolean;
 }
 
-// Pill-style source link (like ChatGPT/Perplexity)
-const SourcePill = ({ source, index }: { source: Source; index: number }) => {
-  const [showTooltip, setShowTooltip] = useState(false);
-
+// Perplexity-style source pill with favicon and site name
+const SourcePill = ({ source }: { source: Source }) => {
   const getDomain = (url: string) => {
     try {
       return new URL(url).hostname.replace('www.', '');
@@ -32,37 +30,31 @@ const SourcePill = ({ source, index }: { source: Source; index: number }) => {
     }
   };
 
-  return (
-    <div className="relative inline-block">
-      <a
-        href={source.url}
-        target="_blank"
-        rel="noopener noreferrer"
-        onMouseEnter={() => setShowTooltip(true)}
-        onMouseLeave={() => setShowTooltip(false)}
-        className="inline-flex items-center gap-1 px-2 py-0.5 bg-[#252525] hover:bg-[#303030] rounded-full text-xs text-cyan-400 transition-colors"
-      >
-        <span className="font-medium">{index + 1}</span>
-      </a>
+  const domain = getDomain(source.url);
 
-      {/* Tooltip on hover */}
-      {showTooltip && (
-        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-[#1a1a1a] border border-[#333] rounded-lg shadow-xl z-50 whitespace-nowrap">
-          <div className="flex items-center gap-2">
-            <img
-              src={`https://www.google.com/s2/favicons?domain=${getDomain(source.url)}&sz=16`}
-              alt=""
-              className="w-4 h-4"
-            />
-            <span className="text-xs text-[#ccc] max-w-[200px] truncate">{source.title}</span>
-            <ExternalLink className="w-3 h-3 text-[#666]" />
-          </div>
-          <div className="text-[10px] text-[#666] mt-1">{getDomain(source.url)}</div>
-          {/* Arrow */}
-          <div className="absolute top-full left-1/2 -translate-x-1/2 -mt-px border-4 border-transparent border-t-[#333]" />
-        </div>
-      )}
-    </div>
+  // Get short name from domain (e.g., "reddit.com" -> "Reddit")
+  const getShortName = (domain: string) => {
+    const name = domain.split('.')[0];
+    return name.charAt(0).toUpperCase() + name.slice(1);
+  };
+
+  return (
+    <a
+      href={source.url}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-[#1e1e1e] hover:bg-[#282828] border border-[#333] rounded-full text-xs transition-colors group"
+      title={source.title}
+    >
+      <img
+        src={`https://www.google.com/s2/favicons?domain=${domain}&sz=16`}
+        alt=""
+        className="w-3.5 h-3.5 rounded-sm"
+      />
+      <span className="text-[#999] group-hover:text-[#ccc] font-medium max-w-[100px] truncate">
+        {getShortName(domain)}
+      </span>
+    </a>
   );
 };
 
@@ -130,15 +122,12 @@ const Chat = ({ messages, isLoading }: ChatProps) => {
                     </ReactMarkdown>
                   </div>
 
-                  {/* Sources as small pills at the bottom */}
+                  {/* Perplexity-style sources */}
                   {message.sources && message.sources.length > 0 && (
-                    <div className="flex items-center gap-2 mt-4 pt-3 border-t border-[#222]">
-                      <span className="text-[10px] text-[#555] uppercase tracking-wide">Sources</span>
-                      <div className="flex gap-1.5 flex-wrap">
-                        {message.sources.map((source, idx) => (
-                          <SourcePill key={idx} source={source} index={idx} />
-                        ))}
-                      </div>
+                    <div className="flex items-center gap-2 mt-4 flex-wrap">
+                      {message.sources.map((source, idx) => (
+                        <SourcePill key={idx} source={source} />
+                      ))}
                     </div>
                   )}
                 </>

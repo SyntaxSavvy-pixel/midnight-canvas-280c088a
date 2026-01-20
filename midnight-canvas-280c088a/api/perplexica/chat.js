@@ -10,52 +10,64 @@ function getCurrentDateTime() {
   });
 }
 
-// Check if query needs web search
+// Check if query needs web search - be STRICT about not searching for casual chat
 function needsWebSearch(query) {
   const q = query.toLowerCase().trim();
+  const words = q.split(/\s+/);
 
-  // DON'T search for these (casual chat)
+  // NEVER search for very short messages (1-3 words unless specific)
+  if (words.length <= 3) {
+    // Exception: explicit search keywords
+    const searchKeywords = ['weather', 'news', 'price', 'stock', 'crypto', 'latest'];
+    if (!searchKeywords.some(k => q.includes(k))) {
+      return false;
+    }
+  }
+
+  // DON'T search for these (casual chat) - expanded list
   const casualPatterns = [
-    /^(hi|hey|hello|yo|sup|hiya|howdy|greetings)/,
-    /^(how are you|how's it going|what's up|whats up)/,
-    /^(good morning|good afternoon|good evening|good night)/,
-    /^(thanks|thank you|thx|ty|appreciate)/,
-    /^(bye|goodbye|see you|later|cya)/,
-    /^(ok|okay|sure|yes|no|yeah|nah|yep|nope)/,
-    /^(nice|cool|awesome|great|amazing|wow)/,
-    /^(help me write|write me|create a|generate)/,
-    /^(can you|could you|would you|please)/,
-    /tell me a joke/,
-    /^(lol|haha|lmao|rofl)/,
+    /^(hi|hey|hello|yo|sup|hiya|howdy|greetings|hola|ola)/i,
+    /^(how are you|how's it going|what's up|whats up|wassup|how you doing)/i,
+    /^(good morning|good afternoon|good evening|good night|gm|gn)/i,
+    /^(thanks|thank you|thx|ty|appreciate|cheers)/i,
+    /^(bye|goodbye|see you|later|cya|ttyl|peace)/i,
+    /^(ok|okay|sure|yes|no|yeah|nah|yep|nope|alright|k|kk)/i,
+    /^(nice|cool|awesome|great|amazing|wow|neat|dope|sick)/i,
+    /^(help me write|write me|create a|generate|make me)/i,
+    /^(can you|could you|would you|please|i want you to|i need you to)/i,
+    /^(tell me a joke|make me laugh|say something funny)/i,
+    /^(lol|haha|lmao|rofl|xd|hehe)/i,
+    /^(what do you think|how do you feel|are you)/i,
+    /^(i am|i'm|im|i feel|i think|i want|i need|i have|i love|i hate)/i,
+    /^(do you|are you|can you|will you|would you)/i,
+    /^(my name is|call me|i go by)/i,
+    /^(let's talk|let's chat|want to chat|wanna talk)/i,
   ];
 
   for (const pattern of casualPatterns) {
     if (pattern.test(q)) return false;
   }
 
-  // DO search for these (factual queries)
+  // Only search for EXPLICIT factual queries about external/real-world info
   const searchPatterns = [
-    /^(what is|what are|what's|whats)/,
-    /^(who is|who are|who's|whos)/,
-    /^(where is|where are|where's)/,
-    /^(when did|when was|when is|when will)/,
-    /^(why did|why is|why are|why do)/,
-    /^(how to|how do|how does|how can)/,
-    /^(is there|are there|does|do)/,
-    /(weather|temperature|forecast)/,
-    /(news|latest|recent|update)/,
-    /(price|cost|stock|crypto)/,
-    /(best|top|recommend|review)/,
-    /\d{4}/, // years
-    /(site:|\.com|\.org|\.net)/, // URLs
+    /\b(what is|what are|what's the)\b.*(in|on|at|for|about)\b/i, // "what is the weather in..."
+    /\b(who is|who are|who was|who were)\b/i,
+    /\b(where is|where are|where can i)\b/i,
+    /\b(when did|when was|when is|when will)\b/i,
+    /\b(how much|how many|how long)\b.*(cost|price|take)/i,
+    /\b(latest|recent|current|today's|this week)\b.*(news|update|price|weather)/i,
+    /\b(weather|forecast|temperature)\b/i,
+    /\b(stock price|crypto|bitcoin|market)\b/i,
+    /\b(search for|look up|find me|google)\b/i,
+    /\b(news about|updates on|information about)\b/i,
   ];
 
   for (const pattern of searchPatterns) {
     if (pattern.test(q)) return true;
   }
 
-  // Default: don't search for short messages
-  return q.split(' ').length > 5;
+  // Default: DON'T search - let the AI respond naturally
+  return false;
 }
 
 export default async function handler(req) {
@@ -102,9 +114,9 @@ export default async function handler(req) {
         const messages = [
           {
             role: 'system',
-            content: `You are TabKeep AI, a helpful assistant. Current date: ${currentDateTime}.
-Be conversational, friendly, and helpful. Use markdown for formatting when appropriate.
-${shouldSearch ? 'You have access to web search. Cite sources naturally in your response.' : 'Respond naturally without searching the web.'}`
+            content: shouldSearch
+              ? `You are TabKeep AI. Current date: ${currentDateTime}. You have web search results to help answer the user's question. Be helpful and cite sources when relevant. Use markdown formatting.`
+              : `You are TabKeep AI, a friendly and helpful assistant. Be conversational and natural - respond like a knowledgeable friend would. Don't say you're searching or looking things up. Just have a natural conversation. Use markdown formatting when helpful.`
           },
           ...history.slice(-10).map(h => ({ role: h.role, content: h.content })),
           { role: 'user', content: message }
