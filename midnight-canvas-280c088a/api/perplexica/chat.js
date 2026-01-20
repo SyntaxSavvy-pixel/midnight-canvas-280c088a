@@ -40,43 +40,22 @@ export default async function handler(req) {
 
     (async () => {
       try {
-        // Build input from history and current message
-        const input = [
-          ...history.slice(-10).map(h => ({
-            role: h.role,
-            content: h.content
-          })),
-          { role: 'user', content: message }
-        ];
+        // Build conversation as single input string
+        let inputText = '';
+        if (history.length > 0) {
+          const recentHistory = history.slice(-10);
+          for (const h of recentHistory) {
+            inputText += `${h.role === 'user' ? 'User' : 'Assistant'}: ${h.content}\n\n`;
+          }
+        }
+        inputText += `User: ${message}`;
 
-        // Use OpenAI Responses API with saved prompt
+        // Simple Responses API format
         const requestBody = {
-          prompt: {
-            id: 'pmpt_696989b3e12481968e301ed9ee0ab5610c74eacb2e740c2c',
-            version: '3'
-          },
-          input: input,
-          text: {
-            format: {
-              type: 'text'
-            }
-          },
-          reasoning: {},
-          tools: [
-            {
-              type: 'web_search',
-              search_context_size: 'medium',
-              user_location: {
-                type: 'approximate'
-              }
-            }
-          ],
-          max_output_tokens: 2048,
-          store: true,
+          model: 'gpt-4o',
+          tools: [{ type: 'web_search' }],
+          input: inputText,
           stream: true,
-          include: [
-            'web_search_call.results'
-          ]
         };
 
         const response = await fetch('https://api.openai.com/v1/responses', {
@@ -89,14 +68,14 @@ export default async function handler(req) {
         });
 
         if (!response.ok) {
-          const err = await response.json();
-          throw new Error(err.error?.message || `API error: ${response.status}`);
+          const errText = await response.text();
+          console.error('[CHAT] API Error:', errText);
+          throw new Error(`API error: ${response.status} - ${errText}`);
         }
 
         const reader = response.body.getReader();
         const decoder = new TextDecoder();
         let buffer = '';
-        let sources = [];
 
         while (true) {
           const { done, value } = await reader.read();
@@ -114,27 +93,32 @@ export default async function handler(req) {
               try {
                 const parsed = JSON.parse(data);
 
-                // Handle text content
+                // Handle text content delta
                 if (parsed.type === 'response.output_text.delta') {
                   await sendSSE('content', { content: parsed.delta || '' });
                 }
 
-                // Handle web search sources
-                if (parsed.type === 'response.web_search_call.results') {
-                  sources = (parsed.results || []).slice(0, 5).map(s => ({
-                    title: s.title || s.name || '',
-                    url: s.url || '',
-                  }));
-                  if (sources.length > 0) {
-                    await sendSSE('sources', { sources });
-                  }
+                // Handle completed text
+                if (parsed.type === 'response.output_text.done') {
+                  // Text is complete
+                }
+
+                // Handle web search sources (url_citation)
+                if (parsed.type === 'response.output_text.annotation' && parsed.annotation?.type === 'url_citation') {
+                  const cite = parsed.annotation;
+                  await sendSSE('sources', {
+                    sources: [{
+                      title: cite.title || '',
+                      url: cite.url || '',
+                    }]
+                  });
                 }
               } catch {}
             }
           }
         }
 
-        await sendSSE('done', { sourcesCount: sources.length });
+        await sendSSE('done', {});
       } catch (error) {
         console.error('[CHAT] Error:', error);
         await sendSSE('error', { message: error.message });
