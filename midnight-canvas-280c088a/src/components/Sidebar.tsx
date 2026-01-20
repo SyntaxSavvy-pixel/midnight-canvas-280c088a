@@ -122,36 +122,34 @@ const Sidebar = ({
 
           {/* Header with logo and menu */}
           <div className="flex items-center justify-between p-3">
-            <div className="flex items-center gap-2">
-              <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-cyan-400 to-blue-500 flex items-center justify-center">
-                <Brain className="w-4 h-4 text-white" />
+            <div className="flex items-center gap-2.5">
+              <div className="w-8 h-8 flex items-center justify-center">
+                <Brain className="w-7 h-7 text-[#00bfff]" strokeWidth={1.5} />
               </div>
-              <span className="text-sm font-semibold text-[#ccc]">TabKeep</span>
+              <span className="text-base font-semibold text-[#ccc]">TabKeep</span>
             </div>
             <button onClick={onToggle} className="p-2 rounded-lg hover:bg-white/5 transition-colors">
               <Menu className="w-5 h-5 text-[#666]" />
             </button>
           </div>
 
-          {/* Navigation tabs */}
-          <div className="px-3 pb-3">
-            <div className="flex gap-1 p-1 bg-[#202020] rounded-lg">
-              <button
-                onClick={onNewChat}
-                className="flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-md bg-[#2a2a2a] text-[#ccc] text-sm font-medium transition-colors"
-              >
-                <MessageSquare className="w-4 h-4" />
-                Ask
-              </button>
-              <button className="flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-md text-[#777] text-sm font-medium hover:bg-[#252525] transition-colors">
-                <Bookmark className="w-4 h-4" />
-                Save
-              </button>
-              <button className="flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-md text-[#777] text-sm font-medium hover:bg-[#252525] transition-colors">
-                <Users className="w-4 h-4" />
-                Community
-              </button>
-            </div>
+          {/* Navigation buttons - vertical stack */}
+          <div className="px-3 pb-3 space-y-1">
+            <button
+              onClick={onNewChat}
+              className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg bg-[#202020] text-[#ccc] text-sm font-medium hover:bg-[#252525] transition-colors"
+            >
+              <MessageSquare className="w-4 h-4" />
+              Ask
+            </button>
+            <button className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-[#888] text-sm font-medium hover:bg-[#202020] transition-colors">
+              <Bookmark className="w-4 h-4" />
+              Saved Tabs
+            </button>
+            <button className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-[#888] text-sm font-medium hover:bg-[#202020] transition-colors">
+              <Users className="w-4 h-4" />
+              Community
+            </button>
           </div>
 
           {/* Search */}
