@@ -62,12 +62,12 @@ export default async function handler(req) {
         }
         inputText += `User: ${message}`;
 
-        // Simple Responses API format
+        // Try NON-streaming first to verify API works
         const requestBody = {
           model: 'gpt-4o',
           tools: [{ type: 'web_search' }],
           input: inputText,
-          stream: true,
+          // stream: false (default)
         };
 
         const response = await fetch('https://api.openai.com/v1/responses', {
@@ -85,109 +85,53 @@ export default async function handler(req) {
           throw new Error(`API error: ${response.status} - ${errText}`);
         }
 
-        const reader = response.body.getReader();
-        const decoder = new TextDecoder();
-        let buffer = '';
+        // Parse the full response
+        const result = await response.json();
+        console.log('[CHAT] Full response:', JSON.stringify(result).slice(0, 500));
 
-        while (true) {
-          const { done, value } = await reader.read();
-          if (done) break;
+        // Extract text from the response
+        let fullText = '';
+        const sources = [];
 
-          buffer += decoder.decode(value, { stream: true });
-          const lines = buffer.split('\n');
-          buffer = lines.pop() || '';
+        // Try to get output_text from response
+        if (result.output_text) {
+          fullText = result.output_text;
+        }
 
-          for (const line of lines) {
-            if (line.startsWith('data: ')) {
-              const data = line.slice(6);
-              if (data === '[DONE]') continue;
-
-              try {
-                const parsed = JSON.parse(data);
-                const eventType = parsed.type || '';
-
-                // DEBUG: Log all event types to see what OpenAI sends
-                console.log('[CHAT] Event:', eventType, JSON.stringify(parsed).slice(0, 200));
-
-                // Handle text content delta - check multiple possible locations
-                if (eventType === 'response.output_text.delta') {
-                  const text = parsed.delta || '';
-                  if (text) {
-                    await sendSSE('content', { content: text });
-                  }
+        // Or try output array
+        if (result.output && Array.isArray(result.output)) {
+          for (const item of result.output) {
+            if (item.type === 'message' && item.content) {
+              for (const part of item.content) {
+                if (part.type === 'output_text' || part.type === 'text') {
+                  fullText += part.text || '';
                 }
-
-                // Also try response.text.delta (another possible format)
-                if (eventType === 'response.text.delta') {
-                  const text = parsed.delta || parsed.text || '';
-                  if (text) {
-                    await sendSSE('content', { content: text });
-                  }
-                }
-
-                // Handle content part added
-                if (eventType === 'response.content_part.added') {
-                  const text = parsed.part?.text || '';
-                  if (text) {
-                    await sendSSE('content', { content: text });
-                  }
-                }
-
-                // When response is done, extract full text
-                if (eventType === 'response.output_item.done') {
-                  const item = parsed.item;
-                  if (item?.type === 'message' && item?.content) {
-                    for (const part of item.content) {
-                      if (part.type === 'output_text' && part.text) {
-                        await sendSSE('content', { content: part.text });
-                      }
+                // Get citations
+                if (part.annotations) {
+                  for (const ann of part.annotations) {
+                    if (ann.type === 'url_citation' && ann.url) {
+                      sources.push({
+                        title: ann.title || ann.url,
+                        url: ann.url,
+                      });
                     }
                   }
                 }
-
-                // Also get text from response.done or response.completed
-                if (eventType === 'response.done' || eventType === 'response.completed') {
-                  const output = parsed.response?.output || [];
-                  for (const item of output) {
-                    if (item.type === 'message' && item.content) {
-                      for (const part of item.content) {
-                        if (part.type === 'output_text' && part.text) {
-                          // Send the full text if we haven't streamed it
-                          await sendSSE('content', { content: part.text });
-                        }
-                        // Extract citations
-                        if (part.annotations) {
-                          for (const ann of part.annotations) {
-                            if (ann.type === 'url_citation' && ann.url) {
-                              await sendSSE('sources', {
-                                sources: [{
-                                  title: ann.title || ann.url,
-                                  url: ann.url,
-                                }]
-                              });
-                            }
-                          }
-                        }
-                      }
-                    }
-                  }
-                }
-
-                // Handle web search results
-                if (eventType.includes('web_search') && parsed.results) {
-                  const sources = parsed.results.slice(0, 5).map(r => ({
-                    title: r.title || r.name || r.url,
-                    url: r.url,
-                  }));
-                  if (sources.length > 0) {
-                    await sendSSE('sources', { sources });
-                  }
-                }
-              } catch (e) {
-                console.error('[CHAT] Parse error:', e);
               }
             }
           }
+        }
+
+        // Send sources first
+        if (sources.length > 0) {
+          await sendSSE('sources', { sources });
+        }
+
+        // Send the full text content
+        if (fullText) {
+          await sendSSE('content', { content: fullText });
+        } else {
+          await sendSSE('content', { content: 'No response text received from API.' });
         }
 
         await sendSSE('done', {});
