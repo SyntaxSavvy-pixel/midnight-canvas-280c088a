@@ -140,23 +140,30 @@ export default async function handler(req) {
           requestBody.include = ['web_search_call.action.sources'];
         }
 
-        const response = await fetch('https://api.openai.com/v1/responses', {
+        // Use standard Chat Completions API (more reliable)
+        const chatRequestBody = {
+          model: 'gpt-4o-mini',
+          messages: messages,
+          max_tokens: 2048,
+          stream: true,
+        };
+
+        const response = await fetch('https://api.openai.com/v1/chat/completions', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${apiKey}`,
           },
-          body: JSON.stringify(requestBody),
+          body: JSON.stringify(chatRequestBody),
         });
 
         if (!response.ok) {
           const err = await response.json();
-          throw new Error(err.error?.message || 'API error');
+          throw new Error(err.error?.message || `API error: ${response.status}`);
         }
 
         const reader = response.body.getReader();
         const decoder = new TextDecoder();
-        let sources = [];
         let buffer = '';
 
         while (true) {
@@ -174,24 +181,16 @@ export default async function handler(req) {
 
               try {
                 const parsed = JSON.parse(data);
-
-                if (parsed.type === 'response.output_text.delta') {
-                  await sendSSE('content', { content: parsed.delta || '' });
-                } else if (parsed.type === 'response.web_search_call.sources' && shouldSearch) {
-                  sources = (parsed.sources || []).slice(0, 5).map(s => ({
-                    title: s.title,
-                    url: s.url,
-                  }));
-                  if (sources.length > 0) {
-                    await sendSSE('sources', { sources });
-                  }
+                const content = parsed.choices?.[0]?.delta?.content;
+                if (content) {
+                  await sendSSE('content', { content });
                 }
               } catch {}
             }
           }
         }
 
-        await sendSSE('done', { searchUsed: shouldSearch, sourcesCount: sources.length });
+        await sendSSE('done', { searchUsed: false, sourcesCount: 0 });
       } catch (error) {
         console.error('[CHAT] Error:', error);
         await sendSSE('error', { message: error.message });
