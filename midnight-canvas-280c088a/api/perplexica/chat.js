@@ -104,28 +104,74 @@ export default async function handler(req) {
 
               try {
                 const parsed = JSON.parse(data);
+                const eventType = parsed.type || '';
 
-                // Handle text content delta
-                if (parsed.type === 'response.output_text.delta') {
-                  await sendSSE('content', { content: parsed.delta || '' });
+                // Handle text content delta (multiple possible formats)
+                if (eventType === 'response.output_text.delta') {
+                  const text = parsed.delta || parsed.text || '';
+                  if (text) {
+                    await sendSSE('content', { content: text });
+                  }
                 }
 
-                // Handle completed text
-                if (parsed.type === 'response.output_text.done') {
-                  // Text is complete
+                // Handle content part delta (alternative format)
+                if (eventType === 'response.content_part.delta') {
+                  const text = parsed.delta?.text || parsed.text || '';
+                  if (text) {
+                    await sendSSE('content', { content: text });
+                  }
                 }
 
-                // Handle web search sources (url_citation)
-                if (parsed.type === 'response.output_text.annotation' && parsed.annotation?.type === 'url_citation') {
-                  const cite = parsed.annotation;
-                  await sendSSE('sources', {
-                    sources: [{
-                      title: cite.title || '',
-                      url: cite.url || '',
-                    }]
-                  });
+                // Handle output item done (might contain full text)
+                if (eventType === 'response.output_item.done') {
+                  const content = parsed.item?.content;
+                  if (Array.isArray(content)) {
+                    for (const part of content) {
+                      if (part.type === 'output_text' && part.text) {
+                        // Only send if we haven't been streaming
+                        // await sendSSE('content', { content: part.text });
+                      }
+                    }
+                  }
                 }
-              } catch {}
+
+                // Handle web search sources
+                if (eventType.includes('annotation') || eventType.includes('url_citation')) {
+                  const cite = parsed.annotation || parsed;
+                  if (cite.url) {
+                    await sendSSE('sources', {
+                      sources: [{
+                        title: cite.title || cite.url,
+                        url: cite.url,
+                      }]
+                    });
+                  }
+                }
+
+                // Also check for citations in response.completed
+                if (eventType === 'response.completed' && parsed.response?.output) {
+                  for (const item of parsed.response.output) {
+                    if (item.content) {
+                      for (const part of item.content) {
+                        if (part.annotations) {
+                          for (const ann of part.annotations) {
+                            if (ann.type === 'url_citation' && ann.url) {
+                              await sendSSE('sources', {
+                                sources: [{
+                                  title: ann.title || ann.url,
+                                  url: ann.url,
+                                }]
+                              });
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              } catch (e) {
+                console.error('[CHAT] Parse error:', e);
+              }
             }
           }
         }
