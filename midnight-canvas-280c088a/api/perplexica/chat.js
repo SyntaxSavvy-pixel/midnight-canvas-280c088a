@@ -106,53 +106,56 @@ export default async function handler(req) {
                 const parsed = JSON.parse(data);
                 const eventType = parsed.type || '';
 
-                // Handle text content delta (multiple possible formats)
+                // DEBUG: Log all event types to see what OpenAI sends
+                console.log('[CHAT] Event:', eventType, JSON.stringify(parsed).slice(0, 200));
+
+                // Handle text content delta - check multiple possible locations
                 if (eventType === 'response.output_text.delta') {
+                  const text = parsed.delta || '';
+                  if (text) {
+                    await sendSSE('content', { content: text });
+                  }
+                }
+
+                // Also try response.text.delta (another possible format)
+                if (eventType === 'response.text.delta') {
                   const text = parsed.delta || parsed.text || '';
                   if (text) {
                     await sendSSE('content', { content: text });
                   }
                 }
 
-                // Handle content part delta (alternative format)
-                if (eventType === 'response.content_part.delta') {
-                  const text = parsed.delta?.text || parsed.text || '';
+                // Handle content part added
+                if (eventType === 'response.content_part.added') {
+                  const text = parsed.part?.text || '';
                   if (text) {
                     await sendSSE('content', { content: text });
                   }
                 }
 
-                // Handle output item done (might contain full text)
+                // When response is done, extract full text
                 if (eventType === 'response.output_item.done') {
-                  const content = parsed.item?.content;
-                  if (Array.isArray(content)) {
-                    for (const part of content) {
+                  const item = parsed.item;
+                  if (item?.type === 'message' && item?.content) {
+                    for (const part of item.content) {
                       if (part.type === 'output_text' && part.text) {
-                        // Only send if we haven't been streaming
-                        // await sendSSE('content', { content: part.text });
+                        await sendSSE('content', { content: part.text });
                       }
                     }
                   }
                 }
 
-                // Handle web search sources
-                if (eventType.includes('annotation') || eventType.includes('url_citation')) {
-                  const cite = parsed.annotation || parsed;
-                  if (cite.url) {
-                    await sendSSE('sources', {
-                      sources: [{
-                        title: cite.title || cite.url,
-                        url: cite.url,
-                      }]
-                    });
-                  }
-                }
-
-                // Also check for citations in response.completed
-                if (eventType === 'response.completed' && parsed.response?.output) {
-                  for (const item of parsed.response.output) {
-                    if (item.content) {
+                // Also get text from response.done or response.completed
+                if (eventType === 'response.done' || eventType === 'response.completed') {
+                  const output = parsed.response?.output || [];
+                  for (const item of output) {
+                    if (item.type === 'message' && item.content) {
                       for (const part of item.content) {
+                        if (part.type === 'output_text' && part.text) {
+                          // Send the full text if we haven't streamed it
+                          await sendSSE('content', { content: part.text });
+                        }
+                        // Extract citations
                         if (part.annotations) {
                           for (const ann of part.annotations) {
                             if (ann.type === 'url_citation' && ann.url) {
@@ -167,6 +170,17 @@ export default async function handler(req) {
                         }
                       }
                     }
+                  }
+                }
+
+                // Handle web search results
+                if (eventType.includes('web_search') && parsed.results) {
+                  const sources = parsed.results.slice(0, 5).map(r => ({
+                    title: r.title || r.name || r.url,
+                    url: r.url,
+                  }));
+                  if (sources.length > 0) {
+                    await sendSSE('sources', { sources });
                   }
                 }
               } catch (e) {
