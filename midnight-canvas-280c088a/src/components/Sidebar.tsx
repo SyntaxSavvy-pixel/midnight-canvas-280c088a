@@ -123,7 +123,7 @@ const Sidebar = ({
           {/* Header with logo and menu */}
           <div className="flex items-center justify-between p-3">
             <div className="flex items-center gap-2">
-              <img src="/brain-logo.svg" alt="TabKeep" className="w-8 h-8" />
+              <img src="/favicon.png" alt="TabKeep" className="w-7 h-7" />
               <span className="text-base font-semibold text-[#ccc]">TabKeep</span>
             </div>
             <button onClick={onToggle} className="p-2 rounded-lg hover:bg-white/5 transition-colors">
