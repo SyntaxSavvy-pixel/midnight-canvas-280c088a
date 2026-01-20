@@ -112,6 +112,22 @@ const Index = () => {
     }, 300);
   };
 
+  // Generate a summarized title for the chat
+  const generateTitle = async (message: string): Promise<string> => {
+    try {
+      const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+      const response = await fetch(`${API_URL}/api/generate-title`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message }),
+      });
+      const data = await response.json();
+      return data.title || message.slice(0, 30);
+    } catch {
+      return message.slice(0, 30);
+    }
+  };
+
   const handleSearch = async (query: string) => {
     if (!isAuthenticated) {
       setAuthModalOpen(true);
@@ -126,9 +142,12 @@ const Index = () => {
     if (!isChatActive) {
       setIsChatActive(true);
 
-      // Create new chat and save to history
+      // Generate a summarized title using AI
+      const summarizedTitle = await generateTitle(query);
+
+      // Create new chat and save to history with summarized title
       const newChatData = {
-        title: query.slice(0, 50),
+        title: summarizedTitle,
         initialQuery: query,
         messages: [{ id: Date.now().toString(), role: 'user', content: query }],
       };

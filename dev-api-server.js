@@ -678,6 +678,55 @@ app.post('/api/perplexica/search', async (req, res) => {
 });
 
 // ============================================
+// Generate Chat Title (Summarize)
+// ============================================
+app.post('/api/generate-title', async (req, res) => {
+  const apiKey = process.env.VITE_OPENAI_API_KEY;
+  const { message } = req.body;
+
+  if (!apiKey) {
+    return res.json({ title: message.slice(0, 30) });
+  }
+
+  if (!message) {
+    return res.status(400).json({ error: 'Message is required' });
+  }
+
+  try {
+    const openai = new OpenAI({ apiKey });
+    const completion = await openai.chat.completions.create({
+      model: 'gpt-4o-mini',
+      messages: [
+        {
+          role: 'system',
+          content: `Generate a very short, concise title (2-5 words max) that summarizes what the user is asking about.
+Do NOT include quotes or punctuation.
+Do NOT start with "How to" or "What is" - just the topic.
+Examples:
+- "how do I make pasta" → "Making Pasta"
+- "what is the weather in new york" → "NYC Weather"
+- "explain quantum physics" → "Quantum Physics"
+- "hello how are you" → "Greeting"
+- "write me a poem about love" → "Love Poem"
+- "debug my python code" → "Python Debugging"
+Return ONLY the title, nothing else.`
+        },
+        { role: 'user', content: message }
+      ],
+      max_tokens: 20,
+      temperature: 0.3,
+    });
+
+    const title = completion.choices[0]?.message?.content?.trim() || message.slice(0, 30);
+    console.log(`[TITLE] "${message.substring(0, 30)}..." → "${title}"`);
+    res.json({ title });
+  } catch (error) {
+    console.error('[TITLE] Error:', error.message);
+    res.json({ title: message.slice(0, 30) });
+  }
+});
+
+// ============================================
 // Suggest Related Queries
 // ============================================
 app.post('/api/suggest', async (req, res) => {
