@@ -64,8 +64,8 @@ export interface SendMessageOptions {
   fileContext?: string;
 }
 
-// API Server URL - configurable via env or default to localhost
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+// API Server URL - empty string = relative URLs (works on Vercel)
+const API_URL = import.meta.env.VITE_API_URL || '';
 
 export const useAIChat = (): UseAIChatReturn => {
   const [messages, setMessages] = useState<Message[]>([]);

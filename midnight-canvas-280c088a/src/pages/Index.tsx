@@ -115,7 +115,7 @@ const Index = () => {
   // Generate a summarized title for the chat
   const generateTitle = async (message: string): Promise<string> => {
     try {
-      const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+      const API_URL = import.meta.env.VITE_API_URL || '';
       const response = await fetch(`${API_URL}/api/generate-title`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
