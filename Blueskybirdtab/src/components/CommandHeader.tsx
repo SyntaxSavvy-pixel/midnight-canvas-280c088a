@@ -166,6 +166,9 @@ const CommandHeader = ({
                  <div className="w-[1px] h-4 bg-[var(--border-subtle)] mx-1" />
 
                  {/* Theme Dropdown Menu */}
+                 <ThemeDropdown onOpenThemeStudio={onOpenThemeStudio} />
+
+                 {/* Theme Dropdown Menu */}
                  <ThemeDropdown onOpenThemeStudio={onOpenThemeStudio || (() => {})} />
             </div>
 
