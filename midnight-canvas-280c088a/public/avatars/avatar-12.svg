@@ -1,8 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
-  <!-- Pixel art avatar 12: Rose character -->
-  <rect width="64" height="64" fill="#f43f5e"/>
-  <rect x="16" y="16" width="8" height="8" fill="#ffe4e6"/>
-  <rect x="40" y="16" width="8" height="8" fill="#ffe4e6"/>
-  <rect x="24" y="40" width="16" height="4" fill="#ffe4e6"/>
-  <rect x="20" y="32" width="24" height="4" fill="#fecdd3"/>
-</svg>

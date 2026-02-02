@@ -1,8 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
-  <!-- Pixel art avatar 10: Teal character -->
-  <rect width="64" height="64" fill="#14b8a6"/>
-  <rect x="16" y="16" width="8" height="8" fill="#ccfbf1"/>
-  <rect x="40" y="16" width="8" height="8" fill="#ccfbf1"/>
-  <rect x="24" y="36" width="16" height="8" fill="#99f6e4"/>
-  <rect x="28" y="28" width="8" height="4" fill="#ccfbf1"/>
-</svg>

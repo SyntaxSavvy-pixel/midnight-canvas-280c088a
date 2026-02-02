@@ -5,9 +5,10 @@
   "main": "dev-api-server.js",
   "scripts": {
     "dev:api": "node dev-api-server.js",
-    "dev:frontend": "cd midnight-canvas-280c088a.backup && npm run dev",
+    "dev:frontend": "cd Blueskybirdtab && npm run dev",
     "dev": "concurrently \"npm run dev:api\" \"npm run dev:frontend\"",
-    "start": "npm run dev"
+    "start": "npm run dev",
+    "build": "cd Blueskybirdtab && npm run build"
   },
   "dependencies": {
     "axios": "^1.13.2",
