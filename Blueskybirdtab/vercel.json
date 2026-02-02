@@ -1,0 +1,51 @@
+{
+  "buildCommand": "npm run build",
+  "outputDirectory": "dist",
+  "installCommand": "npm install",
+  "routes": [
+    { "src": "/api/chat", "dest": "/api/chat.js" },
+    { "src": "/api/generate-title", "dest": "/api/generate-title.js" },
+    { "src": "/api/plan", "dest": "/api/plan.js" },
+    { "src": "/api/extract-memory", "dest": "/api/extract-memory.js" },
+    { "src": "/api/extract-frames", "dest": "/api/extract-frames.js" },
+    { "src": "/api/judge-quality", "dest": "/api/judge-quality.js" },
+    { "src": "/api/summarize", "dest": "/api/summarize.js" },
+    { "src": "/api/generate-project", "dest": "/api/generate-project.js" },
+    { "src": "/api/anchors/([^/]+)/memories", "dest": "/api/anchors/[anchorId]/memories.js" },
+    { "src": "/api/anchors", "dest": "/api/anchors.js" },
+    { "handle": "filesystem" },
+    { "src": "/(.*)", "dest": "/index.html" }
+  ],
+  "functions": {
+    "api/chat.js": {
+      "maxDuration": 60
+    },
+    "api/generate-title.js": {
+      "maxDuration": 10
+    },
+    "api/plan.js": {
+      "maxDuration": 10
+    },
+    "api/extract-memory.js": {
+      "maxDuration": 30
+    },
+    "api/extract-frames.js": {
+      "maxDuration": 30
+    },
+    "api/judge-quality.js": {
+      "maxDuration": 10
+    },
+    "api/summarize.js": {
+      "maxDuration": 10
+    },
+    "api/generate-project.js": {
+      "maxDuration": 10
+    },
+    "api/anchors.js": {
+      "maxDuration": 10
+    },
+    "api/anchors/[anchorId]/memories.js": {
+      "maxDuration": 10
+    }
+  }
+}

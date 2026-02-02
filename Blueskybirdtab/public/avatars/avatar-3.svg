@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <!-- Pixel art avatar 3: Green character -->
+  <rect width="64" height="64" fill="#16a34a"/>
+  <rect x="16" y="16" width="8" height="8" fill="#dcfce7"/>
+  <rect x="40" y="16" width="8" height="8" fill="#dcfce7"/>
+  <rect x="24" y="36" width="4" height="4" fill="#dcfce7"/>
+  <rect x="36" y="36" width="4" height="4" fill="#dcfce7"/>
+  <rect x="28" y="44" width="8" height="4" fill="#dcfce7"/>
+</svg>
